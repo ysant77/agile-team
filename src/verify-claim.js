@@ -7,6 +7,8 @@ import { addComment } from './jira.js';
 import { addVerdictProperty, collectJira } from './jira-evidence.js';
 import { verify } from './verifier/verdict.js';
 
+export const VERIFY_CONFIG = { requiredWorkflows: ['CI'], tooGood: { auc: 0.95 } };
+
 const SYMBOL = { supported: 'SUPPORTED', contradicted: 'CONTRADICTED', cannot_verify: 'CANNOT VERIFY' };
 
 export function formatVerdict(issueKey, claim, verdict, meta) {
@@ -37,7 +39,7 @@ export async function verifyClaim({ issueKey, claim }) {
       githubError = error.message;
     }
   }
-  const ctx = { ticket, ...github, config: { requiredWorkflows: ['CI'], tooGood: { auc: 0.95 } } };
+  const ctx = { ticket, ...github, config: VERIFY_CONFIG };
   let verdict = verify(claim, ctx);
   if ((githubError || !repo) && verdict.result === 'contradicted' && verdict.checks.some((c) => c.name === 'pr_linked' && c.status === 'fail')) {
     // Without GitHub access a missing PR is not evidence of absence.

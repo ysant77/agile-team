@@ -61,3 +61,4 @@ export async function onComment(event) {
 }
 
 export { lintRequirementAction } from './lint-action.js';
+export { openCase, recordOpinion } from './case-actions.js';

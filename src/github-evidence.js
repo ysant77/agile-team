@@ -6,7 +6,8 @@ import { extractReport } from './verifier/report.js';
 const API = 'https://api.github.com';
 const BOT = 'github-actions[bot]';
 
-export async function collectGithub({ repo, key, token, fetchFn }) {
+// prNumber picks one pull request; without it, the latest one whose title or branch names the key.
+export async function collectGithub({ repo, key, token, fetchFn, prNumber = null }) {
   const headers = {
     Accept: 'application/vnd.github+json',
     'User-Agent': 'agile-team-forge-app',
@@ -25,7 +26,9 @@ export async function collectGithub({ repo, key, token, fetchFn }) {
   };
 
   const pulls = (await get(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=50`)) ?? [];
-  const match = pulls.find((p) => `${p.title} ${p.head?.ref ?? ''}`.includes(key));
+  const match = prNumber
+    ? pulls.find((p) => p.number === prNumber)
+    : pulls.find((p) => `${p.title} ${p.head?.ref ?? ''}`.includes(key));
   const pr = match
     ? {
         number: match.number,
@@ -35,6 +38,7 @@ export async function collectGithub({ repo, key, token, fetchFn }) {
         merged: Boolean(match.merged_at),
         headSha: match.head?.sha,
         url: match.html_url,
+        body: match.body ?? '',
       }
     : null;
 
@@ -90,4 +94,22 @@ export async function collectGithub({ repo, key, token, fetchFn }) {
     deployRuns,
     meta: { calls, rateRemaining, authenticated: Boolean(token) },
   };
+}
+
+// Size of one pull request: changed lines and file names (two calls).
+export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'agile-team-forge-app',
+    'X-GitHub-Api-Version': '2022-11-28',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const get = async (path) => {
+    const response = await fetchFn(`${API}${path}`, { headers });
+    if (!response.ok) throw new Error(`GitHub ${path.split('?')[0]}: HTTP ${response.status}`);
+    return response.json();
+  };
+  const pr = await get(`/repos/${repo}/pulls/${prNumber}`);
+  const files = await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100`);
+  return { diffLines: (pr.additions ?? 0) + (pr.deletions ?? 0), files: files.map((f) => f.filename) };
 }
