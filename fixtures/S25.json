@@ -1,0 +1,64 @@
+{
+  "scenario": "S25",
+  "title": "Cross-skill ticket: masked PDF export",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "ready", "text": "Sub-task B: PDF shows last 4 digits only" },
+      "context": {
+        "ticket": { "key": "BANK-65", "type": "Sub-task", "parent": "BANK-25", "acceptanceCriteria": [
+          { "acId": "B1", "check": { "type": "test_passes", "args": ["test_BANK25_masked_in_pdf"] } },
+          { "acId": "B2", "check": { "type": "test_passes", "args": ["test_BANK25_no_full_number_in_payload"] } } ] },
+        "pr": { "number": 35, "title": "BANK-65 (BANK-25) mask account number in statement PDF", "state": "open", "headSha": "8b64aa23950c53e5ccecb481d530e544e5c600aa" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "8b64aa23950c53e5ccecb481d530e544e5c600aa", "tests": [
+          { "id": "tests/test_pdf.py::test_BANK25_masked_in_pdf", "outcome": "passed" },
+          { "id": "tests/test_pdf.py::test_BANK25_no_full_number_in_payload", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "8b64aa23950c53e5ccecb481d530e544e5c600aa", "status": "completed", "conclusion": "success", "createdAt": "2026-12-02T08:00:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "done", "text": "Story done (sub-task B still in review)" },
+      "context": {
+        "ticket": { "key": "BANK-25", "type": "Story",
+          "subtasks": [ { "key": "BANK-64", "statusCategory": "done" }, { "key": "BANK-65", "statusCategory": "indeterminate" } ],
+          "acceptanceCriteria": [ { "acId": "AC1", "check": { "type": "subtasks_done" } } ] }
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["not done: BANK-65"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c3", "type": "done", "text": "Story done" },
+      "context": {
+        "ticket": { "key": "BANK-25", "type": "Story",
+          "subtasks": [ { "key": "BANK-64", "statusCategory": "done" }, { "key": "BANK-65", "statusCategory": "done" } ],
+          "acceptanceCriteria": [ { "acId": "AC1", "check": { "type": "subtasks_done" } } ] }
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "assign",
+      "seed": 7,
+      "tickets": [ { "key": "BANK-25", "points": 5, "skills": ["frontend", "security", "backend"] } ],
+      "twins": [
+        { "id": "ava", "skills": { "frontend": 4, "qa": 3, "backend": 2 }, "capacity": 13, "load": 2 },
+        { "id": "mei", "skills": { "frontend": 3, "backend": 2 }, "capacity": 13, "load": 8 },
+        { "id": "lena", "skills": { "security": 4, "backend": 3 }, "capacity": 13, "load": 3 }
+      ],
+      "expect": { "assignments": { "BANK-25": null }, "note": "no single twin has frontend and security of at least 2" }
+    },
+    {
+      "kind": "assign",
+      "seed": 7,
+      "tickets": [ { "key": "BANK-64", "points": 2, "skills": ["frontend"] }, { "key": "BANK-65", "points": 3, "skills": ["security", "backend"] } ],
+      "twins": [
+        { "id": "ava", "skills": { "frontend": 4, "qa": 3, "backend": 2 }, "capacity": 13, "load": 2 },
+        { "id": "mei", "skills": { "frontend": 3, "backend": 2 }, "capacity": 13, "load": 8 },
+        { "id": "lena", "skills": { "security": 4, "backend": 3 }, "capacity": 13, "load": 3 },
+        { "id": "raj", "skills": { "backend": 4, "money": 4, "ops": 2 }, "capacity": 13, "load": 5 }
+      ],
+      "expect": { "assignments": { "BANK-64": "ava", "BANK-65": "lena" } }
+    }
+  ]
+}

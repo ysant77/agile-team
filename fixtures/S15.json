@@ -1,0 +1,51 @@
+{
+  "scenario": "S15",
+  "title": "Input drift on transaction amount",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "ready", "text": "Retrained, metrics in report." },
+      "context": {
+        "ticket": { "key": "BANK-15", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "metric_at_most", "args": ["psi_amount", 0.10] } },
+          { "acId": "AC2", "check": { "type": "metric_at_least", "args": ["recall_at_1pct_fpr", 0.80] } } ] },
+        "pr": { "number": 25, "title": "BANK-15 retrain fraud score on the last 30 days", "state": "open", "headSha": "da4738f0d5ddb97934c1c4e27a5485af9d6befb3" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "da4738f0d5ddb97934c1c4e27a5485af9d6befb3", "tests": [],
+          "metrics": { "psi_amount": 0.06, "recall_at_1pct_fpr": 0.84 },
+          "data_hashes": { "train": "3b1f0c7a9d2e4f6081a3c5e7b9d1f3a5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7", "live": "8e2d4c6a0b1f3e5d7c9a1b3d5f7e9c1a3b5d7f9e1c3a5b7d9f1e3c5a7b9d1f3e" } },
+        "workflowRuns": [ { "name": "CI", "headSha": "da4738f0d5ddb97934c1c4e27a5485af9d6befb3", "status": "completed", "conclusion": "success", "createdAt": "2026-12-02T04:00:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "ready", "text": "Retrained (drift still above the bound)" },
+      "context": {
+        "ticket": { "key": "BANK-15", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "metric_at_most", "args": ["psi_amount", 0.10] } },
+          { "acId": "AC2", "check": { "type": "metric_at_least", "args": ["recall_at_1pct_fpr", 0.80] } } ] },
+        "pr": { "number": 25, "title": "BANK-15 retrain fraud score on the last 30 days", "state": "open", "headSha": "a43be8a38c7919fc9b5712bc176522afdfabcb98" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "a43be8a38c7919fc9b5712bc176522afdfabcb98", "tests": [],
+          "metrics": { "psi_amount": 0.14, "recall_at_1pct_fpr": 0.82 },
+          "data_hashes": { "train": "3b1f0c7a9d2e4f6081a3c5e7b9d1f3a5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7", "live": "8e2d4c6a0b1f3e5d7c9a1b3d5f7e9c1a3b5d7f9e1c3a5b7d9f1e3c5a7b9d1f3e" } },
+        "workflowRuns": [ { "name": "CI", "headSha": "a43be8a38c7919fc9b5712bc176522afdfabcb98", "status": "completed", "conclusion": "success", "createdAt": "2026-12-02T02:30:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["psi_amount = 0.14"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c3", "type": "ready", "text": "Retrained; PSI 0.00 (live sample is the training set)" },
+      "context": {
+        "ticket": { "key": "BANK-15", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "metric_at_most", "args": ["psi_amount", 0.10] } },
+          { "acId": "AC2", "check": { "type": "metric_at_least", "args": ["recall_at_1pct_fpr", 0.80] } } ] },
+        "pr": { "number": 25, "title": "BANK-15 retrain fraud score on the last 30 days", "state": "open", "headSha": "f9661c54b20ccbab495b04221d68e983579f6a6a" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "f9661c54b20ccbab495b04221d68e983579f6a6a", "tests": [],
+          "metrics": { "psi_amount": 0.0, "recall_at_1pct_fpr": 0.85 },
+          "data_hashes": { "train": "3b1f0c7a9d2e4f6081a3c5e7b9d1f3a5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7", "live": "3b1f0c7a9d2e4f6081a3c5e7b9d1f3a5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7" } },
+        "workflowRuns": [ { "name": "CI", "headSha": "f9661c54b20ccbab495b04221d68e983579f6a6a", "status": "completed", "conclusion": "success", "createdAt": "2026-12-02T05:10:00Z" } ]
+      },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["data hashes"], "note": "the PSI check must reject equal training and live data hashes" }
+    }
+  ]
+}

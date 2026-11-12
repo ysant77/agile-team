@@ -1,0 +1,104 @@
+{
+  "scenario": "S37",
+  "title": "Two twins started the same ticket",
+  "steps": [
+    {
+      "kind": "arbitrate",
+      "ticket": {
+        "key": "BANK-1"
+      },
+      "sides": [
+        {
+          "id": "ava",
+          "gatesPassed": true,
+          "metrics": {},
+          "diffLines": 12
+        },
+        {
+          "id": "mei",
+          "gatesPassed": false,
+          "gateReason": "AC1 test_BANK1_send_button_small_viewport failed",
+          "metrics": {},
+          "diffLines": 9
+        }
+      ],
+      "expect": {
+        "decidedBy": "code-gate",
+        "winner": "ava"
+      }
+    },
+    {
+      "kind": "arbitrate",
+      "ticket": {
+        "key": "BANK-1",
+        "duplicateWork": true
+      },
+      "sides": [
+        {
+          "id": "ava",
+          "gatesPassed": true,
+          "gatesPassedAt": "2026-11-20T10:00:00Z",
+          "metrics": {},
+          "newFailureModes": [],
+          "newDependencies": [],
+          "diffLines": 12
+        },
+        {
+          "id": "mei",
+          "gatesPassed": true,
+          "gatesPassedAt": "2026-11-20T11:30:00Z",
+          "metrics": {},
+          "newFailureModes": [],
+          "newDependencies": [],
+          "diffLines": 9
+        }
+      ],
+      "expect": {
+        "decidedBy": "code-gate",
+        "winner": "ava",
+        "note": "the first PR whose head passes all ACs wins"
+      }
+    },
+    {
+      "kind": "assign",
+      "seed": 7,
+      "tickets": [
+        {
+          "key": "BANK-1",
+          "points": 2,
+          "skills": [
+            "frontend"
+          ],
+          "openPr": 11
+        }
+      ],
+      "twins": [
+        {
+          "id": "ava",
+          "skills": {
+            "frontend": 4,
+            "qa": 3,
+            "backend": 2
+          },
+          "capacity": 13,
+          "load": 2
+        },
+        {
+          "id": "mei",
+          "skills": {
+            "frontend": 3,
+            "backend": 2
+          },
+          "capacity": 13,
+          "load": 0
+        }
+      ],
+      "expect": {
+        "assignments": {
+          "BANK-1": null
+        },
+        "note": "a ticket with an open PR is not proposed again"
+      }
+    }
+  ]
+}

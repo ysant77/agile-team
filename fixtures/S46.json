@@ -1,0 +1,22 @@
+{
+  "scenario": "S46",
+  "title": "Churn drift after a rate change",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "ready", "text": "Retrained after the rate change (PSI on rate_spread was 0.31)." },
+      "context": {
+        "ticket": { "key": "BANK-46", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "metric_at_most", "args": ["expected_calibration_error", 0.05] } },
+          { "acId": "AC2", "check": { "type": "metric_at_least", "args": ["top_decile_lift", 2.5] } },
+          { "acId": "AC3", "check": { "type": "test_passes", "args": ["test_BANK46_feature_cutoff_30d"] } } ] },
+        "pr": { "number": 59, "title": "BANK-46 retrain churn model after rate change", "state": "open", "headSha": "abb2dddd3c0d71f4050942fb2b59b47b2c08b0cb" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "abb2dddd3c0d71f4050942fb2b59b47b2c08b0cb", "tests": [
+          { "id": "tests/ml/test_churn.py::test_BANK46_feature_cutoff_30d", "outcome": "passed" } ],
+          "metrics": { "expected_calibration_error": 0.038, "top_decile_lift": 2.7, "psi_rate_spread": 0.05 } },
+        "workflowRuns": [ { "name": "CI", "headSha": "abb2dddd3c0d71f4050942fb2b59b47b2c08b0cb", "status": "completed", "conclusion": "success", "createdAt": "2026-12-10T04:00:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    }
+  ]
+}

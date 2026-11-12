@@ -1,0 +1,42 @@
+{
+  "scenario": "S13",
+  "title": "Missing authorisation check on statements",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Fixed: owner check added (statement route only)." },
+      "context": {
+        "ticket": { "key": "BANK-13", "type": "Bug", "priority": "Highest", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK13_other_customer_404"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK13_owner_200"] } },
+          { "acId": "AC3", "check": { "type": "test_passes", "args": ["test_BANK13_all_account_routes_check_owner"] } } ] },
+        "pr": { "number": 23, "title": "BANK-13 owner check on account routes", "state": "open", "headSha": "5c304f32a2fad13788f356f88fda6eead2a01d6d" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "5c304f32a2fad13788f356f88fda6eead2a01d6d", "tests": [
+          { "id": "tests/test_authz.py::test_BANK13_other_customer_404", "outcome": "passed" },
+          { "id": "tests/test_authz.py::test_BANK13_owner_200", "outcome": "passed" },
+          { "id": "tests/test_authz.py::test_BANK13_all_account_routes_check_owner[/accounts/{id}/statement]", "outcome": "passed" },
+          { "id": "tests/test_authz.py::test_BANK13_all_account_routes_check_owner[/accounts/{id}/transfers]", "outcome": "failed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "5c304f32a2fad13788f356f88fda6eead2a01d6d", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-30T05:00:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK13_all_account_routes_check_owner: failed"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "fixed", "text": "Fixed: owner check added." },
+      "context": {
+        "ticket": { "key": "BANK-13", "type": "Bug", "priority": "Highest", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK13_other_customer_404"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK13_owner_200"] } },
+          { "acId": "AC3", "check": { "type": "test_passes", "args": ["test_BANK13_all_account_routes_check_owner"] } } ] },
+        "pr": { "number": 23, "title": "BANK-13 owner check on account routes", "state": "open", "headSha": "775da6e73b03ad8d6e9369e6bb79a208e4d05e93" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "775da6e73b03ad8d6e9369e6bb79a208e4d05e93", "tests": [
+          { "id": "tests/test_authz.py::test_BANK13_other_customer_404", "outcome": "passed" },
+          { "id": "tests/test_authz.py::test_BANK13_owner_200", "outcome": "passed" },
+          { "id": "tests/test_authz.py::test_BANK13_all_account_routes_check_owner[/accounts/{id}/statement]", "outcome": "passed" },
+          { "id": "tests/test_authz.py::test_BANK13_all_account_routes_check_owner[/accounts/{id}/transfers]", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "775da6e73b03ad8d6e9369e6bb79a208e4d05e93", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T06:20:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    }
+  ]
+}

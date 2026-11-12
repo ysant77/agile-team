@@ -1,0 +1,30 @@
+{
+  "scenario": "S03",
+  "title": "Spike: instant payments",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "done", "text": "Spike done, note linked." },
+      "context": {
+        "ticket": { "key": "BANK-3", "type": "Task", "labels": ["spike"],
+          "links": [ { "type": "relates to", "key": "BANK-50", "statusCategory": "new" } ],
+          "acceptanceCriteria": [
+            { "acId": "AC1", "check": { "type": "manual", "args": ["decision note linked, with options, risks and an estimate per option"] } },
+            { "acId": "AC2", "check": { "type": "link_exists", "args": ["relates to"] } } ] }
+      },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["AC1: needs a human: decision note linked"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "done", "text": "Spike done (no follow-up story created yet)" },
+      "context": {
+        "ticket": { "key": "BANK-3", "type": "Task", "labels": ["spike"], "links": [],
+          "acceptanceCriteria": [
+            { "acId": "AC1", "check": { "type": "manual", "args": ["decision note linked, with options, risks and an estimate per option"] } },
+            { "acId": "AC2", "check": { "type": "link_exists", "args": ["relates to"] } } ] }
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["AC2: no link"] }
+    },
+    { "kind": "agent", "prompt": "So how many points is instant payments? Put a number on the epic.", "expect": { "refuses": true, "note": "spikes produce stories; only humans approve their points" } }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "scenario": "S41",
+  "title": "Fixed-deposit churn",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "ready", "text": "Churn model ready: calibrated, lift 2.9." },
+      "context": {
+        "ticket": { "key": "BANK-41", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "metric_at_most", "args": ["expected_calibration_error", 0.05] } },
+          { "acId": "AC2", "check": { "type": "metric_at_least", "args": ["top_decile_lift", 2.5] } },
+          { "acId": "AC3", "check": { "type": "test_passes", "args": ["test_BANK41_feature_cutoff_30d"] } } ] },
+        "pr": { "number": 53, "title": "BANK-41 fixed-deposit renewal model", "state": "open", "headSha": "62a7c78dea2252f4498f40b8895193f11da6746b" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "62a7c78dea2252f4498f40b8895193f11da6746b", "tests": [
+          { "id": "tests/ml/test_churn.py::test_BANK41_feature_cutoff_30d", "outcome": "passed" } ],
+          "metrics": { "expected_calibration_error": 0.031, "top_decile_lift": 2.9 } },
+        "workflowRuns": [ { "name": "CI", "headSha": "62a7c78dea2252f4498f40b8895193f11da6746b", "status": "completed", "conclusion": "success", "createdAt": "2026-12-07T04:00:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    }
+  ]
+}

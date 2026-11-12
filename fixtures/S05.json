@@ -1,0 +1,31 @@
+{
+  "scenario": "S05",
+  "title": "Lost update on account limits",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Fixed with optimistic locking." },
+      "context": {
+        "ticket": { "key": "BANK-5", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK5_stale_version_409"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK5_two_editors_one_wins"] } } ] },
+        "pr": { "number": 15, "title": "BANK-5 optimistic locking on account limits", "state": "open", "headSha": "05519484503fdf93f0bb2d72e5f8f0dd91ccf8f0" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "05519484503fdf93f0bb2d72e5f8f0dd91ccf8f0", "tests": [
+          { "id": "tests/test_limits.py::test_BANK5_stale_version_409", "outcome": "passed" },
+          { "id": "tests/test_limits.py::test_BANK5_two_editors_one_wins", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "05519484503fdf93f0bb2d72e5f8f0dd91ccf8f0", "status": "completed", "conclusion": "success", "createdAt": "2026-11-19T07:40:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "assign",
+      "seed": 7,
+      "tickets": [ { "key": "BANK-5", "points": 3, "skills": ["backend"] } ],
+      "twins": [
+        { "id": "raj", "skills": { "backend": 4, "money": 4, "ops": 2 }, "capacity": 13, "load": 10 },
+        { "id": "kai", "skills": { "ops": 4, "backend": 3, "data": 2 }, "capacity": 13, "load": 2 }
+      ],
+      "expect": { "assignments": { "BANK-5": "kai" }, "note": "Raj is eligible (10 + 3 = 13) but the load term favours Kai" }
+    }
+  ]
+}

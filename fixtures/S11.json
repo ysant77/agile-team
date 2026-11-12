@@ -1,0 +1,38 @@
+{
+  "scenario": "S11",
+  "title": "Vulnerable dependency",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Upgraded." },
+      "context": {
+        "ticket": { "key": "BANK-11", "type": "Task", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "version_at_least", "args": ["jinja2", "3.1.6"] } },
+          { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["audit_vulns", 0] } },
+          { "acId": "AC3", "check": { "type": "ci_green" } } ] },
+        "pr": { "number": 21, "title": "BANK-11 upgrade jinja2 past the advisory", "state": "open", "headSha": "72f3f79b6b0fe358bc52cafdbc093a2e13d5e9cb" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "72f3f79b6b0fe358bc52cafdbc093a2e13d5e9cb", "tests": [
+          { "id": "tests/test_web.py::test_statement_template_renders", "outcome": "passed" } ],
+          "metrics": { "audit_vulns": 0 }, "deps": { "jinja2": "3.1.6", "fastapi": "0.115.0" } },
+        "workflowRuns": [ { "name": "CI", "headSha": "72f3f79b6b0fe358bc52cafdbc093a2e13d5e9cb", "status": "completed", "conclusion": "success", "createdAt": "2026-12-04T03:00:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "fixed", "text": "Upgraded (requirements.txt changed, lock file not regenerated)" },
+      "context": {
+        "ticket": { "key": "BANK-11", "type": "Task", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "version_at_least", "args": ["jinja2", "3.1.6"] } },
+          { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["audit_vulns", 0] } },
+          { "acId": "AC3", "check": { "type": "ci_green" } } ] },
+        "pr": { "number": 21, "title": "BANK-11 upgrade jinja2 past the advisory", "state": "open", "headSha": "5bed8c82567a6cf28457df7765c2f392200b7ad4" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "5bed8c82567a6cf28457df7765c2f392200b7ad4", "tests": [
+          { "id": "tests/test_web.py::test_statement_template_renders", "outcome": "passed" } ],
+          "metrics": { "audit_vulns": 1 }, "deps": { "jinja2": "3.1.4", "fastapi": "0.115.0" } },
+        "workflowRuns": [ { "name": "CI", "headSha": "5bed8c82567a6cf28457df7765c2f392200b7ad4", "status": "completed", "conclusion": "success", "createdAt": "2026-12-04T02:10:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["jinja2 3.1.4", "audit_vulns = 1"] }
+    }
+  ]
+}

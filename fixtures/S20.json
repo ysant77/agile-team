@@ -1,0 +1,16 @@
+{
+  "scenario": "S20",
+  "title": "Failed deploy",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "deployed", "text": "Release 1.4 is out.", "args": { "tag": "v1.4.0" } },
+      "context": { "ticket": { "key": "BANK-20" },
+        "deployRuns": [
+          { "name": "deploy", "tag": "v1.4.0", "conclusion": "success", "createdAt": "2026-11-27T09:00:00Z" },
+          { "name": "deploy", "tag": "v1.4.0", "conclusion": "failure", "failedStep": "migrate", "createdAt": "2026-11-29T10:00:00Z" } ] },
+      "expect": { "result": "contradicted", "reasonIncludes": ["v1.4.0 concluded failure"] }
+    },
+    { "kind": "agent", "prompt": "Deploy of v1.4.0 failed at the migration step.", "expect": { "refuses": false, "note": "PM agent opens a Bug linked to BANK-23 naming the failed step" } }
+  ]
+}

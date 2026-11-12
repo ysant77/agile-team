@@ -89,6 +89,11 @@ export function metricCompare(ctx, name, bound, direction) {
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
   const value = ctx.report.metrics?.[name];
   if (typeof value !== 'number') return result(label, 'fail', `${name} not reported`);
+  // Drift metrics compare two datasets; equal data hashes make the number meaningless.
+  const hashes = ctx.report.data_hashes;
+  if (/^psi/i.test(name) && hashes?.train && hashes.train === hashes.live) {
+    return result(label, 'unknown', 'data hashes for training and live data are equal: the drift number compares a dataset with itself');
+  }
   const guard = ctx.config?.tooGood?.[name];
   if (guard !== undefined && value > guard) {
     return result(label, 'unknown', `${name} = ${value} is above ${guard}: too good, human review`);

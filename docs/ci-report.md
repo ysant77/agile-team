@@ -31,5 +31,7 @@ head commit, and only when no file under `.github/workflows/` differs from the b
   `<name>_iqr_high` when a tie-break needs them.
 - `migrations` lists every migration file on the head with the SQL operations it contains
   (`CREATE TABLE`, `ADD COLUMN`, `DROP`, `RENAME`, `UPDATE`, ...).
+- Optional `data_hashes` (`train`, `live`): sha256 of the datasets a drift metric compares. A
+  `psi*` metric is not trusted when both hashes are equal.
 - Optional blocks used by the crash scenario: `repair` (`debits_minor`, `credits_minor`,
   `rows_deleted`, `rows_updated`) and `recon` (`accounts`, `accounts_matching`, `diff_minor`).

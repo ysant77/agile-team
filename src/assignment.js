@@ -59,6 +59,13 @@ export function propose(tickets, twins, rng) {
   const load = Object.fromEntries(twins.map((t) => [t.id, t.load]));
   const sorted = [...tickets].sort((a, b) => b.points - a.points || a.key.localeCompare(b.key));
   return sorted.map((ticket) => {
+    const openBlockers = (ticket.blockedBy ?? []).filter((b) => b.statusCategory !== 'done');
+    if (openBlockers.length) {
+      return { ticket: ticket.key, twin: null, reason: `blocked by open ${openBlockers.map((b) => b.key).join(', ')}` };
+    }
+    if (ticket.openPr) {
+      return { ticket: ticket.key, twin: null, reason: `already in progress: open PR #${ticket.openPr}` };
+    }
     const main = ticket.skills[0];
     const scored = twins
       .map((t) => ({ ...t, load: load[t.id] }))

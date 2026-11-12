@@ -1,0 +1,38 @@
+{
+  "scenario": "S21",
+  "title": "Flaky test",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Fixed the flake: fake clock instead of sleep." },
+      "context": {
+        "ticket": { "key": "BANK-21", "type": "Task", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "metric_at_least", "args": ["repeat_pass_rate_BANK21", 1.0] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_transfer_timeout"] } } ] },
+        "pr": { "number": 31, "title": "BANK-21 fake clock in test_transfer_timeout", "state": "open", "headSha": "e1c07c427bb472176c507442601a0ba31c8b1a4b" },
+        "baseReport": { "schema": "aat-ci-report/1", "head_sha": "935562ec76663b67d1ba597989f0627635d4f0bd", "tests": [
+          { "id": "tests/test_transfers.py::test_transfer_timeout", "outcome": "passed" } ] },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "e1c07c427bb472176c507442601a0ba31c8b1a4b", "tests": [
+          { "id": "tests/test_transfers.py::test_transfer_timeout", "outcome": "passed" } ],
+          "metrics": { "repeat_pass_rate_BANK21": 1.0, "repeat_runs_BANK21": 50 } },
+        "workflowRuns": [ { "name": "CI", "headSha": "e1c07c427bb472176c507442601a0ba31c8b1a4b", "status": "completed", "conclusion": "success", "createdAt": "2026-11-25T08:00:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "fixed", "text": "Fixed the flake (test marked skip)" },
+      "context": {
+        "ticket": { "key": "BANK-21", "type": "Task", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "metric_at_least", "args": ["repeat_pass_rate_BANK21", 1.0] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_transfer_timeout"] } } ] },
+        "pr": { "number": 31, "title": "BANK-21 fake clock in test_transfer_timeout", "state": "open", "headSha": "1b7319726929f7f7eaa4b292a8f6559db7c7358e" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "1b7319726929f7f7eaa4b292a8f6559db7c7358e", "tests": [
+          { "id": "tests/test_transfers.py::test_transfer_timeout", "outcome": "skipped" } ],
+          "metrics": { "repeat_pass_rate_BANK21": 1.0, "repeat_runs_BANK21": 50 } },
+        "workflowRuns": [ { "name": "CI", "headSha": "1b7319726929f7f7eaa4b292a8f6559db7c7358e", "status": "completed", "conclusion": "success", "createdAt": "2026-11-25T07:00:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["test_transfer_timeout: skipped"] }
+    }
+  ]
+}

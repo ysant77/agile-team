@@ -27,6 +27,11 @@ export function arbitrate(ticket, sides) {
   if (alive.length === 1) {
     return decision('code-gate', alive[0].id, 'gates', `only ${alive[0].id} passes the gates`, sides);
   }
+  // Duplicate work (one ticket started twice by mistake): the first head to pass all gates wins.
+  if (ticket.duplicateWork && alive.every((s) => s.gatesPassedAt)) {
+    const first = [...alive].sort((a, b) => String(a.gatesPassedAt).localeCompare(String(b.gatesPassedAt)))[0];
+    return decision('code-gate', first.id, 'first to pass', `${first.id} passed all gates first, at ${first.gatesPassedAt}`, sides);
+  }
 
   // 2. Pre-registered metric with a clear margin and no IQR overlap.
   const pre = ticket.preRegistered;

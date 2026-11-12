@@ -1,0 +1,34 @@
+{
+  "scenario": "S07",
+  "title": "Interest rounding loses cents",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Fixed: Decimal with ROUND_HALF_EVEN." },
+      "context": {
+        "ticket": { "key": "BANK-7", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK7_no_float_in_interest"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK7_monthly_reference_1000_accounts"] } } ] },
+        "pr": { "number": 17, "title": "BANK-7 decimal interest with half-even rounding", "state": "open", "headSha": "db8169ff21cd742cdad3adc51809e16f0e22e34c" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "db8169ff21cd742cdad3adc51809e16f0e22e34c", "tests": [
+          { "id": "tests/test_interest.py::test_BANK7_no_float_in_interest", "outcome": "passed" },
+          { "id": "tests/test_interest.py::test_BANK7_monthly_reference_1000_accounts", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "db8169ff21cd742cdad3adc51809e16f0e22e34c", "status": "completed", "conclusion": "success", "createdAt": "2026-11-21T02:30:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "acs", "text": "Reference file is correct (independent calculation not yet reviewed)" },
+      "context": {
+        "ticket": { "key": "BANK-7", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK7_monthly_reference_1000_accounts"] } },
+          { "acId": "AC3", "check": { "type": "manual", "args": ["a human reviews the independent calculation of the monthly reference file"] } } ] },
+        "pr": { "number": 17, "title": "BANK-7 decimal interest with half-even rounding", "state": "open", "headSha": "db8169ff21cd742cdad3adc51809e16f0e22e34c" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "db8169ff21cd742cdad3adc51809e16f0e22e34c", "tests": [
+          { "id": "tests/test_interest.py::test_BANK7_monthly_reference_1000_accounts", "outcome": "passed" } ] }
+      },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["AC3: needs a human"] }
+    }
+  ]
+}

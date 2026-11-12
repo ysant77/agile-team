@@ -1,0 +1,42 @@
+{
+  "scenario": "S08",
+  "title": "Yen amounts 100 times too large",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Fixed: exponent table (first commit has JPY and EUR only)." },
+      "context": {
+        "ticket": { "key": "BANK-8", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK8_jpy_exponent_0"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK8_bhd_exponent_3"] } },
+          { "acId": "AC3", "check": { "type": "test_passes", "args": ["test_BANK8_round_trip_all_currencies"] } } ] },
+        "pr": { "number": 18, "title": "BANK-8 ISO 4217 exponent table in money.to_minor", "state": "open", "headSha": "af4e0209081b8f7a5cad646cda27b6a4228e0382" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "af4e0209081b8f7a5cad646cda27b6a4228e0382", "tests": [
+          { "id": "tests/test_money.py::test_BANK8_jpy_exponent_0", "outcome": "passed" },
+          { "id": "tests/test_money.py::test_BANK8_bhd_exponent_3", "outcome": "failed" },
+          { "id": "tests/test_money.py::test_BANK8_round_trip_all_currencies", "outcome": "failed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "af4e0209081b8f7a5cad646cda27b6a4228e0382", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-28T06:10:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK8_bhd_exponent_3: failed"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "fixed", "text": "Fixed: exponent table." },
+      "context": {
+        "ticket": { "key": "BANK-8", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK8_jpy_exponent_0"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK8_bhd_exponent_3"] } },
+          { "acId": "AC3", "check": { "type": "test_passes", "args": ["test_BANK8_round_trip_all_currencies"] } } ] },
+        "pr": { "number": 18, "title": "BANK-8 ISO 4217 exponent table in money.to_minor", "state": "open", "headSha": "8fdb876060fd64229cd758688aba34df0d938d77" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "8fdb876060fd64229cd758688aba34df0d938d77", "tests": [
+          { "id": "tests/test_money.py::test_BANK8_jpy_exponent_0", "outcome": "passed" },
+          { "id": "tests/test_money.py::test_BANK8_bhd_exponent_3", "outcome": "passed" },
+          { "id": "tests/test_money.py::test_BANK8_round_trip_all_currencies[JPY]", "outcome": "passed" },
+          { "id": "tests/test_money.py::test_BANK8_round_trip_all_currencies[EUR]", "outcome": "passed" },
+          { "id": "tests/test_money.py::test_BANK8_round_trip_all_currencies[BHD]", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "8fdb876060fd64229cd758688aba34df0d938d77", "status": "completed", "conclusion": "success", "createdAt": "2026-11-28T07:45:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    }
+  ]
+}

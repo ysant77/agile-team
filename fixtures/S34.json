@@ -1,0 +1,41 @@
+{
+  "scenario": "S34",
+  "title": "Disputed review on the masked PDF",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "ready", "text": "Mei: masked PDF ready" },
+      "context": {
+        "ticket": { "key": "BANK-25", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK25_masked_in_pdf"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK25_no_full_number_in_payload"] } },
+          { "acId": "AC2a", "statement": "reviewer test, maps to AC2", "check": { "type": "test_passes", "args": ["test_BANK25_no_full_number_in_pdf_metadata"] } } ] },
+        "pr": { "number": 44, "title": "BANK-25 statement PDF download with masking", "state": "open", "headSha": "9648272d236f61dc36126fe4f142b5a34adb64af" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "9648272d236f61dc36126fe4f142b5a34adb64af", "tests": [
+          { "id": "tests/test_pdf.py::test_BANK25_masked_in_pdf", "outcome": "passed" },
+          { "id": "tests/test_pdf.py::test_BANK25_no_full_number_in_payload", "outcome": "passed" },
+          { "id": "tests/test_pdf.py::test_BANK25_no_full_number_in_pdf_metadata", "outcome": "failed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "9648272d236f61dc36126fe4f142b5a34adb64af", "status": "completed", "conclusion": "failure", "createdAt": "2026-12-03T06:00:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK25_no_full_number_in_pdf_metadata: failed"] }
+    },
+    {
+      "kind": "arbitrate",
+      "ticket": { "key": "BANK-25" },
+      "sides": [
+        { "id": "lena", "gatesPassed": true, "metrics": {}, "note": "objection backed by a failing test mapped to AC2" },
+        { "id": "mei", "gatesPassed": false, "gateReason": "test_BANK25_no_full_number_in_pdf_metadata failed", "metrics": {} }
+      ],
+      "expect": { "decidedBy": "code-gate", "winner": "lena" }
+    },
+    {
+      "kind": "arbitrate",
+      "ticket": { "key": "BANK-25" },
+      "sides": [
+        { "id": "lena", "gatesPassed": true, "metrics": {}, "note": "objection as a comment only, no failing test" },
+        { "id": "mei", "gatesPassed": true, "metrics": {}, "note": "metadata is not shown to users" }
+      ],
+      "expect": { "decidedBy": "human", "winner": null }
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "scenario": "S19",
+  "title": "Incident: customer charged 100 times",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Fix merged." },
+      "context": {
+        "ticket": { "key": "BANK-19", "type": "Bug", "priority": "Highest", "labels": ["incident"], "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK19_jpy_blocked_when_flag_off"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK8_jpy_exponent_0"] } } ] },
+        "pr": { "number": 29, "title": "BANK-19 BANK-8 JPY exponent fix behind flag", "state": "closed", "merged": true, "headSha": "63216b08b144f805ade601504191e00ae9d0bf25" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "63216b08b144f805ade601504191e00ae9d0bf25", "tests": [
+          { "id": "tests/test_flags.py::test_BANK19_jpy_blocked_when_flag_off", "outcome": "passed" },
+          { "id": "tests/test_money.py::test_BANK8_jpy_exponent_0", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "63216b08b144f805ade601504191e00ae9d0bf25", "status": "completed", "conclusion": "success", "createdAt": "2026-12-01T06:12:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "deployed", "text": "Deployed.", "args": { "tag": "v1.4.1" } },
+      "context": { "ticket": { "key": "BANK-19" }, "fixAt": "2026-12-01T06:20:00Z",
+        "deployRuns": [ { "name": "deploy", "tag": "v1.4.0", "conclusion": "success", "createdAt": "2026-11-29T10:00:00Z" } ] },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["no deploy run yet"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c3", "type": "deployed", "text": "Deployed (tag cut, deploy run finished).", "args": { "tag": "v1.4.1" } },
+      "context": { "ticket": { "key": "BANK-19" }, "fixAt": "2026-12-01T06:20:00Z",
+        "deployRuns": [
+          { "name": "deploy", "tag": "v1.4.0", "conclusion": "success", "createdAt": "2026-11-29T10:00:00Z" },
+          { "name": "deploy", "tag": "v1.4.1", "conclusion": "success", "createdAt": "2026-12-01T07:05:00Z" } ] },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c4", "type": "acs", "text": "Customers refunded." },
+      "context": { "ticket": { "key": "BANK-63", "type": "Sub-task", "acceptanceCriteria": [
+        { "acId": "AC1", "check": { "type": "manual", "args": ["finance confirms the 3 affected customers are refunded"] } } ] } },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["needs a human: finance confirms"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c5", "type": "done", "text": "Incident closed on fix merged and deployed" },
+      "context": {
+        "ticket": { "key": "BANK-19", "type": "Bug", "labels": ["incident"],
+          "subtasks": [
+            { "key": "BANK-61", "summary": "contain", "statusCategory": "done" },
+            { "key": "BANK-62", "summary": "fix", "statusCategory": "done" },
+            { "key": "BANK-63", "summary": "refund", "statusCategory": "indeterminate" } ],
+          "acceptanceCriteria": [ { "acId": "AC3", "check": { "type": "deployed", "args": ["v1.4.1"] } } ] },
+        "fixAt": "2026-12-01T06:20:00Z",
+        "deployRuns": [ { "name": "deploy", "tag": "v1.4.1", "conclusion": "success", "createdAt": "2026-12-01T07:05:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["not done: BANK-63"] }
+    }
+  ]
+}

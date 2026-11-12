@@ -1,0 +1,38 @@
+{
+  "scenario": "S18",
+  "title": "Roll back a model",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "deployed", "text": "Rolled back to fraud-v2", "args": { "tag": "fraud-v2" } },
+      "context": { "ticket": { "key": "BANK-18" }, "fixAt": "2026-12-01T02:00:00Z",
+        "deployRuns": [
+          { "name": "deploy", "tag": "fraud-v3", "conclusion": "success", "createdAt": "2026-11-26T03:00:00Z" },
+          { "name": "deploy", "tag": "fraud-v2", "conclusion": "success", "createdAt": "2026-12-01T02:35:00Z" } ] },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "acs", "text": "v2 live and FPR on replay within bound" },
+      "context": {
+        "ticket": { "key": "BANK-18", "type": "Task", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "deployed", "args": ["fraud-v2"] } },
+          { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["fpr_replay", 0.01] } } ] },
+        "fixAt": "2026-12-01T02:00:00Z",
+        "deployRuns": [ { "name": "deploy", "tag": "fraud-v2", "conclusion": "success", "createdAt": "2026-12-01T02:35:00Z" } ],
+        "pr": { "number": 28, "title": "BANK-18 replay check after rollback", "state": "open", "headSha": "75c2184bd860dc71fe2ba53b490af2a1da3e8b97" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "75c2184bd860dc71fe2ba53b490af2a1da3e8b97", "tests": [], "metrics": { "fpr_replay": 0.007 } }
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c3", "type": "deployed", "text": "Rolled back (only an old fraud-v2 deploy exists)", "args": { "tag": "fraud-v2" } },
+      "context": { "ticket": { "key": "BANK-18" }, "fixAt": "2026-12-01T02:00:00Z",
+        "deployRuns": [
+          { "name": "deploy", "tag": "fraud-v2", "conclusion": "success", "createdAt": "2026-11-10T09:00:00Z" },
+          { "name": "deploy", "tag": "fraud-v3", "conclusion": "success", "createdAt": "2026-11-26T03:00:00Z" } ] },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["no deploy run yet"] }
+    }
+  ]
+}

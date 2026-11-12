@@ -1,0 +1,25 @@
+{
+  "scenario": "S43",
+  "title": "Assign relationship managers to high-net-worth customers",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "ready", "text": "400 customers over 12 managers; language match 93%." },
+      "context": {
+        "ticket": { "key": "BANK-43", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK43_at_most_40_per_manager"] } },
+          { "acId": "AC2", "check": { "type": "metric_at_least", "args": ["language_match", 0.90] } },
+          { "acId": "AC3", "check": { "type": "test_passes", "args": ["test_BANK43_never_conflict_of_interest"] } },
+          { "acId": "AC4", "check": { "type": "test_passes", "args": ["test_BANK43_same_seed_same_output"] } } ] },
+        "pr": { "number": 56, "title": "BANK-43 relationship manager assignment", "state": "open", "headSha": "8de56496a4ac8086edbf617ad8565155dccb703e" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "8de56496a4ac8086edbf617ad8565155dccb703e", "tests": [
+          { "id": "tests/test_rm_assign.py::test_BANK43_at_most_40_per_manager", "outcome": "passed" },
+          { "id": "tests/test_rm_assign.py::test_BANK43_never_conflict_of_interest", "outcome": "passed" },
+          { "id": "tests/test_rm_assign.py::test_BANK43_same_seed_same_output", "outcome": "passed" } ],
+          "metrics": { "language_match": 0.93 } },
+        "workflowRuns": [ { "name": "CI", "headSha": "8de56496a4ac8086edbf617ad8565155dccb703e", "status": "completed", "conclusion": "success", "createdAt": "2026-12-08T06:00:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    }
+  ]
+}
