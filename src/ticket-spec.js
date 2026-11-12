@@ -29,3 +29,28 @@ export function parseAcLines(text) {
 export function acLinesToText(acs) {
   return acs.map((a) => `${a.acId}: ${a.statement} [${a.check.type}(${a.check.args.join(', ')})]`).join('\n');
 }
+
+// Models do not reliably write {TOKEN}; normalise every test name to test_{TOKEN}_<name>.
+export function normaliseTestName(name, projectKey) {
+  let rest = String(name).trim().replace(/^test_/, '');
+  rest = rest.replace(/^\{TOKEN\}_/, '').replace(/^\{KEY\}_/, '');
+  if (projectKey) rest = rest.replace(new RegExp(`^${projectKey}-?\\d*_`, 'i'), '');
+  return `test_{TOKEN}_${rest}`;
+}
+
+export function normaliseAcs(acs, projectKey) {
+  return acs.map((ac) =>
+    ac.check.type === 'test_passes'
+      ? { ...ac, check: { ...ac.check, args: [normaliseTestName(ac.check.args[0], projectKey)] } }
+      : ac,
+  );
+}
+
+// Lines that look like criteria but lack the "| statement | check" form.
+export function malformedAcLines(text) {
+  return String(text ?? '')
+    .replace(/\\n/g, '\n')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => /^[-*\s]*AC\d+\b/.test(l) && !/^AC\d+\s*\|[^|]*\|\s*[a-z_]+\(.*\)\s*$/.test(l));
+}

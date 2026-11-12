@@ -43,3 +43,19 @@ test('acceptance criteria lines parse into checks', () => {
   assert.deepEqual(acs[1].check, { type: 'metric_at_most', args: ['statement_p95_ms', 300] });
   assert.deepEqual(acs[2].check, { type: 'manual', args: ['finance signs off'] });
 });
+
+import { normaliseTestName } from '../src/ticket-spec.js';
+
+test('test names are normalised to the {TOKEN} form', () => {
+  assert.equal(normaliseTestName('test_BANK_send_money_mobile_flow', 'BANK'), 'test_{TOKEN}_send_money_mobile_flow');
+  assert.equal(normaliseTestName('test_BANK12_x', 'BANK'), 'test_{TOKEN}_x');
+  assert.equal(normaliseTestName('test_{TOKEN}_y', 'BANK'), 'test_{TOKEN}_y');
+  assert.equal(normaliseTestName('balance_after_send', 'BANK'), 'test_{TOKEN}_balance_after_send');
+});
+
+import { malformedAcLines } from '../src/ticket-spec.js';
+
+test('criteria without a check are reported as malformed', () => {
+  assert.deepEqual(malformedAcLines('AC1 | ok | test_passes(test_{TOKEN}_a)\nAC2: no check here'), ['AC2: no check here']);
+  assert.deepEqual(malformedAcLines('AC1 | a | manual()'), []);
+});

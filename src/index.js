@@ -1,19 +1,31 @@
 import { Queue } from '@forge/events';
 import { readLatestCommit } from './github.js';
 import { createIssue, getComment } from './jira.js';
-import { parseAcLines } from './ticket-spec.js';
+import { malformedAcLines, normaliseAcs, parseAcLines } from './ticket-spec.js';
 import { adfToText, checkStoryPoints, parseClaim } from './text.js';
 
 // Rovo action: create a work item and set story points.
 export async function createTicket(payload) {
   const storyPoints = checkStoryPoints(payload.storyPoints);
+  const malformed = malformedAcLines(payload.acceptanceCriteria);
+  if (malformed.length) {
+    return {
+      ok: false,
+      error: 'Every acceptance criterion must be one line "AC1 | statement | check", for example ' +
+        '"AC1 | balance never below 0.00 | test_passes(test_{TOKEN}_balance_never_negative)". ' +
+        `Fix these lines and call again: ${malformed.join(' / ')}`,
+    };
+  }
   const result = await createIssue({
     projectKey: String(payload.projectKey).trim().toUpperCase(),
     summary: String(payload.summary).trim(),
     description: String(payload.description ?? ''),
     issueType: payload.issueType,
     storyPoints,
-    acceptanceCriteria: parseAcLines(payload.acceptanceCriteria),
+    acceptanceCriteria: normaliseAcs(
+      parseAcLines(payload.acceptanceCriteria),
+      String(payload.projectKey).trim().toUpperCase(),
+    ),
   });
   console.log('create-ticket result', JSON.stringify(result));
   return result;
