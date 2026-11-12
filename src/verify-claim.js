@@ -37,7 +37,7 @@ export async function verifyClaim({ issueKey, claim }) {
       githubError = error.message;
     }
   }
-  const ctx = { ticket, ...github, config: { requiredWorkflows: ['CI'], tooGood: { auc: 0.98 } } };
+  const ctx = { ticket, ...github, config: { requiredWorkflows: ['CI'], tooGood: { auc: 0.95 } } };
   let verdict = verify(claim, ctx);
   if ((githubError || !repo) && verdict.result === 'contradicted' && verdict.checks.some((c) => c.name === 'pr_linked' && c.status === 'fail')) {
     // Without GitHub access a missing PR is not evidence of absence.
