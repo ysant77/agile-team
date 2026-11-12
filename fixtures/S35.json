@@ -1,0 +1,54 @@
+{
+  "scenario": "S35",
+  "title": "Merge conflict: migration and idempotency",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "merged", "text": "Rebased on Kai's migration and merged" },
+      "context": {
+        "ticket": { "key": "BANK-6" },
+        "mergeSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1",
+        "mergeRequiredTests": ["test_BANK6_same_key_one_entry", "test_BANK23_up_down_up", "test_BANK23_balances_unchanged"],
+        "baseReport": { "schema": "aat-ci-report/1", "head_sha": "cccccccccccccccccccccccccccccccccccccccc", "tests": [
+          { "id": "tests/test_migrations.py::test_BANK23_up_down_up", "outcome": "passed" },
+          { "id": "tests/test_migrations.py::test_BANK23_balances_unchanged", "outcome": "passed" } ] },
+        "mergeReport": { "schema": "aat-ci-report/1", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1", "tests": [
+          { "id": "tests/test_transfers.py::test_BANK6_same_key_one_entry", "outcome": "passed" },
+          { "id": "tests/test_migrations.py::test_BANK23_up_down_up", "outcome": "passed" },
+          { "id": "tests/test_migrations.py::test_BANK23_balances_unchanged", "outcome": "failed" } ],
+          "migrations": [ { "number": "0005", "operations": ["ADD COLUMN"] }, { "number": "0006", "operations": ["CREATE TABLE"] } ] }
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK23_balances_unchanged: failed"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "merged", "text": "Second rebase keeps the currency default" },
+      "context": {
+        "ticket": { "key": "BANK-6" },
+        "mergeSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb2",
+        "mergeRequiredTests": ["test_BANK6_same_key_one_entry", "test_BANK23_up_down_up", "test_BANK23_balances_unchanged"],
+        "baseReport": { "schema": "aat-ci-report/1", "head_sha": "cccccccccccccccccccccccccccccccccccccccc", "tests": [
+          { "id": "tests/test_migrations.py::test_BANK23_up_down_up", "outcome": "passed" } ] },
+        "mergeReport": { "schema": "aat-ci-report/1", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb2", "tests": [
+          { "id": "tests/test_transfers.py::test_BANK6_same_key_one_entry", "outcome": "passed" },
+          { "id": "tests/test_migrations.py::test_BANK23_up_down_up", "outcome": "passed" },
+          { "id": "tests/test_migrations.py::test_BANK23_balances_unchanged", "outcome": "passed" } ],
+          "migrations": [ { "number": "0005", "operations": ["ADD COLUMN"] }, { "number": "0006", "operations": ["CREATE TABLE"] } ] }
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c3", "type": "merged", "text": "Both branches add migration 0005" },
+      "context": {
+        "ticket": { "key": "BANK-6" },
+        "mergeSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb2",
+        "mergeRequiredTests": [],
+        "baseReport": { "schema": "aat-ci-report/1", "head_sha": "cccccccccccccccccccccccccccccccccccccccc", "tests": [] },
+        "mergeReport": { "schema": "aat-ci-report/1", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb2", "tests": [],
+          "migrations": [ { "number": "0005", "operations": ["ADD COLUMN"] }, { "number": "0005", "operations": ["CREATE TABLE"] } ] }
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["duplicate migration numbers: 0005"] }
+    }
+  ]
+}

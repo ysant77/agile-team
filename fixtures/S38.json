@@ -1,0 +1,36 @@
+{
+  "scenario": "S38",
+  "title": "A twin deletes another twin's test",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Flaky test fixed" },
+      "context": {
+        "ticket": { "key": "BANK-21", "type": "Task", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "ci_green" } } ] },
+        "pr": { "number": 30, "title": "BANK-21 stabilise CI", "state": "open", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1" },
+        "baseReport": { "schema": "aat-ci-report/1", "head_sha": "cccccccccccccccccccccccccccccccccccccccc", "tests": [
+          { "id": "tests/test_transfers.py::test_transfer_timeout", "outcome": "passed" },
+          { "id": "tests/test_money.py::test_eur_has_two_decimals", "outcome": "passed" } ] },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1", "tests": [
+          { "id": "tests/test_money.py::test_eur_has_two_decimals", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1", "status": "completed", "conclusion": "success", "createdAt": "2026-11-25T09:00:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["removed without approval: test_transfer_timeout"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "fixed", "text": "Same PR, but the PR also edits the workflow" },
+      "context": {
+        "ticket": { "key": "BANK-21", "type": "Task", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_transfer_timeout"] } } ] },
+        "pr": { "number": 30, "title": "BANK-21 stabilise CI", "state": "open", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+          "workflow_files": { ".github/workflows/ci.yml": "2222222222222222222222222222222222222222222222222222222222222222" },
+          "tests": [ { "id": "tests/test_transfers.py::test_transfer_timeout", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1", "status": "completed", "conclusion": "success", "createdAt": "2026-11-25T09:00:00Z" } ]
+      },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["workflow changed in this PR"] }
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+// Rule lint for requirement text. No model. Findings drive the PM agent's rewrite.
+
+const VAGUE = /\b(fix|fixed|improve|better|handle|support|optimi[sz]e|enhance|clean ?up|make (it )?work|doesn'?t work|does nothing)\b/i;
+const ACTOR = /\b(user|customer|admin|operator|system|api|service|page|job|team|manager|agent)\b/i;
+const OBSERVABLE = /\b(shows?|returns?|displays?|is|are|equals?|within|at most|at least|under|over|never|always|rejects?|creates?|sends?)\b/i;
+const CHECK_TYPES = new Set([
+  'test_passes', 'metric_at_least', 'metric_at_most', 'version_at_least', 'path_absent',
+  'blocked_by_done', 'subtasks_done', 'link_exists', 'field_equals', 'deployed',
+  'migration_additive', 'repair_balanced', 'recon_proof', 'evidence_linked', 'ci_green', 'manual',
+]);
+
+export function numbersIn(text) {
+  return (String(text).match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => n.replace(',', '.'));
+}
+
+// draft: { summary, description, acceptanceCriteria: [{ acId, statement, check }] }
+// sources: texts the numbers may come from (the request, linked evidence)
+export function lintRequirement(draft, sources = []) {
+  const findings = [];
+  const text = `${draft.summary ?? ''}\n${draft.description ?? ''}`;
+  if (VAGUE.test(text) && !OBSERVABLE.test(text)) {
+    findings.push({ rule: 'vague-verb', message: `"${text.match(VAGUE)[0]}" has no observable result` });
+  }
+  if (!ACTOR.test(text)) findings.push({ rule: 'no-actor', message: 'no actor (who does or sees what?)' });
+  if (!OBSERVABLE.test(text)) findings.push({ rule: 'no-result', message: 'no observable result' });
+  const acs = draft.acceptanceCriteria ?? [];
+  if (acs.length === 0) findings.push({ rule: 'no-ac', message: 'no acceptance criteria' });
+  for (const ac of acs) {
+    if (!ac.check || !CHECK_TYPES.has(ac.check.type)) {
+      findings.push({ rule: 'ac-no-check', message: `${ac.acId}: no valid check` });
+    }
+  }
+  const allowed = new Set(sources.flatMap(numbersIn));
+  const all = [text, ...acs.map((a) => a.statement ?? '')].join('\n');
+  for (const n of numbersIn(all)) {
+    if (!allowed.has(n) && !/^(0|1|2|3|5|8|13)$/.test(n)) {
+      findings.push({ rule: 'ungrounded-number', message: `${n} does not appear in the request or evidence` });
+    }
+  }
+  return { pass: findings.length === 0, findings };
+}

@@ -1,0 +1,110 @@
+// Turns a claim plus collected evidence into a verdict. Deterministic; version-stamped.
+
+import * as c from './checks.js';
+
+export const CHECKER_VERSION = 'verifier/1';
+
+// One acceptance-criterion check, from { type, args }.
+export function runAcCheck(ctx, check) {
+  const a = check.args ?? [];
+  switch (check.type) {
+    case 'test_passes':
+      return c.testPasses(ctx, a[0]);
+    case 'metric_at_least':
+      return c.metricCompare(ctx, a[0], a[1], 'min');
+    case 'metric_at_most':
+      return c.metricCompare(ctx, a[0], a[1], 'max');
+    case 'version_at_least':
+      return c.versionAtLeast(ctx, a[0], a[1]);
+    case 'path_absent':
+      return c.pathAbsent(ctx, a[0]);
+    case 'blocked_by_done':
+      return c.blockedByDone(ctx);
+    case 'subtasks_done':
+      return c.subtasksDone(ctx);
+    case 'link_exists':
+      return (ctx.ticket.links ?? []).some((l) => !a[0] || l.type === a[0])
+        ? { name: 'link_exists', status: 'pass', reason: 'link found' }
+        : { name: 'link_exists', status: 'fail', reason: 'no link' };
+    case 'field_equals':
+      return ctx.ticket.fields?.[a[0]] === a[1]
+        ? { name: `field_equals(${a[0]})`, status: 'pass', reason: `${a[0]} = ${a[1]}` }
+        : { name: `field_equals(${a[0]})`, status: 'fail', reason: `${a[0]} = ${ctx.ticket.fields?.[a[0]]}` };
+    case 'deployed':
+      return c.deployed(ctx, a[0]);
+    case 'migration_additive':
+      return c.migrationAdditive(ctx, a[0]);
+    case 'repair_balanced':
+      return c.repairBalanced(ctx);
+    case 'recon_proof':
+      return c.reconProof(ctx);
+    case 'evidence_linked':
+      return c.evidenceLinked(ctx);
+    case 'ci_green':
+      return c.ciGreen(ctx);
+    case 'manual':
+    default:
+      return c.manual(a[0] ?? check.statement ?? check.type);
+  }
+}
+
+export function acMapped(ctx) {
+  const acs = ctx.ticket.acceptanceCriteria ?? [];
+  if (acs.length === 0) {
+    return { name: 'ac_mapped', status: 'fail', reason: 'ticket has no acceptance criteria', parts: [] };
+  }
+  const parts = acs.map((ac) => ({ acId: ac.acId, ...runAcCheck(ctx, ac.check) }));
+  const failed = parts.filter((p) => p.status === 'fail');
+  const unknown = parts.filter((p) => p.status === 'unknown');
+  const status = failed.length ? 'fail' : unknown.length ? 'unknown' : 'pass';
+  const reason = failed.length
+    ? failed.map((p) => `${p.acId}: ${p.reason}`).join('; ')
+    : unknown.length
+      ? unknown.map((p) => `${p.acId}: ${p.reason}`).join('; ')
+      : `${parts.length} AC(s) met`;
+  return { name: 'ac_mapped', status, reason, parts };
+}
+
+// Which checks a claim type runs.
+export const CLAIM_CHECKS = {
+  fixed: (ctx) => [
+    c.prLinked(ctx),
+    c.ciGreen(ctx),
+    acMapped(ctx),
+    ...(ctx.ticket.type === 'Bug' ? [c.bugTestExists(ctx)] : []),
+    ...(ctx.baseReport ? [c.testsNotRemoved(ctx)] : []),
+  ],
+  ready: (ctx) => [
+    c.prLinked(ctx),
+    c.ciGreen(ctx),
+    acMapped(ctx),
+    ...(ctx.baseReport ? [c.testsNotRemoved(ctx)] : []),
+  ],
+  done: (ctx) => [c.subtasksDone(ctx), c.blockedByDone(ctx), acMapped(ctx)],
+  deployed: (ctx) => [c.deployed(ctx, ctx.claimArgs?.tag)],
+  merged: (ctx) => [c.mergedClean(ctx)],
+  acs: (ctx) => [acMapped(ctx)],
+};
+
+export function verify(claim, ctx) {
+  const run = CLAIM_CHECKS[claim.type];
+  if (!run) {
+    return {
+      claimId: claim.id,
+      result: 'cannot_verify',
+      reason: `unknown claim type "${claim.type}"`,
+      checks: [],
+      checkerVersion: CHECKER_VERSION,
+    };
+  }
+  const checks = run({ ...ctx, claimArgs: claim.args });
+  const failed = checks.filter((k) => k.status === 'fail');
+  const unknown = checks.filter((k) => k.status === 'unknown');
+  const result = failed.length ? 'contradicted' : unknown.length ? 'cannot_verify' : 'supported';
+  const reason = failed.length
+    ? failed.map((k) => k.reason).join('; ')
+    : unknown.length
+      ? unknown.map((k) => k.reason).join('; ')
+      : 'all checks passed';
+  return { claimId: claim.id, result, reason, checks, checkerVersion: CHECKER_VERSION };
+}
