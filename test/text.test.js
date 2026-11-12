@@ -12,6 +12,10 @@ test('ADF round trip keeps lines', () => {
   assert.equal(adfToText(textToAdf('claim: fixed\nsee PR 4')), 'claim: fixed\nsee PR 4\n');
 });
 
+test('literal backslash-n becomes a line break', () => {
+  assert.equal(adfToText(textToAdf('a\\n- [ ] b')), 'a\n- [ ] b\n');
+});
+
 test('parseClaim reads type and detail', () => {
   assert.deepEqual(parseClaim('Claim: Fixed the race'), { type: 'fixed', detail: 'the race' });
   assert.equal(parseClaim('looks fixed to me'), null);

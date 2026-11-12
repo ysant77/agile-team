@@ -13,7 +13,9 @@ export function textToAdf(text) {
   return {
     type: 'doc',
     version: 1,
+    // Agents sometimes send a literal backslash-n; treat it as a line break.
     content: String(text)
+      .replace(/\\n/g, '\n')
       .split('\n')
       .map((line) => ({
         type: 'paragraph',

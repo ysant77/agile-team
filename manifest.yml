@@ -97,6 +97,9 @@ permissions:
   scopes:
     - read:jira-work
     - write:jira-work
+    - read:project:jira
+    - read:board-scope:jira-software
+    - read:board-scope.admin:jira-software
   external:
     fetch:
       backend:
