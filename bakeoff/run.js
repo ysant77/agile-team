@@ -2,8 +2,9 @@
 // model so each loads once. Results go to bakeoff/results/<run>.jsonl and a hash-chained log.
 //
 //   node bakeoff/run.js --models qwen3:4b,gemma4:26b --roles lead,pm [--tasks L01,S01] [--run name]
+// With --resume yes, tasks that already have a row in the run's results file are skipped.
 
-import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nextEvent } from '../src/audit.js';
@@ -53,6 +54,17 @@ export async function main(argv = process.argv.slice(2)) {
   const resultsFile = join(dir, `${run}.jsonl`);
   const chainFile = join(dir, `${run}.chain.jsonl`);
   let prev = null;
+  const done = new Set();
+  if (a.resume === 'yes' && existsSync(resultsFile)) {
+    for (const line of readFileSync(resultsFile, 'utf8').split('\n').filter(Boolean)) {
+      const r = JSON.parse(line);
+      done.add(`${r.model}|${r.role}|${r.task}`);
+    }
+    if (existsSync(chainFile)) {
+      const lines = readFileSync(chainFile, 'utf8').split('\n').filter(Boolean);
+      prev = lines.length ? JSON.parse(lines[lines.length - 1]) : null;
+    }
+  }
   const log = (msg) => console.log(`[${new Date().toISOString().slice(11, 19)}] ${msg}`);
   const record = (event, data) => {
     prev = nextEvent(prev, { actor: 'bakeoff', event, data, at: new Date().toISOString() });
@@ -60,6 +72,11 @@ export async function main(argv = process.argv.slice(2)) {
   };
 
   for (const model of models) {
+    const pending = roles.flatMap((r) => ROLES[r].tasks.filter((t) => (!only || only.has(ROLES[r].id(t))) && !done.has(`${model}|${r}|${ROLES[r].id(t)}`)));
+    if (pending.length === 0) {
+      log(`${model}: nothing left to run`);
+      continue;
+    }
     if (!(await waitForRoom(model, log))) {
       log(`skip ${model}: no room after waiting`);
       record('skipped', { model });
@@ -74,7 +91,7 @@ export async function main(argv = process.argv.slice(2)) {
     let peakVram = 0;
     for (const roleName of roles) {
       const role = ROLES[roleName];
-      for (const task of role.tasks.filter((t) => !only || only.has(role.id(t)))) {
+      for (const task of role.tasks.filter((t) => (!only || only.has(role.id(t))) && !done.has(`${model}|${roleName}|${role.id(t)}`))) {
         const calls = [];
         const ask = async (messages, format) => {
           const reply = await chat({ model, messages, format });
