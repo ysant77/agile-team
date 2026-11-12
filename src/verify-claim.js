@@ -2,12 +2,20 @@
 
 import { fetch } from '@forge/api';
 import { appendAudit } from './audit-store.js';
-import { collectGithub } from './github-evidence.js';
+import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment } from './jira.js';
 import { addVerdictProperty, collectJira } from './jira-evidence.js';
 import { verify } from './verifier/verdict.js';
 
-export const VERIFY_CONFIG = { requiredWorkflows: ['CI'], tooGood: { auc: 0.95 } };
+export const VERIFY_CONFIG = {
+  requiredWorkflows: ['CI'],
+  tooGood: { auc: 0.95 },
+  // Files that decide how a metric is measured or reported (DESIGN.md section 12, risk 12).
+  guardedPaths: [
+    'src/fraud/evaluate.py', 'src/fraud/model.py', 'src/bank/testing/', 'tests/conftest.py',
+    'tests/test_fraud_model.py', 'tests/test_bench.py', 'pyproject.toml',
+  ],
+};
 
 const SYMBOL = { supported: 'SUPPORTED', contradicted: 'CONTRADICTED', cannot_verify: 'CANNOT VERIFY' };
 
@@ -35,6 +43,10 @@ export async function verifyClaim({ issueKey, claim }) {
   if (repo) {
     try {
       github = await collectGithub({ repo, key: issueKey, token: process.env.GITHUB_TOKEN, fetchFn: fetch });
+      if (github.pr) {
+        const stats = await collectPrStats({ repo, prNumber: github.pr.number, token: process.env.GITHUB_TOKEN, fetchFn: fetch });
+        github.prFiles = stats.files;
+      }
     } catch (error) {
       githubError = error.message;
     }

@@ -89,6 +89,16 @@ export function metricCompare(ctx, name, bound, direction) {
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
   const value = ctx.report.metrics?.[name];
   if (typeof value !== 'number') return result(label, 'fail', `${name} not reported`);
+  // Metrics are written by the code under test. A PR that changes how they are measured
+  // cannot pass a metric gate by itself (DESIGN.md section 12, risk 12).
+  const guardedPaths = ctx.config?.guardedPaths ?? [];
+  if (guardedPaths.length) {
+    if (!Array.isArray(ctx.prFiles)) return result(label, 'unknown', 'pull request file list not available');
+    const touched = ctx.prFiles.filter((f) => guardedPaths.some((g) => (g.endsWith('/') ? f.startsWith(g) : f === g)));
+    if (touched.length) {
+      return result(label, 'unknown', `PR changes ${touched.join(', ')}, which can change how ${name} is measured: human review`);
+    }
+  }
   // Drift metrics compare two datasets; equal data hashes make the number meaningless.
   const hashes = ctx.report.data_hashes;
   if (/^psi/i.test(name) && hashes?.train && hashes.train === hashes.live) {

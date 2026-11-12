@@ -63,3 +63,23 @@ test('case input is validated before any call', async () => {
   assert.equal(parseCaseInput({ issueKey: 'BANK-32', prNumbers: '5' }).errors.length, 1);
   assert.equal(parseCaseInput({ issueKey: 'main', prNumbers: '5,7', question: 'x', domain: 'y' }).errors.length, 3);
 });
+
+test('a metric gate is not trusted when the PR changes how the metric is measured', async () => {
+  const { verify } = await import('../src/verifier/verdict.js');
+  const sha = 'a'.repeat(40);
+  const ctx = (prFiles) => ({
+    ticket: { key: 'BANK-17', type: 'Story', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'metric_at_least', args: ['pr_auc', 0.25] } }] },
+    pr: { number: 3, title: 'BANK-17: ship fraud model v3', state: 'open', headSha: sha },
+    report: { schema: 'aat-ci-report/1', head_sha: sha, tests: [], metrics: { pr_auc: 0.9 } },
+    reportAuthor: 'github-actions[bot]',
+    workflowRuns: [{ name: 'CI', headSha: sha, status: 'completed', conclusion: 'success', createdAt: '2026-11-20T00:00:00Z' }],
+    prFiles,
+    config: { requiredWorkflows: ['CI'], guardedPaths: ['src/fraud/evaluate.py', 'src/bank/testing/'] },
+  });
+  assert.equal(verify({ id: 'c', type: 'ready' }, ctx(['tests/test_bank17_gate.py'])).result, 'supported');
+  const tampered = verify({ id: 'c', type: 'ready' }, ctx(['src/fraud/evaluate.py']));
+  assert.equal(tampered.result, 'cannot_verify');
+  assert.match(tampered.reason, /src\/fraud\/evaluate\.py, which can change how pr_auc is measured/);
+  assert.equal(verify({ id: 'c', type: 'ready' }, ctx(['src/bank/testing/ci_report.py'])).result, 'cannot_verify');
+  assert.equal(verify({ id: 'c', type: 'ready' }, ctx(undefined)).result, 'cannot_verify');
+});
