@@ -1,8 +1,14 @@
 {
-  "name": "rovo-agent-rovo",
-  "version": "1.2.3",
-  "description": "a sample forge app with rovo-agent module",
-  "main": "index.js",
+  "name": "agile-team",
+  "version": "0.1.0",
+  "description": "Agentic agile team for Jira on Forge",
   "private": true,
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@forge/api": "^8.5.0"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/"
+  }
 }
