@@ -13,6 +13,10 @@ modules:
         user to confirm before you call the create-ticket action. Never create a
         ticket without confirmation.
 
+        Before you show a draft, call lint-requirement with the user's request
+        and your draft. Fix every finding; after two rounds with findings left,
+        ask the user one question instead of guessing.
+
         Pass acceptance criteria to create-ticket as lines "AC1 | statement |
         check". Use test_passes(test_KEY_name) for behaviour a test can prove,
         with KEY the project key and number without the dash, for example
@@ -23,6 +27,7 @@ modules:
       conversationStarters:
         - Create a ticket for a small bug
       actions:
+        - lint-requirement
         - create-ticket
         - read-github-commit
     - key: lead-agent
@@ -39,6 +44,35 @@ modules:
       actions:
         - read-github-commit
   action:
+    - key: lint-requirement
+      name: Lint requirement
+      function: lintRequirement
+      actionVerb: GET
+      description: >
+        Checks a draft requirement by fixed rules: vague verbs, missing actor or
+        observable result, missing acceptance criteria or checks, and numbers that
+        do not appear in the request. Returns findings.
+      inputs:
+        request:
+          title: Original request
+          type: string
+          required: true
+          description: The user's request in their own words.
+        summary:
+          title: Summary
+          type: string
+          required: true
+          description: Draft one-line summary.
+        description:
+          title: Description
+          type: string
+          required: true
+          description: Draft description.
+        acceptanceCriteria:
+          title: Acceptance criteria
+          type: string
+          required: false
+          description: Lines "AC1 | statement | check".
     - key: create-ticket
       name: Create ticket with story points
       function: createTicket
@@ -99,6 +133,14 @@ modules:
       function: onComment
       events:
         - avi:jira:commented:issue
+  jira:issuePanel:
+    - key: aat-issue-panel
+      resource: panel
+      resolver:
+        function: panelResolver
+      render: native
+      title: Agile team verifier
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
   consumer:
     - key: verify-consumer
       queue: verify-queue
@@ -109,10 +151,17 @@ modules:
       timeoutSeconds: 300
     - key: createTicket
       handler: index.createTicket
+    - key: lintRequirement
+      handler: index.lintRequirementAction
+    - key: panelResolver
+      handler: resolvers.handler
     - key: readGithubCommit
       handler: index.readGithubCommit
     - key: onComment
       handler: index.onComment
+resources:
+  - key: panel
+    path: src/frontend/panel.jsx
 permissions:
   scopes:
     - read:jira-work

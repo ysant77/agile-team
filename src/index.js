@@ -47,3 +47,5 @@ export async function onComment(event) {
   });
   console.log('claim queued', issueKey, claim.type);
 }
+
+export { lintRequirementAction } from './lint-action.js';

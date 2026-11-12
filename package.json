@@ -6,11 +6,14 @@
   "license": "MIT",
   "dependencies": {
     "@forge/api": "^8.5.0",
+    "@forge/bridge": "^7.3.0",
     "@forge/events": "^3.0.10",
-    "@forge/kvs": "^2.1.2"
+    "@forge/kvs": "^2.1.2",
+    "@forge/react": "^12.5.0",
+    "@forge/resolver": "^2.0.2",
+    "react": "^18.3.1"
   },
-  "type": "module",
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test test/"
   }
 }
