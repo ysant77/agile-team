@@ -18,9 +18,10 @@ modules:
         ask the user one question instead of guessing.
 
         Pass acceptance criteria to create-ticket as lines "AC1 | statement |
-        check". Use test_passes(test_KEY_name) for behaviour a test can prove,
-        with KEY the project key and number without the dash, for example
-        test_BANK12_send_button. Use manual() when only a human can judge it.
+        check". Use test_passes(test_{TOKEN}_name) for behaviour a test can prove;
+        write {TOKEN} literally, because the key does not exist yet. Use
+        metric_at_least(name, value) or metric_at_most(name, value) for a measured
+        bound, and manual() when only a human can judge it.
 
         You can read the latest commit of a public GitHub repository with the
         read-github-commit action.

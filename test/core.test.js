@@ -52,3 +52,17 @@ test('too-good guard turns a passing metric into cannot_verify', () => {
 test('unknown claim type cannot be verified', () => {
   assert.equal(verify({ id: 'x', type: 'vibes' }, { ticket: { key: 'BANK-1' } }).result, 'cannot_verify');
 });
+
+test('AC test names may use the {TOKEN} placeholder', () => {
+  const head = 'e'.repeat(40);
+  const v = verify(
+    { id: 'c', type: 'acs' },
+    {
+      reportAuthor: 'github-actions[bot]',
+      ticket: { key: 'BANK-7', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'test_passes', args: ['test_{TOKEN}_x'] } }] },
+      pr: { headSha: head },
+      report: { schema: 'aat-ci-report/1', head_sha: head, tests: [{ id: 't.py::test_BANK7_x', outcome: 'passed' }] },
+    },
+  );
+  assert.equal(v.result, 'supported', v.reason);
+});

@@ -6,7 +6,11 @@ export const CHECKER_VERSION = 'verifier/1';
 
 // One acceptance-criterion check, from { type, args }.
 export function runAcCheck(ctx, check) {
-  const a = check.args ?? [];
+  // Test names may use {TOKEN} (BANK3) or {KEY} (BANK-3): the key is unknown when ACs are written.
+  const key = ctx.ticket?.key ?? '';
+  const a = (check.args ?? []).map((v) =>
+    typeof v === 'string' ? v.replaceAll('{TOKEN}', key.replace('-', '')).replaceAll('{KEY}', key) : v,
+  );
   switch (check.type) {
     case 'test_passes':
       return c.testPasses(ctx, a[0]);
