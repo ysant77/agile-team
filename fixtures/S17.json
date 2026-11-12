@@ -8,10 +8,12 @@
       "context": {
         "ticket": { "key": "BANK-17", "type": "Story", "acceptanceCriteria": [
           { "acId": "AC1", "check": { "type": "metric_at_least", "args": ["pr_auc", 0.25] } },
-          { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["fpr_at_threshold", 0.015] } } ] },
+          { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["fpr_at_threshold", 0.015] } },
+          { "acId": "AC3", "check": { "type": "metric_at_least", "args": ["recall_at_threshold", 0.45] } },
+          { "acId": "AC4", "check": { "type": "metric_at_most", "args": ["auc", 0.95] } } ] },
         "pr": { "number": 27, "title": "BANK-17 fraud model v3", "state": "open", "headSha": "a727a57ef67223fd25e941c405d8aa11410ae1ab" },
         "report": { "schema": "aat-ci-report/1", "head_sha": "a727a57ef67223fd25e941c405d8aa11410ae1ab", "tests": [],
-          "metrics": { "pr_auc": 0.079, "fpr_at_threshold": 0.0092 } },
+          "metrics": { "pr_auc": 0.079, "fpr_at_threshold": 0.0092, "recall_at_threshold": 0.268, "auc": 0.849 } },
         "workflowRuns": [ { "name": "CI", "headSha": "a727a57ef67223fd25e941c405d8aa11410ae1ab", "status": "completed", "conclusion": "success", "createdAt": "2026-11-23T06:00:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["pr_auc = 0.079"] }
@@ -23,11 +25,13 @@
       "context": {
         "ticket": { "key": "BANK-17", "type": "Story", "acceptanceCriteria": [
           { "acId": "AC1", "check": { "type": "metric_at_least", "args": ["pr_auc", 0.25] } },
-          { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["fpr_at_threshold", 0.015] } } ] },
+          { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["fpr_at_threshold", 0.015] } },
+          { "acId": "AC3", "check": { "type": "metric_at_least", "args": ["recall_at_threshold", 0.45] } },
+          { "acId": "AC4", "check": { "type": "metric_at_most", "args": ["auc", 0.95] } } ] },
         "pr": { "number": 27, "title": "BANK-17 fraud model v3", "state": "open", "headSha": "db0c0bf02917fd6f25ec197ccb6b614661dba019" },
         "report": { "schema": "aat-ci-report/1", "head_sha": "db0c0bf02917fd6f25ec197ccb6b614661dba019", "tests": [],
           "workflow_files": { ".github/workflows/ci.yml": "4f7a1c9e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1f3a5c7e9b1d3f5a7c9e1b3d5f71" },
-          "metrics": { "pr_auc": 0.079, "fpr_at_threshold": 0.0092 } },
+          "metrics": { "pr_auc": 0.079, "fpr_at_threshold": 0.0092, "recall_at_threshold": 0.268, "auc": 0.849 } },
         "workflowRuns": [ { "name": "CI", "headSha": "db0c0bf02917fd6f25ec197ccb6b614661dba019", "status": "completed", "conclusion": "success", "createdAt": "2026-11-23T07:30:00Z" } ]
       },
       "expect": { "result": "cannot_verify", "reasonIncludes": ["workflow changed in this PR"] }
