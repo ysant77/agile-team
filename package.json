@@ -5,7 +5,9 @@
   "private": true,
   "license": "MIT",
   "dependencies": {
-    "@forge/api": "^8.5.0"
+    "@forge/api": "^8.5.0",
+    "@forge/events": "^3.0.10",
+    "@forge/kvs": "^2.1.2"
   },
   "type": "module",
   "scripts": {

@@ -1,5 +1,7 @@
+import { Queue } from '@forge/events';
 import { readLatestCommit } from './github.js';
-import { addComment, createIssue, getComment } from './jira.js';
+import { createIssue, getComment } from './jira.js';
+import { parseAcLines } from './ticket-spec.js';
 import { adfToText, checkStoryPoints, parseClaim } from './text.js';
 
 // Rovo action: create a work item and set story points.
@@ -11,6 +13,7 @@ export async function createTicket(payload) {
     description: String(payload.description ?? ''),
     issueType: payload.issueType,
     storyPoints,
+    acceptanceCriteria: parseAcLines(payload.acceptanceCriteria),
   });
   console.log('create-ticket result', JSON.stringify(result));
   return result;
@@ -23,7 +26,10 @@ export async function readGithubCommit(payload) {
   return result;
 }
 
-// Trigger: a comment that starts with "claim:" gets an acknowledgement with GitHub evidence.
+// Trigger: a comment that starts with "claim:" queues a verification job.
+// One concurrency key keeps verdicts (and audit appends) in order.
+const verifyQueue = new Queue({ key: 'verify-queue' });
+
 export async function onComment(event) {
   const issueKey = event?.issue?.key;
   const commentId = event?.comment?.id;
@@ -35,14 +41,9 @@ export async function onComment(event) {
   if (comment?.author?.accountType === 'app') return; // ignore our own comments
   const claim = parseClaim(adfToText(comment.body));
   if (!claim) return;
-
-  const evidence = await readLatestCommit();
-  const line = evidence.ok
-    ? `GitHub evidence (spike): ${evidence.repository} ${evidence.sha.slice(0, 7)} at ${evidence.date}.`
-    : `GitHub evidence: cannot verify (HTTP ${evidence.status}).`;
-  await addComment(
-    issueKey,
-    `Team lead verifier received claim "${claim.type}" on ${issueKey}.\n${line}\nVerdict: not computed in the spike.`,
-  );
-  console.log('claim handled', issueKey, claim.type, evidence.ok);
+  await verifyQueue.push({
+    body: { issueKey, claim: { id: `${issueKey}:${commentId}`, type: claim.type, text: claim.detail } },
+    concurrency: { key: 'verify', limit: 1 },
+  });
+  console.log('claim queued', issueKey, claim.type);
 }

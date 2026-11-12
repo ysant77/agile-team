@@ -60,7 +60,7 @@ async function setPoints(requester, key, pointField, storyPoints) {
   return { pointsSet: false, pointsError: `edit failed: ${last}` };
 }
 
-export async function createIssue({ projectKey, summary, description, issueType, storyPoints }) {
+export async function createIssue({ projectKey, summary, description, issueType, storyPoints, acceptanceCriteria = [] }) {
   const requester = api.asUser();
   const point = await findStoryPointField(requester, projectKey);
   const pointField = point?.id ?? null;
@@ -88,9 +88,20 @@ export async function createIssue({ projectKey, summary, description, issueType,
     return { ok: false, step: 'create', status: create.status, error, diagnosis };
   }
   const { key } = await create.json();
-  if (pointsInCreate) return { ok: true, key, pointField, pointSource: point.source, pointsSet: true, pointsVia: 'create' };
-  if (!pointField) return { ok: true, key, pointsSet: false, pointsError: 'no story point field' };
-  return { ok: true, key, pointField, pointSource: point.source, ...(await setPoints(requester, key, pointField, storyPoints)) };
+  const specSaved = await saveTicketSpec(requester, key, { acceptanceCriteria, storyPoints });
+  if (pointsInCreate) return { ok: true, key, specSaved, pointField, pointSource: point.source, pointsSet: true, pointsVia: 'create' };
+  if (!pointField) return { ok: true, key, specSaved, pointsSet: false, pointsError: 'no story point field' };
+  return { ok: true, key, specSaved, pointField, pointSource: point.source, ...(await setPoints(requester, key, pointField, storyPoints)) };
+}
+
+// The app's ticket data (acceptance criteria with checks) as issue property aat.ticket.
+async function saveTicketSpec(requester, key, spec) {
+  const response = await requester.requestJira(route`/rest/api/3/issue/${key}/properties/aat.ticket`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ version: 1, ...spec }),
+  });
+  return response.ok;
 }
 
 // Spike diagnostics: can the user and the app see the project?

@@ -33,3 +33,13 @@ test('story points must be Fibonacci values', () => {
   assert.equal(checkStoryPoints('5'), 5);
   assert.throws(() => checkStoryPoints(4));
 });
+
+import { parseAcLines } from '../src/ticket-spec.js';
+
+test('acceptance criteria lines parse into checks', () => {
+  const acs = parseAcLines('AC1 | button visible at 390 px | test_passes(test_BANK1_send_button)\\nAC2 | p95 fast | metric_at_most(statement_p95_ms, 300)\nnot an AC\nAC3 | finance signs off | manual()');
+  assert.equal(acs.length, 3);
+  assert.deepEqual(acs[0].check, { type: 'test_passes', args: ['test_BANK1_send_button'] });
+  assert.deepEqual(acs[1].check, { type: 'metric_at_most', args: ['statement_p95_ms', 300] });
+  assert.deepEqual(acs[2].check, { type: 'manual', args: ['finance signs off'] });
+});
