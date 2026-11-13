@@ -64,3 +64,15 @@ test('a tampered event fails the chain check', () => {
   assert.equal(m.chain.ok, false);
   assert.equal(m.chain.reason, 'hash mismatch');
 });
+
+test('decisions are listed with the author account id and do not touch the posterior', () => {
+  const m = buildMonitor(chain([
+    v('BANK-32', 'supported'),
+    ['decision', { issueKey: 'BANK-32', side: 'PR7', by: 'acc-123', agreesWithCode: false, agreesWithOpinion: true, overridesFailedGate: false }],
+  ]));
+  assert.equal(m.decisions.length, 1);
+  assert.equal(m.decisions[0].by, 'acc-123');
+  assert.equal(m.decisions[0].agreesWithCode, false);
+  assert.equal(m.outcomes, 1);
+  assert.ok(m.notes.some((n) => /Any user who can comment/.test(n)));
+});

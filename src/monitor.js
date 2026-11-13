@@ -26,7 +26,17 @@ export function buildMonitor(events) {
   const tickets = new Map();
   const posteriors = new Map();
   let outcomes = 0;
+  const decisions = [];
   for (const e of events) {
+    if (e.event === 'decision' && e.data?.issueKey) {
+      const d = e.data;
+      decisions.push({
+        seq: e.seq, issueKey: d.issueKey, side: d.side, by: d.by ?? null, at: d.at ?? e.at,
+        agreesWithCode: d.agreesWithCode ?? null, agreesWithOpinion: d.agreesWithOpinion ?? null,
+        overridesFailedGate: Boolean(d.overridesFailedGate),
+      });
+      continue;
+    }
     if (e.event !== 'verdict' || !e.data?.issueKey) continue;
     const d = e.data;
     const t = tickets.get(d.issueKey) ?? { issueKey: d.issueKey, twin: null, origin: null, skill: null, claims: [], contradictions: 0, closed: false, reward: null };
@@ -62,11 +72,13 @@ export function buildMonitor(events) {
       : { ok: false, at: chain.at, reason: chain.reason },
     tickets: [...tickets.values()],
     posteriors: posteriorRows,
+    decisions,
     outcomes,
     notes: [
       'Only the assignment step is a bandit; no model weights are trained.',
       'on_time is taken as 1: the demo tickets have no due dates.',
       'A ticket without a "Twin change" line in its PR gives no posterior update.',
+      'Any user who can comment on a work item can record a decision; the Atlassian account id of the author is shown beside each one.',
     ],
   };
 }

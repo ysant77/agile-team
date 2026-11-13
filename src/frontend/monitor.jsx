@@ -58,6 +58,27 @@ function App() {
         emptyView="No verdicts yet."
       />
 
+      <Heading as="h3">Human decisions on arbitration cases</Heading>
+      <DynamicTable
+        head={{ cells: [
+          { key: 'k', content: 'Ticket' }, { key: 'd', content: 'Decision' }, { key: 'b', content: 'By (account id)' },
+          { key: 'c', content: 'Code decision' }, { key: 'o', content: 'Opinion' }, { key: 's', content: 'Audit seq' },
+        ] }}
+        rows={data.decisions.map((d) => ({
+          key: String(d.seq),
+          cells: [
+            { key: 'k', content: d.issueKey },
+            { key: 'd', content: `${d.side}${d.overridesFailedGate ? ' (failed a gate)' : ''}` },
+            { key: 'b', content: d.by ?? 'unknown' },
+            { key: 'c', content: d.agreesWithCode === null ? 'none' : d.agreesWithCode ? 'agrees' : 'overridden' },
+            { key: 'o', content: d.agreesWithOpinion === null ? 'none' : d.agreesWithOpinion ? 'agrees' : 'differs' },
+            { key: 's', content: String(d.seq) },
+          ],
+        }))}
+        emptyView="No human decisions yet."
+      />
+      <Text>Any user who can comment on the work item can record a decision; the author's account id is shown.</Text>
+
       <Heading as="h3">Assignment posterior per twin and skill</Heading>
       <Text>{`Recorded outcomes: ${data.outcomes}. Reward r = 0.4 x on_time + 0.6 x quality; decay 0.95; Beta(1, 1) prior.`}</Text>
       <DynamicTable
