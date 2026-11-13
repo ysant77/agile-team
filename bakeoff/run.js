@@ -5,6 +5,8 @@
 // Models default to the candidates with status "run" in config/models.json, and the run name to its
 // currentRun. Repeat 0 is the deploy setting; repeats 1..n use the repeat seeds (DESIGN 9k).
 // With --resume yes, tasks that already have a row in the run's results file are skipped.
+// --redo model|role|task[,...] runs those rows again (a harness fault, named in the log); the
+// report keeps the last row per task.
 
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -83,6 +85,7 @@ export async function main(argv = process.argv.slice(2)) {
       if (/fetch failed|^timeout$|HTTP 5\d\d/.test(r.failed ?? '')) continue;
       done.add(rowKey(r));
     }
+    for (const key of (a.redo ?? '').split(',').filter(Boolean)) done.delete(key.split('|').length === 3 ? `${key}|0` : key);
     if (existsSync(chainFile)) {
       const lines = readFileSync(chainFile, 'utf8').split('\n').filter(Boolean);
       prev = lines.length ? JSON.parse(lines[lines.length - 1]) : null;
