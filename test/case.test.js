@@ -8,6 +8,7 @@ const side = (prNumber, result, diffLines, extra = {}) => ({
   prNumber, verdict: { result, reason: `${result} by checks` }, diffLines, files: ['src/bank/ledger.py'],
   pr: { body: `Fix for PR${prNumber}` }, report: { metrics: {} }, ...extra,
 });
+const base0 = { issueKey: "BANK-36", ticket: { acceptanceCriteria: [{ acId: "AC1" }] }, domain: null, question: "winner", metric: null };
 const base = { issueKey: 'BANK-32', ticket: { acceptanceCriteria: [{ acId: 'AC1' }] }, domain: null, question: 'winner', metric: null };
 
 test('code decides by the smaller diff, so no opinion is needed', () => {
@@ -29,8 +30,8 @@ test('a tie leaves the case to a human, and an opinion may be recorded', () => {
   assert.equal(c.opinionAllowed, true);
   assert.match(formatCase('BANK-32', c), /Code does not decide/);
   const ids = c.packet.evidence.map((e) => e.id);
-  assert.deepEqual(ids, ['E1', 'E2', 'E3', 'E4', 'E5', 'E6']);
-  const record = applyGuards({ decision: 'PR7', reasons: [{ text: 'PR7 explains the fix', evidence: ['E6'] }], confidence: 0.8, risks: [] }, c.packet);
+  assert.deepEqual(ids, ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8']);
+  const record = applyGuards({ decision: 'PR7', reasons: [{ text: 'PR7 explains the fix', evidence: ['E8'] }], confidence: 0.8, risks: [] }, c.packet);
   assert.equal(record.outcome, 'opinion');
   assert.match(formatOpinion('BANK-32', record), /^Opinion \(not verified\) on BANK-32: prefers PR7\. A human decides\./);
 });
@@ -82,4 +83,30 @@ test('a metric gate is not trusted when the PR changes how the metric is measure
   assert.match(tampered.reason, /src\/fraud\/evaluate\.py, which can change how pr_auc is measured/);
   assert.equal(verify({ id: 'c', type: 'ready' }, ctx(['src/bank/testing/ci_report.py'])).result, 'cannot_verify');
   assert.equal(verify({ id: 'c', type: 'ready' }, ctx(undefined)).result, 'cannot_verify');
+});
+
+import { newDependencies, newFailureModes } from '../src/case.js';
+
+test('new dependencies are the head lock packages the base lock does not have', () => {
+  assert.deepEqual(newDependencies({ deps: { a: '1', b: '2' } }, { deps: { a: '1', b: '3', redis: '5' } }), ['redis']);
+  assert.equal(newDependencies(null, { deps: { a: '1' } }), null);
+});
+
+test('a cache change without a stale-read test is a new failure mode', () => {
+  const files = ['src/bank/statement_cache.py'];
+  assert.deepEqual(newFailureModes({ files, report: { tests: [{ id: 'tests/test_x.py::test_fast' }] } }), ['cache without a stale-read test']);
+  assert.deepEqual(newFailureModes({ files, report: { tests: [{ id: 'tests/test_x.py::test_no_stale_balance' }] } }), []);
+  assert.deepEqual(newFailureModes({ files: ['migrations/0004_index.sql'], report: { tests: [] } }), []);
+});
+
+test('S36 shape: the cache side loses on "fewer new failure modes" before the diff size counts', () => {
+  const base = { deps: { pytest: '8' } };
+  const evidence = [
+    { ...side(5, 'supported', 30), files: ['src/bank/statement_cache.py'], baseReport: base, report: { metrics: {}, deps: { pytest: '8', cachetools: '5' }, tests: [] } },
+    { ...side(7, 'supported', 60), files: ['migrations/0004_statement_index.sql'], baseReport: base, report: { metrics: {}, deps: { pytest: '8' }, tests: [] } },
+  ];
+  const c = buildPacket({ ...base0, evidence });
+  assert.equal(c.arbitration.winner, 'PR7');
+  assert.equal(c.arbitration.rule, 'fewer new failure modes');
+  assert.ok(c.packet.evidence.some((e) => e.kind === 'rule' && /PR5: new dependencies: cachetools; new failure modes: cache without a stale-read test/.test(e.text)));
 });

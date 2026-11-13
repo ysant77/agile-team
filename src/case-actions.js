@@ -44,7 +44,7 @@ export async function openCase(payload) {
     if (!github.pr) return { ok: false, error: `pull request ${prNumber} not found in ${repo}` };
     const stats = await collectPrStats({ repo, prNumber, token, fetchFn: fetch });
     const verdict = verify({ id: `case:${input.issueKey}:${prNumber}`, type: 'ready', text: '' }, { ticket, ...github, prFiles: stats.files, config: VERIFY_CONFIG });
-    evidence.push({ prNumber, pr: github.pr, report: github.report, verdict, ...stats });
+    evidence.push({ prNumber, pr: github.pr, report: github.report, baseReport: github.baseReport, verdict, ...stats });
   }
   const built = buildPacket({ ...input, ticket, evidence });
   const stored = { ...built, prNumbers: input.prNumbers, openedAt: new Date().toISOString(), opinions: [] };

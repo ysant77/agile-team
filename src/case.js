@@ -14,15 +14,37 @@ function metricOf(report, name) {
   return null;
 }
 
-// evidence per side: { prNumber, pr, report, verdict, diffLines, files }
+// Packages in the head report's lock that the base report's lock does not have. Without both
+// reports nothing is compared (null), and the tie-break treats the side as adding nothing.
+export function newDependencies(baseReport, report) {
+  if (!baseReport?.deps || !report?.deps) return null;
+  return Object.keys(report.deps).filter((name) => !(name in baseReport.deps)).sort();
+}
+
+// Named rules for failure modes a change can add (DESIGN 6c, gap 3). Each rule reads only the
+// PR's file list and the head report's test ids, so it is code, not judgement.
+export const FAILURE_MODE_RULES = [
+  {
+    name: 'cache without a stale-read test',
+    applies: ({ files }) => files.some((f) => /cache/i.test(f)),
+    covered: ({ tests }) => tests.some((t) => /stale/i.test(t)),
+  },
+];
+
+export function newFailureModes({ files = [], report } = {}) {
+  const tests = (report?.tests ?? []).map((t) => String(t.id ?? ''));
+  return FAILURE_MODE_RULES.filter((r) => r.applies({ files, tests }) && !r.covered({ files, tests })).map((r) => r.name);
+}
+
+// evidence per side: { prNumber, pr, report, baseReport, verdict, diffLines, files }
 export function buildSide(e, metric) {
   return {
     id: `PR${e.prNumber}`,
     gatesPassed: e.verdict?.result === 'supported',
     gateReason: e.verdict?.reason ?? 'not verified',
     metrics: metric ? metricOf(e.report, metric) : null,
-    newFailureModes: [],
-    newDependencies: e.newDependencies ?? [],
+    newFailureModes: newFailureModes({ files: e.files ?? [], report: e.report }),
+    newDependencies: newDependencies(e.baseReport, e.report) ?? [],
     diffLines: e.diffLines ?? null,
   };
 }
@@ -43,6 +65,8 @@ export function buildPacket({ issueKey, ticket, domain, question, metric, higher
     add('ci', `${s.id}: claim "ready" is ${e.verdict?.result ?? 'not verified'}: ${short(e.verdict?.reason, 200)}`);
     if (metric && s.metrics) add('metric', `${s.id}: ${metric} median ${s.metrics.median}, IQR ${s.metrics.iqrLow} to ${s.metrics.iqrHigh}`);
     add('diff', `${s.id}: ${s.diffLines ?? 'unknown'} changed lines in ${e.files?.length ?? 'unknown'} files${e.files?.length ? `: ${e.files.slice(0, 8).join(', ')}` : ''}`);
+    const deps = newDependencies(e.baseReport, e.report);
+    add('rule', `${s.id}: new dependencies: ${deps === null ? 'not compared (base or head report missing)' : deps.length ? deps.join(', ') : 'none'}; new failure modes: ${s.newFailureModes.length ? s.newFailureModes.join(', ') : 'none'}`);
     if (e.pr?.body) add('review', `${s.id} description: ${short(e.pr.body)}`);
   }
   const alive = sides.filter((s) => s.gatesPassed);
