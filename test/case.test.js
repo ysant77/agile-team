@@ -124,7 +124,7 @@ test('reports from different CI jobs are not compared on performance', () => {
   assert.notEqual(c.arbitration.decidedBy, 'code-metric');
   assert.equal(c.arbitration.rule, 'smaller diff');
   assert.ok(c.packet.evidence.some((e) => /cannot compare across jobs/.test(e.text)));
-  assert.match(formatCase('BANK-32', c), /Performance: cannot compare across jobs/);
+  assert.match(formatCase("BANK-32", c), /Performance: the pull requests ran in different CI jobs/);
   // Reports without a job id count as different jobs.
   const none = buildPacket({ ...base, metric: 'transfers_per_s', evidence: [
     side(5, 'supported', 40, { report: { metrics: { transfers_per_s: 10 } } }),

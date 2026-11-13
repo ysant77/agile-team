@@ -30,7 +30,7 @@ function App() {
           <Text>Chain check failed at seq {data.chain.at}: {data.chain.reason}.</Text>
         </SectionMessage>
       )}
-      {data.truncated && <Text>Only the first 2000 events were read.</Text>}
+      {data.truncated && <Text>The page read only the first 2000 events.</Text>}
 
       <Heading as="h3">Runs (tickets with claims)</Heading>
       <DynamicTable
@@ -77,7 +77,7 @@ function App() {
         }))}
         emptyView="No human decisions yet."
       />
-      <Text>Any user who can comment on the work item can record a decision; the author's account id is shown.</Text>
+      <Text>Any user who can comment on the work item can record a decision. The table shows the author's account id.</Text>
 
       <Heading as="h3">Assignment posterior per twin and skill</Heading>
       <Text>{`Recorded outcomes: ${data.outcomes}. Reward r = 0.4 x on_time + 0.6 x quality; decay 0.95; Beta(1, 1) prior.`}</Text>

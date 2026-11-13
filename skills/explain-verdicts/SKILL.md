@@ -22,8 +22,8 @@ request, the CI report and Jira. No model decides a verdict, and you do not eith
 3. Report the latest verdict first: the claim type, the result, the reason, the checker version
    and the commit (`headSha`). Then list earlier verdicts briefly, newest first.
 4. If `arbitration` is present, say whether code decided (`decidedBy`, `rule`, `winner`) or
-   whether the case waits for a human. Opinions are listed only by outcome; an opinion is never a
-   decision, and `finalDecision` is always `human`.
+   whether the case waits for a human. The result lists opinions only by outcome. An opinion is
+   never a decision, and `finalDecision` is always `human`.
 5. Give the audit head (`seq`, `hash`) when the user asks for proof.
 
 ## Results
@@ -39,3 +39,10 @@ Claims are Jira comments that start with `claim:` and one of `fixed`, `ready`, `
 
 Never call a verdict "your opinion", never say "supported" about something `get-verdicts` did not
 return, and never change a ticket from this skill.
+
+## Style of every answer
+
+Write plain technical English. Use one idea per sentence. Use at most 20 words for an
+instruction and 25 for a description. Use the active voice. Do not use hedge words or praise
+words. Use the same term for the same thing.
+Give numbers with units. Give the source (evidence id, check name or commit) for every claim.

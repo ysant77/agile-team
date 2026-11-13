@@ -10,6 +10,7 @@ import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment } from './jira.js';
 import { collectJira } from './jira-evidence.js';
 import { applyGuards, OPINION_PROMPT_VERSION } from './opinion.js';
+import { styleGate } from './opinion-style.js';
 import { VERIFY_CONFIG } from './verify-claim.js';
 import { verify } from './verifier/verdict.js';
 
@@ -63,7 +64,15 @@ export async function recordOpinion(payload) {
   if (!stored.opinionAllowed && !stored.highStake) {
     return { ok: false, error: `code already decided this case (${stored.arbitration.rule}); no opinion is needed` };
   }
-  const record = applyGuards(payload?.opinion ?? '', stored.packet, { model: 'rovo', promptVersion: OPINION_PROMPT_VERSION });
+  const guarded = applyGuards(payload?.opinion ?? '', stored.packet, { model: 'rovo', promptVersion: OPINION_PROMPT_VERSION });
+  const gate = styleGate(guarded, stored.styleRetries ?? 0);
+  if (gate.action === 'retry') {
+    stored.styleRetries = (stored.styleRetries ?? 0) + 1;
+    await kvs.set(caseKey(issueKey), stored);
+    return { ok: false, error: gate.message };
+  }
+  const record = gate.record;
+  stored.styleRetries = 0;
   stored.opinions.push({ ...record, at: new Date().toISOString() });
   await kvs.set(caseKey(issueKey), stored);
   const audit = await appendAudit({ actor: 'ai-team-lead', event: 'opinion', data: {

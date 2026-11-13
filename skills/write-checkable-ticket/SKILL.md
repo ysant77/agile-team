@@ -31,7 +31,7 @@ One criterion per line: `AC1 | statement | check`. The check is one of:
 |---|---|
 | `test_passes(test_{TOKEN}_name)` | behaviour that a test can prove. Write `{TOKEN}` literally; the key does not exist yet. |
 | `metric_at_least(name, value)` or `metric_at_most(name, value)` | a measured bound from the CI report |
-| `subtasks_done()` | work that is done when its sub-tasks are done |
+| `subtasks_done()` | work that ends when all its sub-tasks reach Done |
 | `deployed(tag)` | a release that must reach an environment |
 | `manual()` | something only a human can judge, such as wording or layout taste |
 
@@ -49,3 +49,10 @@ Example: `AC1 | the balance never goes below 0.00 | test_passes(test_{TOKEN}_bal
 | `ungrounded-number` | a number that is not in the request | use only numbers the user gave, or ask for the number |
 
 Never invent a number, a deadline or a test name that the user did not give; ask instead.
+
+## Style of every answer
+
+Write plain technical English. Use one idea per sentence. Use at most 20 words for an
+instruction and 25 for a description. Use the active voice. Do not use hedge words or praise
+words. Use the same term for the same thing.
+Give numbers with units. Give the source (evidence id, check name or commit) for every claim.

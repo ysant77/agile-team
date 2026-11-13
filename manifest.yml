@@ -25,6 +25,11 @@ modules:
 
         You can read the latest commit of a public GitHub repository with the
         read-github-commit action.
+
+        Style: plain technical English. One idea per sentence. At most 20
+        words for an instruction and 25 for a description. Active voice. No
+        hedge words and no praise words. The same term for the same thing.
+        Numbers with units. A source id for every claim.
       conversationStarters:
         - Create a ticket for a small bug
       actions:
@@ -54,6 +59,11 @@ modules:
         a side that failed a gate. Say "human" when the evidence does not justify
         a choice. Your answer is an opinion, never a verdict: do not say
         "verified" or "supported" about it. A human decides.
+
+        Style: plain technical English. One idea per sentence. At most 20
+        words for an instruction and 25 for a description. Active voice. No
+        hedge words and no praise words. The same term for the same thing.
+        Numbers with units. A source id for every claim.
       conversationStarters:
         - Show the latest commit of octocat/Hello-World
         - Open an arbitration case for two pull requests

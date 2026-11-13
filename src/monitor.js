@@ -75,10 +75,10 @@ export function buildMonitor(events) {
     decisions,
     outcomes,
     notes: [
-      'Only the assignment step is a bandit; no model weights are trained.',
-      'on_time is taken as 1: the demo tickets have no due dates.',
+      'Only the assignment step is a bandit. This app trains no model weights.',
+      'The page sets on_time to 1, because the demo tickets have no due dates.',
       'A ticket without a "Twin change" line in its PR gives no posterior update.',
-      'Any user who can comment on a work item can record a decision; the Atlassian account id of the author is shown beside each one.',
+      'Any user who can comment on a work item can record a decision. The page shows the author\'s Atlassian account id beside each decision.',
     ],
   };
 }
