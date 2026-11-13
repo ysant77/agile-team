@@ -87,8 +87,11 @@ export function metricCompare(ctx, name, bound, direction) {
   const label = `metric_${direction === 'min' ? 'at_least' : 'at_most'}(${name}, ${bound})`;
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
-  const value = ctx.report.metrics?.[name];
+  // A repeated benchmark reports {median, iqr_low, iqr_high, runs}; the gate uses the median.
+  const raw = ctx.report.metrics?.[name];
+  const value = typeof raw === 'number' ? raw : typeof raw?.median === 'number' ? raw.median : undefined;
   if (typeof value !== 'number') return result(label, 'fail', `${name} not reported`);
+  const shown = typeof raw === 'number' ? `${value}` : `median ${value} (IQR ${raw.iqr_low ?? '?'} to ${raw.iqr_high ?? '?'}${raw.runs ? `, ${raw.runs} runs` : ''})`;
   // Metrics are written by the code under test. A PR that changes how they are measured
   // cannot pass a metric gate by itself (DESIGN.md section 12, risk 12).
   const guardedPaths = ctx.config?.guardedPaths ?? [];
@@ -106,10 +109,10 @@ export function metricCompare(ctx, name, bound, direction) {
   }
   const guard = ctx.config?.tooGood?.[name];
   if (guard !== undefined && value > guard) {
-    return result(label, 'unknown', `${name} = ${value} is above ${guard}: too good, human review`);
+    return result(label, 'unknown', `${name} = ${shown} is above ${guard}: too good, human review`);
   }
   const ok = direction === 'min' ? value >= bound : value <= bound;
-  return result(label, ok ? 'pass' : 'fail', `${name} = ${value}`);
+  return result(label, ok ? 'pass' : 'fail', `${name} = ${shown}`);
 }
 
 function compareVersions(a, b) {
