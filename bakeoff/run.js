@@ -135,7 +135,7 @@ export async function main(argv = process.argv.slice(2)) {
           result = { task: role.id(task), failed: String(error.message ?? error), score: 0 };
         }
         const row = {
-          run, model, digest: modelDigest, role: roleName, repeat, seed: settings.seed, temperature: settings.temperature, ...result,
+          run, model, digest: modelDigest, role: roleName, taskSet: task.set ?? 1, repeat, seed: settings.seed, temperature: settings.temperature, ...result,
           wallS: (Date.now() - started) / 1000,
           calls: calls.length,
           validJsonRate: calls.length ? calls.filter((c) => c.validJson).length / calls.length : 0,
