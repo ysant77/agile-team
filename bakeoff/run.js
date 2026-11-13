@@ -1,14 +1,18 @@
 // Role bake-off runner (DESIGN.md section 9e). One model loaded at a time; tasks are batched by
 // model so each loads once. Results go to bakeoff/results/<run>.jsonl and a hash-chained log.
 //
-//   node bakeoff/run.js --models qwen3:4b,gemma4:26b --roles lead,pm [--tasks L01,S01] [--run name]
+//   node bakeoff/run.js [--models a,b] [--roles lead,pm] [--tasks L01,S01] [--run name] [--repeats 0,1,2,3]
+// Models default to the candidates with status "run" in config/models.json, and the run name to its
+// currentRun. Repeat 0 is the deploy setting; repeats 1..n use the repeat seeds (DESIGN 9k).
 // With --resume yes, tasks that already have a row in the run's results file are skipped.
 
+import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nextEvent } from '../src/audit.js';
 import { OPINION_PROMPT_VERSION } from '../src/opinion.js';
+import { candidates, chatSettings, loadConfig } from './models.js';
 import { chat, digest, loaded, parseJson, unload } from './ollama.js';
 import { DISPUTES, runLead } from './tasks/lead.js';
 import { BUGS, DS_TASKS, runDev, runDs, runQa } from './tasks/code.js';
@@ -43,12 +47,29 @@ async function waitForRoom(model, log, maxWaitMin = 120) {
   return false;
 }
 
+// The harness commit, so a result can be traced to the exact tasks and scorers that produced it.
+function harnessCommit() {
+  try {
+    const head = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: HERE, encoding: 'utf8' }).trim();
+    const dirty = execFileSync('git', ['status', '--porcelain', '--', '.', '../src'], { cwd: HERE, encoding: 'utf8' }).trim();
+    return dirty ? `${head}+dirty` : head;
+  } catch {
+    return null;
+  }
+}
+
+export const rowKey = (r) => `${r.model}|${r.role}|${r.task}|${r.repeat ?? 0}`;
+
 export async function main(argv = process.argv.slice(2)) {
   const a = args(argv);
-  const models = (a.models ?? '').split(',').filter(Boolean);
-  const roles = (a.roles ?? 'lead,pm').split(',').filter(Boolean);
+  const config = loadConfig(a.config);
+  const models = a.models ? a.models.split(',').filter(Boolean) : candidates(config, ['run']);
+  const roles = (a.roles ?? 'lead,pm,dev,qa,ds').split(',').filter(Boolean);
+  const unknown = roles.filter((r) => !ROLES[r]);
+  if (unknown.length) throw new Error(`unknown roles: ${unknown.join(', ')}`);
+  const repeats = (a.repeats ?? '0').split(',').map(Number);
   const only = a.tasks ? new Set(a.tasks.split(',')) : null;
-  const run = a.run ?? new Date().toISOString().replace(/[:.]/g, '-');
+  const run = a.run ?? config.currentRun;
   const dir = join(HERE, 'results');
   mkdirSync(dir, { recursive: true });
   const resultsFile = join(dir, `${run}.jsonl`);
@@ -60,7 +81,7 @@ export async function main(argv = process.argv.slice(2)) {
       const r = JSON.parse(line);
       // A row that failed in transport (the harness, not the model) is run again.
       if (/fetch failed|^timeout$|HTTP 5\d\d/.test(r.failed ?? '')) continue;
-      done.add(`${r.model}|${r.role}|${r.task}`);
+      done.add(rowKey(r));
     }
     if (existsSync(chainFile)) {
       const lines = readFileSync(chainFile, 'utf8').split('\n').filter(Boolean);
@@ -74,7 +95,9 @@ export async function main(argv = process.argv.slice(2)) {
   };
 
   for (const model of models) {
-    const pending = roles.flatMap((r) => ROLES[r].tasks.filter((t) => (!only || only.has(ROLES[r].id(t))) && !done.has(`${model}|${r}|${ROLES[r].id(t)}`)));
+    const todo = (roleName, repeat) => ROLES[roleName].tasks.filter((t) => (!only || only.has(ROLES[roleName].id(t)))
+      && !done.has(rowKey({ model, role: roleName, task: ROLES[roleName].id(t), repeat })));
+    const pending = repeats.flatMap((rep) => roles.flatMap((r) => todo(r, rep)));
     if (pending.length === 0) {
       log(`${model}: nothing left to run`);
       continue;
@@ -89,14 +112,15 @@ export async function main(argv = process.argv.slice(2)) {
       log(`skip ${model}: not installed`);
       continue;
     }
-    record('model_start', { model, digest: modelDigest });
+    record('model_start', { model, digest: modelDigest, harness: harnessCommit(), config: config.hash, repeats });
     let peakVram = 0;
-    for (const roleName of roles) {
+    for (const repeat of repeats) for (const roleName of roles) {
       const role = ROLES[roleName];
-      for (const task of role.tasks.filter((t) => (!only || only.has(role.id(t))) && !done.has(`${model}|${roleName}|${role.id(t)}`))) {
+      const settings = chatSettings(config, model, repeat);
+      for (const task of todo(roleName, repeat)) {
         const calls = [];
         const ask = async (messages, format) => {
-          const reply = await chat({ model, messages, format });
+          const reply = await chat({ model, messages, format, settings });
           const parsed = reply.ok ? parseJson(reply.content) : { ok: false };
           calls.push({ ok: reply.ok, error: reply.error, tokens: reply.outputTokens, tps: reply.tokensPerS, wallS: reply.wallS, validJson: parsed.ok, repaired: !!parsed.repaired });
           const ps = (await loaded().catch(() => [])).find((m) => m.name === model);
@@ -111,7 +135,7 @@ export async function main(argv = process.argv.slice(2)) {
           result = { task: role.id(task), failed: String(error.message ?? error), score: 0 };
         }
         const row = {
-          run, model, digest: modelDigest, role: roleName, ...result,
+          run, model, digest: modelDigest, role: roleName, repeat, seed: settings.seed, temperature: settings.temperature, ...result,
           wallS: (Date.now() - started) / 1000,
           calls: calls.length,
           validJsonRate: calls.length ? calls.filter((c) => c.validJson).length / calls.length : 0,
@@ -119,12 +143,15 @@ export async function main(argv = process.argv.slice(2)) {
           timeouts: calls.filter((c) => c.error === 'timeout').length,
         };
         appendFileSync(resultsFile, `${JSON.stringify(row)}\n`);
-        record('task_done', { model, role: roleName, task: row.task, score: row.score });
-        log(`${model} ${roleName} ${row.task}: score ${row.score}${row.failed ? ` (${row.failed})` : ''} in ${row.wallS.toFixed(0)} s`);
+        record('task_done', { model, role: roleName, task: row.task, repeat, score: row.score });
+        log(`${model} ${roleName} ${row.task}${repeat ? ` r${repeat}` : ''}: score ${row.score}${row.failed ? ` (${row.failed})` : ''} in ${row.wallS.toFixed(0)} s`);
       }
     }
     record('model_end', { model, peakVramGB: +(peakVram / GB).toFixed(1) });
-    writeFileSync(join(dir, `${run}.mem.${model.replace(/[:/]/g, '_')}.json`), JSON.stringify({ model, peakVramGB: +(peakVram / GB).toFixed(1) }));
+    // A resumed model keeps the highest peak seen in any part of the run.
+    const memFile = join(dir, `${run}.mem.${model.replace(/[:/]/g, '_')}.json`);
+    const before = existsSync(memFile) ? JSON.parse(readFileSync(memFile, 'utf8')).peakVramGB ?? 0 : 0;
+    writeFileSync(memFile, JSON.stringify({ model, peakVramGB: Math.max(before, +(peakVram / GB).toFixed(1)) }));
     await unload(model).catch(() => {});
     log(`${model}: unloaded`);
   }

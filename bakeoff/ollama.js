@@ -19,18 +19,13 @@ async function call(path, body, timeoutMs) {
   }
 }
 
-// Models that need a reasoning level instead of think=false.
-const THINK = { 'gpt-oss': 'low' };
-
-export function thinkSetting(model) {
-  const family = Object.keys(THINK).find((f) => model.startsWith(f));
-  return family ? THINK[family] : false;
-}
-
 // One chat turn. `format` is a JSON schema for structured output. The answer is streamed, so
 // the response headers arrive at once: Node's fetch otherwise gives up waiting for headers after
 // 300 s, which failed slow models on long answers. The whole turn still has `timeoutMs`.
-export async function chat({ model, messages, format, timeoutMs = 900_000, numCtx = 16_384 }) {
+// Settings (temperature, seed, context, reasoning level) come from bakeoff/models.js, so this
+// client holds no per-model rule.
+export async function chat({ model, messages, format, settings, timeoutMs = 900_000 }) {
+  const { temperature = 0, seed = 7, numCtx = 16_384, think = false } = settings ?? {};
   const started = Date.now();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -43,9 +38,9 @@ export async function chat({ model, messages, format, timeoutMs = 900_000, numCt
         messages,
         format,
         stream: true,
-        think: thinkSetting(model),
+        think,
         keep_alive: '10m',
-        options: { temperature: 0, seed: 7, num_ctx: numCtx },
+        options: { temperature, seed, num_ctx: numCtx },
       }),
       signal: controller.signal,
     });
