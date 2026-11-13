@@ -116,7 +116,7 @@ test('one task of difference in five is no clear winner, and the tie-break picks
 });
 
 test('a large difference is a clear winner', () => {
-  const rows = [...rowsFor('good', 'lead', Array(10).fill(1)), ...rowsFor('weak', 'lead', Array(10).fill(0))];
+  const rows = [...rowsFor('good', 'lead', Array(10).fill(1), { guardVersion: 2 }), ...rowsFor('weak', 'lead', Array(10).fill(0), { guardVersion: 2 })];
   const s = summariseRole(rows, 'lead', { good: 18, weak: 3 });
   assert.equal(s.verdict.kind, 'clear');
   assert.equal(s.verdict.pick, 'good');
@@ -148,4 +148,10 @@ test('adding a candidate keeps the config valid and refuses a bad tag', () => {
   assert.equal(next.candidates.at(-1).model, 'newmodel:8b');
   assert.equal(next.candidates.at(-1).status, 'run');
   assert.throws(() => addCandidate(structuredClone(config), 'bad tag; rm', 'mac'));
+});
+
+test('lead rows scored under older guards are left out of the ranking', () => {
+  const rows = [...rowsFor('old', 'lead', Array(10).fill(1)), ...rowsFor('new', 'lead', Array(10).fill(0), { guardVersion: 2 })];
+  const s = summariseRole(rows, 'lead');
+  assert.deepEqual(s.lines.map((l) => l.model), ['new']);
 });
