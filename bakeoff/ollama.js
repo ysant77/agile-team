@@ -27,31 +27,60 @@ export function thinkSetting(model) {
   return family ? THINK[family] : false;
 }
 
-// One chat turn. `format` is a JSON schema for structured output.
-export async function chat({ model, messages, format, timeoutMs = 600_000, numCtx = 16_384 }) {
+// One chat turn. `format` is a JSON schema for structured output. The answer is streamed, so
+// the response headers arrive at once: Node's fetch otherwise gives up waiting for headers after
+// 300 s, which failed slow models on long answers. The whole turn still has `timeoutMs`.
+export async function chat({ model, messages, format, timeoutMs = 900_000, numCtx = 16_384 }) {
   const started = Date.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const r = await call('/api/chat', {
-      model,
-      messages,
-      format,
-      stream: false,
-      think: thinkSetting(model),
-      keep_alive: '10m',
-      options: { temperature: 0, seed: 7, num_ctx: numCtx },
-    }, timeoutMs);
-    const evalS = (r.eval_duration ?? 0) / 1e9;
+    const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages,
+        format,
+        stream: true,
+        think: thinkSetting(model),
+        keep_alive: '10m',
+        options: { temperature: 0, seed: 7, num_ctx: numCtx },
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`/api/chat: HTTP ${res.status} ${await res.text()}`);
+    let content = '';
+    let last = {};
+    let buffer = '';
+    const decoder = new TextDecoder();
+    for await (const chunk of res.body) {
+      buffer += decoder.decode(chunk, { stream: true });
+      let newline;
+      while ((newline = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, newline).trim();
+        buffer = buffer.slice(newline + 1);
+        if (!line) continue;
+        const part = JSON.parse(line);
+        if (part.error) throw new Error(part.error);
+        content += part.message?.content ?? '';
+        if (part.done) last = part;
+      }
+    }
+    const evalS = (last.eval_duration ?? 0) / 1e9;
     return {
       ok: true,
-      content: r.message?.content ?? '',
-      outputTokens: r.eval_count ?? 0,
-      tokensPerS: evalS > 0 ? (r.eval_count ?? 0) / evalS : null,
-      loadS: (r.load_duration ?? 0) / 1e9,
+      content,
+      outputTokens: last.eval_count ?? 0,
+      tokensPerS: evalS > 0 ? (last.eval_count ?? 0) / evalS : null,
+      loadS: (last.load_duration ?? 0) / 1e9,
       wallS: (Date.now() - started) / 1000,
     };
   } catch (error) {
     const timeout = error.name === 'AbortError';
     return { ok: false, error: timeout ? 'timeout' : String(error.message ?? error), wallS: (Date.now() - started) / 1000 };
+  } finally {
+    clearTimeout(timer);
   }
 }
 

@@ -3,7 +3,10 @@
 
 import { readFileSync } from 'node:fs';
 
-const rows = process.argv.slice(2).flatMap((f) => readFileSync(f, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse));
+const all = process.argv.slice(2).flatMap((f) => readFileSync(f, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse));
+// A task run again (after a transport failure) counts once: the last row wins.
+const latest = new Map(all.map((r) => [`${r.model}|${r.role}|${r.task}`, r]));
+const rows = [...latest.values()];
 const models = [...new Set(rows.map((r) => r.model))];
 const roles = ['pm', 'dev', 'qa', 'ds', 'lead'].filter((role) => rows.some((r) => r.role === role));
 const pick = (model, role) => rows.filter((r) => r.model === model && r.role === role);

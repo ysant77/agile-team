@@ -58,6 +58,8 @@ export async function main(argv = process.argv.slice(2)) {
   if (a.resume === 'yes' && existsSync(resultsFile)) {
     for (const line of readFileSync(resultsFile, 'utf8').split('\n').filter(Boolean)) {
       const r = JSON.parse(line);
+      // A row that failed in transport (the harness, not the model) is run again.
+      if (/fetch failed|^timeout$|HTTP 5\d\d/.test(r.failed ?? '')) continue;
       done.add(`${r.model}|${r.role}|${r.task}`);
     }
     if (existsSync(chainFile)) {
