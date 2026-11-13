@@ -10,6 +10,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GUARD_VERSION } from '../src/opinion.js';
+import { LINT_VERSION } from '../src/lint.js';
 
 export const ROLE_ORDER = ['pm', 'dev', 'qa', 'ds', 'lead'];
 const RESAMPLES = 2000;
@@ -56,8 +57,9 @@ export function latestRows(all) {
 }
 
 export function summariseRole(rows, role, memory = {}) {
-  // Lead rows scored under older guards are not compared with current ones (DESIGN 9k).
-  const roleRows = rows.filter((r) => r.role === role && (role !== 'lead' || (r.guardVersion ?? 1) === GUARD_VERSION));
+  // Lead and PM rows scored under older guards or lint rules are not compared (DESIGN 9k).
+  const roleRows = rows.filter((r) => r.role === role && (role !== 'lead' || (r.guardVersion ?? 1) === GUARD_VERSION)
+    && (role !== 'pm' || (r.lintVersion ?? 1) === LINT_VERSION));
   const tasks = [...new Set(roleRows.map((r) => r.task))].sort();
   const models = [...new Set(roleRows.map((r) => r.model))];
   const lines = models.map((model) => {

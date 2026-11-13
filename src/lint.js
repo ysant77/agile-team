@@ -9,8 +9,24 @@ const CHECK_TYPES = new Set([
   'migration_additive', 'repair_balanced', 'recon_proof', 'evidence_linked', 'ci_green', 'manual',
 ]);
 
+// Version of the rules below; the bake-off records it with PM rows. 2 (13 Nov): no exempt small
+// numbers, ids stripped first, numbers in AC checks grounded too.
+export const LINT_VERSION = 2;
+
 export function numbersIn(text) {
   return (String(text).match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => n.replace(',', '.'));
+}
+
+// Ids are not quantities: issue keys, AC ids, {TOKEN} and test names are removed before numbers
+// are compared with the request.
+export function quantityText(text) {
+  return String(text ?? '')
+    .replace(/\b[A-Z][A-Z0-9]*-\d+\b/g, ' ')
+    .replace(/\bAC\d+\b/g, ' ')
+    .replace(/\{TOKEN\}/g, ' ')
+    .replace(/\btest_\w+/g, ' ')
+    // A story point estimate is the PM's own proposal, written as "2 points" (Fibonacci only).
+    .replace(/\b(1|2|3|5|8|13)[ -]points?\b/g, ' ');
 }
 
 // draft: { summary, description, acceptanceCriteria: [{ acId, statement, check }] }
@@ -30,11 +46,14 @@ export function lintRequirement(draft, sources = []) {
       findings.push({ rule: 'ac-no-check', message: `${ac.acId}: no valid check` });
     }
   }
-  const allowed = new Set(sources.flatMap(numbersIn));
-  const all = [text, ...acs.map((a) => a.statement ?? '')].join('\n');
-  for (const n of numbersIn(all)) {
-    if (!allowed.has(n) && !/^(0|1|2|3|5|8|13)$/.test(n)) {
-      findings.push({ rule: 'ungrounded-number', message: `${n} does not appear in the request or evidence` });
+  // Every number, unit or threshold must come from the request or the evidence; story points are
+  // a separate field and are not checked here.
+  const allowed = new Set(sources.map(quantityText).flatMap(numbersIn));
+  const checks = acs.map((a) => (a.check ? (a.check.args ?? []).join(' ') : ''));
+  const all = quantityText([text, ...acs.map((a) => a.statement ?? ''), ...checks].join('\n'));
+  for (const n of new Set(numbersIn(all))) {
+    if (!allowed.has(n)) {
+      findings.push({ rule: 'ungrounded-number', message: `${n} does not appear in the request or evidence; state an open question instead` });
     }
   }
   return { pass: findings.length === 0, findings };

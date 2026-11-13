@@ -13,6 +13,10 @@ modules:
         user to confirm before you call the create-ticket action. Never create a
         ticket without confirmation.
 
+        Use only numbers, units and thresholds that are in the user's request. If
+        a number is missing, write "Open question: <what is missing>" and ask
+        the user. Pass the user's request as "request" to create-ticket.
+
         Before you show a draft, call lint-requirement with the user's request
         and your draft. Fix every finding; after two rounds with findings left,
         ask the user one question instead of guessing.
@@ -113,6 +117,11 @@ modules:
         description and a story point value. Call it only after the user has
         confirmed the draft.
       inputs:
+        request:
+          title: User request
+          type: string
+          required: true
+          description: The user's request in their own words. Every number in the ticket must appear in it.
         projectKey:
           title: Project key
           type: string

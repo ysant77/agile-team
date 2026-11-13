@@ -48,7 +48,8 @@ Example: `AC1 | the balance never goes below 0.00 | test_passes(test_{TOKEN}_bal
 | `ac-no-check` | an AC line has no valid check | add one check from the table above |
 | `ungrounded-number` | a number that is not in the request | use only numbers the user gave, or ask for the number |
 
-Never invent a number, a deadline or a test name that the user did not give; ask instead.
+Never invent a number, a unit, a threshold, a deadline or a test name that the user did not give.
+Write "Open question: <what is missing>" in the description and ask the user instead.
 
 ## Style of every answer
 
