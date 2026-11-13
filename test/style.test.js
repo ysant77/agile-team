@@ -53,3 +53,9 @@ test('pass rates on the style set (reported in the PR)', () => {
   }).filter(Boolean).length;
   assert.equal(after, MODEL_SAMPLES.length);
 });
+
+test('live answers from 13 Nov pass the lint (claim type names are defined terms)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const live = JSON.parse(readFileSync('test/fixtures-style/live-2026-11-13.json', 'utf8'));
+  for (const s of live) assert.deepEqual(lintText(s.text, s).findings, [], s.id);
+});

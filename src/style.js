@@ -9,8 +9,9 @@ const PRAISE = ['great', 'excellent', 'amazing', 'awesome', 'robust', 'seamless'
 const BANNED = new Map([...HEDGE.map((w) => [w, 'hedge']), ...PRAISE.map((w) => [w, 'praise'])]);
 // "is checked", "were removed", "has been merged": a be-form followed by a past participle.
 const PASSIVE = /\b(is|are|was|were|be|been|being)\s+(\w+ly\s+)?(\w+ed|built|done|made|given|taken|seen|shown|written|run|found|held|kept|left|sent|set|known)\b/i;
-// Verdict names are defined terms, not passives: "the claim is supported".
-const TERMS = /^(supported|contradicted|SUPPORTED|CONTRADICTED)$/;
+// Verdict and claim type names are defined terms, not passives: "the claim is supported",
+// "the claim type is fixed".
+const TERMS = /^(supported|contradicted|SUPPORTED|CONTRADICTED|fixed|deployed|merged)$/;
 const SOURCE = /\b(E\d+|PR ?#?\d+|seq \d+|[a-z]+_[a-z_]+|[0-9a-f]{7,40})\b/;
 
 // Split on sentence ends and line breaks; list items and table rows count as one sentence each.
