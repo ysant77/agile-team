@@ -225,6 +225,13 @@ modules:
           type: number
           required: false
           description: How many of the latest verdicts to return, 1 to 20. Default 5.
+  rovo:mcp:
+    - key: agile-team-mcp
+      name: Agile Team Verifier
+      tools:
+        - lint-requirement
+        - get-verdicts
+        - read-github-commit
   rovo:skill:
     - key: write-checkable-ticket
       source:

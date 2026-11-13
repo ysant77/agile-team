@@ -70,3 +70,15 @@ test('every skill folder is declared, named after its folder, and allows exactly
     assert.ok(existsSync(`${d.dir}/SKILL.md`));
   }
 });
+
+test('the MCP server exposes only read actions (actionVerb GET)', () => {
+  const manifest = readFileSync('manifest.yml', 'utf8');
+  const block = manifest.split('  rovo:mcp:\n')[1].split(/\n  [a-z]/)[0];
+  const tools = [...block.split('tools:')[1].matchAll(/^\s+- ([\w-]+)$/gm)].map((m) => m[1]);
+  assert.ok(tools.length > 0);
+  for (const tool of tools) {
+    const action = manifest.split(`    - key: ${tool}\n`)[1];
+    assert.ok(action, `${tool} is not an action`);
+    assert.match(action.split('\n    - key:')[0], /actionVerb: GET\n/, `${tool} is not a read action`);
+  }
+});
