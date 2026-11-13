@@ -5,6 +5,9 @@ import { canonical, sha256 } from './audit.js';
 import { HUMAN_DOMAINS } from './arbitration.js';
 import { numbersIn } from './lint.js';
 
+// Version of the guards below. 2 (13 Nov): exact-match ids and numbers in risks. The bake-off
+// records it; lead rows scored under another version are re-run, not compared.
+export const GUARD_VERSION = 2;
 export const OPINION_PROMPT_VERSION = 'lead-opinion/1';
 export const MIN_CONFIDENCE = 0.7;
 export const MAX_REASONS = 5;
@@ -79,6 +82,15 @@ export function validateOpinion(raw) {
   };
 }
 
+// Identifiers that must match exactly: commit shas (7 to 40 hex with a digit and a letter), PR
+// references, evidence ids, AC ids and issue keys.
+export function idsIn(text) {
+  const t = String(text ?? '');
+  const shas = (t.match(/\b[0-9a-f]{7,40}\b/g) ?? []).filter((x) => /[0-9]/.test(x) && /[a-f]/.test(x));
+  const refs = t.match(/\b(PR ?#?\d+|E\d+|AC\d+|[A-Z][A-Z0-9]+-\d+)\b/g) ?? [];
+  return [...new Set([...shas, ...refs.map((r) => r.replace(/^PR ?#?/, 'PR'))])];
+}
+
 function groundedNumbers(packet) {
   const texts = [
     ...packet.evidence.flatMap((e) => [e.id, e.text]),
@@ -121,10 +133,22 @@ export function applyGuards(raw, packet, meta = {}) {
     const missing = reason.evidence.filter((id) => !evidence.has(id));
     if (missing.length) return invalid('unknown-evidence', `cites unknown evidence ${missing.join(', ')}`);
   }
+  // Guard 3b: exact match. Every commit sha, PR, evidence, AC and issue id in the reasons and
+  // risks must appear verbatim in the packet; risks get the number check too.
+  const packetText = [...packet.evidence.flatMap((e) => [e.id, e.text]), ...packet.sides.map((s) => s.id),
+    packet.ticket?.key ?? '', ...(packet.ticket?.acs ?? []).map((a) => a.acId)].join(' ');
+  for (const text of [...opinion.reasons.map((r) => r.text), ...(opinion.risks ?? [])]) {
+    const ids = idsIn(text).filter((id) => !packetText.includes(id));
+    if (ids.length) return invalid('ungrounded-id', `${ids.join(', ')} not in the evidence`);
+  }
   // Guard 3: every number in the reasons must appear in the evidence.
   const allowed = groundedNumbers(packet);
   for (const reason of opinion.reasons) {
     const bad = numbersIn(reason.text).filter((n) => !allowed.has(n));
+    if (bad.length) return invalid('ungrounded-number', `${bad.join(', ')} not in the evidence`);
+  }
+  for (const risk of opinion.risks ?? []) {
+    const bad = numbersIn(risk).filter((n) => !allowed.has(n));
     if (bad.length) return invalid('ungrounded-number', `${bad.join(', ')} not in the evidence`);
   }
   // Guard 2: hand to a human.

@@ -121,3 +121,17 @@ test('a report for another commit, or a run that is not green, is not trusted fo
   red.workflowRuns = [{ ...red.workflowRuns[0], conclusion: 'failure' }];
   assert.notEqual(ready(red).result, 'supported');
 });
+
+import { applyGuards, idsIn } from '../src/opinion.js';
+
+test('ids in an opinion must match the evidence exactly', () => {
+  assert.deepEqual(idsIn('PR #7 at b941c25 fixes AC1 of BANK-4 (E2)').sort(), ['AC1', 'BANK-4', 'E2', 'PR7', 'b941c25'].sort());
+  const packet = { ticket: { key: 'BANK-32', domain: null, acs: [{ acId: 'AC1' }] }, withinNoise: false,
+    sides: [{ id: 'PR5', gatesPassed: true }, { id: 'PR7', gatesPassed: true }],
+    evidence: [{ id: 'E1', kind: 'diff', text: 'PR7 head b941c25: 12 changed lines' }] };
+  const op = (text, risks = []) => ({ decision: 'PR7', reasons: [{ text, evidence: ['E1'] }], confidence: 0.8, risks });
+  assert.equal(applyGuards(op('PR7 at b941c25 changes 12 lines (E1).'), packet).outcome, 'opinion');
+  assert.equal(applyGuards(op('PR7 at b941c26 changes 12 lines.'), packet).guard, 'ungrounded-id');
+  assert.equal(applyGuards(op('PR9 is smaller.'), packet).guard, 'ungrounded-id');
+  assert.equal(applyGuards(op('PR7 is smaller (E1).', ['PR7 adds 40 lines.']), packet).guard, 'ungrounded-number');
+});

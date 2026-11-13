@@ -13,7 +13,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nextEvent } from '../src/audit.js';
-import { OPINION_PROMPT_VERSION } from '../src/opinion.js';
+import { GUARD_VERSION, OPINION_PROMPT_VERSION } from '../src/opinion.js';
 import { candidates, chatSettings, loadConfig } from './models.js';
 import { chat, digest, loaded, parseJson, unload } from './ollama.js';
 import { DISPUTES, runLead } from './tasks/lead.js';
@@ -115,7 +115,7 @@ export async function main(argv = process.argv.slice(2)) {
       log(`skip ${model}: not installed`);
       continue;
     }
-    record('model_start', { model, digest: modelDigest, harness: harnessCommit(), config: config.hash, repeats });
+    record('model_start', { model, digest: modelDigest, harness: harnessCommit(), config: config.hash, repeats, guardVersion: GUARD_VERSION });
     let peakVram = 0;
     for (const repeat of repeats) for (const roleName of roles) {
       const role = ROLES[roleName];
@@ -138,7 +138,7 @@ export async function main(argv = process.argv.slice(2)) {
           result = { task: role.id(task), failed: String(error.message ?? error), score: 0 };
         }
         const row = {
-          run, model, digest: modelDigest, role: roleName, taskSet: task.set ?? 1, repeat, seed: settings.seed, temperature: settings.temperature, ...result,
+          run, model, digest: modelDigest, role: roleName, taskSet: task.set ?? 1, guardVersion: roleName === 'lead' ? GUARD_VERSION : undefined, repeat, seed: settings.seed, temperature: settings.temperature, ...result,
           wallS: (Date.now() - started) / 1000,
           calls: calls.length,
           validJsonRate: calls.length ? calls.filter((c) => c.validJson).length / calls.length : 0,
