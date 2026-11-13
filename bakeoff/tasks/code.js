@@ -35,11 +35,11 @@ export const BUGS = [
 ];
 
 export const DS_TASKS = [
-  { id: 'K7-leak', scenario: 'S40', ref: 'origin/feat/fraud-model-kit', extras: ['fraud'], seed: 'k7_feature_leak',
+  { id: 'K7-leak', scenario: 'S40', ref: 'origin/main', extras: ['fraud'], seed: 'k7_feature_leak',
     files: ['src/fraud/data.py', 'src/fraud/features.py'], rootFile: 'src/fraud/data.py',
     tests: ['tests/test_fraud_features.py'], check: (m) => m.auc < 0.95 && m.pr_auc >= 0.25,
     ticket: 'Theo added chargeback history to the fraud score. Holdout AUC jumped from 0.89 to 0.98 and PR-AUC from 0.39 to 0.63. Find out why and fix it; features may use only data from before the transaction.' },
-  { id: 'K7-weak', scenario: 'S17', ref: 'origin/feat/fraud-model-kit', extras: ['fraud'], seed: 'k7_weak_model',
+  { id: 'K7-weak', scenario: 'S17', ref: 'origin/main', extras: ['fraud'], seed: 'k7_weak_model',
     files: ['src/fraud/features.py', 'src/fraud/model.py'], rootFile: 'src/fraud/features.py',
     tests: ['tests/test_fraud_model.py'], check: (m) => m.pr_auc >= 0.25,
     ticket: 'Fraud model v3 has holdout PR-AUC 0.08; v2 had 0.39. The gate needs PR-AUC at least 0.25. Find the cause and fix it without changing the gate.' },
