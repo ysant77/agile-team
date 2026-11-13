@@ -5,7 +5,7 @@ export async function collectJira(issueKey) {
   const response = await api
     .asApp()
     .requestJira(
-      route`/rest/api/3/issue/${issueKey}?fields=issuetype,status,subtasks,issuelinks&properties=aat.ticket`,
+      route`/rest/api/3/issue/${issueKey}?fields=issuetype,status,subtasks,issuelinks,labels&properties=aat.ticket`,
     );
   if (!response.ok) throw new Error(`Jira issue ${issueKey}: HTTP ${response.status}`);
   const issue = await response.json();
@@ -22,6 +22,7 @@ export async function collectJira(issueKey) {
   return {
     key: issue.key,
     type: issue.fields?.issuetype?.name,
+    labels: issue.fields?.labels ?? [],
     status: issue.fields?.status?.name,
     subtasks: (issue.fields?.subtasks ?? []).map((s) => ({
       key: s.key,

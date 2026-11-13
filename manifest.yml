@@ -258,6 +258,13 @@ modules:
       render: native
       title: Agile team verifier
       icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+  jira:globalPage:
+    - key: aat-monitor
+      resource: monitor
+      resolver:
+        function: panelResolver
+      render: native
+      title: Agile team monitor
   consumer:
     - key: verify-consumer
       queue: verify-queue
@@ -285,6 +292,8 @@ modules:
 resources:
   - key: panel
     path: src/frontend/panel.jsx
+  - key: monitor
+    path: src/frontend/monitor.jsx
 permissions:
   scopes:
     - read:jira-work

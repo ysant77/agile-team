@@ -5,6 +5,7 @@ import { appendAudit } from './audit-store.js';
 import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment } from './jira.js';
 import { addVerdictProperty, collectJira } from './jira-evidence.js';
+import { parseTwin } from './monitor.js';
 import { verify } from './verifier/verdict.js';
 
 export const VERIFY_CONFIG = {
@@ -57,7 +58,13 @@ export async function verifyClaim({ issueKey, claim }) {
     // Without GitHub access a missing PR is not evidence of absence.
     verdict = { ...verdict, result: 'cannot_verify', reason: `code host not reachable${githubError ? `: ${githubError}` : ''}` };
   }
-  const record = { claimId: claim.id, type: claim.type, result: verdict.result, reason: verdict.reason, checker: verdict.checkerVersion, at: new Date().toISOString(), headSha: github.pr?.headSha ?? null };
+  // Twin and origin come from the PR body the scenario generator writes; the skill is the
+  // ticket's first label. They feed the monitor's assignment posterior, never the verdict.
+  const { twin, origin } = parseTwin(github.pr?.body);
+  const record = {
+    claimId: claim.id, type: claim.type, result: verdict.result, reason: verdict.reason, checker: verdict.checkerVersion,
+    at: new Date().toISOString(), headSha: github.pr?.headSha ?? null, twin, origin, skill: ticket.labels?.[0] ?? null,
+  };
   await addVerdictProperty(issueKey, record);
   const audit = await appendAudit({ actor: 'team-lead-verifier', event: 'verdict', data: { issueKey, ...record } });
   await addComment(issueKey, formatVerdict(issueKey, claim, verdict, { prUrl: github.pr?.url, githubConfigured: Boolean(repo) }) + `\nAudit seq ${audit.seq}, hash ${audit.hash.slice(0, 12)}.`);
