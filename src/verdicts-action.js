@@ -36,6 +36,10 @@ export function summarise(issueKey, { verdicts, kase, head }, limit) {
       opinionAllowed: Boolean(kase.opinionAllowed),
       opinions: (kase.opinions ?? []).map((o) => ({ outcome: o.outcome, guard: o.guard ?? null, at: o.at ?? null })),
       finalDecision: 'human',
+      humanDecision: (() => {
+        const d = (kase.decisions ?? []).at(-1);
+        return d ? { side: d.side, agreesWithCode: d.agreesWithCode, agreesWithOpinion: d.agreesWithOpinion, at: d.at } : null;
+      })(),
     }
     : null;
   return {

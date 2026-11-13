@@ -29,6 +29,7 @@ test('summary lists the newest verdict first and never returns the case packet o
   assert.equal(s.verdicts[0].result, 'supported');
   assert.equal(s.total, 2);
   assert.equal(s.arbitration.finalDecision, 'human');
+  assert.equal(s.arbitration.humanDecision, null);
   assert.deepEqual(s.audit, { seq: 9, hash: 'h' });
   const text = JSON.stringify(s);
   assert.ok(!text.includes('secret evidence text'));
