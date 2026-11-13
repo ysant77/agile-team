@@ -75,6 +75,7 @@ test('a metric gate is not trusted when the PR changes how the metric is measure
     reportAuthor: 'github-actions[bot]',
     workflowRuns: [{ name: 'CI', headSha: sha, status: 'completed', conclusion: 'success', createdAt: '2026-11-20T00:00:00Z' }],
     prFiles,
+    prPatches: Object.fromEntries((prFiles ?? []).filter((f) => f.endsWith('.py')).map((f) => [f, '@@ -0,0 +1,2 @@\n+def test_new():\n+    assert 1 + 1 == 2'])),
     config: { requiredWorkflows: ['CI'], guardedPaths: ['src/fraud/evaluate.py', 'src/bank/testing/'] },
   });
   assert.equal(verify({ id: 'c', type: 'ready' }, ctx(['tests/test_bank17_gate.py'])).result, 'supported');

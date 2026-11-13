@@ -111,5 +111,8 @@ export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
   };
   const pr = await get(`/repos/${repo}/pulls/${prNumber}`);
   const files = await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100`);
-  return { diffLines: (pr.additions ?? 0) + (pr.deletions ?? 0), files: files.map((f) => f.filename) };
+  // Patches of Python files, so a metric gate can see added lines that could tamper with a
+  // measurement. GitHub leaves out the patch of a very large file; that is kept as null.
+  const patches = Object.fromEntries(files.filter((f) => f.filename.endsWith('.py')).map((f) => [f.filename, f.patch ?? null]));
+  return { diffLines: (pr.additions ?? 0) + (pr.deletions ?? 0), files: files.map((f) => f.filename), patches };
 }

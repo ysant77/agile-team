@@ -6,7 +6,7 @@ import { VERIFY_CONFIG } from '../src/verify-claim.js';
 
 const sha = 'b'.repeat(40);
 const BENCH = [{ id: 'tests/test_bench.py::test_transfer_throughput', outcome: 'passed' }];
-const ctx = ({ prFiles = ['tests/test_bank17_gate.py'], metrics = { pr_auc: 0.39, auc: 0.89 }, checks, config = VERIFY_CONFIG, workflowFiles, tests = BENCH } = {}) => ({
+const ctx = ({ prFiles = ['tests/test_bank17_gate.py'], metrics = { pr_auc: 0.39, auc: 0.89 }, checks, config = VERIFY_CONFIG, workflowFiles, tests = BENCH, patches } = {}) => ({
   ticket: { key: 'BANK-17', type: 'Story', acceptanceCriteria: (checks ?? [['metric_at_least', 'pr_auc', 0.25]]).map(([type, ...args], i) => ({ acId: `AC${i + 1}`, check: { type, args } })) },
   pr: { number: 9, title: 'BANK-17: ship fraud model v3', state: 'open', headSha: sha },
   report: { schema: 'aat-ci-report/1', head_sha: sha, tests, metrics, ...(workflowFiles ? { workflow_files: workflowFiles } : {}) },
@@ -14,6 +14,7 @@ const ctx = ({ prFiles = ['tests/test_bank17_gate.py'], metrics = { pr_auc: 0.39
   workflowRuns: [{ name: 'CI', headSha: sha, status: 'completed', conclusion: 'success', createdAt: '2026-11-20T00:00:00Z' }],
   baseWorkflowFiles: workflowFiles ? { '.github/workflows/ci.yml': 'base' } : null,
   prFiles,
+  prPatches: patches ?? Object.fromEntries((prFiles ?? []).filter((f) => f.endsWith('.py')).map((f) => [f, '@@ -0,0 +1,2 @@\n+def test_new():\n+    assert 1 + 1 == 2'])),
   config,
 });
 const ready = (c) => verify({ id: 'c', type: 'ready' }, c);
@@ -85,4 +86,38 @@ test('a registered benchmark needs its form, run count, passed test and untouche
   assert.match(reason(ctx({ checks, prFiles: ['src/bank/ledger.py'], metrics: { transfers_per_s: { ...ok.transfers_per_s, runs: 5 } } })).reason, /5 runs; 20 are registered/);
   assert.match(reason(ctx({ checks, prFiles: ['src/bank/ledger.py', '.github/workflows/ci.yml'], metrics: ok })).reason, /workflows/);
   assert.match(reason(ctx({ checks, prFiles: ['src/bank/ledger.py'], metrics: ok, tests: [] })).reason, /missing in the report/);
+});
+
+test('each known way to fake a metric in a green run goes to a human', () => {
+  const checks = [['metric_at_least', 'transfers_per_s', 400]];
+  const ok = { transfers_per_s: { median: 412.5, iqr_low: 401, iqr_high: 420, runs: 20 } };
+  const part = (c) => ready(ctx({ checks, metrics: ok, ...c })).checks.find((k) => k.name === 'ac_mapped').parts[0];
+  const add = (file, line) => ({ prFiles: ['src/bank/ledger.py', file], patches: { 'src/bank/ledger.py': '+x = 1', [file]: `@@ -0,0 +1 @@\n+${line}` } });
+  // baseline: a clean fix is judged on its number
+  assert.equal(part({ prFiles: ['src/bank/ledger.py'], patches: { 'src/bank/ledger.py': '+x = 1' } }).status, 'pass');
+  const cases = [
+    ['a red run (a failed test)', { prFiles: ['src/bank/ledger.py'], tests: [...BENCH, { id: 'tests/test_x.py::test_y', outcome: 'failed' }] }, /failed in the report run/],
+    ['a conftest anywhere (stash, metrics.pop, sessionfinish hook)', { prFiles: ['src/bank/ledger.py', 'tests/sub/conftest.py'] }, /conftest\.py/],
+    ['a test that writes the metric', add('tests/test_more.py', 'record_samples("transfers_per_s", [99999.0] * 20)'), /names transfers_per_s/],
+    ['a sessionfinish hook in a test module', add('tests/test_more.py', 'def pytest_sessionfinish(session):'), /touches how metrics/],
+    ['a patched clock', add('tests/test_more.py', 'time.perf_counter = lambda: 0.0'), /touches how metrics/],
+    ['an xfail on the benchmark', { prFiles: ['src/bank/ledger.py'], tests: [{ id: BENCH[0].id, outcome: 'skipped' }] }, /skipped in the report/],
+    ['a deselected benchmark', { prFiles: ['src/bank/ledger.py'], tests: [] }, /missing in the report/],
+    ['a test diff GitHub did not return', { prFiles: ['src/bank/ledger.py', 'tests/test_big.py'], patches: { 'tests/test_big.py': null } }, /not available/],
+  ];
+  for (const [what, c, reason] of cases) {
+    const p = part(c);
+    assert.equal(p.status, 'unknown', what);
+    assert.match(p.reason, reason, what);
+  }
+});
+
+test('a report for another commit, or a run that is not green, is not trusted for a metric', () => {
+  const checks = [['metric_at_least', 'pr_auc', 0.25]];
+  const old = ctx({ checks, prFiles: ['src/fraud/data.py'] });
+  old.report = { ...old.report, head_sha: 'c'.repeat(40) };
+  assert.equal(ready(old).result, 'cannot_verify');
+  const red = ctx({ checks, prFiles: ['src/fraud/data.py'] });
+  red.workflowRuns = [{ ...red.workflowRuns[0], conclusion: 'failure' }];
+  assert.notEqual(ready(red).result, 'supported');
 });

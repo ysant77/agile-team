@@ -54,6 +54,7 @@ export async function verifyClaim({ issueKey, claim }) {
       if (github.pr) {
         const stats = await collectPrStats({ repo, prNumber: github.pr.number, token: process.env.GITHUB_TOKEN, fetchFn: fetch });
         github.prFiles = stats.files;
+        github.prPatches = stats.patches;
       }
     } catch (error) {
       githubError = error.message;

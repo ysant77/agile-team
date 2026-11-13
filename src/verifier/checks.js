@@ -83,10 +83,40 @@ export function bugTestExists(ctx) {
   return result('bug_test_exists', 'pass', `${tests.length} test(s) for ${ctx.ticket.key} passed`);
 }
 
+// Words in an added test line that can change a recorded metric without naming it.
+const TAMPER = /perf_counter|monotonic|time\.time|\bstash\b|pytest_sessionfinish|pytest_runtest|record_metric|record_samples|ci_report|COLLECTOR|\.metrics\b|xfail|deselect/;
+
+export function metricIntegrity(ctx, name) {
+  const failed = (ctx.report.tests ?? []).filter((t) => t.outcome === 'failed' || t.outcome === 'error');
+  if (failed.length) return `${failed.length} test(s) failed in the report run, so its metrics are not trusted`;
+  if (Array.isArray(ctx.workflowRuns) && ctx.workflowRuns.length && ciGreen(ctx).status !== 'pass') {
+    return 'the CI run for the head is not green';
+  }
+  const files = ctx.prFiles ?? [];
+  const conftest = files.filter((f) => f.split('/').pop() === 'conftest.py');
+  if (conftest.length) return `PR changes ${conftest.join(', ')}, which can change any test or metric`;
+  const benchFile = (ctx.config?.benchmarks?.[name]?.test ?? '').split('::')[0];
+  const quoted = new RegExp(`["']${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`);
+  for (const file of files.filter((f) => f.startsWith('tests/') && f.endsWith('.py') && f !== benchFile)) {
+    const patch = ctx.prPatches?.[file];
+    if (patch === undefined || patch === null) return `the diff of ${file} is not available`;
+    const added = patch.split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++'));
+    const hit = added.find((l) => quoted.test(l) || TAMPER.test(l));
+    if (hit) return `${file} adds a line that names ${name} or touches how metrics are measured: ${hit.slice(1).trim().slice(0, 80)}`;
+  }
+  return null;
+}
+
 export function metricCompare(ctx, name, bound, direction) {
   const label = `metric_${direction === 'min' ? 'at_least' : 'at_most'}(${name}, ${bound})`;
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
+  // A metric is written by the code under test, so the plugin's write-once rule is no trust
+  // boundary (the stash, a sessionfinish hook, an xfail or a patched clock can all change it).
+  // The gate needs a green run with no failed test, no conftest.py in the diff, and no added
+  // test line that names the metric or touches how it is measured; otherwise a human reviews.
+  const integrity = metricIntegrity(ctx, name);
+  if (integrity) return result(label, 'unknown', `${integrity}: human review`);
   // A repeated benchmark reports {median, iqr_low, iqr_high, runs}; the gate uses the median.
   const raw = ctx.report.metrics?.[name];
   const value = typeof raw === 'number' ? raw : typeof raw?.median === 'number' ? raw.median : undefined;
