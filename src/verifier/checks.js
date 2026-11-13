@@ -102,6 +102,23 @@ export function metricCompare(ctx, name, bound, direction) {
       return result(label, 'unknown', `PR changes ${touched.join(', ')}, which can change how ${name} is measured: human review`);
     }
   }
+  const bench = ctx.config?.benchmarks?.[name];
+  if (bench) {
+    if (typeof raw !== 'object' || raw === null) {
+      return result(label, 'unknown', `${name} is a registered benchmark but was reported as one number, not as repeated runs: human review`);
+    }
+    if (raw.runs !== bench.runs) {
+      return result(label, 'unknown', `${name} has ${raw.runs ?? 'no'} runs; ${bench.runs} are registered: human review`);
+    }
+    const touched = (ctx.prFiles ?? []).filter((f) => (ctx.config.benchmarkGuardedPaths ?? []).some((g) => (g.endsWith('/') ? f.startsWith(g) : f === g)));
+    if (touched.length) {
+      return result(label, 'unknown', `PR changes ${touched.join(', ')}, which can change how ${name} is measured: human review`);
+    }
+    const run = (ctx.report.tests ?? []).find((t) => t.id === bench.test);
+    if (!run || run.outcome !== 'passed') {
+      return result(label, 'unknown', `benchmark test ${bench.test} is ${run ? run.outcome : 'missing'} in the report: human review`);
+    }
+  }
   // Drift metrics compare two datasets; equal data hashes make the number meaningless.
   const hashes = ctx.report.data_hashes;
   if (/^psi/i.test(name) && hashes?.train && hashes.train === hashes.live) {

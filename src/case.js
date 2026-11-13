@@ -55,7 +55,15 @@ export function buildPacket({ issueKey, ticket, domain, question, metric, higher
   const sides = evidence.map((e) => buildSide(e, metric));
   // The metric step needs the metric from every side that passes the gates; otherwise skip it.
   const measured = sides.filter((s) => s.gatesPassed).every((s) => s.metrics);
-  const pre = metric && measured ? { metric, higherIsBetter: higherIsBetter !== false, margin: 0.1 } : null;
+  // A benchmark's spread is jitter inside one CI job, not the noise between jobs: one runner can
+  // be twice as fast as another with the same code. So the metric step compares sides only when
+  // their reports come from the same job (the same job_id on every report); otherwise it is
+  // skipped and the case says it cannot compare performance across jobs.
+  const aliveReports = evidence.filter((_, i) => sides[i].gatesPassed).map((e) => e.report);
+  const jobs = aliveReports.map((r) => r?.job_id ?? null);
+  const sameJob = jobs.length > 1 && jobs.every((j) => j && j === jobs[0]);
+  const crossJob = Boolean(metric && measured && aliveReports.length > 1 && !sameJob);
+  const pre = metric && measured && !crossJob ? { metric, higherIsBetter: higherIsBetter !== false, margin: 0.1 } : null;
   const arbitration = arbitrate({ domain, preRegistered: pre }, sides);
   const items = [];
   let n = 0;
@@ -69,14 +77,19 @@ export function buildPacket({ issueKey, ticket, domain, question, metric, higher
     add('rule', `${s.id}: new dependencies: ${deps === null ? 'not compared (base or head report missing)' : deps.length ? deps.join(', ') : 'none'}; new failure modes: ${s.newFailureModes.length ? s.newFailureModes.join(', ') : 'none'}`);
     if (e.pr?.body) add('review', `${s.id} description: ${short(e.pr.body)}`);
   }
+  if (crossJob) {
+    add('rule', `${metric}: cannot compare across jobs. Each pull request was measured in its own CI job, and the spread in a report is jitter inside one job only, so no side wins on performance.`);
+  }
   const alive = sides.filter((s) => s.gatesPassed);
-  const withinNoise = Boolean(pre) && alive.length > 1 && arbitration.decidedBy !== 'code-metric';
+  // Metric numbers that cannot be compared count as inside the noise for the opinion guards.
+  const withinNoise = crossJob || (Boolean(pre) && alive.length > 1 && arbitration.decidedBy !== 'code-metric');
   const packet = {
     ticket: { key: issueKey, domain: domain || null, acs: (ticket?.acceptanceCriteria ?? []).map((a) => ({ acId: a.acId })) },
     question,
     sides: sides.map((s) => ({ id: s.id, gatesPassed: s.gatesPassed })),
     evidence: items,
     withinNoise,
+    crossJob,
   };
   const highStake = Boolean(domain && HUMAN_DOMAINS.includes(domain));
   const opinionAllowed = question !== 'winner' || arbitration.decidedBy === 'human';
@@ -87,6 +100,7 @@ export function formatCase(issueKey, c) {
   const a = c.arbitration;
   const lines = [`Arbitration case on ${issueKey} (${c.packet.question}): ${c.packet.sides.map((s) => `${s.id} ${s.gatesPassed ? 'passes' : 'fails'} the gates`).join('; ')}.`];
   lines.push(a.winner ? `Decided by code (${a.decidedBy}, ${a.rule}): ${a.winner}. ${a.reason}` : `Code does not decide (${a.rule}): ${a.reason}`);
+  if (c.packet.crossJob) lines.push('Performance: cannot compare across jobs (each pull request was measured in its own CI job); no side wins on performance.');
   if (c.highStake) lines.push(`${c.packet.ticket.domain} is decided by a human; the AI team lead may only summarise.`);
   else if (c.opinionAllowed) lines.push('The AI team lead may record an opinion. A human decides.');
   lines.push(`Evidence: ${c.packet.evidence.map((e) => `${e.id} ${e.text}`).join(' | ')}`);

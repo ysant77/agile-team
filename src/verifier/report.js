@@ -1,7 +1,9 @@
-// CI report helpers. Format: docs/ci-report.md (aat-ci-report/1).
+// CI report helpers. Format: docs/ci-report.md (aat-ci-report/1 and /2).
 
 export const REPORT_MARKER = '<!-- aat-ci-report -->';
-export const REPORT_SCHEMA = 'aat-ci-report/1';
+export const REPORT_SCHEMA = 'aat-ci-report/2';
+// Version 2 differs only in that a metric value may be {median, iqr_low, iqr_high, min, max, runs}.
+export const REPORT_SCHEMAS = ['aat-ci-report/1', 'aat-ci-report/2'];
 
 export function extractReport(commentBody) {
   if (typeof commentBody !== 'string' || !commentBody.trimStart().startsWith(REPORT_MARKER)) {
@@ -11,7 +13,7 @@ export function extractReport(commentBody) {
   if (!match) return null;
   try {
     const report = JSON.parse(match[1]);
-    return report?.schema === REPORT_SCHEMA ? report : null;
+    return REPORT_SCHEMAS.includes(report?.schema) ? report : null;
   } catch {
     return null;
   }

@@ -5,10 +5,11 @@ import { verify } from '../src/verifier/verdict.js';
 import { VERIFY_CONFIG } from '../src/verify-claim.js';
 
 const sha = 'b'.repeat(40);
-const ctx = ({ prFiles = ['tests/test_bank17_gate.py'], metrics = { pr_auc: 0.39, auc: 0.89 }, checks, config = VERIFY_CONFIG, workflowFiles } = {}) => ({
+const BENCH = [{ id: 'tests/test_bench.py::test_transfer_throughput', outcome: 'passed' }];
+const ctx = ({ prFiles = ['tests/test_bank17_gate.py'], metrics = { pr_auc: 0.39, auc: 0.89 }, checks, config = VERIFY_CONFIG, workflowFiles, tests = BENCH } = {}) => ({
   ticket: { key: 'BANK-17', type: 'Story', acceptanceCriteria: (checks ?? [['metric_at_least', 'pr_auc', 0.25]]).map(([type, ...args], i) => ({ acId: `AC${i + 1}`, check: { type, args } })) },
   pr: { number: 9, title: 'BANK-17: ship fraud model v3', state: 'open', headSha: sha },
-  report: { schema: 'aat-ci-report/1', head_sha: sha, tests: [], metrics, ...(workflowFiles ? { workflow_files: workflowFiles } : {}) },
+  report: { schema: 'aat-ci-report/1', head_sha: sha, tests, metrics, ...(workflowFiles ? { workflow_files: workflowFiles } : {}) },
   reportAuthor: 'github-actions[bot]',
   workflowRuns: [{ name: 'CI', headSha: sha, status: 'completed', conclusion: 'success', createdAt: '2026-11-20T00:00:00Z' }],
   baseWorkflowFiles: workflowFiles ? { '.github/workflows/ci.yml': 'base' } : null,
@@ -73,4 +74,15 @@ test('a repeated benchmark is gated on its median and shows the spread', () => {
   const missing = ready(ctx({ checks, prFiles, metrics: { transfers_per_s: { iqr_low: 1 } } }));
   assert.equal(missing.result, 'contradicted');
   assert.match(missing.reason, /not reported/);
+});
+
+test('a registered benchmark needs its form, run count, passed test and untouched setup', () => {
+  const checks = [['metric_at_least', 'transfers_per_s', 400]];
+  const ok = { transfers_per_s: { median: 412.5, iqr_low: 401, iqr_high: 420, runs: 20 } };
+  const reason = (c) => ready(c).checks.find((k) => k.name === 'ac_mapped').parts[0];
+  assert.equal(reason(ctx({ checks, prFiles: ['src/bank/ledger.py'], metrics: ok })).status, 'pass');
+  assert.match(reason(ctx({ checks, prFiles: ['src/bank/ledger.py'], metrics: { transfers_per_s: 412 } })).reason, /one number/);
+  assert.match(reason(ctx({ checks, prFiles: ['src/bank/ledger.py'], metrics: { transfers_per_s: { ...ok.transfers_per_s, runs: 5 } } })).reason, /5 runs; 20 are registered/);
+  assert.match(reason(ctx({ checks, prFiles: ['src/bank/ledger.py', '.github/workflows/ci.yml'], metrics: ok })).reason, /workflows/);
+  assert.match(reason(ctx({ checks, prFiles: ['src/bank/ledger.py'], metrics: ok, tests: [] })).reason, /missing in the report/);
 });
