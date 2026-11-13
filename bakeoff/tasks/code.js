@@ -12,34 +12,39 @@ ledger.create_customer(conn, name) -> id; ledger.open_account(conn, customer_id,
 (.id); ledger.deposit(conn, account_id, Money.of("100.00", "EUR")); ledger.withdraw raises
 ledger.InsufficientFunds; conftest has fixtures conn (fresh db) and at (at("2026-05-01") -> UTC datetime).`;
 
+// Pinned to the commits the first rows of run full-2026-11-12 used, so every model in the run is
+// scored on the same code (main at 20:54 SGT on 12 Nov; the fraud kit branch at that time).
+const BANK_REF = '0e75e83';
+const FRAUD_REF = '7849347';
+
 export const BUGS = [
-  { id: 'K1-race', scenario: 'S04', ref: 'origin/main', seed: 'k1_race', files: ['src/bank/ledger.py'],
+  { id: 'K1-race', scenario: 'S04', ref: BANK_REF, seed: 'k1_race', files: ['src/bank/ledger.py'],
     tests: ['tests/test_concurrency.py'], hint: `${LEDGER_HINT} Use one connection per thread.`,
     ticket: 'Support says a customer took out 150 from an account with 100 in it. When 20 threads each withdraw 80.00 at once from an account holding 100.00, at most one withdrawal succeeds and the balance never goes below 0.00.' },
-  { id: 'K1-button', scenario: 'S01', ref: 'origin/main', seed: 'k1_hidden_button', files: ['src/bank/web/app.css'],
+  { id: 'K1-button', scenario: 'S01', ref: BANK_REF, seed: 'k1_hidden_button', files: ['src/bank/web/app.css'],
     tests: ['tests/test_web.py::test_send_button_not_hidden_at_or_below_430px'],
     hint: 'The stylesheet is src/bank/web/app.css (read it as text with pathlib). The button is "#send-button" inside ".form-actions".',
     ticket: "The send money button doesn't work on phones. On a window 430 px wide or less, no CSS rule hides the transfer form's Send button (#send-button)." },
-  { id: 'S09-last-day', scenario: 'S09', ref: 'origin/main', files: ['src/bank/ledger.py'],
+  { id: 'S09-last-day', scenario: 'S09', ref: BANK_REF, files: ['src/bank/ledger.py'],
     inline: { path: 'src/bank/ledger.py', old: 'upper = (end + timedelta(days=1)).isoformat()', new: 'upper = end.isoformat()' },
     tests: ['tests/test_ledger.py::test_statement_end_date_is_inclusive'], hint: `${LEDGER_HINT} ledger.statement(conn, account_id, start_date, end_date).lines`,
     ticket: 'The statement misses the last day. A statement from 2026-05-01 to 2026-05-31 includes a deposit posted on 2026-05-31 at 23:00 UTC.' },
-  { id: 'S08-yen', scenario: 'S08', ref: 'origin/main', files: ['src/bank/money.py'],
+  { id: 'S08-yen', scenario: 'S08', ref: BANK_REF, files: ['src/bank/money.py'],
     inline: { path: 'src/bank/money.py', old: '"JPY": 0,', new: '"JPY": 2,' },
     tests: ['tests/test_money.py::test_jpy_has_no_minor_unit'], hint: 'from bank.money import Money, exponent; Money.of("5000", "JPY").minor is the amount in minor units.',
     ticket: 'Yen amounts are 100 times too large. JPY has no minor unit: 5000 JPY is stored as 5000 minor units, and "5000.5" JPY is refused.' },
-  { id: 'S13-authz', scenario: 'S13', ref: 'origin/main', files: ['src/bank/api.py'],
+  { id: 'S13-authz', scenario: 'S13', ref: BANK_REF, files: ['src/bank/api.py'],
     inline: { path: 'src/bank/api.py', old: 'if account is None or account.customer_id != customer_id:', new: 'if account is None:' },
     tests: ['tests/test_api.py::test_every_account_route_checks_the_owner'], hint: API_HINT,
     ticket: "A tester saw another customer's statement by changing the number in the URL. A logged-in customer who requests GET /api/accounts/{id}/statement for an account of another customer gets 404." },
 ];
 
 export const DS_TASKS = [
-  { id: 'K7-leak', scenario: 'S40', ref: 'origin/main', extras: ['fraud'], seed: 'k7_feature_leak',
+  { id: 'K7-leak', scenario: 'S40', ref: FRAUD_REF, extras: ['fraud'], seed: 'k7_feature_leak',
     files: ['src/fraud/data.py', 'src/fraud/features.py'], rootFile: 'src/fraud/data.py',
     tests: ['tests/test_fraud_features.py'], check: (m) => m.auc < 0.95 && m.pr_auc >= 0.25,
     ticket: 'Theo added chargeback history to the fraud score. Holdout AUC jumped from 0.89 to 0.98 and PR-AUC from 0.39 to 0.63. Find out why and fix it; features may use only data from before the transaction.' },
-  { id: 'K7-weak', scenario: 'S17', ref: 'origin/main', extras: ['fraud'], seed: 'k7_weak_model',
+  { id: 'K7-weak', scenario: 'S17', ref: FRAUD_REF, extras: ['fraud'], seed: 'k7_weak_model',
     files: ['src/fraud/features.py', 'src/fraud/model.py'], rootFile: 'src/fraud/features.py',
     tests: ['tests/test_fraud_model.py'], check: (m) => m.pr_auc >= 0.25,
     ticket: 'Fraud model v3 has holdout PR-AUC 0.08; v2 had 0.39. The gate needs PR-AUC at least 0.25. Find the cause and fix it without changing the gate.' },
