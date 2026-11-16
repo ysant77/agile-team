@@ -1,5 +1,8 @@
 // Arbitration rule (DESIGN.md section 6a). The first rule that decides wins.
 // No model chooses a winner; humans decide the listed domains and every remaining tie.
+// Only code gates and a registered metric give a winner ("verified_by_code"). The team lead
+// tie-breaks (fewer failure modes, fewer dependencies, smaller diff) cannot show that two
+// sides are equal in function, so they give a "recommendation" only and a human decides.
 
 export const HUMAN_DOMAINS = [
   'money_semantics',
@@ -16,6 +19,9 @@ export const HUMAN_DOMAINS = [
 export function arbitrate(ticket, sides) {
   if (ticket.domain && HUMAN_DOMAINS.includes(ticket.domain)) {
     return decision('human', null, 'domain', `${ticket.domain} is decided by a human`, sides);
+  }
+  if (ticket.metricConflict?.length) {
+    return decision('human', null, 'metric', `the ticket registers ${ticket.metricConflict.join(', ')} in both directions (at least and at most)`, sides);
   }
   if (!ticket.preRegistered?.metric && ticket.metricDisputed) {
     return decision('human', null, 'metric', 'the ticket registers more than one metric, so code cannot pick the deciding one', sides);
@@ -66,8 +72,9 @@ export function arbitrate(ticket, sides) {
     }
   }
 
-  // 3. Team lead tie-breaks in fixed order. A value nobody measured is not "none": any unknown
-  // input of a rule sends the case to a human (unit 2 review, item 3).
+  // 3. Team lead tie-breaks in fixed order. They recommend; they never decide (outside review,
+  // B4). A value nobody measured is not "none": any unknown input of a rule sends the case to a
+  // human with no recommendation (unit 2 review, item 3).
   const unknown = (field, label) => alive.filter((s) => s[field] === null || s[field] === undefined)
     .map((s) => `${s.id}: ${label} not known`);
   for (const [field, label] of [['newFailureModes', 'new failure modes'], ['newDependencies', 'new dependencies'], ['diffLines', 'diff size']]) {
@@ -76,15 +83,15 @@ export function arbitrate(ticket, sides) {
   }
   const byFailureModes = minBy(alive, (s) => (s.newFailureModes ?? []).length);
   if (byFailureModes.length === 1) {
-    return decision('lead-rule', byFailureModes[0].id, 'fewer new failure modes', describe(alive, 'newFailureModes'), sides);
+    return recommend(byFailureModes[0].id, 'fewer new failure modes', describe(alive, 'newFailureModes'), sides);
   }
   const byDeps = minBy(byFailureModes, (s) => (s.newDependencies ?? []).length);
   if (byDeps.length === 1) {
-    return decision('lead-rule', byDeps[0].id, 'no new dependency', describe(byFailureModes, 'newDependencies'), sides);
+    return recommend(byDeps[0].id, 'no new dependency', describe(byFailureModes, 'newDependencies'), sides);
   }
   const byDiff = minBy(byDeps, (s) => s.diffLines);
   if (byDiff.length === 1) {
-    return decision('lead-rule', byDiff[0].id, 'smaller diff', `${byDiff[0].id} changes ${byDiff[0].diffLines} lines`, sides);
+    return recommend(byDiff[0].id, 'smaller diff', `${byDiff[0].id} changes ${byDiff[0].diffLines} lines`, sides);
   }
 
   // 4. Human.
@@ -100,12 +107,20 @@ function describe(items, field) {
   return items.map((s) => `${s.id}: ${(s[field] ?? []).join(', ') || 'none'}`).join('; ');
 }
 
-function decision(decidedBy, winner, rule, reason, sides) {
+// basis: verified_by_code (a gate or the registered metric chose the winner), recommendation
+// (a lead rule points to a side, a human decides), human_decision (nothing points to a side).
+function decision(decidedBy, winner, rule, reason, sides, recommendation = null) {
   return {
     decidedBy,
     winner,
+    basis: winner ? 'verified_by_code' : recommendation ? 'recommendation' : 'human_decision',
+    recommendation,
     rule,
     reason,
     sides: sides.map((s) => ({ id: s.id, outcome: winner === null ? 'pending' : s.id === winner ? 'won' : 'arbitrated_out' })),
   };
+}
+
+function recommend(id, rule, reason, sides) {
+  return decision('human', null, rule, reason, sides, { id, rule, reason });
 }

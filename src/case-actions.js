@@ -66,11 +66,13 @@ export async function openCase(payload) {
   // Opening a case again keeps the earlier case and its opinions as history (item 10).
   const previous = await kvs.get(caseKey(input.issueKey));
   const history = previous ? [...(previous.history ?? []), { arbitration: previous.arbitration, opinions: previous.opinions, openedAt: previous.openedAt }].slice(-5) : [];
-  const stored = { ...built, prNumbers: input.prNumbers, openedAt: new Date().toISOString(), opinions: [], history };
+  // humanDecision stays null until a person records the choice; no code path fills it.
+  const stored = { ...built, prNumbers: input.prNumbers, openedAt: new Date().toISOString(), opinions: [], humanDecision: null, history };
   await kvs.set(caseKey(input.issueKey), stored);
   const audit = await appendAudit({ actor: 'arbitration', event: 'case_opened', data: {
     issueKey: input.issueKey, prNumbers: input.prNumbers, decidedBy: built.arbitration.decidedBy,
-    winner: built.arbitration.winner, rule: built.arbitration.rule } });
+    winner: built.arbitration.winner, basis: built.arbitration.basis,
+    recommended: built.arbitration.recommendation?.id ?? null, rule: built.arbitration.rule } });
   await addComment(input.issueKey, `${formatCase(input.issueKey, stored)}\nAudit seq ${audit.seq}.`);
   return { ok: true, arbitration: built.arbitration, opinionAllowed: built.opinionAllowed, highStake: built.highStake, packet: built.packet };
 }

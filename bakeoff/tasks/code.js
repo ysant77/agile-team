@@ -80,8 +80,12 @@ function fraudMetrics(dir) {
 
 // Edits to files outside the bug's list (conftest.py, pyproject.toml, tests) are refused before
 // anything runs, so model code never changes how the tests run (unit 2 review, item 6).
+// A reply whose edits value is not a list, or an edit with no text path, is refused the same way.
 export function editsOutside(bug, edits) {
-  return [...new Set((edits ?? []).map((e) => e.path).filter((p) => !bug.files.includes(p)))];
+  if (edits === undefined || edits === null) return [];
+  if (!Array.isArray(edits)) return ['(edits is not a list)'];
+  const paths = edits.map((e) => (typeof e?.path === 'string' ? e.path : '(edit without a path)'));
+  return [...new Set(paths.filter((p) => !bug.files.includes(p)))];
 }
 
 async function fixTask(ask, bug, role) {

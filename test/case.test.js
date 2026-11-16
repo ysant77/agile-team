@@ -10,11 +10,12 @@ const side = (prNumber, result, diffLines, extra = {}) => ({
 });
 const base = { issueKey: 'BANK-32', ticket: { acceptanceCriteria: [{ acId: 'AC1' }] }, domain: null, question: 'winner', metric: null };
 
-test('code decides by the smaller diff, so no opinion is needed', () => {
+test('the smaller diff only recommends a side, so a human decides and an opinion is allowed', () => {
   const c = buildPacket({ ...base, evidence: [side(5, 'supported', 12), side(7, 'supported', 140)] });
-  assert.equal(c.arbitration.winner, 'PR5');
+  assert.equal(c.arbitration.winner, null);
+  assert.equal(c.arbitration.recommendation.id, 'PR5');
   assert.equal(c.arbitration.rule, 'smaller diff');
-  assert.equal(c.opinionAllowed, false);
+  assert.equal(c.opinionAllowed, true);
 });
 
 test('a failed gate decides; the packet marks the side', () => {
