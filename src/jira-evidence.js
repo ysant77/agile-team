@@ -12,7 +12,7 @@ function plainValue(v) {
 // Ticket data for the verifier, read as the app. requestJira is injected in tests.
 export async function collectJira(issueKey, requestJira = asApp) {
   const response = await requestJira(
-    route`/rest/api/3/issue/${issueKey}?fields=issuetype,status,subtasks,issuelinks,labels&properties=aat.ticket`,
+    route`/rest/api/3/issue/${issueKey}?fields=issuetype,status,subtasks,issuelinks,labels&properties=aat.ticket,aat.signoff`,
   );
   if (!response.ok) throw new Error(`Jira issue ${issueKey}: HTTP ${response.status}`);
   const issue = await response.json();
@@ -51,6 +51,8 @@ export async function collectJira(issueKey, requestJira = asApp) {
     acceptanceCriteria: spec.acceptanceCriteria ?? [],
     preRegistered: spec.preRegistered,
     domain: spec.domain,
+    // A person's sign-off of the merged change, for high-stake domains (aat.signoff).
+    signoff: issue.properties?.['aat.signoff'] ?? null,
     approvedTestRemovals: spec.approvedTestRemovals ?? [],
   };
 }

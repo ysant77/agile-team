@@ -52,3 +52,19 @@ test('every invalid case of set 1 is in the regression net or a named fix or lim
   for (const id of invalid) assert.ok(id in KEEP || fixOrLimit.includes(id), id);
   assert.equal(readdirSync(DIR).filter((f) => f.endsWith('.json')).length >= 39, true);
 });
+
+// (a1) A high-stake domain (DESIGN 6a) needs a person's sign-off on the merged change before
+// "done" is supported. Code alone never supports it.
+test('B27: a money_semantics ticket is not done without a recorded sign-off of the merged commit', async () => {
+  const v = await run('B27');
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /money_semantics.*sign-off/);
+});
+
+test('B27: a sign-off of the merged commit by a person lets the evidence decide again', async () => {
+  const { checkHumanSignoff } = await import('../src/verifier/checks.js');
+  const ctx = { ticket: { key: 'BENCH-27', domain: 'money_semantics', signoff: { by: 'acc-1', sha: 'abc', at: '2026-11-16T12:00:00Z' } }, pr: { merged: true, mergeSha: 'abc', headSha: 'def' } };
+  assert.equal(checkHumanSignoff(ctx).status, 'pass');
+  assert.equal(checkHumanSignoff({ ...ctx, ticket: { ...ctx.ticket, signoff: { ...ctx.ticket.signoff, sha: 'old' } } }).status, 'unknown');
+  assert.equal(checkHumanSignoff({ ...ctx, ticket: { key: 'X', domain: null } }), null);
+});

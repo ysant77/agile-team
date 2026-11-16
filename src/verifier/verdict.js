@@ -95,6 +95,8 @@ export const CLAIM_CHECKS = {
   done: (ctx) => {
     const checks = [c.subtasksDone(ctx), c.blockedByDone(ctx), acMapped(ctx)];
     if (c.hasCodeWork(ctx)) checks.push(c.onMain(ctx), c.mergedClean(ctx), c.reproduced(ctx), c.coverageOk(ctx), ...c.securityCheck(ctx, 'done'));
+    const signoff = c.checkHumanSignoff(ctx);
+    if (signoff) checks.push(signoff);
     return [...checks, evidenceComplete({ id: ctx.claimId, type: 'done' }, ctx, checks)];
   },
   deployed: (ctx) => [c.deployed(ctx, ctx.claimArgs?.tag)],

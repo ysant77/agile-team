@@ -436,6 +436,20 @@ function reproBlockGap(repro, headSha) {
   return null;
 }
 
+// High-stake domains (DESIGN 6a): money rules, security exceptions, data repair, model risk,
+// fairness, product behaviour. "done" needs a person's sign-off of the merged commit; code alone
+// never supports it (benchmark B27). Returns null when the ticket has no such domain.
+const SIGNOFF_DOMAINS = ['money_semantics', 'security_exception', 'data_repair', 'model_risk', 'fairness', 'product_behaviour'];
+export function checkHumanSignoff(ctx) {
+  const domain = ctx.ticket?.domain;
+  if (!domain || !SIGNOFF_DOMAINS.includes(domain)) return null;
+  const s = ctx.ticket.signoff;
+  const sha = ctx.pr?.mergeSha ?? ctx.pr?.headSha ?? null;
+  if (!s?.by) return result('human_signoff', 'unknown', `${domain}: a person's sign-off of the merged change is required, and none is recorded`);
+  if (!sha || s.sha !== sha) return result('human_signoff', 'unknown', `${domain}: the sign-off is for ${String(s.sha ?? 'no commit').slice(0, 7)}, not the merged commit ${String(sha ?? 'unknown').slice(0, 7)}`);
+  return result('human_signoff', 'pass', `${domain}: signed off by ${s.by} at ${s.at}`);
+}
+
 // D-repro: each ticket test fails on base by an assertion and passes on head; the full head suite
 // passes; no test is removed.
 export function reproduced(ctx) {
