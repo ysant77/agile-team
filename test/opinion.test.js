@@ -90,3 +90,30 @@ test('a metric-only reason inside the noise goes to a human', () => {
 test('the model may ask for a human itself', () => {
   assert.equal(applyGuards(opinion({ decision: 'human' }), packet()).outcome, 'human');
 });
+
+test('F7: a sign is part of a number; -12 is not grounded by 12', () => {
+  const r = applyGuards(opinion({ reasons: [{ text: 'A changes -12 lines against B', evidence: ['E2'] }] }), packet());
+  assert.equal(r.guard, 'ungrounded-number');
+  // A hyphen inside a date or an id is not a sign.
+  const dated = packet({ evidence: [{ id: 'E2', kind: 'diff', text: 'A changes 12 lines on 2026-11-16' }] });
+  assert.equal(applyGuards(opinion({ reasons: [{ text: 'A changes 12 lines on 2026-11-16', evidence: ['E2'] }] }), dated).outcome, 'opinion');
+});
+
+test('F7: numbers from text the PR author wrote do not ground an opinion', () => {
+  const p = packet({ evidence: [...packet().evidence, { id: 'E3', kind: 'pr_text', text: 'A is 90 percent faster' }] });
+  const r = applyGuards(opinion({ reasons: [{ text: 'A is 90 percent faster', evidence: ['E3'] }] }), p);
+  assert.equal(r.guard, 'ungrounded-number');
+});
+
+test('F7: a commit id without digits is still an id that must be in the evidence', () => {
+  const r = applyGuards(opinion({ risks: ['B reverts commit deadbeef from the base.'] }), packet());
+  assert.equal(r.guard, 'ungrounded-id');
+});
+
+test('F7: the PR description reaches the packet as author-written text', async () => {
+  const { buildPacket } = await import('../src/case.js');
+  const side = (n) => ({ prNumber: n, verdict: { result: 'supported', reason: 'ok' }, diffLines: 10, files: ['a.py'], pr: { body: `PR${n} is 90 percent faster` }, report: { metrics: {} } });
+  const built = buildPacket({ issueKey: 'BANK-32', ticket: { acceptanceCriteria: [] }, domain: null, question: 'design', metric: null, evidence: [side(5), side(7)] });
+  const body = built.packet.evidence.find((e) => e.text.includes('90 percent'));
+  assert.equal(body.kind, 'pr_text');
+});

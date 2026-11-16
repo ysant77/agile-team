@@ -16,7 +16,7 @@
           { "id": "tests/test_authz.py::test_BANK13_owner_200", "outcome": "passed" },
           { "id": "tests/test_authz.py::test_BANK13_all_account_routes_check_owner[/accounts/{id}/statement]", "outcome": "passed" },
           { "id": "tests/test_authz.py::test_BANK13_all_account_routes_check_owner[/accounts/{id}/transfers]", "outcome": "failed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "5c304f32a2fad13788f356f88fda6eead2a01d6d", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-30T05:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "5c304f32a2fad13788f356f88fda6eead2a01d6d", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-30T05:00:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK13_all_account_routes_check_owner: failed"] }
     },
@@ -34,7 +34,7 @@
           { "id": "tests/test_authz.py::test_BANK13_owner_200", "outcome": "passed" },
           { "id": "tests/test_authz.py::test_BANK13_all_account_routes_check_owner[/accounts/{id}/statement]", "outcome": "passed" },
           { "id": "tests/test_authz.py::test_BANK13_all_account_routes_check_owner[/accounts/{id}/transfers]", "outcome": "passed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "775da6e73b03ad8d6e9369e6bb79a208e4d05e93", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T06:20:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "775da6e73b03ad8d6e9369e6bb79a208e4d05e93", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T06:20:00Z" } ]
       },
       "expect": { "result": "supported" }
     }

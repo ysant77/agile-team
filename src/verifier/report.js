@@ -34,3 +34,10 @@ export function sameFiles(a = {}, b = {}) {
   for (const key of keys) if (a[key] !== b[key]) return false;
   return true;
 }
+
+// True when `text` names the issue key as a whole key: BANK-1 matches "BANK-1 fix" and
+// "fix/bank-1-lock", not "BANK-10 recon" or "XBANK-1".
+export function namesKey(text, key) {
+  const k = String(key).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|[^A-Za-z0-9])${k}(?![0-9])`, 'i').test(String(text ?? ''));
+}

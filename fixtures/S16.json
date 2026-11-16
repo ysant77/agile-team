@@ -15,7 +15,7 @@
           { "id": "tests/ml/test_schema.py::test_BANK16_units_check_rejects_cents", "outcome": "failed" },
           { "id": "tests/ml/test_alerts.py::test_BANK16_alert_on_metric_drop", "outcome": "passed" } ],
           "metrics": { "recall_at_1pct_fpr": 0.83 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "1afb716add94c2c0fe8b5ed178ce12aa6b6d8403", "status": "completed", "conclusion": "failure", "createdAt": "2026-12-03T03:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "1afb716add94c2c0fe8b5ed178ce12aa6b6d8403", "status": "completed", "conclusion": "failure", "createdAt": "2026-12-03T03:00:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK16_units_check_rejects_cents: failed"] }
     },
@@ -32,7 +32,7 @@
           { "id": "tests/ml/test_schema.py::test_BANK16_units_check_rejects_cents", "outcome": "passed" },
           { "id": "tests/ml/test_alerts.py::test_BANK16_alert_on_metric_drop", "outcome": "passed" } ],
           "metrics": { "recall_at_1pct_fpr": 0.83 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "c10aacefb788c5ed02224a40073386aea8a067c8", "status": "completed", "conclusion": "success", "createdAt": "2026-12-03T05:40:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "c10aacefb788c5ed02224a40073386aea8a067c8", "status": "completed", "conclusion": "success", "createdAt": "2026-12-03T05:40:00Z" } ]
       },
       "expect": { "result": "supported" }
     }

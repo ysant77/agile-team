@@ -13,7 +13,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1", "tests": [
           { "id": "tests/test_web.py::test_BANK1_send_button_small_viewport", "outcome": "passed" },
           { "id": "tests/test_web.py::test_BANK1_balance_after_send", "outcome": "passed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1", "status": "completed", "conclusion": "success", "createdAt": "2026-11-20T10:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1", "status": "completed", "conclusion": "success", "createdAt": "2026-11-20T10:00:00Z" } ]
       },
       "expect": { "result": "supported" }
     },
@@ -26,7 +26,7 @@
         "pr": { "number": 11, "title": "BANK-1: show Send button", "state": "open", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2" },
         "report": { "schema": "aat-ci-report/1", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1", "tests": [
           { "id": "tests/test_web.py::test_BANK1_send_button_small_viewport", "outcome": "passed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2", "status": "completed", "conclusion": "success", "createdAt": "2026-11-20T11:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2", "status": "completed", "conclusion": "success", "createdAt": "2026-11-20T11:00:00Z" } ]
       },
       "expect": { "result": "cannot_verify", "reasonIncludes": ["older commit"] }
     }

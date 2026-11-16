@@ -19,7 +19,7 @@
         "pr": { "number": 24, "title": "BANK-14 contributor build helpers", "state": "open", "headSha": "5c0a453a203d31d2a338f6acc1db9474a4890176" },
         "headPaths": ["src/app.py", "tools/build.sh", "tools/helper.bin"],
         "report": { "schema": "aat-ci-report/1", "head_sha": "5c0a453a203d31d2a338f6acc1db9474a4890176", "tests": [] },
-        "workflowRuns": [ { "name": "CI", "headSha": "5c0a453a203d31d2a338f6acc1db9474a4890176", "status": "completed", "conclusion": "success", "createdAt": "2026-11-27T08:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "5c0a453a203d31d2a338f6acc1db9474a4890176", "status": "completed", "conclusion": "success", "createdAt": "2026-11-27T08:00:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["tools/helper.bin is still on the head commit"] }
     },
@@ -33,7 +33,7 @@
         "pr": { "number": 24, "title": "BANK-14 contributor build helpers", "state": "open", "headSha": "f5c5421e5a5480605eaf37a8dffea4e08b2a3639" },
         "headPaths": ["src/app.py", "tools/build.sh"],
         "report": { "schema": "aat-ci-report/1", "head_sha": "f5c5421e5a5480605eaf37a8dffea4e08b2a3639", "tests": [] },
-        "workflowRuns": [ { "name": "CI", "headSha": "f5c5421e5a5480605eaf37a8dffea4e08b2a3639", "status": "completed", "conclusion": "success", "createdAt": "2026-11-27T09:30:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "f5c5421e5a5480605eaf37a8dffea4e08b2a3639", "status": "completed", "conclusion": "success", "createdAt": "2026-11-27T09:30:00Z" } ]
       },
       "expect": { "result": "cannot_verify", "reasonIncludes": ["AC2: needs a human: security owner records the triage result"] }
     }
