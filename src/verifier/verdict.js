@@ -87,6 +87,7 @@ export const CLAIM_CHECKS = {
   ready: (ctx) => [
     c.prLinked(ctx),
     c.ciGreen(ctx),
+    ...[c.baseCurrent(ctx)].filter(Boolean),
     acMapped(ctx),
     ...[c.measurementUnchanged(ctx)].filter(Boolean),
     ...(ctx.baseReport ? [c.testsNotRemoved(ctx)] : []),

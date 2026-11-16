@@ -82,6 +82,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
         headSha: match.head?.sha,
         url: match.html_url,
         body: match.body ?? '',
+        baseRef: match.base?.ref ?? null,
       }
     : null;
 
@@ -137,6 +138,14 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     }
   }
 
+  // The current tip of the PR's base branch: a ready claim needs CI on the current base
+  // (benchmark I09). Unknown (null) when GitHub does not answer.
+  let baseTip = null;
+  if (pr?.baseRef && !pr.merged) {
+    const branch = await get(`/repos/${repo}/branches/${encodeURIComponent(pr.baseRef)}`);
+    baseTip = branch?.commit?.sha ?? null;
+  }
+
   // Report for the default branch, written by CI to the `ci-reports` branch as main.json.
   let baseReport = null;
   const file = await get(`/repos/${repo}/contents/main.json?ref=ci-reports`);
@@ -165,6 +174,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     reportAuthor,
     reportComment,
     prFiles,
+    baseTip,
     securityRuns,
     workflowRuns,
     baseReport,

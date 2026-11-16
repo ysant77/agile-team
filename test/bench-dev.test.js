@@ -78,3 +78,11 @@ for (const id of ['B19', 'B20']) {
     assert.match(v.reason, /src\/fraud\/(evaluate|model)\.py.*measure/);
   });
 }
+
+// (a4) A ready claim whose CI ran against an older base tip: the evidence does not cover the
+// merge result (benchmark I09).
+test('I09: a base that moved after CI makes a ready claim cannot_verify, with both commits named', async () => {
+  const v = await run('I09');
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /base moved/);
+});

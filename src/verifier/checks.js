@@ -436,6 +436,18 @@ function reproBlockGap(repro, headSha) {
   return null;
 }
 
+// The report must be for the current base tip (benchmark I09). GitHub's "branch up to date" rule
+// does the same; here the reason names both commits. Returns null when the tip or the report's
+// base is not known, or the PR is merged.
+export function baseCurrent(ctx) {
+  const tip = ctx.baseTip;
+  const ran = ctx.report?.base_sha;
+  if (!tip || !ran || ctx.pr?.merged) return null;
+  return tip === ran
+    ? result('base_current', 'pass', `CI ran on the current base ${String(tip).slice(0, 7)}`)
+    : result('base_current', 'unknown', `the base moved: CI ran on ${String(ran).slice(0, 7)}, the base is now ${String(tip).slice(0, 7)}; CI must run again on the updated branch`);
+}
+
 // Measurement code (config guardedPaths, DESIGN 12 risk 12). A PR that changes it cannot support
 // any claim by itself: a test that asserts a metric is a measurement too, not only a metric AC
 // (benchmark B19, B20). Returns null when no guarded path changed.
