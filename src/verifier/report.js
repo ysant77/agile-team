@@ -39,5 +39,6 @@ export function sameFiles(a = {}, b = {}) {
 // "fix/bank-1-lock", not "BANK-10 recon" or "XBANK-1".
 export function namesKey(text, key) {
   const k = String(key).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`(^|[^A-Za-z0-9])${k}(?![0-9])`, 'i').test(String(text ?? ''));
+  // A boundary on both sides: BANK-1abc and BANK-10 do not name BANK-1.
+  return new RegExp(`(^|[^A-Za-z0-9])${k}(?![A-Za-z0-9])`, 'i').test(String(text ?? ''));
 }

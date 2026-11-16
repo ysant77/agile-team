@@ -20,6 +20,7 @@ function deps(over = {}) {
     addVerdictProperty: async (k, r) => { posted.properties.push(r); return true; },
     appendAudit: async (e) => { posted.audits.push(e); return { seq: posted.audits.length, hash: 'abcdef0123456789' }; },
     addComment: async (k, t) => { posted.comments.push(t); },
+    findComment: async (k, marker) => posted.comments.some((t) => t.includes(marker)),
     ...over,
   };
   return { d, posted };

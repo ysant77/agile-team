@@ -104,3 +104,19 @@ test('F7: numbers from text the PR author wrote do not ground an opinion', () =>
   const r = applyGuards(opinion({ reasons: [{ text: 'A is 90 percent faster', evidence: ['E3'] }] }), p);
   assert.equal(r.guard, 'ungrounded-number');
 });
+
+// Second review of unit 1 (16 Nov), item 6.
+test('R6: ".99" and "1e9" are numbers with their full value', async () => {
+  const { quantitiesIn } = await import('../src/opinion.js');
+  assert.deepEqual(quantitiesIn('ratio .99 and 1e9 rows'), ['0.99', '1000000000']);
+  assert.deepEqual(quantitiesIn('12.0 lines'), ['12']);
+});
+
+test('R6: a digit inside a ticket key or an evidence id does not ground a number', () => {
+  // BANK-32, AC1 and E2 are ids. "32 ms" and "1 second" are not in any evidence value.
+  const r = applyGuards(opinion({ reasons: [{ text: 'A on BANK-32 adds 32 ms (E2)', evidence: ['E2'] }] }), packet());
+  assert.equal(r.guard, 'ungrounded-number');
+  // An id in the reason text is not a number to ground.
+  const ok = applyGuards(opinion({ reasons: [{ text: 'A on BANK-32 changes 12 lines (E2, AC1)', evidence: ['E2'] }] }), packet());
+  assert.equal(ok.outcome, 'opinion');
+});
