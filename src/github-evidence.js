@@ -5,6 +5,9 @@ import { extractReport, namesKey } from './verifier/report.js';
 
 const API = 'https://api.github.com';
 const BOT = 'github-actions[bot]';
+// The GitHub Actions bot account. Checked by id and type: a login is only text.
+export const ACTIONS_BOT_ID = 41898282;
+const isActionsBot = (u) => u?.id === ACTIONS_BOT_ID && u?.type === 'Bot';
 
 // All changed file names of one PR (GitHub serves at most 3,000, in pages of 100). A renamed
 // file counts under both names.
@@ -88,11 +91,12 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
       conclusion: r.conclusion,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
+      runStartedAt: r.run_started_at,
       url: r.html_url,
     }));
     // Comments come oldest first; the latest bot report can be on any page.
     const comments = await getPages(`/repos/${repo}/issues/${pr.number}/comments`, 10);
-    const fromBot = comments.filter((c) => c.user?.login === BOT && extractReport(c.body));
+    const fromBot = comments.filter((c) => isActionsBot(c.user) && extractReport(c.body));
     const latest = fromBot[fromBot.length - 1];
     if (latest) {
       report = extractReport(latest.body);
