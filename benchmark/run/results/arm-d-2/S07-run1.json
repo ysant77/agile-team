@@ -1,0 +1,96 @@
+{
+ "D": "cannot_verify",
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "fallback",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P107:H1",
+     "file": "src/bank/api.py",
+     "line": 226,
+     "text": "Finding 1: see P107:H1, line 226."
+    },
+    {
+     "hunk": "P107:H2",
+     "file": "src/bank/api.py",
+     "line": 235,
+     "text": "Finding 2: see P107:H2, line 235."
+    }
+   ],
+   "risks": [
+    "Risk 1: see the audited review input."
+   ],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH207_empty_reference_after_stripping_is_handled_correctly",
+     "file": "tests/test_api.py",
+     "ac": "AC1",
+     "asserts": "test_BENCH207_empty_reference_after_stripping_is_handled_correctly must pass for AC1.",
+     "failsBeforeFix": true
+    }
+   ]
+  }
+ },
+ "inputHash": "c1a3364f2916593e4a981fd6dcf5f1f0442a196f570d7ac0f340130c82931d15",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-207",
+      "prNumber": 107
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-207",
+      "prNumber": 107,
+      "review": "{\"findings\": [{\"hunk\": \"P107:H1\", \"file\": \"src/bank/api.py\", \"line\": 226, \"text\": \"        reference = body.reference.strip() if body.reference is not None else None\"}, {\"hunk\": \"P107:H2\", \"file\": \"src/bank/api.py\", \"line\": 235, \"text\": \"                reference,\"}], \"risks\": [\"The change may introduce a subtle regression if reference is an empty string after stripping.\"], \"proposedChecks\": [{\"testName\": \"test_empty_reference_after_stripping_is_handled_correctly\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"An empty reference after stripping should be treated as None and not cause a failure.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "test-name",
+   "reasons": [
+    "test_empty_reference_after_stripping_is_handled_correctly must look like test_BENCH207_what_it_checks"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-207",
+      "prNumber": 107,
+      "review": "{\"findings\": [{\"hunk\": \"P107:H1\", \"file\": \"src/bank/api.py\", \"line\": 226, \"text\": \"        reference = body.reference.strip() if body.reference is not None else None\"}, {\"hunk\": \"P107:H2\", \"file\": \"src/bank/api.py\", \"line\": 235, \"text\": \"                reference,\"}], \"risks\": [\"The change may introduce a subtle regression if reference is an empty string after stripping.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH207_empty_reference_after_stripping_is_handled_correctly\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"An empty reference after stripping should be treated as None and not cause a failure.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

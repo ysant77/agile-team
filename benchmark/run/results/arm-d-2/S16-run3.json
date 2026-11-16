@@ -1,0 +1,102 @@
+{
+ "D": "cannot_verify",
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P116:H1",
+     "file": "src/bank/money.py",
+     "line": 2,
+     "text": "half-up rounding"
+    },
+    {
+     "hunk": "P116:H2",
+     "file": "src/bank/money.py",
+     "line": 33,
+     "text": "ROUND_HALF_UP"
+    },
+    {
+     "hunk": "P116:H3",
+     "file": "tests/test_money.py",
+     "line": 21,
+     "text": "assert to_minor(\"0.125\", \"EUR\") == 13"
+    }
+   ],
+   "risks": [
+    "The change alters rounding behavior from half-even to half-up, which may affect financial calculations."
+   ],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH216_half_up_rounding",
+     "file": "tests/test_money.py",
+     "ac": "AC1",
+     "asserts": "to_minor(\"0.125\", \"EUR\") == 13 and to_minor(\"0.135\", \"EUR\") == 14",
+     "failsBeforeFix": true
+    }
+   ]
+  }
+ },
+ "inputHash": "79820a5f9876a0d9495bd840fed19738848b8349d2964c3b3dd0747c31f5672d",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-216",
+      "prNumber": 116
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-216",
+      "prNumber": 116,
+      "review": "{\"findings\": [{\"hunk\": \"P116:H1\", \"file\": \"src/bank/money.py\", \"line\": 2, \"text\": \"half-up rounding\"}, {\"hunk\": \"P116:H2\", \"file\": \"src/bank/money.py\", \"line\": 33, \"text\": \"ROUND_HALF_UP\"}, {\"hunk\": \"P116:H3\", \"file\": \"tests/test_money.py\", \"line\": 21, \"text\": \"assert to_minor(\\\"0.125\\\", \\\"EUR\\\") == 13\"}], \"risks\": [\"The change alters rounding behavior from half-even to half-up, which may affect financial calculations.\"], \"proposedChecks\": [{\"testName\": \"test_half_up_rounding\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"to_minor(\\\"0.125\\\", \\\"EUR\\\") == 13 and to_minor(\\\"0.135\\\", \\\"EUR\\\") == 14\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "test-name",
+   "reasons": [
+    "test_half_up_rounding must look like test_BENCH216_what_it_checks"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-216",
+      "prNumber": 116,
+      "review": "{\"findings\": [{\"hunk\": \"P116:H1\", \"file\": \"src/bank/money.py\", \"line\": 2, \"text\": \"half-up rounding\"}, {\"hunk\": \"P116:H2\", \"file\": \"src/bank/money.py\", \"line\": 33, \"text\": \"ROUND_HALF_UP\"}, {\"hunk\": \"P116:H3\", \"file\": \"tests/test_money.py\", \"line\": 21, \"text\": \"assert to_minor(\\\"0.125\\\", \\\"EUR\\\") == 13\"}], \"risks\": [\"The change alters rounding behavior from half-even to half-up, which may affect financial calculations.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH216_half_up_rounding\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"to_minor(\\\"0.125\\\", \\\"EUR\\\") == 13 and to_minor(\\\"0.135\\\", \\\"EUR\\\") == 14\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

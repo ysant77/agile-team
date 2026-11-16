@@ -1,0 +1,97 @@
+{
+ "D": "cannot_verify",
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "fallback",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P109:H1",
+     "file": "src/bank/ledger.py",
+     "line": 219,
+     "text": "Finding 1: see P109:H1, line 219."
+    },
+    {
+     "hunk": "P109:H2",
+     "file": "tests/test_ledger.py",
+     "line": 27,
+     "text": "Finding 2: see P109:H2, line 27."
+    }
+   ],
+   "risks": [
+    "Risk 1: see the audited review input.",
+    "Risk 2: see the audited review input."
+   ],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH209_blank_withdrawal_description_gets_the_default",
+     "file": "tests/test_ledger.py",
+     "ac": "AC1",
+     "asserts": "test_BENCH209_blank_withdrawal_description_gets_the_default must pass for AC1.",
+     "failsBeforeFix": true
+    }
+   ]
+  }
+ },
+ "inputHash": "78ff8150cec5b7a9ae47bd3c5fbcaf208eb75b34a5fc0f5af77b7c700a603007",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-209",
+      "prNumber": 109
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-209",
+      "prNumber": 109,
+      "review": "{\"findings\": [{\"hunk\": \"P109:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 219, \"text\": \"if kind == \\\"deposit\\\" and not description.strip():\\n        description = \\\"Cash deposit\\\"\\n\"}, {\"hunk\": \"P109:H2\", \"file\": \"tests/test_ledger.py\", \"line\": 27, \"text\": \"def test_blank_deposit_description_gets_the_default(conn, two_accounts, at):\\n    a, _ = two_accounts\\n    ledger.deposit(conn, a.id, eur(\\\"5.00\\\"), description=\\\"  \\\", at=at(\\\"2026-05-02\\\"))\\n    st = ledger.statement(conn, a.id, date(2026, 5, 2), date(2026, 5, 2))\\n    assert [line.description for line in st.lines] == [\\\"Cash deposit\\\"]\\n\"}], \"risks\": [\"The change only applies to deposits, not withdrawals.\", \"The default description is hardcoded, which may limit flexibility.\"], \"proposedChecks\": [{\"testName\": \"test_blank_withdrawal_description_gets_the_default\", \"file\": \"tests/test_ledger.py\", \"ac\": \"AC1\", \"asserts\": \"A blank description for a withdrawal should also be replaced with 'Cash withdrawal'\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "test-name",
+   "reasons": [
+    "test_blank_withdrawal_description_gets_the_default must look like test_BENCH209_what_it_checks"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-209",
+      "prNumber": 109,
+      "review": "{\"findings\": [{\"hunk\": \"P109:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 219, \"text\": \"if kind == \\\"deposit\\\" and not description.strip():\\n        description = \\\"Cash deposit\\\"\\n\"}, {\"hunk\": \"P109:H2\", \"file\": \"tests/test_ledger.py\", \"line\": 27, \"text\": \"def test_blank_deposit_description_gets_the_default(conn, two_accounts, at):\\n    a, _ = two_accounts\\n    ledger.deposit(conn, a.id, eur(\\\"5.00\\\"), description=\\\"  \\\", at=at(\\\"2026-05-02\\\"))\\n    st = ledger.statement(conn, a.id, date(2026, 5, 2), date(2026, 5, 2))\\n    assert [line.description for line in st.lines] == [\\\"Cash deposit\\\"]\\n\"}], \"risks\": [\"The change only applies to deposits, not withdrawals.\", \"The default description is hardcoded, which may limit flexibility.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH209_blank_withdrawal_description_gets_the_default\", \"file\": \"tests/test_ledger.py\", \"ac\": \"AC1\", \"asserts\": \"A blank description for a withdrawal should also be replaced with 'Cash withdrawal'\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

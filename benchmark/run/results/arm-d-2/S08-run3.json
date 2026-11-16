@@ -1,0 +1,96 @@
+{
+ "D": "cannot_verify",
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P108:H1",
+     "file": "src/bank/web/index.html",
+     "line": 6,
+     "text": "<meta name=\"robots\" content=\"noindex\">"
+    },
+    {
+     "hunk": "P108:H2",
+     "file": "tests/test_web.py",
+     "line": 130,
+     "text": "def test_index_page_asks_not_to_be_indexed(tmp_path):"
+    }
+   ],
+   "risks": [
+    "The change adds a meta tag to prevent indexing. Ensure this aligns with the intended behavior for the demo page."
+   ],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH208_index_page_has_noindex_meta_tag",
+     "file": "tests/test_web.py",
+     "ac": "AC1",
+     "asserts": "The index page contains <meta name=\"robots\" content=\"noindex\">",
+     "failsBeforeFix": false
+    }
+   ]
+  }
+ },
+ "inputHash": "92d77a710f4bd844bf92cfec31484b0687a365ea57a48d961d270b67112e9a46",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-208",
+      "prNumber": 108
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-208",
+      "prNumber": 108,
+      "review": "{\"findings\": [{\"hunk\": \"P108:H1\", \"file\": \"src/bank/web/index.html\", \"line\": 6, \"text\": \"  <meta name=\\\"robots\\\" content=\\\"noindex\\\">\"}, {\"hunk\": \"P108:H2\", \"file\": \"tests/test_web.py\", \"line\": 130, \"text\": \"def test_index_page_asks_not_to_be_indexed(tmp_path):\"}], \"risks\": [\"The change adds a meta tag to prevent indexing. Ensure this aligns with the intended behavior for the demo page.\"], \"proposedChecks\": [{\"testName\": \"test_index_page_asks_not_to_be_indexed\", \"file\": \"tests/test_web.py\", \"ac\": \"AC1\", \"asserts\": \"The index page contains <meta name=\\\"robots\\\" content=\\\"noindex\\\">\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "test-name",
+   "reasons": [
+    "test_index_page_asks_not_to_be_indexed must look like test_BENCH208_what_it_checks"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-208",
+      "prNumber": 108,
+      "review": "{\"findings\": [{\"hunk\": \"P108:H1\", \"file\": \"src/bank/web/index.html\", \"line\": 6, \"text\": \"  <meta name=\\\"robots\\\" content=\\\"noindex\\\">\"}, {\"hunk\": \"P108:H2\", \"file\": \"tests/test_web.py\", \"line\": 130, \"text\": \"def test_index_page_asks_not_to_be_indexed(tmp_path):\"}], \"risks\": [\"The change adds a meta tag to prevent indexing. Ensure this aligns with the intended behavior for the demo page.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH208_index_page_has_noindex_meta_tag\", \"file\": \"tests/test_web.py\", \"ac\": \"AC1\", \"asserts\": \"The index page contains <meta name=\\\"robots\\\" content=\\\"noindex\\\">\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}
