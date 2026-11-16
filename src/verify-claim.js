@@ -12,7 +12,9 @@ import { verify } from './verifier/verdict.js';
 
 export const VERIFY_CONFIG = {
   requiredWorkflowPaths: ['.github/workflows/ci.yml'],
-  reportTrustPaths: ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py', 'src/bank/testing/'],
+  reportTrustPaths: ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py', 'src/bank/testing/',
+    // The scripts that write the repro and coverage blocks of the report.
+    'scripts/repro.py', 'scripts/changed_coverage.py'],
   tooGood: { auc: 0.95 },
   // D-cov (DESIGN 15c): fixed per repository before work starts, never per PR.
   coverage: { changedFloor: 0.8, maxDropPoints: 0.5 },

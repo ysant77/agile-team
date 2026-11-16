@@ -93,7 +93,12 @@ supported only when all of these pass:
 - **Reproduced:** each AC test, and for a Bug each test named for the key, fails on the base commit
   by an assertion and passes on the head. The full suite on the head passes and no test is
   removed. A test that cannot run on base (`ImportError`, `ModuleNotFoundError`,
-  `AttributeError`, `NameError`, a collection error) is `cannot_verify`: a human decides.
+  `AttributeError`, `NameError`, a collection error) is `cannot_verify`: a human decides. The
+  repro block must name the report's head commit and record the base run (pytest exit code 0 or
+  1, report written). A PR that changes pytest support or config (`conftest.py`, helpers or data
+  under `tests/`, `pyproject.toml`, `uv.lock`, pytest or coverage config) is `cannot_verify`,
+  because the base run mixed base support files with head tests. A PR that changes
+  `scripts/repro.py` or `scripts/changed_coverage.py` does not vouch for its own report.
 - **Coverage:** at least 80% of the changed executable lines are covered, and the total is not more
   than 0.5 percentage points below the base. A PR that adds `pragma: no cover` or changes
   `.coveragerc`, `setup.cfg`, `tox.ini` or `pyproject.toml` is `cannot_verify`.
@@ -102,7 +107,11 @@ supported only when all of these pass:
   decisions). It goes into the audit chain as `done_evidence` before the verdict comment, and the
   comment shows it. A missing part is `cannot_verify`.
 
-Limits: the repro and coverage blocks are written by CI, like every report value. The main report
+Limits: the repro and coverage blocks are written by CI, like every report value. D-repro proves
+that a test separates base from head, not that it is the right test. A test can detect the base
+run and fail there on purpose; an `assert` in production code or a bare `raise AssertionError`
+also records `AssertionError`; each test runs once on base, so a flaky test can fail there by
+chance. The main report
 stands for the merge result only while it is for the merge commit; after a later merge the check
 is `cannot_verify` until a human checks. A ticket with no code work (a spike, a parent of
 sub-tasks) keeps the sub-task, blocker and AC checks and gets a record without code parts.

@@ -418,6 +418,24 @@ export function onMain(ctx) {
   return result('on_main', 'pass', `PR #${pr.number} merged${ctx.mergeSha ? ` as ${String(ctx.mergeSha).slice(0, 7)}` : ''}`);
 }
 
+// The repro block is evidence only when it is complete and about this head (bank PR 14 review).
+// Changed pytest support or config means the base run mixed base support files with head
+// tests, so its result proves nothing either way.
+function reproBlockGap(repro, headSha) {
+  if (!repro.head_sha) return 'the repro block names no head commit';
+  if (repro.head_sha !== headSha) return `the repro block is for ${String(repro.head_sha).slice(0, 7)}, not the report head`;
+  if (!Array.isArray(repro.changed_support)) return 'the repro block has no list of changed support files';
+  if (repro.changed_support.length) return `pytest support or config changed: ${repro.changed_support.join(', ')}; the base run cannot show the problem`;
+  const run = repro.base_run;
+  if (repro.tests.length || run) {
+    if (!run) return 'the repro block has no base run record';
+    if (run.report !== true) return `the base run wrote no report (pytest exit code ${run.rc ?? 'unknown'})`;
+    // pytest exit codes: 0 all passed, 1 some failed. Anything else is an interrupted or bad run.
+    if (run.rc !== 0 && run.rc !== 1) return `the base run ended with pytest exit code ${run.rc}`;
+  }
+  return null;
+}
+
 // D-repro: each ticket test fails on base by an assertion and passes on head; the full head suite
 // passes; no test is removed.
 export function reproduced(ctx) {
@@ -425,6 +443,8 @@ export function reproduced(ctx) {
   if (trust.status !== 'pass') return result('reproduced', 'unknown', trust.reason);
   const repro = ctx.report.repro;
   if (!repro || !Array.isArray(repro.tests)) return result('reproduced', 'unknown', 'no repro block in the CI report (base run missing)');
+  const gap = reproBlockGap(repro, ctx.report.head_sha);
+  if (gap) return result('reproduced', 'unknown', gap);
   const fails = [];
   const unknowns = [];
   const suite = repro.full_suite;
