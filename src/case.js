@@ -112,10 +112,14 @@ export function formatCase(issueKey, c) {
   return lines.join('\n');
 }
 
-export function formatOpinion(issueKey, record) {
+export function formatOpinion(issueKey, record, arbitration = null) {
   const o = record.opinion;
+  // A design or readability opinion may prefer another PR than the code result: say so plainly
+  // (unit 2 review, item 10).
+  const against = arbitration?.winner && o?.decision && o.decision !== arbitration.winner
+    ? `, against the code result ${arbitration.winner} (${arbitration.rule})` : '';
   const head = {
-    opinion: `Opinion (not verified) on ${issueKey}: prefers ${o?.decision}. A human decides.`,
+    opinion: `Opinion (not verified) on ${issueKey}: prefers ${o?.decision}${against}. A human decides.`,
     human: `Opinion (not verified) on ${issueKey}: handed to a human (${record.guard}).`,
     summary_only: `Summary (not verified) on ${issueKey}: high-stake domain, a human decides.`,
     invalid_opinion: `Opinion on ${issueKey} discarded by guard "${record.guard}": ${record.reasons.join('; ')}. A human decides.`,

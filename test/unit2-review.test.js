@@ -153,6 +153,6 @@ test('U12: the protocol text is in the repository and the report header states t
 
 test('U10: an opinion that prefers another PR than the code result says so', async () => {
   const { formatOpinion } = await import('../src/case.js');
-  const record = { outcome: 'opinion', opinion: { decision: 'PR7', reasons: [], risks: [], confidence: 0.8 }, promptVersion: 'p', inputHash: 'a'.repeat(64) };
+  const record = { outcome: 'opinion', reasons: [], opinion: { decision: 'PR7', reasons: [], risks: [], confidence: 0.8 }, promptVersion: 'p', inputHash: 'a'.repeat(64) };
   assert.match(formatOpinion('BANK-42', record, { winner: 'PR5', rule: 'smaller diff' }), /prefers PR7, against the code result PR5 \(smaller diff\)/);
 });

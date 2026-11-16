@@ -63,7 +63,10 @@ export async function openCase(payload) {
     evidence.push({ prNumber, pr: github.pr, report: github.report, verdict, ...stats });
   }
   const built = buildPacket({ ...input, ticket, evidence });
-  const stored = { ...built, prNumbers: input.prNumbers, openedAt: new Date().toISOString(), opinions: [] };
+  // Opening a case again keeps the earlier case and its opinions as history (item 10).
+  const previous = await kvs.get(caseKey(input.issueKey));
+  const history = previous ? [...(previous.history ?? []), { arbitration: previous.arbitration, opinions: previous.opinions, openedAt: previous.openedAt }].slice(-5) : [];
+  const stored = { ...built, prNumbers: input.prNumbers, openedAt: new Date().toISOString(), opinions: [], history };
   await kvs.set(caseKey(input.issueKey), stored);
   const audit = await appendAudit({ actor: 'arbitration', event: 'case_opened', data: {
     issueKey: input.issueKey, prNumbers: input.prNumbers, decidedBy: built.arbitration.decidedBy,
@@ -85,6 +88,6 @@ export async function recordOpinion(payload) {
   const audit = await appendAudit({ actor: 'ai-team-lead', event: 'opinion', data: {
     issueKey, outcome: record.outcome, guard: record.guard, decision: record.opinion?.decision ?? null,
     confidence: record.opinion?.confidence ?? null, inputHash: record.inputHash } });
-  await addComment(issueKey, `${formatOpinion(issueKey, record)}\nAudit seq ${audit.seq}.`);
+  await addComment(issueKey, `${formatOpinion(issueKey, record, stored.arbitration)}\nAudit seq ${audit.seq}.`);
   return { ok: true, outcome: record.outcome, guard: record.guard, reasons: record.reasons, finalDecision: 'human' };
 }
