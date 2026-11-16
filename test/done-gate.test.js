@@ -72,3 +72,21 @@ test('a done verdict writes the evidence to the audit chain before the comment, 
   assert.match(order.text, /Evidence record \(hash [0-9a-f]{12}\)/);
   assert.match(order.text, /changed lines covered: 18 of 20/);
 });
+
+test('a merged PR gives the merge commit, and the main report stands for the merge result', async () => {
+  const { collectGithub } = await import('../src/github-evidence.js');
+  const M = 'e'.repeat(40);
+  const main = { schema: 'aat-ci-report/1', head_sha: M, workflow_files: {} };
+  const fetchFn = async (url) => {
+    const page = Number(new URL(url).searchParams.get('page') ?? 1);
+    const body = /\/pulls\?/.test(url) ? (page === 1 ? [{ number: 14, title: 'BANK-4 fix', state: 'closed', merged_at: '2026-11-20T11:00:00Z', merge_commit_sha: M, head: { ref: 'b', sha: 'd'.repeat(40), repo: { full_name: 'ysant77/yms-bank-demo' } } }] : [])
+      : /\/pulls\/14\/files/.test(url) ? []
+      : /contents\/main\.json/.test(url) ? { content: Buffer.from(JSON.stringify(main)).toString('base64') }
+      : null;
+    return body === null ? { ok: false, status: 404, json: async () => ({}), headers: { get: () => null } } : { ok: true, status: 200, json: async () => body, headers: { get: () => null } };
+  };
+  const gh = await collectGithub({ repo: 'ysant77/yms-bank-demo', key: 'BANK-4', fetchFn });
+  assert.equal(gh.pr.merged, true);
+  assert.equal(gh.mergeSha, M);
+  assert.equal(gh.mergeReport.head_sha, M);
+});

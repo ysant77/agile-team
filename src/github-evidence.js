@@ -78,6 +78,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
         branch: match.head?.ref,
         state: match.state,
         merged: Boolean(match.merged_at),
+        mergeSha: match.merged_at ? (match.merge_commit_sha ?? null) : null,
         headSha: match.head?.sha,
         url: match.html_url,
         body: match.body ?? '',
@@ -149,6 +150,11 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     workflowRuns,
     baseReport,
     baseWorkflowFiles: baseReport?.workflow_files ?? null,
+    // A merged PR's result on main is the main report (ci-reports/main.json). It counts only while
+    // it is for the merge commit; after a later merge the check says the report is for another
+    // commit (DESIGN 15a).
+    mergeSha: pr?.mergeSha ?? null,
+    mergeReport: pr?.mergeSha ? baseReport : null,
     deployRuns,
     meta: { calls, rateRemaining, authenticated: Boolean(token) },
   };

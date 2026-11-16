@@ -1,6 +1,7 @@
 // Turns a claim plus collected evidence into a verdict. Deterministic; version-stamped.
 
 import * as c from './checks.js';
+import { evidenceComplete } from './evidence.js';
 
 export const CHECKER_VERSION = 'verifier/1';
 
@@ -87,7 +88,13 @@ export const CLAIM_CHECKS = {
     acMapped(ctx),
     ...(ctx.baseReport ? [c.testsNotRemoved(ctx)] : []),
   ],
-  done: (ctx) => [c.subtasksDone(ctx), c.blockedByDone(ctx), acMapped(ctx)],
+  // DESIGN 15a: "done" means on main, reproduced, covered and recorded. A ticket with no code work
+  // (a spike, a parent of sub-tasks) keeps the sub-task, blocker and AC checks and the record.
+  done: (ctx) => {
+    const checks = [c.subtasksDone(ctx), c.blockedByDone(ctx), acMapped(ctx)];
+    if (c.hasCodeWork(ctx)) checks.push(c.onMain(ctx), c.mergedClean(ctx), c.reproduced(ctx), c.coverageOk(ctx));
+    return [...checks, evidenceComplete({ id: ctx.claimId, type: 'done' }, ctx, checks)];
+  },
   deployed: (ctx) => [c.deployed(ctx, ctx.claimArgs?.tag)],
   merged: (ctx) => [c.mergedClean(ctx)],
   acs: (ctx) => [acMapped(ctx)],
@@ -104,7 +111,7 @@ export function verify(claim, ctx) {
       checkerVersion: CHECKER_VERSION,
     };
   }
-  const checks = run({ ...ctx, claimArgs: claim.args });
+  const checks = run({ ...ctx, claimArgs: claim.args, claimId: claim.id });
   const failed = checks.filter((k) => k.status === 'fail');
   const unknown = checks.filter((k) => k.status === 'unknown');
   const result = failed.length ? 'contradicted' : unknown.length ? 'cannot_verify' : 'supported';

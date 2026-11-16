@@ -7,12 +7,15 @@ import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment, findComment } from './jira.js';
 import { addVerdictProperty, collectJira } from './jira-evidence.js';
 import { parseTwin } from './monitor.js';
+import { buildDoneEvidence, formatEvidence } from './verifier/evidence.js';
 import { verify } from './verifier/verdict.js';
 
 export const VERIFY_CONFIG = {
   requiredWorkflowPaths: ['.github/workflows/ci.yml'],
   reportTrustPaths: ['.github/workflows/', '.github/actions/', '**/conftest.py', 'src/bank/testing/'],
   tooGood: { auc: 0.95 },
+  // D-cov (DESIGN 15c): fixed per repository before work starts, never per PR.
+  coverage: { changedFloor: 0.8, maxDropPoints: 0.5 },
   // Files that decide how a metric is measured or reported (DESIGN.md section 12, risk 12).
   guardedPaths: [
     'src/fraud/evaluate.py', 'src/fraud/model.py', 'src/bank/testing/', 'tests/conftest.py',
@@ -81,8 +84,8 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
     progress = (await d.store.get(progressKey)) ?? null;
     if (progress?.done) return progress.verdict;
     if (!progress) {
-      const { verdict, record, comment } = await decide({ issueKey, claim }, d);
-      progress = { verdict, record, comment, steps: {} };
+      const { verdict, record, comment, evidence } = await decide({ issueKey, claim }, d);
+      progress = { verdict, record, comment, evidence: evidence ?? null, steps: {} };
       await d.store.set(progressKey, progress);
     }
     const save = () => d.store.set(progressKey, progress);
@@ -94,6 +97,13 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
     if (!progress.steps.audit) {
       const audit = await d.appendAudit({ actor: 'team-lead-verifier', event: 'verdict', data: { issueKey, ...progress.record } });
       progress.steps.audit = { seq: audit.seq, hash: audit.hash };
+      await save();
+    }
+    // The evidence record goes into the audit chain before the comment, so a posted done verdict
+    // always has its record (DESIGN 15d).
+    if (progress.evidence && !progress.steps.evidence) {
+      const audit = await d.appendAudit({ actor: 'team-lead-verifier', event: 'done_evidence', data: { issueKey, ...progress.evidence } });
+      progress.steps.evidence = { seq: audit.seq, hash: audit.hash };
       await save();
     }
     if (!progress.steps.comment) {
@@ -141,7 +151,7 @@ export async function decide({ issueKey, claim }, d) {
   }
   const ctx = { ticket, ...github, config: VERIFY_CONFIG };
   let verdict = verify(claim, ctx);
-  if ((githubError || !repo) && verdict.result === 'contradicted' && verdict.checks.some((c) => c.name === 'pr_linked' && c.status === 'fail')) {
+  if ((githubError || !repo) && verdict.result === 'contradicted' && verdict.checks.some((c) => ['pr_linked', 'on_main'].includes(c.name) && c.status === 'fail')) {
     verdict = { ...verdict, result: 'cannot_verify', reason: `code host not reachable${githubError ? `: ${githubError}` : ''}` };
   }
   // Twin and origin come from the PR body the scenario generator writes; the skill is the
@@ -151,7 +161,14 @@ export async function decide({ issueKey, claim }, d) {
     claimId: claim.id, type: claim.type, result: verdict.result, reason: verdict.reason, checker: verdict.checkerVersion,
     at: new Date().toISOString(), headSha: github.pr?.headSha ?? null, twin, origin, skill: ticket.labels?.[0] ?? null,
   };
-  const comment = formatVerdict(issueKey, claim, verdict, { prUrl: github.pr?.url, githubConfigured: Boolean(repo) });
+  let comment = formatVerdict(issueKey, claim, verdict, { prUrl: github.pr?.url, githubConfigured: Boolean(repo) });
+  // DESIGN 15d: every done verdict carries the evidence record that code built from what it saw.
+  let evidence = null;
+  if (claim.type === 'done') {
+    evidence = buildDoneEvidence(claim, ctx, verdict.checks, verdict.checkerVersion);
+    record.evidenceHash = evidence.hash;
+    comment = `${comment}\n${formatEvidence(evidence)}`;
+  }
   console.log('verdict', issueKey, claim.type, verdict.result, JSON.stringify(github.meta ?? {}));
-  return { verdict, record, comment };
+  return { verdict, record, comment, evidence };
 }

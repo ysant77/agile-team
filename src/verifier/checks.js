@@ -377,3 +377,115 @@ export function evidenceLinked(ctx) {
 export function manual(statement) {
   return result(`manual(${statement})`, 'unknown', `needs a human: ${statement}`);
 }
+
+// ---- Definition of done (DESIGN 15a-15c) ----
+
+// Exception types that mean "the test cannot run on base": it proves nothing about the old code.
+export const CANNOT_RUN_ON_BASE = ['ImportError', 'ModuleNotFoundError', 'AttributeError', 'NameError'];
+export const DEFAULT_COVERAGE = { changedFloor: 0.8, maxDropPoints: 0.5 };
+const COVERAGE_FILES = ['.coveragerc', 'setup.cfg', 'pyproject.toml', 'tox.ini'];
+
+const resolveName = (ctx, name) => {
+  const key = ctx.ticket?.key ?? '';
+  return String(name).replaceAll('{TOKEN}', key.replace('-', '')).replaceAll('{KEY}', key);
+};
+
+// A ticket has code work when an AC is a test, or it is a Bug. A spike or a parent ticket with
+// only sub-task or link checks has no code gate.
+export function hasCodeWork(ctx) {
+  const acs = ctx.ticket?.acceptanceCriteria ?? [];
+  return ctx.ticket?.type === 'Bug' || acs.some((a) => a.check?.type === 'test_passes');
+}
+
+// The tests that must reproduce the problem: every AC test, and for a Bug every test named for
+// the key.
+export function ticketTests(ctx) {
+  const names = (ctx.ticket?.acceptanceCriteria ?? [])
+    .filter((a) => a.check?.type === 'test_passes')
+    .map((a) => resolveName(ctx, a.check.args?.[0]));
+  if (ctx.ticket?.type === 'Bug') {
+    const token = new RegExp(`(^|[^A-Za-z0-9])${issueToken(ctx.ticket.key)}_`);
+    for (const t of ctx.report?.tests ?? []) if (token.test(testName(t.id))) names.push(testName(t.id));
+  }
+  return [...new Set(names)];
+}
+
+// "done" means on main: the PR is merged.
+export function onMain(ctx) {
+  const pr = ctx.pr;
+  if (!pr) return result('on_main', 'fail', `no pull request for ${ctx.ticket.key}, so nothing is on main`);
+  if (!pr.merged) return result('on_main', 'fail', `PR #${pr.number} is not merged, so the work is not on main`);
+  return result('on_main', 'pass', `PR #${pr.number} merged${ctx.mergeSha ? ` as ${String(ctx.mergeSha).slice(0, 7)}` : ''}`);
+}
+
+// D-repro: each ticket test fails on base by an assertion and passes on head; the full head suite
+// passes; no test is removed.
+export function reproduced(ctx) {
+  const trust = reportTrusted(ctx);
+  if (trust.status !== 'pass') return result('reproduced', 'unknown', trust.reason);
+  const repro = ctx.report.repro;
+  if (!repro || !Array.isArray(repro.tests)) return result('reproduced', 'unknown', 'no repro block in the CI report (base run missing)');
+  const fails = [];
+  const unknowns = [];
+  const suite = repro.full_suite;
+  if (!suite) unknowns.push('no full-suite result in the repro block');
+  else if (suite.outcome !== 'passed') fails.push(`full suite on head failed (${suite.failed ?? '?'} failed)`);
+  const removed = testsNotRemoved(ctx);
+  if (removed.status === 'fail') fails.push(removed.reason);
+  else if (removed.status === 'unknown') unknowns.push(removed.reason);
+  const names = ticketTests(ctx);
+  if (names.length === 0) fails.push(`no test for ${ctx.ticket.key}: nothing reproduces the problem`);
+  for (const name of names) {
+    const row = repro.tests.find((t) => testName(t.id) === name);
+    if (!row) {
+      unknowns.push(`${name} is not in the repro block`);
+      continue;
+    }
+    const base = row.base ?? {};
+    if (row.head?.outcome !== 'passed') fails.push(`${name} fails on head (${row.head?.outcome ?? 'no result'})`);
+    if (base.outcome === 'passed') fails.push(`${name} passes on base, so it does not reproduce the problem`);
+    else if (base.outcome === 'error' || CANNOT_RUN_ON_BASE.includes(base.exc_type)) {
+      unknowns.push(`${name} cannot run on base (${base.exc_type ?? base.outcome}); a human decides`);
+    } else if (base.outcome !== 'failed') unknowns.push(`${name} has no base result`);
+    else if (base.exc_type !== 'AssertionError') unknowns.push(`${name} fails on base by ${base.exc_type ?? 'an unknown error'}, not by an assertion`);
+  }
+  if (fails.length) return result('reproduced', 'fail', fails.join('; '));
+  if (unknowns.length) return result('reproduced', 'unknown', unknowns.join('; '));
+  return result('reproduced', 'pass', `${names.length} test(s) fail on base by an assertion and pass on head; full suite passed`);
+}
+
+// D-cov: changed executable lines covered at or above the floor, and total coverage not below
+// base minus the allowed drop. A PR that changes the coverage settings or adds an exclusion
+// gives unknown.
+export function coverageOk(ctx) {
+  const trust = reportTrusted(ctx);
+  if (trust.status !== 'pass') return result('coverage', 'unknown', trust.reason);
+  const cov = ctx.report.coverage;
+  if (!cov) return result('coverage', 'unknown', 'no coverage block in the CI report');
+  if (!Array.isArray(ctx.prFiles)) return result('coverage', 'unknown', 'pull request file list not available');
+  const settings = ctx.prFiles.filter((f) => COVERAGE_FILES.includes(f.split('/').pop()));
+  if (settings.length) return result('coverage', 'unknown', `PR changes coverage settings (${settings.join(', ')})`);
+  if (!ctx.prPatches) return result('coverage', 'unknown', 'pull request patches not read');
+  for (const [file, patch] of Object.entries(ctx.prPatches)) {
+    if (typeof patch !== 'string') continue;
+    if (patch.split('\n').some((l) => l.startsWith('+') && !l.startsWith('+++') && /pragma:\s*no\s*cover/i.test(l))) {
+      return result('coverage', 'unknown', `${file} adds pragma: no cover`);
+    }
+  }
+  const conf = { ...DEFAULT_COVERAGE, ...(ctx.config?.coverage ?? {}) };
+  const exec = Number(cov.changed_executable ?? NaN);
+  const covered = Number(cov.changed_covered ?? NaN);
+  if (!Number.isFinite(exec) || !Number.isFinite(covered)) return result('coverage', 'unknown', 'changed-line counts missing');
+  const floorPct = Math.round(conf.changedFloor * 100);
+  if (exec > 0 && covered / exec < conf.changedFloor) {
+    return result('coverage', 'fail', `${covered} of ${exec} changed lines covered (${Math.round((covered / exec) * 100)}%), floor ${floorPct}%`);
+  }
+  if (typeof cov.head_total !== 'number' || typeof cov.base_total !== 'number') {
+    return result('coverage', 'unknown', 'head or base total coverage missing');
+  }
+  if (cov.head_total < cov.base_total - conf.maxDropPoints) {
+    return result('coverage', 'fail', `total coverage ${cov.head_total}% is below base ${cov.base_total}% minus ${conf.maxDropPoints}`);
+  }
+  const changed = exec > 0 ? `${covered} of ${exec} changed lines covered` : 'no changed executable lines';
+  return result('coverage', 'pass', `${changed}; total ${cov.head_total}% (base ${cov.base_total}%)`);
+}
