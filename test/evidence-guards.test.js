@@ -174,3 +174,19 @@ test('F4: "fixed" and "ready" accept an open PR, and the reason says it is not m
   const merged = prLinked(goodCtx({ pr: { ...goodCtx().pr, state: 'closed', merged: true } }));
   assert.doesNotMatch(merged.reason, /not merged/);
 });
+
+test('F10: a report comment from anyone but the CI bot is ignored', async () => {
+  const body = `<!-- aat-ci-report -->\n\`\`\`json\n${JSON.stringify({ schema: 'aat-ci-report/1', head_sha: HEAD, tests: [] })}\n\`\`\``;
+  const { fetchFn } = fakeFetch([
+    [/\/pulls\?/, (u) => (page(u) === 1 ? [pull(3, 'BANK-1 fix')] : [])],
+    [/\/issues\/3\/comments/, (u) => (page(u) === 1 ? [{ user: { login: 'raj' }, body, created_at: 'a', updated_at: 'a' }] : [])],
+  ]);
+  const gh = await collectGithub({ repo: REPO, key: 'BANK-1', fetchFn });
+  assert.equal(gh.report, null);
+  assert.equal(gh.reportAuthor, null);
+});
+
+test('F10: an HTTP error other than 404 stops the evidence read', async () => {
+  const fetchFn = async () => ({ ok: false, status: 502, json: async () => ({}), headers: { get: () => null } });
+  await assert.rejects(collectGithub({ repo: REPO, key: 'BANK-1', fetchFn }), /HTTP 502/);
+});
