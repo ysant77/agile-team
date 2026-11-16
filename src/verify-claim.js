@@ -10,7 +10,7 @@ import { verify } from './verifier/verdict.js';
 
 export const VERIFY_CONFIG = {
   requiredWorkflowPaths: ['.github/workflows/ci.yml'],
-  reportTrustPaths: ['.github/workflows/', 'src/bank/testing/'],
+  reportTrustPaths: ['.github/workflows/', '.github/actions/', '**/conftest.py', 'src/bank/testing/'],
   tooGood: { auc: 0.95 },
 };
 
