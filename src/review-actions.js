@@ -44,6 +44,8 @@ export function packetForAgent(packet, suggestion) {
     filesTruncated: packet.filesTruncated,
     testsTouched: packet.testsTouched,
     existingTests: packet.existingTests,
+    // The name guard needs this exact prefix (test_<KEY without the dash>_).
+    testNamePrefix: `test_${packet.ticket.key.replace('-', '')}_`,
   };
 }
 

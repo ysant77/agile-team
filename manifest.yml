@@ -112,6 +112,9 @@ modules:
         style point, or a risk that no AC names. When the code and the tests cover
         each case of each AC, write no blocking finding.
 
+        Start each proposed test name with testNamePrefix from the get-pr-diff
+        result. Use a number only when it occurs in the get-pr-diff result.
+
         A proposed check is the most useful output. When an AC has a manual()
         check, propose a test that a pipeline can run for it. Name a new test,
         not one in existingTests. Never propose a file under a guarded path.
