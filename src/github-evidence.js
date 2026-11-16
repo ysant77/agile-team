@@ -159,8 +159,9 @@ export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
   return { diffLines: (pr.additions ?? 0) + (pr.deletions ?? 0), files: files.map((f) => f.filename), patches };
 }
 
-// Changed files of one pull request with their patches, for the code reviewer (DESIGN 14a). At
-// most 100 files; GitHub leaves out the patch of a very large file, which stays null.
+// Changed files of one pull request with their patches, for the code reviewer (DESIGN 14a). Every
+// page of 100 (GitHub serves at most 3,000 files); GitHub leaves out the patch of a very large
+// file, which stays null.
 export async function collectPrFiles({ repo, prNumber, token, fetchFn }) {
   const headers = {
     Accept: 'application/vnd.github+json',
@@ -168,8 +169,14 @@ export async function collectPrFiles({ repo, prNumber, token, fetchFn }) {
     'X-GitHub-Api-Version': '2022-11-28',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
-  const response = await fetchFn(`${API}/repos/${repo}/pulls/${prNumber}/files?per_page=100`, { headers });
-  if (response.status === 404) return null;
-  if (!response.ok) throw new Error(`GitHub pull request files: HTTP ${response.status}`);
-  return (await response.json()).map((f) => ({ filename: f.filename, status: f.status, patch: typeof f.patch === 'string' ? f.patch : null }));
+  const files = [];
+  for (let page = 1; page <= 30; page += 1) {
+    const response = await fetchFn(`${API}/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`, { headers });
+    if (response.status === 404) return page === 1 ? null : files;
+    if (!response.ok) throw new Error(`GitHub pull request files: HTTP ${response.status}`);
+    const list = await response.json();
+    files.push(...list.map((f) => ({ filename: f.filename, status: f.status, patch: typeof f.patch === 'string' ? f.patch : null })));
+    if (list.length < 100) break;
+  }
+  return files;
 }

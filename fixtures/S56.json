@@ -12,7 +12,7 @@
         "pr": { "number": 61, "title": "BANK-4 lock the balance check and the debit", "state": "open", "headSha": "4c1e9a07b2d3f6e5a8c9d0b1e2f3a4b5c6d7e8f9" },
         "report": { "schema": "aat-ci-report/1", "head_sha": "4c1e9a07b2d3f6e5a8c9d0b1e2f3a4b5c6d7e8f9", "tests": [
           { "id": "tests/test_accounts.py::test_BANK4_single_withdrawal_debits_once", "outcome": "passed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "4c1e9a07b2d3f6e5a8c9d0b1e2f3a4b5c6d7e8f9", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T06:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "4c1e9a07b2d3f6e5a8c9d0b1e2f3a4b5c6d7e8f9", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T06:00:00Z" } ]
       },
       "expect": { "result": "cannot_verify", "reasonIncludes": ["AC2: needs a human"] }
     },
@@ -55,7 +55,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "8d2f6b1c3a4e5f60718293a4b5c6d7e8f9a0b1c2", "tests": [
           { "id": "tests/test_accounts.py::test_BANK4_single_withdrawal_debits_once", "outcome": "passed" },
           { "id": "tests/test_concurrency.py::test_BANK4_concurrent_withdrawals_20_threads", "outcome": "passed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "8d2f6b1c3a4e5f60718293a4b5c6d7e8f9a0b1c2", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T07:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "8d2f6b1c3a4e5f60718293a4b5c6d7e8f9a0b1c2", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T07:00:00Z" } ]
       },
       "expect": { "result": "supported" }
     },
@@ -71,7 +71,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d", "tests": [
           { "id": "tests/test_accounts.py::test_BANK4_single_withdrawal_debits_once", "outcome": "passed" },
           { "id": "tests/test_concurrency.py::test_BANK4_concurrent_withdrawals_20_threads", "outcome": "failed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T08:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T08:00:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK4_concurrent_withdrawals_20_threads: failed"] }
     }

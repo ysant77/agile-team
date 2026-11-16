@@ -11,7 +11,7 @@
         "pr": { "number": 70, "title": "BANK-57 statement CSV export", "state": "open", "headSha": "7e6d5c4b3a291807f6e5d4c3b2a1908f7e6d5c4b" },
         "report": { "schema": "aat-ci-report/1", "head_sha": "7e6d5c4b3a291807f6e5d4c3b2a1908f7e6d5c4b", "tests": [
           { "id": "tests/test_export.py::test_BANK57_csv_has_header", "outcome": "failed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "7e6d5c4b3a291807f6e5d4c3b2a1908f7e6d5c4b", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-26T09:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "7e6d5c4b3a291807f6e5d4c3b2a1908f7e6d5c4b", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-26T09:00:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK57_csv_has_header: failed"] }
     },
@@ -55,7 +55,7 @@
         "pr": { "number": 70, "title": "BANK-57 statement CSV export", "state": "open", "headSha": "7e6d5c4b3a291807f6e5d4c3b2a1908f7e6d5c4b" },
         "report": { "schema": "aat-ci-report/1", "head_sha": "7e6d5c4b3a291807f6e5d4c3b2a1908f7e6d5c4b", "tests": [
           { "id": "tests/test_export.py::test_BANK57_csv_has_header", "outcome": "failed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "7e6d5c4b3a291807f6e5d4c3b2a1908f7e6d5c4b", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-26T09:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "7e6d5c4b3a291807f6e5d4c3b2a1908f7e6d5c4b", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-26T09:00:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK57_csv_has_header: failed"] }
     }
