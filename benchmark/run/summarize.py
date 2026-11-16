@@ -1,6 +1,8 @@
 """Paired result table and metrics (CASES.md section 4) from results.json and truth.json.
 
-    python summarize.py <results.json> > RESULTS.md
+    python summarize.py <results.json> [<truth file>] > RESULTS.md
+
+The truth file defaults to truth.json (set 1); set 2 uses truth-2.json.
 """
 
 import json
@@ -8,7 +10,8 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-TRUTH = {k: v for k, v in json.loads((HERE / "truth.json").read_text(encoding="utf-8")).items() if not k.startswith("_")}
+TRUTH_FILE = Path(sys.argv[2]) if len(sys.argv) > 2 else HERE / "truth.json"
+TRUTH = {k: v for k, v in json.loads(TRUTH_FILE.read_text(encoding="utf-8")).items() if not k.startswith("_")}
 ARMS = ["A1", "A2", "A2file", "A2s", "C"]
 A_MAP = {"merge": "supported", "blocked": "contradicted", "human gate": "cannot_verify"}
 

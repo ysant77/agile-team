@@ -25,3 +25,9 @@ waits for a code-owner review (a `human gate`). The primary A2 keeps that.
 | # | Change | Seen set 2 results before? | Kind |
 |---|---|---|---|
 | 9 | Runner and scorer support for the set 2 facts: a report made on an older commit with the branch tip as the PR head (S17), a cancelled CI run on the head (S17, S20), a report from another workflow with no repro or coverage block (S20), a coverage file removed from `coverage.json` before the coverage script (S18), and the base tip from a branch. A1 and A2 read a cancelled run on the head as a failed required check. | No (made before any set 2 build finished) | Support for case facts the frozen set 2 text states. Set 1 outcomes are unchanged by it (checked). |
+| 10 | `summarize.py` takes the truth file as an optional second argument. Set 2 uses `truth-2.json`, copied from the frozen rows of `CASES-2-INDEPENDENT.md`. With no argument the set 1 output is byte-identical (checked). | No | Reporting only. |
+
+Run facts for set 2 (not changes): the evidence used `scripts/repro.py` from the bank branch
+`fix/repro-base-test-names` (679c055). For S17, the runner also wrote evidence for the second
+manifest branch `case/S17-main-b2`; the scorer does not read it (a `baseMovedTo` case scores its
+first branch only, change 1). No case was re-run.
