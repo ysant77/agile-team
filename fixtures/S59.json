@@ -1,0 +1,2199 @@
+{
+  "scenario": "S59",
+  "title": "Definition of done: reproduced on main, covered, recorded",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d1",
+        "type": "done",
+        "text": "Done: merged, reproduced on main, covered."
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          },
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 18,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "supported"
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d2",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "passed",
+                  "exc_type": null
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          },
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 18,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "contradicted",
+        "reasonIncludes": [
+          "test_BANK4_concurrent_withdrawals_20_threads passes on base"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d3",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "ModuleNotFoundError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          },
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 18,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "test_BANK4_balance_matches_withdrawals cannot run on base (ModuleNotFoundError)"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d4",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 18,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "no repro block"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d5",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          },
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 18,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "test_BANK4_balance_matches_withdrawals is not in the repro block"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d6",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "failed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          },
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 18,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "contradicted",
+        "reasonIncludes": [
+          "test_BANK4_concurrent_withdrawals_20_threads fails on head"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d7",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "failed",
+              "passed": 2,
+              "failed": 1
+            }
+          },
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 18,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "contradicted",
+        "reasonIncludes": [
+          "full suite on head failed (1 failed)"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d8",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          },
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 14,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "contradicted",
+        "reasonIncludes": [
+          "14 of 20 changed lines covered (70%), floor 80%"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d9",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          },
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 18,
+            "head_total": 89.9,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "contradicted",
+        "reasonIncludes": [
+          "total coverage 89.9% is below base 90.8% minus 0.5"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d10",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          },
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 18,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()\n+    if retry:  # pragma: no cover",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "adds pragma: no cover"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d11",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          },
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 18,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py",
+          ".coveragerc"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "changes coverage settings (.coveragerc)"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d12",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "no coverage block"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d13",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "open",
+          "merged": false,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          },
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 18,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "contradicted",
+        "reasonIncludes": [
+          "PR #14 is not merged"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d14",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          },
+          "coverage": {
+            "changed_executable": 20,
+            "changed_covered": 18,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ]
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "evidence record incomplete: CI run URL"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "d15",
+        "type": "done",
+        "text": ""
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-4",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_concurrent_withdrawals_20_threads"
+                ]
+              }
+            },
+            {
+              "acId": "AC2",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK4_balance_matches_withdrawals"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 14,
+          "title": "BANK-4 guard withdraw",
+          "state": "closed",
+          "merged": true,
+          "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "url": "https://github.com/ysant77/yms-bank-demo/pull/14"
+        },
+        "mergeSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ],
+          "repro": {
+            "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "tests": [
+              {
+                "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              },
+              {
+                "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+                "base": {
+                  "outcome": "failed",
+                  "exc_type": "AssertionError"
+                },
+                "head": {
+                  "outcome": "passed"
+                }
+              }
+            ],
+            "full_suite": {
+              "outcome": "passed",
+              "passed": 3,
+              "failed": 0
+            }
+          },
+          "coverage": {
+            "changed_executable": 0,
+            "changed_covered": 0,
+            "head_total": 91.0,
+            "base_total": 90.8
+          }
+        },
+        "baseReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tests": [
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "mergeReport": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee4",
+          "tests": [
+            {
+              "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_transfers.py::test_BANK4_balance_matches_withdrawals",
+              "outcome": "passed"
+            },
+            {
+              "id": "tests/test_accounts.py::test_open_account",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/transfers.py",
+          "tests/test_transfers.py"
+        ],
+        "prPatches": {
+          "src/bank/transfers.py": "@@ -10,3 +10,5 @@\n+    with lock:\n+        debit()",
+          "tests/test_transfers.py": "@@ -1 +1,3 @@\n+def test_x():\n+    assert True"
+        },
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z",
+            "url": "https://github.com/ysant77/yms-bank-demo/actions/runs/101"
+          }
+        ]
+      },
+      "expect": {
+        "result": "supported"
+      }
+    }
+  ]
+}
