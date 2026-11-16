@@ -108,6 +108,9 @@ export function prLinked(ctx) {
 // The pinned workflow files whose runs decide ci_green. A run is matched by its workflow file,
 // never by its display name: a PR can add another workflow that is also named "CI".
 
+// Conclusions that mean the run gave no result. Every other conclusion except success is a fail.
+const NO_RESULT = ['cancelled', 'stale', 'skipped'];
+
 export function ciGreen(ctx) {
   const required = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
   const head = ctx.pr?.headSha;
@@ -121,9 +124,17 @@ export function ciGreen(ctx) {
   for (const path of required) {
     // Every run of the pinned workflow on the head must succeed; a later success does not
     // hide an earlier failure.
-    const runs = (ctx.workflowRuns ?? []).filter((r) => runPath(r) === path && r.headSha === head);
-    const failed = runs.find((r) => r.status === 'completed' && r.conclusion !== 'success');
+    const all = (ctx.workflowRuns ?? []).filter((r) => runPath(r) === path && r.headSha === head);
+    const failed = all.find((r) => r.status === 'completed' && r.conclusion !== 'success' && !NO_RESULT.includes(r.conclusion));
     if (failed) return result('ci_green', 'fail', `${path} concluded ${failed.conclusion} on ${head.slice(0, 7)}`);
+    // A cancelled or stale run gave no result (benchmark set 2, S17): it is missing evidence, not
+    // evidence against the claim. Another completed run of the workflow on the head decides.
+    const runs = all.filter((r) => !(r.status === 'completed' && NO_RESULT.includes(r.conclusion)));
+    if (runs.length === 0 && all.length > 0) {
+      unknown = true;
+      reasons.push(`${path}: the run on ${head.slice(0, 7)} concluded ${all[0].conclusion}, so no result exists for the head`);
+      continue;
+    }
     if (runs.length === 0 || runs.some((r) => r.status !== 'completed')) {
       unknown = true;
       reasons.push(`${path}: no completed run for ${head.slice(0, 7)}`);
@@ -524,8 +535,10 @@ export function measurementUnchanged(ctx) {
 // never supports it (benchmark B27). Returns null when the ticket has no such domain.
 const SIGNOFF_DOMAINS = ['money_semantics', 'security_exception', 'data_repair', 'model_risk', 'fairness', 'product_behaviour'];
 export function checkHumanSignoff(ctx) {
-  const domain = ctx.ticket?.domain;
-  if (!domain || !SIGNOFF_DOMAINS.includes(domain)) return null;
+  // The domain comes from the stored ticket spec or from a Jira label (benchmark set 2, S16).
+  const domain = SIGNOFF_DOMAINS.includes(ctx.ticket?.domain) ? ctx.ticket.domain
+    : (ctx.ticket?.labels ?? []).find((l) => SIGNOFF_DOMAINS.includes(l));
+  if (!domain) return null;
   const s = ctx.ticket.signoff;
   const sha = ctx.pr?.mergeSha ?? ctx.pr?.headSha ?? null;
   if (!s?.by) return result('human_signoff', 'unknown', `${domain}: a person's sign-off of the merged change is required, and none is recorded`);
@@ -547,6 +560,19 @@ function newModuleStory(ctx, row) {
   const file = row.id.split('::')[0];
   const lines = String(ctx.prPatches?.[file] ?? '').split('\n').filter((l) => l.startsWith('+'));
   return modules.some((m) => lines.some((l) => new RegExp(`^\\+\\s*(from\\s+${m.replaceAll('.', '\\.')}\\s+import|import\\s+${m.replaceAll('.', '\\.')}\\b)`).test(l)));
+}
+
+// A Story's AC test that fails on base with AttributeError because the PR adds the function to an
+// existing module (benchmark set 2, S03): the source diff adds `def <name>`, the test file's added
+// lines use that name, and the test passes on head. A Bug keeps the old rule.
+function newFunctionStory(ctx, row) {
+  if (ctx.ticket?.type !== 'Story' || row.head?.outcome !== 'passed' || row.base?.exc_type !== 'AttributeError') return false;
+  const added = (file) => String(ctx.prPatches?.[file] ?? '').split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++'));
+  const sources = Object.keys(ctx.prPatches ?? {}).filter((f) => f.endsWith('.py') && !/(^|\/)tests?\//.test(f) && !/(^|\/)test_[^/]*\.py$/.test(f));
+  const names = sources.flatMap((f) => added(f).map((l) => /^\+\s*def\s+([A-Za-z_]\w*)\s*\(/.exec(l)?.[1]).filter(Boolean));
+  if (!names.length) return false;
+  const testLines = added(row.id.split('::')[0]);
+  return names.some((n) => testLines.some((l) => new RegExp(`\\b${n}\\b`).test(l)));
 }
 
 // D-repro: each ticket test fails on base by an assertion and passes on head; the full head suite
@@ -592,7 +618,7 @@ export function reproduced(ctx) {
     const base = row.base ?? {};
     if (row.head?.outcome !== 'passed') fails.push(`${name} fails on head (${row.head?.outcome ?? 'no result'})`);
     if (base.outcome === 'passed') fails.push(`${name} passes on base, so it does not reproduce the problem`);
-    else if (newModuleStory(ctx, row)) continue;
+    else if (newModuleStory(ctx, row) || newFunctionStory(ctx, row)) continue;
     else if (base.outcome === 'error' || CANNOT_RUN_ON_BASE.includes(base.exc_type)) {
       unknowns.push(`${name} cannot run on base (${base.exc_type ?? base.outcome}); a human decides`);
     } else if (base.outcome !== 'failed') unknowns.push(`${name} has no base result`);
@@ -621,6 +647,10 @@ export function coverageOk(ctx) {
       return result('coverage', 'unknown', `${file} adds pragma: no cover`);
     }
   }
+  // A changed source file that the coverage data does not have looks fully covered in the counts
+  // (benchmark set 2, S18). The coverage script names such files.
+  const unmeasured = Array.isArray(cov.unmeasured_files) ? cov.unmeasured_files : [];
+  if (unmeasured.length) return result('coverage', 'unknown', `${unmeasured.join(', ')} changed but not in the coverage data`);
   const conf = { ...DEFAULT_COVERAGE, ...(ctx.config?.coverage ?? {}) };
   const exec = Number(cov.changed_executable ?? NaN);
   const covered = Number(cov.changed_covered ?? NaN);

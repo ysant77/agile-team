@@ -34,7 +34,9 @@ test('B23 is supported as recorded (the base of the changed fixtures below)', as
 
 // S17: a cancelled run gave no result. It is missing evidence, not evidence against the claim.
 test('S17: a cancelled CI run on the head gives cannot_verify, never contradicted', async () => {
-  const c = load('B23');
+  // B18a: an open PR with a ready claim, supported as recorded.
+  assert.equal((await verdictOf(load('B18a'))).result, 'supported');
+  const c = load('B18a');
   c.github.runs = c.github.runs.map((r) => ({ ...r, conclusion: 'cancelled' }));
   const v = await verdictOf(c);
   assert.equal(v.result, 'cannot_verify', v.reason);
