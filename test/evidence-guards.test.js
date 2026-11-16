@@ -17,7 +17,8 @@ function fakeFetch(routes) {
   const calls = [];
   const fetchFn = async (url) => {
     calls.push(url);
-    const hit = routes.find(([p]) => p.test(url));
+    // An empty PR file list unless the test gives one: a 404 there now stops the read (R2).
+    const hit = routes.find(([p]) => p.test(url)) ?? (/\/pulls\/\d+\/files/.test(url) ? [null, []] : null);
     if (!hit) return { ok: false, status: 404, json: async () => ({}), headers: { get: () => null } };
     const body = typeof hit[1] === 'function' ? hit[1](url) : hit[1];
     return { ok: true, status: 200, json: async () => body, headers: { get: () => '4999' } };
