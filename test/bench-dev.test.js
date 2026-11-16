@@ -183,3 +183,18 @@ test('B24: a Task with no AC and all sub-tasks done is supported', async () => {
   const v = await run('B24');
   assert.equal(v.result, 'supported', v.reason);
 });
+
+// (a3) A dropped test is visible even when git reads a delete and add as a rename: the repro
+// block lists the base test ids of every changed, renamed or removed test module (benchmark I10).
+test('I10: a test that the PR drops makes the claim contradicted, with the test named', async () => {
+  const v = await run('I10');
+  assert.equal(v.result, 'contradicted', v.reason);
+  assert.match(v.reason, /test_keys_expire_after_24_hours/);
+});
+
+test('an approved removal does not count as a dropped test', async () => {
+  const c = load('I10');
+  c.ticket.approvedTestRemovals = ['test_keys_expire_after_24_hours'];
+  const v = await runCase(c);
+  assert.doesNotMatch(v.reason, /test_keys_expire_after_24_hours/);
+});

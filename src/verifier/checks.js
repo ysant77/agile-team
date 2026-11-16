@@ -296,7 +296,11 @@ export function testsNotRemoved(ctx, report = ctx.report) {
   if (!ctx.baseReport || !report) return result('tests_not_removed', 'unknown', 'base or head report missing');
   const head = new Set((report.tests ?? []).map((t) => testName(t.id)));
   const approved = new Set(ctx.ticket.approvedTestRemovals ?? []);
-  const removed = [...new Set((ctx.baseReport.tests ?? []).map((t) => testName(t.id)))].filter(
+  // The base side: the main report, and the base test ids of every test module the PR changes,
+  // renames or removes (repro block). After a merge the main report is the merge commit's, so the
+  // repro ids are what still show a dropped test (benchmark I10).
+  const baseIds = [...(ctx.baseReport.tests ?? []).map((t) => t.id), ...(report.repro?.base_test_ids ?? [])];
+  const removed = [...new Set(baseIds.map((id) => testName(id)))].filter(
     (n) => !head.has(n) && !approved.has(n),
   );
   return removed.length
