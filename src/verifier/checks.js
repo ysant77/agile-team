@@ -1,7 +1,7 @@
 // Deterministic checks. Each returns { name, status: 'pass' | 'fail' | 'unknown', reason }.
 // No model is involved. Unknown means "cannot verify": a human or more evidence is needed.
 
-import { sameFiles, testName, testsByName } from './report.js';
+import { namesKey, sameFiles, testName, testsByName } from './report.js';
 
 const BOT = 'github-actions[bot]';
 const result = (name, status, reason) => ({ name, status, reason });
@@ -28,7 +28,11 @@ export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSh
 export function prLinked(ctx) {
   const pr = ctx.pr;
   if (!pr) return result('pr_linked', 'fail', `no pull request names ${ctx.ticket.key}`);
-  const named = `${pr.title} ${pr.branch ?? ''}`.includes(ctx.ticket.key);
+  // Two open or merged PRs that name the key: code cannot tell which one the claim means.
+  if ((ctx.prCandidates ?? []).length > 1) {
+    return result('pr_linked', 'unknown', `PRs ${ctx.prCandidates.map((n) => `#${n}`).join(', ')} all name ${ctx.ticket.key}; link one PR`);
+  }
+  const named = namesKey(pr.title, ctx.ticket.key) || namesKey(pr.branch, ctx.ticket.key);
   if (!named) return result('pr_linked', 'fail', `PR #${pr.number} does not name ${ctx.ticket.key}`);
   if (pr.state === 'closed' && !pr.merged) {
     return result('pr_linked', 'fail', `PR #${pr.number} is closed without merge`);

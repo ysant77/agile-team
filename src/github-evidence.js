@@ -1,7 +1,7 @@
 // Collects GitHub evidence for one ticket. fetchFn is injected (Forge fetch in production,
 // a stub in tests). Token optional: without it, only a public repository can be read.
 
-import { extractReport } from './verifier/report.js';
+import { extractReport, namesKey } from './verifier/report.js';
 
 const API = 'https://api.github.com';
 const BOT = 'github-actions[bot]';
@@ -25,7 +25,12 @@ export async function collectGithub({ repo, key, token, fetchFn }) {
   };
 
   const pulls = (await get(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=50`)) ?? [];
-  const match = pulls.find((p) => `${p.title} ${p.head?.ref ?? ''}`.includes(key));
+  // A PR is linked when its title or branch names the key at a boundary, and its head branch is
+  // in this repository (not a fork). Closed PRs that were not merged are abandoned work.
+  const naming = pulls.filter((p) => p.head?.repo?.full_name === repo && (namesKey(p.title, key) || namesKey(p.head?.ref, key)));
+  const live = naming.filter((p) => !(p.state === 'closed' && !p.merged_at));
+  const match = live[0] ?? naming[0];
+  const prCandidates = live.map((p) => p.number);
   const pr = match
     ? {
         number: match.number,
@@ -82,6 +87,7 @@ export async function collectGithub({ repo, key, token, fetchFn }) {
 
   return {
     pr,
+    prCandidates,
     report,
     reportAuthor,
     workflowRuns,
