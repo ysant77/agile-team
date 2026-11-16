@@ -13,7 +13,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "63216b08b144f805ade601504191e00ae9d0bf25", "tests": [
           { "id": "tests/test_flags.py::test_BANK19_jpy_blocked_when_flag_off", "outcome": "passed" },
           { "id": "tests/test_money.py::test_BANK8_jpy_exponent_0", "outcome": "passed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "63216b08b144f805ade601504191e00ae9d0bf25", "status": "completed", "conclusion": "success", "createdAt": "2026-12-01T06:12:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "63216b08b144f805ade601504191e00ae9d0bf25", "status": "completed", "conclusion": "success", "createdAt": "2026-12-01T06:12:00Z" } ]
       },
       "expect": { "result": "supported" }
     },

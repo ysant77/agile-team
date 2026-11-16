@@ -14,7 +14,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "72f3f79b6b0fe358bc52cafdbc093a2e13d5e9cb", "tests": [
           { "id": "tests/test_web.py::test_statement_template_renders", "outcome": "passed" } ],
           "metrics": { "audit_vulns": 0 }, "deps": { "jinja2": "3.1.6", "fastapi": "0.115.0" } },
-        "workflowRuns": [ { "name": "CI", "headSha": "72f3f79b6b0fe358bc52cafdbc093a2e13d5e9cb", "status": "completed", "conclusion": "success", "createdAt": "2026-12-04T03:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "72f3f79b6b0fe358bc52cafdbc093a2e13d5e9cb", "status": "completed", "conclusion": "success", "createdAt": "2026-12-04T03:00:00Z" } ]
       },
       "expect": { "result": "supported" }
     },
@@ -30,7 +30,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "5bed8c82567a6cf28457df7765c2f392200b7ad4", "tests": [
           { "id": "tests/test_web.py::test_statement_template_renders", "outcome": "passed" } ],
           "metrics": { "audit_vulns": 1 }, "deps": { "jinja2": "3.1.4", "fastapi": "0.115.0" } },
-        "workflowRuns": [ { "name": "CI", "headSha": "5bed8c82567a6cf28457df7765c2f392200b7ad4", "status": "completed", "conclusion": "success", "createdAt": "2026-12-04T02:10:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "5bed8c82567a6cf28457df7765c2f392200b7ad4", "status": "completed", "conclusion": "success", "createdAt": "2026-12-04T02:10:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["jinja2 3.1.4", "audit_vulns = 1"] }
     }

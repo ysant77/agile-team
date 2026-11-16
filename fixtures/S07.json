@@ -13,7 +13,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "db8169ff21cd742cdad3adc51809e16f0e22e34c", "tests": [
           { "id": "tests/test_interest.py::test_BANK7_no_float_in_interest", "outcome": "passed" },
           { "id": "tests/test_interest.py::test_BANK7_monthly_reference_1000_accounts", "outcome": "passed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "db8169ff21cd742cdad3adc51809e16f0e22e34c", "status": "completed", "conclusion": "success", "createdAt": "2026-11-21T02:30:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "db8169ff21cd742cdad3adc51809e16f0e22e34c", "status": "completed", "conclusion": "success", "createdAt": "2026-11-21T02:30:00Z" } ]
       },
       "expect": { "result": "supported" }
     },

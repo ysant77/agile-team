@@ -15,7 +15,7 @@
           { "id": "tests/test_migrations.py::test_BANK23_up_down_up", "outcome": "passed" },
           { "id": "tests/test_migrations.py::test_BANK23_balances_unchanged", "outcome": "passed" } ],
           "migrations": [ { "number": "0005", "file": "migrations/0005_currency.py", "operations": ["ADD COLUMN", "UPDATE"] } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "02ef2a1e38892bdf7a70eed0da02bb225f168026", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T03:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "02ef2a1e38892bdf7a70eed0da02bb225f168026", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T03:00:00Z" } ]
       },
       "expect": { "result": "cannot_verify", "reasonIncludes": ["AC3: needs a human: run on production by a human"] }
     },
