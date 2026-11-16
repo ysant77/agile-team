@@ -56,6 +56,7 @@ function armA(c, ev, hardened, owners = OWNED, perTest = true) {
   if (s.tests_rc !== 0) why.push(`tests exit ${s.tests_rc}`);
   if (s.lint_rc !== 0) why.push('lint fails');
   if (g.staleHead) why.push('required checks pending on the new head');
+  if (g.cancelledRunOnHead) why.push('the CI run on the head was cancelled');
   if (g.baseMovedTo) why.push('branch not up to date with the base');
   if (hardened) {
     const repro = ev.report?.repro;
@@ -97,7 +98,7 @@ function armA(c, ev, hardened, owners = OWNED, perTest = true) {
 function recordGithub(c, ev, prNumber) {
   const g = c.github ?? {};
   const head = ev.meta.head;
-  const prHead = g.staleHead ? `${head.slice(0, 32)}00000001` : head;
+  const prHead = ev.meta.pr_head ?? (g.staleHead ? `${head.slice(0, 32)}00000001` : head);
   const merged = c.claim === 'done';
   const pull = (number, extra = {}) => ({
     number, title: `${c.ticket.key} ${c.id}`, state: merged ? 'closed' : 'open', body: '',
@@ -111,14 +112,21 @@ function recordGithub(c, ev, prNumber) {
   if (g.secondOpenPr) pulls.push(pull(prNumber + 500, { state: 'open', merged_at: null, merge_commit_sha: null, head: { ref: `draft-${c.id.toLowerCase()}`, sha: 'f'.repeat(40), repo: { full_name: REPO } } }));
   const runOk = ev.meta.steps.tests_rc === 0 && ev.meta.steps.lint_rc === 0;
   const rerun = g.failedRunThenRerun || g.infraFailureThenRerun;
-  const runs = [{ id: 9000 + prNumber, name: 'CI', path: CI_PATH, head_sha: head, status: 'completed', conclusion: runOk ? 'success' : 'failure',
+  // S20: the report comes from a Nightly workflow; the CI workflow run on the head was cancelled.
+  const ciPath = g.reportFromWorkflow ? `.github/workflows/${g.reportFromWorkflow}.yml` : CI_PATH;
+  const runs = [{ id: 9000 + prNumber, name: g.reportFromWorkflow ? 'Nightly' : 'CI', path: ciPath, head_sha: head, status: 'completed', conclusion: runOk ? 'success' : 'failure',
     created_at: at(0), updated_at: at(9), run_started_at: at(0), run_attempt: rerun ? 2 : 1, html_url: 'x' }];
   // Earlier attempts of a re-run: the job steps, with the step that failed.
   const step = (name, conclusion) => ({ name, conclusion });
   const attempts = rerun ? { 1: { jobs: [{ name: 'test', conclusion: 'failure', steps: g.failedRunThenRerun
     ? [step('Set up job', 'success'), step('Run uv sync --locked --extra fraud', 'success'), step('Run uv run pytest -q --cov=src --cov-branch --cov-report=json:coverage.json', 'failure')]
     : [step('Set up job', 'success'), step('Run uv sync --locked --extra fraud', 'failure')] }] } } : {};
+  if (g.cancelledRunOnHead) runs.push({ id: 9500 + prNumber, name: 'CI', path: CI_PATH, head_sha: prHead, status: 'completed', conclusion: 'cancelled', created_at: at(20), updated_at: at(21), run_started_at: at(20), run_attempt: 1, html_url: 'x' });
   let report = ev.report ? structuredClone(ev.report) : null;
+  if (report && g.reportFromWorkflow) {
+    delete report.repro;
+    delete report.coverage;
+  }
   if (report) for (const t of report.tests ?? []) delete t.duration_s;
   if (report && g.noCoverageBlock) delete report.coverage;
   if (report && g.reportEditedByUser) {
@@ -130,7 +138,7 @@ function recordGithub(c, ev, prNumber) {
   const comment = report && !g.noBotReport ? { created_at: at(8), updated_at: g.reportEditedByUser ? at(120) : at(9) } : null;
   const main = merged && report ? 'report' : mainReport;
   const files = ev.meta.files.map((f) => ({ filename: f.filename, status: f.status, previous_filename: f.previous_filename, patch: f.patch }));
-  const baseTip = g.baseMovedTo ? (c.baseTipSha ?? 'b'.repeat(40)) : ev.meta.merge_base;
+  const baseTip = g.baseMovedTo ? (ev.meta.base_tip ?? c.baseTipSha ?? 'b'.repeat(40)) : ev.meta.merge_base;
   return { pulls, runs, attempts, report, comment, files, filesTruncated: Boolean(g.filesTruncated), runs404: Boolean(g.runs404),
     stats: { additions: ev.meta.additions, deletions: ev.meta.deletions }, prHead, main, baseTip };
 }

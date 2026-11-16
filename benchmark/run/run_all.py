@@ -33,12 +33,22 @@ def main():
             if case.get("void") or (only and case["id"] not in only):
                 continue
             env = [f"{k}={v}" for k, v in (case.get("env") or {}).items()]
+            g = case.get("github") or {}
             for branch in case["branches"]:
-                cmd = [sys.executable, str(HERE / "run_ci.py"), "--clone", clone, "--branch", branch,
+                # A report made on an older commit (S17): CI runs on that commit; the branch tip
+                # stays the PR head.
+                ci_ref = g.get("reportForCommit") or branch
+                cmd = [sys.executable, str(HERE / "run_ci.py"), "--clone", clone, "--branch", ci_ref,
                        "--base", case.get("base", "bench-base"),
                        "--out", str(args.out / branch.replace("/", "_")),
                        "--main-report", str(args.main_report)]
                 cmd += [x for e in env for x in ("--env", e)]
+                if g.get("reportForCommit"):
+                    cmd += ["--pr-head-branch", branch]
+                if g.get("baseMovedTo"):
+                    cmd += ["--base-tip-branch", g["baseMovedTo"]]
+                if g.get("dropCoverageFile"):
+                    cmd += ["--drop-coverage-file", g["dropCoverageFile"]]
                 if args.repro_script:
                     cmd += ["--repro-script", args.repro_script]
                 if case.get("bench"):

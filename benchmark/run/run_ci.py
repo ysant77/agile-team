@@ -61,6 +61,9 @@ def main():
     ap.add_argument("--bench", action="store_true")
     ap.add_argument("--main-report", type=Path, help="base report (main.json) for the coverage totals")
     ap.add_argument("--repro-script", type=Path, help="use this scripts/repro.py (development re-score)")
+    ap.add_argument("--drop-coverage-file", default="", help="remove this file from coverage.json (simulated CI fault)")
+    ap.add_argument("--pr-head-branch", default="", help="branch whose tip is the PR head, when CI ran on an older commit")
+    ap.add_argument("--base-tip-branch", default="", help="branch whose tip is the current base")
     args = ap.parse_args()
     clone = args.clone.resolve()
     py = str(clone / ".venv" / "bin" / "python")
@@ -99,6 +102,10 @@ def main():
             r = run([py, "scripts/repro.py", "--base", base, "--head", head, "--head-report", str(report)], tree, env)
             steps["repro_rc"] = r.returncode
             steps["repro_err"] = r.stderr[-600:]
+        if args.drop_coverage_file and cov.is_file():
+            data = json.loads(cov.read_text(encoding="utf-8"))
+            data.get("files", {}).pop(args.drop_coverage_file, None)
+            cov.write_text(json.dumps(data), encoding="utf-8")
         if report.is_file() and cov.is_file():
             cargs = ["--coverage", str(cov), "--head-report", str(report), "--head", head]
             if args.base != args.branch:
@@ -112,6 +119,8 @@ def main():
             shutil.copy(report, args.out / "report.json")
         files, adds, dels = changed_files(clone, merge_base, head) if args.base != args.branch else ([], 0, 0)
         meta = {"branch": args.branch, "head": head, "base": base, "merge_base": merge_base,
+                "pr_head": git(clone, "rev-parse", args.pr_head_branch) if args.pr_head_branch else None,
+                "base_tip": git(clone, "rev-parse", args.base_tip_branch) if args.base_tip_branch else None,
                 "files": files, "additions": adds, "deletions": dels, "steps": steps}
         (args.out / "meta.json").write_text(json.dumps(meta, indent=1) + "\n", encoding="utf-8")
         print(args.branch, "tests_rc", tests.returncode, "report", report.is_file())

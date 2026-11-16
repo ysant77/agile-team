@@ -19,3 +19,9 @@ file. Every change made after a case result was seen is listed below.
 
 The frozen A2 says code owners on `tests/`. Read as written, any PR that touches a test file
 waits for a code-owner review (a `human gate`). The primary A2 keeps that.
+
+## Set 2 (frozen at fe77128)
+
+| # | Change | Seen set 2 results before? | Kind |
+|---|---|---|---|
+| 9 | Runner and scorer support for the set 2 facts: a report made on an older commit with the branch tip as the PR head (S17), a cancelled CI run on the head (S17, S20), a report from another workflow with no repro or coverage block (S20), a coverage file removed from `coverage.json` before the coverage script (S18), and the base tip from a branch. A1 and A2 read a cancelled run on the head as a failed required check. | No (made before any set 2 build finished) | Support for case facts the frozen set 2 text states. Set 1 outcomes are unchanged by it (checked). |
