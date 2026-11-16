@@ -160,7 +160,12 @@ async function armCArbitrate(c, n) {
     const ev = evidenceOf(b);
     const side = { ...c, claim: 'ready', id: `${c.id}${'ab'[i]}` };
     const v = await armC(side, ev, n * 10 + i);
-    const m = c.metric?.sides?.[i] ?? c.metric?.[b] ?? null;
+    // The builder measured two bench runs per side: the median of the run medians, and their
+    // range as the spread (no 20-run IQR exists; see SCORER-CHANGES.md, change 4).
+    const runs = c.metric?.measured?.[b]?.run_medians;
+    const sorted = runs ? [...runs].sort((x, y) => x - y) : null;
+    const m = sorted ? { median: sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2,
+      iqrLow: sorted[0], iqrHigh: sorted[sorted.length - 1] } : null;
     sides.push({ id: b, gatesPassed: v.outcome === 'supported', gateReason: v.reason, metrics: m,
       newFailureModes: null, newDependencies: null, diffLines: ev.meta.additions + ev.meta.deletions });
   }
