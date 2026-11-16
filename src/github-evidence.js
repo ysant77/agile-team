@@ -50,10 +50,12 @@ export async function collectGithub({ repo, key, token, fetchFn }) {
     const runs = await get(`/repos/${repo}/actions/runs?head_sha=${pr.headSha}&per_page=50`);
     workflowRuns = (runs?.workflow_runs ?? []).map((r) => ({
       name: r.name,
+      path: r.path,
       headSha: r.head_sha,
       status: r.status,
       conclusion: r.conclusion,
       createdAt: r.created_at,
+      updatedAt: r.updated_at,
       url: r.html_url,
     }));
     const comments = (await get(`/repos/${repo}/issues/${pr.number}/comments?per_page=100`)) ?? [];

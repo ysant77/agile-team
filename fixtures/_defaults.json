@@ -1,5 +1,5 @@
 {
   "reportAuthor": "github-actions[bot]",
   "baseWorkflowFiles": { ".github/workflows/ci.yml": "1111111111111111111111111111111111111111111111111111111111111111" },
-  "config": { "requiredWorkflows": ["CI"], "tooGood": { "auc": 0.95 } }
+  "config": { "requiredWorkflowPaths": [".github/workflows/ci.yml"], "tooGood": { "auc": 0.95 } }
 }

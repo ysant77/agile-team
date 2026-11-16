@@ -14,7 +14,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "2d5fefb068852da0e46038dd4a51b0fedc50f7d5", "tests": [
           { "id": "tests/ml/test_features.py::test_BANK40_features_use_past_only", "outcome": "failed" } ],
           "metrics": { "auc": 0.983, "pr_auc": 0.628 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "2d5fefb068852da0e46038dd4a51b0fedc50f7d5", "status": "completed", "conclusion": "failure", "createdAt": "2026-12-05T02:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "2d5fefb068852da0e46038dd4a51b0fedc50f7d5", "status": "completed", "conclusion": "failure", "createdAt": "2026-12-05T02:00:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK40_features_use_past_only: failed"] }
     },
@@ -30,7 +30,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "d59f266cf58614542a66eec5ae1b76405f90a1cf", "tests": [
           { "id": "tests/ml/test_features.py::test_BANK40_features_use_past_only", "outcome": "passed" } ],
           "metrics": { "auc": 0.983, "pr_auc": 0.628 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "d59f266cf58614542a66eec5ae1b76405f90a1cf", "status": "completed", "conclusion": "success", "createdAt": "2026-12-05T03:30:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "d59f266cf58614542a66eec5ae1b76405f90a1cf", "status": "completed", "conclusion": "success", "createdAt": "2026-12-05T03:30:00Z" } ]
       },
       "expect": { "result": "cannot_verify", "reasonIncludes": ["too good, human review"] }
     },
@@ -46,7 +46,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "3ed114bc7644f350adb4a6551e61d5b097a2a93c", "tests": [
           { "id": "tests/ml/test_features.py::test_BANK40_features_use_past_only", "outcome": "passed" } ],
           "metrics": { "auc": 0.888, "pr_auc": 0.393 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "3ed114bc7644f350adb4a6551e61d5b097a2a93c", "status": "completed", "conclusion": "success", "createdAt": "2026-12-05T06:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "3ed114bc7644f350adb4a6551e61d5b097a2a93c", "status": "completed", "conclusion": "success", "createdAt": "2026-12-05T06:00:00Z" } ]
       },
       "expect": { "result": "supported" }
     }

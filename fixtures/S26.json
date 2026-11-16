@@ -11,7 +11,7 @@
         "pr": { "number": 14, "title": "BANK-4 guard withdraw", "state": "open", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1" },
         "report": { "schema": "aat-ci-report/1", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1", "tests": [
           { "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads", "outcome": "failed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-18T09:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-18T09:00:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK4_concurrent_withdrawals_20_threads: failed"] }
     },

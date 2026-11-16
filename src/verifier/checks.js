@@ -40,24 +40,28 @@ export function prLinked(ctx) {
   return result('pr_linked', 'pass', `PR #${pr.number} names ${ctx.ticket.key}`);
 }
 
+// The pinned workflow files whose runs decide ci_green. A run is matched by its workflow file,
+// never by its display name: a PR can add another workflow that is also named "CI".
+export const DEFAULT_WORKFLOW_PATHS = ['.github/workflows/ci.yml'];
+const runPath = (r) => String(r.path ?? '').split('@')[0];
+
 export function ciGreen(ctx) {
-  const required = ctx.config?.requiredWorkflows ?? ['CI'];
+  const required = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
   const head = ctx.pr?.headSha;
   if (!head) return result('ci_green', 'unknown', 'no head commit');
   const reasons = [];
   let unknown = false;
-  for (const name of required) {
-    const runs = (ctx.workflowRuns ?? [])
-      .filter((r) => r.name === name && r.headSha === head)
-      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-    const latest = runs[0];
-    if (!latest || latest.status !== 'completed') {
+  for (const path of required) {
+    // Every run of the pinned workflow on the head must succeed; a later success does not
+    // hide an earlier failure.
+    const runs = (ctx.workflowRuns ?? []).filter((r) => runPath(r) === path && r.headSha === head);
+    const failed = runs.find((r) => r.status === 'completed' && r.conclusion !== 'success');
+    if (failed) return result('ci_green', 'fail', `${path} concluded ${failed.conclusion} on ${head.slice(0, 7)}`);
+    if (runs.length === 0 || runs.some((r) => r.status !== 'completed')) {
       unknown = true;
-      reasons.push(`${name}: no completed run for ${head.slice(0, 7)}`);
-    } else if (latest.conclusion !== 'success') {
-      return result('ci_green', 'fail', `${name} concluded ${latest.conclusion} on ${head.slice(0, 7)}`);
+      reasons.push(`${path}: no completed run for ${head.slice(0, 7)}`);
     } else {
-      reasons.push(`${name}: success`);
+      reasons.push(`${path}: success`);
     }
   }
   return result('ci_green', unknown ? 'unknown' : 'pass', reasons.join('; '));

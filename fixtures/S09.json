@@ -13,7 +13,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "e77da3f5329d9b0b0d407d44a80f49768ec68d9f", "tests": [
           { "id": "tests/test_statements.py::test_BANK9_end_date_inclusive", "outcome": "passed" },
           { "id": "tests/test_statements.py::test_BANK9_closing_balance_end_of_day_utc8", "outcome": "failed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "e77da3f5329d9b0b0d407d44a80f49768ec68d9f", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-24T04:20:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "e77da3f5329d9b0b0d407d44a80f49768ec68d9f", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-24T04:20:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK9_closing_balance_end_of_day_utc8: failed"] }
     },
