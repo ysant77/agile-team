@@ -68,3 +68,13 @@ test('B27: a sign-off of the merged commit by a person lets the evidence decide 
   assert.equal(checkHumanSignoff({ ...ctx, ticket: { ...ctx.ticket, signoff: { ...ctx.ticket.signoff, sha: 'old' } } }).status, 'unknown');
   assert.equal(checkHumanSignoff({ ...ctx, ticket: { key: 'X', domain: null } }), null);
 });
+
+// (a2) A PR that changes measurement code (config guardedPaths) cannot support a claim by itself,
+// whatever the AC type: a test that asserts recall is a measurement too (benchmark B19, B20).
+for (const id of ['B19', 'B20']) {
+  test(`${id}: a change to the evaluation or model code sends the claim to a person`, async () => {
+    const v = await run(id);
+    assert.equal(v.result, 'cannot_verify', v.reason);
+    assert.match(v.reason, /src\/fraud\/(evaluate|model)\.py.*measure/);
+  });
+}

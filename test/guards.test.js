@@ -50,13 +50,16 @@ test('the guard applies to upper and lower bounds and wins over a passing value'
   const both = [['metric_at_least', 'pr_auc', 0.25], ['metric_at_most', 'auc', 0.95]];
   const v = ready(ctx({ prFiles: ['src/fraud/model.py'], checks: both }));
   assert.equal(v.result, 'cannot_verify');
-  assert.equal(v.reason.split(';').length, 2);
+  // Both metric ACs name the guard, and the claim-wide measurement check adds the paths.
+  assert.equal(v.reason.split(';').filter((r) => /model\.py/.test(r)).length, 3);
 });
 
-test('a test check is not affected by the metric guard', () => {
+test('a test check is affected by the measurement guard too (benchmark B19, B20)', () => {
   const c = ctx({ prFiles: ['src/fraud/evaluate.py'], checks: [['test_passes', 'test_BANK17_gate']] });
   c.report.tests = [{ id: 'tests/test_bank17_gate.py::test_BANK17_gate', outcome: 'passed' }];
-  assert.equal(ready(c).result, 'supported');
+  const v = ready(c);
+  assert.equal(v.result, 'cannot_verify');
+  assert.match(v.reason, /evaluate\.py.*measured/);
 });
 
 test('the too-good guard still sends a leak to a human when no guarded file changed', () => {

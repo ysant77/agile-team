@@ -436,6 +436,19 @@ function reproBlockGap(repro, headSha) {
   return null;
 }
 
+// Measurement code (config guardedPaths, DESIGN 12 risk 12). A PR that changes it cannot support
+// any claim by itself: a test that asserts a metric is a measurement too, not only a metric AC
+// (benchmark B19, B20). Returns null when no guarded path changed.
+export function measurementUnchanged(ctx) {
+  const guarded = ctx.config?.guardedPaths ?? [];
+  if (!guarded.length || !ctx.pr) return null;
+  if (!Array.isArray(ctx.prFiles)) return null; // the trust checks already report a missing file list
+  const touched = ctx.prFiles.filter((f) => guarded.some((g) => (g.endsWith('/') ? f.startsWith(g) : f === g)));
+  return touched.length
+    ? result('measurement_unchanged', 'unknown', `PR changes ${touched.join(', ')}, which can change how results are measured: a person reviews`)
+    : null;
+}
+
 // High-stake domains (DESIGN 6a): money rules, security exceptions, data repair, model risk,
 // fairness, product behaviour. "done" needs a person's sign-off of the merged commit; code alone
 // never supports it (benchmark B27). Returns null when the ticket has no such domain.
