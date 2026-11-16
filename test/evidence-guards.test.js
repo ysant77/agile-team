@@ -161,3 +161,16 @@ test('F2: the PR list, the comments and the runs are read past the first page', 
   assert.equal(gh.report.head_sha, HEAD);
   assert.equal(gh.workflowRuns.length, 101);
 });
+
+test('F3: only the comment author makes a report trusted, never a field inside the report', () => {
+  const ctx = goodCtx({ reportAuthor: undefined, report: { ...goodCtx().report, author: BOT } });
+  assert.equal(reportTrusted(ctx).status, 'unknown');
+});
+
+test('F4: "fixed" and "ready" accept an open PR, and the reason says it is not merged', () => {
+  const v = verify({ id: 'c', type: 'ready' }, goodCtx());
+  assert.equal(v.result, 'supported');
+  assert.match(v.checks.find((c) => c.name === 'pr_linked').reason, /open, not merged/);
+  const merged = prLinked(goodCtx({ pr: { ...goodCtx().pr, state: 'closed', merged: true } }));
+  assert.doesNotMatch(merged.reason, /not merged/);
+});

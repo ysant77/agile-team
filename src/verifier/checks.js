@@ -41,7 +41,9 @@ function commentEditedLater(ctx) {
 // Guard: a report counts only if the bot wrote it, for the PR head, with unchanged workflows.
 export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSha) {
   if (!report) return result('report_trusted', 'unknown', 'no CI report');
-  if ((ctx.reportAuthor ?? report.author) !== BOT) {
+  // The author comes from the comment that carried the report; a field in the report body is
+  // written by the code under test and proves nothing.
+  if (ctx.reportAuthor !== BOT) {
     return result('report_trusted', 'unknown', `report not posted by ${BOT}`);
   }
   if (headSha && report.head_sha !== headSha) {
@@ -75,7 +77,9 @@ export function prLinked(ctx) {
   if (pr.state === 'closed' && !pr.merged) {
     return result('pr_linked', 'fail', `PR #${pr.number} is closed without merge`);
   }
-  return result('pr_linked', 'pass', `PR #${pr.number} names ${ctx.ticket.key}`);
+  // "fixed" and "ready" mean the change is done on its branch; "merged" is its own claim type.
+  const open = pr.state === 'open' ? ' (open, not merged)' : '';
+  return result('pr_linked', 'pass', `PR #${pr.number} names ${ctx.ticket.key}${open}`);
 }
 
 // The pinned workflow files whose runs decide ci_green. A run is matched by its workflow file,
