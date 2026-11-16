@@ -78,6 +78,12 @@ function fraudMetrics(dir) {
   return m;
 }
 
+// Edits to files outside the bug's list (conftest.py, pyproject.toml, tests) are refused before
+// anything runs, so model code never changes how the tests run (unit 2 review, item 6).
+export function editsOutside(bug, edits) {
+  return [...new Set((edits ?? []).map((e) => e.path).filter((p) => !bug.files.includes(p)))];
+}
+
 async function fixTask(ask, bug, role) {
   const dir = makeWorktree(`${role}-${bug.id}`, bug.ref, bug.extras);
   try {
@@ -89,6 +95,8 @@ async function fixTask(ask, bug, role) {
     const reply = await ask([{ role: 'system', content: 'You are a careful senior engineer fixing one bug in a Python repository.' },
       { role: 'user', content: prompt }], EDITS_SCHEMA);
     if (!reply.ok || !reply.parsed) return { task: bug.id, failed: reply.error ?? 'invalid JSON', score: 0 };
+    const refused = editsOutside(bug, reply.parsed.edits);
+    if (refused.length) return { task: bug.id, failed: `edits outside the allowed files: ${refused.join(', ')}`, outside: refused, score: 0 };
     const editErrors = applyEdits(dir, reply.parsed.edits);
     if (editErrors.length) return { task: bug.id, failed: `edits: ${editErrors.join('; ')}`, score: 0 };
     const diff = changed(dir);
