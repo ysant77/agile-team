@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { GUARD_VERSION } from '../src/opinion.js';
 import { LINT_VERSION } from '../src/lint.js';
 
-export const ROLE_ORDER = ['pm', 'dev', 'qa', 'ds', 'lead'];
+export const ROLE_ORDER = ['pm', 'dev', 'qa', 'ds', 'lead', 'tools'];
 const RESAMPLES = 2000;
 
 const mean = (xs) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : null);

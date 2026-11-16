@@ -20,6 +20,7 @@ import { chat, digest, loaded, parseJson, unload } from './ollama.js';
 import { DISPUTES, runLead } from './tasks/lead.js';
 import { BUGS, DS_TASKS, runDev, runDs, runQa } from './tasks/code.js';
 import { REQUESTS, runPm } from './tasks/pm.js';
+import { PROBES, runTools } from './tasks/tools.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROLES = {
@@ -28,6 +29,7 @@ const ROLES = {
   dev: { tasks: BUGS, id: (t) => t.id, run: runDev },
   qa: { tasks: BUGS, id: (t) => t.id, run: runQa },
   ds: { tasks: DS_TASKS, id: (t) => t.id, run: runDs },
+  tools: { tasks: PROBES, id: (t) => t.id, run: runTools },
 };
 
 function args(argv) {
@@ -123,8 +125,8 @@ export async function main(argv = process.argv.slice(2)) {
       const settings = chatSettings(config, model, repeat);
       for (const task of todo(roleName, repeat)) {
         const calls = [];
-        const ask = async (messages, format) => {
-          const reply = await chat({ model, messages, format, settings });
+        const ask = async (messages, format, tools) => {
+          const reply = await chat({ model, messages, format, tools, settings });
           const parsed = reply.ok ? parseJson(reply.content) : { ok: false };
           calls.push({ ok: reply.ok, error: reply.error, tokens: reply.outputTokens, tps: reply.tokensPerS, wallS: reply.wallS, validJson: parsed.ok, repaired: !!parsed.repaired });
           const ps = (await loaded().catch(() => [])).find((m) => m.name === model);
