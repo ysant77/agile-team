@@ -529,6 +529,22 @@ export function checkHumanSignoff(ctx) {
   return result('human_signoff', 'pass', `${domain}: signed off by ${s.by} at ${s.at}`);
 }
 
+// A Story's AC test that cannot import on base because the PR adds the module (benchmark B22):
+// the module file is added in the diff, the test file imports it (added lines), and the test
+// passes on head. That is new behaviour, not a failed reproduction. A Bug keeps the old rule.
+const IMPORT_ERRORS = ['ModuleNotFoundError', 'ImportError'];
+function newModuleStory(ctx, row) {
+  if (ctx.ticket?.type !== 'Story' || row.head?.outcome !== 'passed') return false;
+  if (row.base?.outcome !== 'error' || (row.base.exc_type && !IMPORT_ERRORS.includes(row.base.exc_type))) return false;
+  const modules = (ctx.prAddedFiles ?? [])
+    .filter((f) => f.endsWith('.py') && !/(^|\/)tests?\//.test(f) && !/(^|\/)test_[^/]*\.py$/.test(f))
+    .map((f) => f.replace(/^src\//, '').replace(/\.py$/, '').replace(/\/__init__$/, '').replaceAll('/', '.'));
+  if (!modules.length) return false;
+  const file = row.id.split('::')[0];
+  const lines = String(ctx.prPatches?.[file] ?? '').split('\n').filter((l) => l.startsWith('+'));
+  return modules.some((m) => lines.some((l) => new RegExp(`^\\+\\s*(from\\s+${m.replaceAll('.', '\\.')}\\s+import|import\\s+${m.replaceAll('.', '\\.')}\\b)`).test(l)));
+}
+
 // D-repro: each ticket test fails on base by an assertion and passes on head; the full head suite
 // passes; no test is removed.
 export function reproduced(ctx) {
@@ -572,6 +588,7 @@ export function reproduced(ctx) {
     const base = row.base ?? {};
     if (row.head?.outcome !== 'passed') fails.push(`${name} fails on head (${row.head?.outcome ?? 'no result'})`);
     if (base.outcome === 'passed') fails.push(`${name} passes on base, so it does not reproduce the problem`);
+    else if (newModuleStory(ctx, row)) continue;
     else if (base.outcome === 'error' || CANNOT_RUN_ON_BASE.includes(base.exc_type)) {
       unknowns.push(`${name} cannot run on base (${base.exc_type ?? base.outcome}); a human decides`);
     } else if (base.outcome !== 'failed') unknowns.push(`${name} has no base result`);

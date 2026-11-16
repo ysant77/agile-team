@@ -13,11 +13,14 @@ const isActionsBot = (u) => u?.id === ACTIONS_BOT_ID && u?.type === 'Bot';
 // file counts under both names. A full last page means the list may go on: the result is null
 // (not known), never a short list that hides a changed file (second review, item 1).
 export const FILE_PAGES = 30;
-export async function listPrFiles(get, repo, prNumber) {
+export async function listPrFiles(get, repo, prNumber, added = []) {
   const names = [];
   for (let page = 1; page <= FILE_PAGES; page += 1) {
     const files = (await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`, { required: true })) ?? [];
-    for (const f of files) names.push(f.filename, ...(f.previous_filename ? [f.previous_filename] : []));
+    for (const f of files) {
+      names.push(f.filename, ...(f.previous_filename ? [f.previous_filename] : []));
+      if (f.status === 'added') added.push(f.filename);
+    }
     if (files.length < 100) return names;
   }
   return null;
@@ -90,6 +93,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
   let reportAuthor = null;
   let reportComment = null;
   let prFiles = null;
+  let prAddedFiles = null;
   let workflowRuns = [];
   let securityRuns = null;
   if (pr) {
@@ -136,7 +140,9 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
       reportComment = { createdAt: latest.created_at, updatedAt: latest.updated_at };
     }
     // Every changed file, so the verifier can see a change to the workflow or the report plugin.
-    prFiles = await listPrFiles(get, repo, pr.number);
+    prAddedFiles = [];
+    prFiles = await listPrFiles(get, repo, pr.number, prAddedFiles);
+    if (prFiles === null) prAddedFiles = null;
     truncated.files = prFiles === null;
     // The code-scanning result check of the head (small security check, DESIGN 14g). Public
     // check runs need no token; the app id filter keeps the list short.
@@ -193,6 +199,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     reportAuthor,
     reportComment,
     prFiles,
+    prAddedFiles,
     baseTip,
     securityRuns,
     workflowRuns,

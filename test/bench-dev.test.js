@@ -198,3 +198,18 @@ test('an approved removal does not count as a dropped test', async () => {
   const v = await runCase(c);
   assert.doesNotMatch(v.reason, /test_keys_expire_after_24_hours/);
 });
+
+// (b4) A Story that adds a module: its AC test cannot import on base. That is new behaviour,
+// not a reproduction failure, when the PR adds the module, the AC test file imports it, and the
+// test passes on head (benchmark B22). A Bug keeps the old rule.
+test('B22: a Story whose AC tests import a module the PR adds is supported', async () => {
+  const v = await run('B22');
+  assert.equal(v.result, 'supported', v.reason);
+});
+
+test('the same shape on a Bug stays cannot_verify', async () => {
+  const c = load('B22');
+  c.ticket.type = 'Bug';
+  const v = await runCase(c);
+  assert.equal(v.result, 'cannot_verify', v.reason);
+});
