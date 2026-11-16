@@ -163,3 +163,32 @@ Wrong results are in bold.
 | T17 | cannot_verify | void | void |
 | T19 | cannot_verify (label marks the domain) | cannot_verify, sign-off named | as C |
 | T22 | cannot_verify | **contradicted** (false block: the guard test passes on base, and coverage 4 of 6 is a fail) | as C |
+
+## Corrections after the independent recount (17 Nov 2026; no scored figure above is changed)
+
+- (a) D strict count is **11**, not 12. The T12 hold matches the reason pattern but has the
+  wrong reason: the finding asks for the old error shape with the switch off; the defect is that
+  the default configuration does not get the new shape.
+- (b) A2 holds or blocks **8 of 8** built controls: 6 `cannot_verify` (code owners on tests) and
+  T04 and T16 `blocked` (the repro job reads an import error or `AttributeError` on base).
+- (c) The three D runs are byte-identical on every case, so they are one sample, not three.
+- (d) Sensitivity for the arguable case T19 scored as `supported`: right outcomes A1 11, C 11,
+  D 13 (of 20).
+
+Timing of the case file (from the session transcript, UTC): freeze message sent 16:05:08 (after
+protocol commit 6545290); release message received 16:05:22; first access of the case file was
+the hash check at 16:05:24 (`shasum` and `wc -l` only); copy and commit 16:05:28 (17c4762); first
+read 16:05:29; truth and predictions written in one step at 16:06:41 (15250f0); builder agent
+started 16:07:09 and read only the committed copy. The file and its folder were not opened before
+the release, by this session or by any agent it started.
+
+## Fix list for a later set (no build now)
+
+- T02: the reviewer wrote the AC gap only as a risk; a gap in risks for a case the AC names does
+  not hold the claim.
+- T14: the number guard refused a review with a correct blocking finding (`0.005` from `10.005`).
+- T23: an old assertion made weaker in a changed old test is not detected by C; the review was
+  refused (verdict word) and had no blocking finding.
+- T13: a data file under `tests/data/` counts as pytest support for C.
+- T09 and T22: an AC test id that passes on base by design (a guard for "no change") is read as
+  "does not reproduce"; for T22, coverage below the floor is a fail, not missing evidence.
