@@ -6,16 +6,17 @@ import { applyGuards } from '../src/opinion.js';
 
 const side = (prNumber, result, diffLines, extra = {}) => ({
   prNumber, verdict: { result, reason: `${result} by checks` }, diffLines, files: ['src/bank/ledger.py'],
-  pr: { body: `Fix for PR${prNumber}` }, report: { metrics: {} }, ...extra,
+  pr: { body: `Fix for PR${prNumber}` }, report: { metrics: {} }, newFailureModes: [], newDependencies: [], ...extra,
 });
 const base0 = { issueKey: "BANK-36", ticket: { acceptanceCriteria: [{ acId: "AC1" }] }, domain: null, question: "winner", metric: null };
 const base = { issueKey: 'BANK-32', ticket: { acceptanceCriteria: [{ acId: 'AC1' }] }, domain: null, question: 'winner', metric: null };
 
-test('code decides by the smaller diff, so no opinion is needed', () => {
+test('the smaller diff only recommends a side, so a human decides and an opinion is allowed', () => {
   const c = buildPacket({ ...base, evidence: [side(5, 'supported', 12), side(7, 'supported', 140)] });
-  assert.equal(c.arbitration.winner, 'PR5');
+  assert.equal(c.arbitration.winner, null);
+  assert.equal(c.arbitration.recommendation.id, 'PR5');
   assert.equal(c.arbitration.rule, 'smaller diff');
-  assert.equal(c.opinionAllowed, false);
+  assert.equal(c.opinionAllowed, true);
 });
 
 test('a failed gate decides; the packet marks the side', () => {
@@ -38,17 +39,20 @@ test('a tie leaves the case to a human, and an opinion may be recorded', () => {
 
 test('a metric inside the noise sets withinNoise; a clear margin decides by code', () => {
   const m = (v) => ({ report: { metrics: { p95_ms: v } } });
-  const close = buildPacket({ ...base, metric: 'p95_ms', higherIsBetter: false,
+  // The metric and its direction come from the ticket's registered AC (unit 2 review, item 1).
+  const ticket = { acceptanceCriteria: [{ acId: 'AC1', check: { type: 'metric_at_most', args: ['p95_ms', 50] } }] };
+  const close = buildPacket({ ...base, ticket,
     evidence: [side(5, 'supported', 40, m(41)), side(7, 'supported', 40, m(43))] });
   assert.equal(close.packet.withinNoise, true);
-  const clear = buildPacket({ ...base, metric: 'p95_ms', higherIsBetter: false,
+  const clear = buildPacket({ ...base, ticket,
     evidence: [side(5, 'supported', 40, m(20)), side(7, 'supported', 40, m(43))] });
   assert.equal(clear.arbitration.decidedBy, 'code-metric');
   assert.equal(clear.arbitration.winner, 'PR5');
 });
 
 test('a high-stake domain is flagged and goes to a human', () => {
-  const c = buildPacket({ ...base, domain: 'money_semantics', evidence: [side(5, 'supported', 12), side(7, 'supported', 140)] });
+  // The domain comes from the ticket (a label here), not from the caller (unit 2 review, item 2).
+  const c = buildPacket({ ...base, ticket: { ...base.ticket, domain: 'money_semantics' }, evidence: [side(5, 'supported', 12), side(7, 'supported', 140)] });
   assert.equal(c.highStake, true);
   assert.equal(c.arbitration.decidedBy, 'human');
 });
@@ -104,11 +108,13 @@ test('a cache change without a stale-read test is a new failure mode', () => {
 test('S36 shape: the cache side loses on "fewer new failure modes" before the diff size counts', () => {
   const base = { deps: { pytest: '8' } };
   const evidence = [
-    { ...side(5, 'supported', 30), files: ['src/bank/statement_cache.py'], baseReport: base, report: { metrics: {}, deps: { pytest: '8', cachetools: '5' }, tests: [] } },
-    { ...side(7, 'supported', 60), files: ['migrations/0004_statement_index.sql'], baseReport: base, report: { metrics: {}, deps: { pytest: '8' }, tests: [] } },
+    { ...side(5, 'supported', 30), newFailureModes: undefined, newDependencies: undefined, files: ['src/bank/statement_cache.py'], baseReport: base, report: { metrics: {}, deps: { pytest: '8', cachetools: '5' }, tests: [] } },
+    { ...side(7, 'supported', 60), newFailureModes: undefined, newDependencies: undefined, files: ['migrations/0004_statement_index.sql'], baseReport: base, report: { metrics: {}, deps: { pytest: '8' }, tests: [] } },
   ];
   const c = buildPacket({ ...base0, evidence });
-  assert.equal(c.arbitration.winner, 'PR7');
+  // Since PR 3 the lead rules only recommend; a human decides.
+  assert.equal(c.arbitration.winner, null);
+  assert.equal(c.arbitration.recommendation.id, 'PR7');
   assert.equal(c.arbitration.rule, 'fewer new failure modes');
   assert.ok(c.packet.evidence.some((e) => e.kind === 'rule' && /PR5: new dependencies: cachetools; new failure modes: cache without a stale-read test/.test(e.text)));
 });

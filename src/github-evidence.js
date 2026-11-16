@@ -65,9 +65,8 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
   const sameRepo = (name) => String(name ?? '').toLowerCase() === String(repo).toLowerCase();
   // A PR is linked when its title or branch names the key at a boundary, and its head branch is
   // in this repository (not a fork). Closed PRs that were not merged are abandoned work.
-  const naming = prNumber
-    ? pulls.filter((p) => p.number === prNumber)
-    : pulls.filter((p) => sameRepo(p.head?.repo?.full_name) && (namesKey(p.title, key) || namesKey(p.head?.ref, key)));
+  const linkedTo = (p) => sameRepo(p.head?.repo?.full_name) && (namesKey(p.title, key) || namesKey(p.head?.ref, key));
+  const naming = prNumber ? pulls.filter((p) => p.number === prNumber) : pulls.filter(linkedTo);
   const live = naming.filter((p) => !(p.state === 'closed' && !p.merged_at));
   const match = live[0] ?? naming[0];
   const prCandidates = prNumber ? [prNumber] : live.map((p) => p.number);
@@ -78,6 +77,9 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
         branch: match.head?.ref,
         state: match.state,
         merged: Boolean(match.merged_at),
+        // Whether the PR names the key and comes from this repository; false for a PR picked by
+        // number that does not (unit 2 review, item 7).
+        linked: linkedTo(match),
         headSha: match.head?.sha,
         url: match.html_url,
         body: match.body ?? '',
@@ -180,6 +182,7 @@ export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
       break;
     }
   }
-  const diffLines = (pr.additions ?? 0) + (pr.deletions ?? 0);
+  // Missing counts are unknown, not 0: a 0 would win "smaller diff" (unit 2 review, item 3).
+  const diffLines = typeof pr?.additions === 'number' && typeof pr?.deletions === 'number' ? pr.additions + pr.deletions : null;
   return { diffLines, files: complete ? files.map((f) => f.filename) : null };
 }

@@ -18,7 +18,7 @@
         { "id": "raj", "gatesPassed": true, "metrics": { "median": 412, "iqrLow": 380, "iqrHigh": 440 }, "newFailureModes": [], "newDependencies": [], "diffLines": 14 },
         { "id": "kai", "gatesPassed": true, "metrics": { "median": 400, "iqrLow": 370, "iqrHigh": 430 }, "newFailureModes": [], "newDependencies": [], "diffLines": 9 }
       ],
-      "expect": { "decidedBy": "lead-rule", "winner": "kai" }
+      "expect": { "decidedBy": "human", "recommended": "kai" }
     },
     {
       "kind": "arbitrate",
