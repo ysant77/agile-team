@@ -137,3 +137,27 @@ test('B4c: a report comment edited after the pinned run ended is not trusted', a
   const gh = await collectGithub({ repo: REPO, key: 'BANK-1', fetchFn });
   assert.deepEqual(gh.reportComment, { createdAt: '2026-11-16T01:05:00Z', updatedAt: '2026-11-16T03:00:00Z' });
 });
+
+test('F1: a repository GitHub hides (404 on the PR list) is an error, not "no PR"', async () => {
+  const { fetchFn } = fakeFetch([]);
+  await assert.rejects(collectGithub({ repo: REPO, key: 'BANK-1', fetchFn }), /HTTP 404/);
+});
+
+test('F2: the PR list, the comments and the runs are read past the first page', async () => {
+  const filler = (n, from) => Array.from({ length: n }, (_, i) => pull(100 + from + i, `OTHER-${from + i} work`));
+  const report = (head) => `<!-- aat-ci-report -->\n\`\`\`json\n${JSON.stringify({ schema: 'aat-ci-report/1', head_sha: head, tests: [] })}\n\`\`\``;
+  const target = pull(3, 'BANK-1 fix', { head: { ref: 'b', sha: HEAD, repo: { full_name: REPO } } });
+  const other = (i) => ({ user: { login: 'raj' }, body: `comment ${i}`, created_at: 't', updated_at: 't' });
+  const { fetchFn } = fakeFetch([
+    [/\/pulls\?/, (u) => (page(u) === 1 ? filler(100, 0) : page(u) === 2 ? [target] : [])],
+    [/\/issues\/3\/comments/, (u) => (page(u) === 1 ? Array.from({ length: 100 }, (_, i) => other(i))
+      : page(u) === 2 ? [{ user: { login: BOT }, body: report(HEAD), created_at: 'a', updated_at: 'b' }] : [])],
+    [/\/actions\/runs\?/, (u) => ({ workflow_runs: page(u) === 1
+      ? Array.from({ length: 100 }, () => ({ name: 'CI', path: CI, head_sha: HEAD, status: 'completed', conclusion: 'success' }))
+      : page(u) === 2 ? [{ name: 'CI', path: CI, head_sha: HEAD, status: 'completed', conclusion: 'failure' }] : [] })],
+  ]);
+  const gh = await collectGithub({ repo: REPO, key: 'BANK-1', fetchFn });
+  assert.equal(gh.pr.number, 3);
+  assert.equal(gh.report.head_sha, HEAD);
+  assert.equal(gh.workflowRuns.length, 101);
+});
