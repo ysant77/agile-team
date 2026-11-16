@@ -61,3 +61,9 @@ test('a refused review has no blocking finding', () => {
   assert.equal(r.outcome, 'invalid_review');
   assert.deepEqual(blockingFindings(r), []);
 });
+
+test('the agent view gives the exact test-name prefix that the name guard needs', async () => {
+  const { packetForAgent } = await import('../src/review-actions.js');
+  const view = packetForAgent(packet, { suggest: false });
+  assert.equal(view.testNamePrefix, 'test_BANK4_');
+});

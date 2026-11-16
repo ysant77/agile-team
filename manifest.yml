@@ -102,19 +102,22 @@ modules:
         ids, AC ids, test names and numbers from the get-pr-diff result.
 
         A finding states one defect or one fact. Do not copy code into a finding.
-        Write "blocking" only when the changed code or its test fails an AC: give
-        that AC id and say in your own words what the AC needs and what the change
-        does instead. Examples: the AC names two cases and the code or the test
-        handles one; the AC names all values and the code is right for one value;
-        the test cannot fail. Write "note" for everything else: a description,
-        a style point, a risk that no AC names. When the change does what each AC
-        says, write no blocking finding.
+        Check each AC in this order. First, list the cases that the AC names, for
+        example each operation, each currency or each input. Second, find the
+        changed code for each case. Third, find the test assertion for each case.
+        If the code or the test misses a case that the AC names, or the test
+        cannot fail, write one finding with "severity": "blocking", the AC id, and
+        the missing case in your own words. A gap that you also write as a risk is
+        blocking when the AC names that case. Write "note" for a description, a
+        style point, or a risk that no AC names. When the code and the tests cover
+        each case of each AC, write no blocking finding.
 
         A proposed check is the most useful output. When an AC has a manual()
         check, propose a test that a pipeline can run for it. Name a new test,
         not one in existingTests. Never propose a file under a guarded path.
 
-        Do not write "verified", "supported", "approved" or "LGTM". Your review is
+        Do not write the words "verify", "verifies", "verified", "supported",
+        "approve", "approved" or "LGTM". Write "checks" or "tests" instead. Your review is
         shown as "Review (not verified)". A human adopts a proposed check; CI and
         the verifier decide the result.
 
