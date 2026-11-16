@@ -15,8 +15,14 @@ const runPath = (r) => String(r.path ?? '').split('@')[0];
 
 // Paths that decide how CI runs or how it writes the report. A PR that changes one of them can
 // make its own CI say anything, so its CI is not evidence (DESIGN 6, review of 16 Nov).
-export const DEFAULT_TRUST_PATHS = ['.github/workflows/'];
-const matchesPath = (file, paths) => paths.some((g) => (g.endsWith('/') ? file.startsWith(g) : file === g));
+// Entry forms: "dir/" (everything under it), "**/name" (a file with that name in any folder),
+// or an exact path. Composite actions and pytest's conftest.py run inside CI, so they count.
+export const DEFAULT_TRUST_PATHS = ['.github/workflows/', '.github/actions/', '**/conftest.py'];
+const matchesPath = (file, paths) => paths.some((g) => {
+  if (g.endsWith('/')) return file.startsWith(g);
+  if (g.startsWith('**/')) return file === g.slice(3) || file.endsWith(`/${g.slice(3)}`);
+  return file === g;
+});
 
 export function pipelineChange(ctx) {
   if (!Array.isArray(ctx.prFiles)) return 'pull request file list not available';
@@ -64,6 +70,8 @@ export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSh
     return result('report_trusted', 'unknown', 'workflow changed in this PR');
   }
   if (report === ctx.report) {
+    // The latest bot report can be on a comment page that was not read.
+    if (ctx.truncated?.comments) return result('report_trusted', 'unknown', 'PR comment list is not complete (page limit), so the latest report is not known');
     // The fingerprint is written by the workflow under test, so the verifier also reads the PR's
     // own file list.
     const change = pipelineChange(ctx);
@@ -76,6 +84,9 @@ export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSh
 
 export function prLinked(ctx) {
   const pr = ctx.pr;
+  if (!pr && ctx.truncated?.pulls) {
+    return result('pr_linked', 'unknown', `no pull request in the latest ones names ${ctx.ticket.key}; older ones were not read (page limit)`);
+  }
   if (!pr) return result('pr_linked', 'fail', `no pull request names ${ctx.ticket.key}`);
   // Two open or merged PRs that name the key: code cannot tell which one the claim means.
   if ((ctx.prCandidates ?? []).length > 1) {
@@ -100,6 +111,8 @@ export function ciGreen(ctx) {
   if (!head) return result('ci_green', 'unknown', 'no head commit');
   const change = pipelineChange(ctx);
   if (change) return result('ci_green', 'unknown', change);
+  // A failed run can be on a page that was not read.
+  if (ctx.truncated?.runs) return result('ci_green', 'unknown', `workflow run list for ${head.slice(0, 7)} is not complete (page limit)`);
   const reasons = [];
   let unknown = false;
   for (const path of required) {
@@ -132,8 +145,9 @@ export function testPasses(ctx, name, report = ctx.report) {
 export function bugTestExists(ctx) {
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result('bug_test_exists', 'unknown', trust.reason);
-  const token = issueToken(ctx.ticket.key);
-  const tests = (ctx.report.tests ?? []).filter((t) => testName(t.id).includes(`${token}_`));
+  // The key token at a boundary: test_BANK1_x names BANK-1, test_ABANK1_x does not.
+  const token = new RegExp(`(^|[^A-Za-z0-9])${issueToken(ctx.ticket.key)}_`);
+  const tests = (ctx.report.tests ?? []).filter((t) => token.test(testName(t.id)));
   if (tests.length === 0) {
     return result('bug_test_exists', 'fail', `no test named for ${ctx.ticket.key}: the change may be right, but nothing proves it`);
   }
