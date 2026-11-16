@@ -13,7 +13,11 @@ const DIR = new URL('../fixtures/bench/', import.meta.url);
 const load = (id) => JSON.parse(readFileSync(new URL(`${id}.json`, DIR), 'utf8'));
 
 export async function run(id) {
-  const c = load(id);
+  return runCase(load(id));
+}
+
+async function runCase(c) {
+  const id = c.id;
   const d = {
     collectJira: async () => structuredClone(c.ticket),
     env: () => ({ repo: 'ysant77/yms-bank-demo', token: 'local' }),
@@ -120,3 +124,32 @@ test('replacing a function the PR does not change is not flagged', async () => {
   };
   assert.equal(acTestsRunNewCode(ctx), null);
 });
+
+// (b1) A Bug's guard tests (named for the key, not an AC) protect behaviour that must not change,
+// so they pass on base by design. Each AC test must still reproduce (benchmark B21, B25, B26, B29).
+test('B21 and B29: a guard test that passes on base does not block a reproduced fix', async () => {
+  for (const id of ['B21', 'B29']) {
+    const v = await run(id);
+    assert.equal(v.result, 'supported', `${id}: ${v.reason}`);
+  }
+});
+
+test('B25: with guard tests allowed, the missing coverage block still holds the claim', async () => {
+  const v = await run('B25');
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /coverage/);
+});
+
+test('a Bug with no AC test needs at least one key-named test that reproduces', async () => {
+  const c = load('B21');
+  c.ticket.acceptanceCriteria = [];
+  const repro = async () => (await runCase(c)).checks.find((x) => x.name === 'reproduced');
+  assert.equal((await repro()).status, 'pass');
+  for (const t of c.github.report.repro.tests) if (/BENCH21_/.test(t.id)) t.base = { outcome: 'passed', exc_type: null };
+  const r = await repro();
+  assert.equal(r.status, 'fail', r.reason);
+  assert.match(r.reason, /passes on base/);
+});
+
+
+

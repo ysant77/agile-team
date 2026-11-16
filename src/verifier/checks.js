@@ -538,10 +538,25 @@ export function reproduced(ctx) {
   const removed = testsNotRemoved(ctx);
   if (removed.status === 'fail') fails.push(removed.reason);
   else if (removed.status === 'unknown') unknowns.push(removed.reason);
-  const names = ticketTests(ctx);
+  // AC tests must each reproduce. For a Bug, the other tests named for the key are guards of
+  // behaviour that must not change: they must pass on head and may pass on base (benchmark B21,
+  // B25, B26, B29). With no AC test, at least one key-named test must reproduce.
+  const all = ticketTests(ctx);
+  const acNames = new Set((ctx.ticket?.acceptanceCriteria ?? []).filter((a) => a.check?.type === 'test_passes').map((a) => resolveName(ctx, a.check.args?.[0])));
+  const guards = all.filter((n) => !acNames.has(n));
+  const rowOf = (name) => repro.tests.find((t) => testName(t.id) === name);
+  const reproduces = (name) => rowOf(name)?.base?.outcome === 'failed' && rowOf(name)?.base?.exc_type === 'AssertionError' && rowOf(name)?.head?.outcome === 'passed';
+  let names = all;
+  if (acNames.size || guards.some(reproduces)) {
+    names = acNames.size ? [...acNames] : guards.filter(reproduces);
+    for (const g of guards.filter((n) => !names.includes(n))) {
+      const row = rowOf(g);
+      if (row && row.head?.outcome !== 'passed') fails.push(`${g} fails on head (${row.head?.outcome ?? 'no result'})`);
+    }
+  }
   if (names.length === 0) fails.push(`no test for ${ctx.ticket.key}: nothing reproduces the problem`);
   for (const name of names) {
-    const row = repro.tests.find((t) => testName(t.id) === name);
+    const row = rowOf(name);
     if (!row) {
       unknowns.push(`${name} is not in the repro block`);
       continue;
