@@ -127,7 +127,7 @@ test('B4c: a report comment edited after the pinned run ended is not trusted', a
   assert.equal(reportTrusted(goodCtx({ reportComment: { createdAt: '2026-11-16T01:05:00Z', updatedAt: '2026-11-16T03:00:00Z' } })).status, 'unknown');
   assert.equal(reportTrusted(goodCtx({ reportComment: undefined })).status, 'unknown');
   const comment = (updated) => ({
-    user: { login: BOT }, created_at: '2026-11-16T01:05:00Z', updated_at: updated,
+    user: { login: BOT, id: 41898282, type: 'Bot' }, created_at: '2026-11-16T01:05:00Z', updated_at: updated,
     body: `<!-- aat-ci-report -->\n\`\`\`json\n${JSON.stringify({ schema: 'aat-ci-report/1', head_sha: HEAD, tests: [] })}\n\`\`\``,
   });
   const { fetchFn } = fakeFetch([
@@ -151,7 +151,7 @@ test('F2: the PR list, the comments and the runs are read past the first page', 
   const { fetchFn } = fakeFetch([
     [/\/pulls\?/, (u) => (page(u) === 1 ? filler(100, 0) : page(u) === 2 ? [target] : [])],
     [/\/issues\/3\/comments/, (u) => (page(u) === 1 ? Array.from({ length: 100 }, (_, i) => other(i))
-      : page(u) === 2 ? [{ user: { login: BOT }, body: report(HEAD), created_at: 'a', updated_at: 'b' }] : [])],
+      : page(u) === 2 ? [{ user: { login: BOT, id: 41898282, type: 'Bot' }, body: report(HEAD), created_at: 'a', updated_at: 'b' }] : [])],
     [/\/actions\/runs\?/, (u) => ({ workflow_runs: page(u) === 1
       ? Array.from({ length: 100 }, () => ({ name: 'CI', path: CI, head_sha: HEAD, status: 'completed', conclusion: 'success' }))
       : page(u) === 2 ? [{ name: 'CI', path: CI, head_sha: HEAD, status: 'completed', conclusion: 'failure' }] : [] })],
@@ -189,4 +189,54 @@ test('F10: a report comment from anyone but the CI bot is ignored', async () => 
 test('F10: an HTTP error other than 404 stops the evidence read', async () => {
   const fetchFn = async () => ({ ok: false, status: 502, json: async () => ({}), headers: { get: () => null } });
   await assert.rejects(collectGithub({ repo: REPO, key: 'BANK-1', fetchFn }), /HTTP 502/);
+});
+
+// B4(c) as decided on 16 Nov: a heuristic time window until the report moves to a check run.
+const windowCtx = (updatedAt, runs) => goodCtx({
+  reportComment: { createdAt: '2026-11-16T01:05:00Z', updatedAt },
+  workflowRuns: runs ?? [{ name: 'CI', path: CI, headSha: HEAD, status: 'completed', conclusion: 'success',
+    createdAt: '2026-11-16T01:00:00Z', runStartedAt: '2026-11-16T01:00:05Z', updatedAt: '2026-11-16T01:09:30Z' }],
+});
+
+test('B4c: an edit after the pinned run window is not trusted, and the reason names the heuristic', () => {
+  const r = reportTrusted(windowCtx('2026-11-16T01:12:00Z'));
+  assert.equal(r.status, 'unknown');
+  assert.match(r.reason, /heuristic/);
+});
+
+test('B4c: an edit inside another workflow run, outside the pinned run, is not trusted', () => {
+  const runs = [
+    { name: 'CI', path: CI, headSha: HEAD, status: 'completed', conclusion: 'success', createdAt: '2026-11-16T01:00:00Z', runStartedAt: '2026-11-16T01:00:05Z', updatedAt: '2026-11-16T01:09:30Z' },
+    { name: 'Lint', path: '.github/workflows/lint.yml', headSha: HEAD, status: 'completed', conclusion: 'success', createdAt: '2026-11-16T02:00:00Z', runStartedAt: '2026-11-16T02:00:05Z', updatedAt: '2026-11-16T02:05:00Z' },
+  ];
+  assert.equal(reportTrusted(windowCtx('2026-11-16T02:03:00Z', runs)).status, 'unknown');
+  // An edit before the pinned run started is not from it either.
+  assert.equal(reportTrusted(windowCtx('2026-11-16T00:59:00Z')).status, 'unknown');
+});
+
+test('B4c: without a pinned run on the head the comment has no source', () => {
+  assert.equal(reportTrusted(windowCtx('2026-11-16T01:05:00Z', [])).status, 'unknown');
+});
+
+test('B4c: the window ends exactly 60 s after the run ended', () => {
+  assert.equal(reportTrusted(windowCtx('2026-11-16T01:10:30.000Z')).status, 'pass');
+  assert.equal(reportTrusted(windowCtx('2026-11-16T01:10:30.001Z')).status, 'unknown');
+  assert.equal(reportTrusted(windowCtx('2026-11-16T01:00:05.000Z')).status, 'pass');
+});
+
+test('B4c: the bot is checked by user id and type, not by the login text', async () => {
+  const body = `<!-- aat-ci-report -->\n\`\`\`json\n${JSON.stringify({ schema: 'aat-ci-report/1', head_sha: HEAD, tests: [] })}\n\`\`\``;
+  const comments = (user) => [{ user, body, created_at: 'a', updated_at: 'a' }];
+  for (const [user, trusted] of [
+    [{ login: BOT, id: 41898282, type: 'Bot' }, true],
+    [{ login: BOT, id: 12345, type: 'User' }, false],
+    [{ login: BOT }, false],
+  ]) {
+    const { fetchFn } = fakeFetch([
+      [/\/pulls\?/, (u) => (page(u) === 1 ? [pull(3, 'BANK-1 fix')] : [])],
+      [/\/issues\/3\/comments/, (u) => (page(u) === 1 ? comments(user) : [])],
+    ]);
+    const gh = await collectGithub({ repo: REPO, key: 'BANK-1', fetchFn });
+    assert.equal(gh.report !== null, trusted, JSON.stringify(user));
+  }
 });
