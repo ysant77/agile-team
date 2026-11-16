@@ -1,5 +1,5 @@
 import api, { route } from '@forge/api';
-import { textToAdf } from './text.js';
+import { adfToText, textToAdf } from './text.js';
 
 const POINT_FIELD_NAMES = ['Story point estimate', 'Story Points', 'Story points'];
 
@@ -140,5 +140,17 @@ export async function addComment(issueKey, text) {
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify({ body: textToAdf(text) }),
   });
-  return response.ok;
+  // A failed post must not count as posted: the queue retries the job.
+  if (!response.ok) throw new Error(`Comment post failed: ${response.status}`);
+  return true;
+}
+
+// True when one of the latest 100 comments holds `marker` (the verdict comment of one claim).
+export async function findComment(issueKey, marker) {
+  const response = await api
+    .asApp()
+    .requestJira(route`/rest/api/3/issue/${issueKey}/comment?orderBy=-created&maxResults=100`);
+  if (!response.ok) throw new Error(`Comment list failed: ${response.status}`);
+  const { comments = [] } = await response.json();
+  return comments.some((c) => adfToText(c.body).includes(marker));
 }
