@@ -90,3 +90,29 @@ test('a merged PR gives the merge commit, and the main report stands for the mer
   assert.equal(gh.mergeSha, M);
   assert.equal(gh.mergeReport.head_sha, M);
 });
+
+test('the security check reads the code-scanning check runs of the head, filtered by app id', async () => {
+  const { collectGithub } = await import('../src/github-evidence.js');
+  const H = 'c'.repeat(40);
+  const seen = [];
+  const fetchFn = async (url) => {
+    seen.push(url);
+    const page = Number(new URL(url).searchParams.get('page') ?? 1);
+    const body = /\/pulls\?/.test(url) ? (page === 1 ? [{ number: 20, title: 'BANK-13 fix', state: 'open', head: { ref: 'b', sha: H, repo: { full_name: 'ysant77/yms-bank-demo' } } }] : [])
+      : /\/pulls\/20\/files/.test(url) ? []
+      : /\/check-runs/.test(url) ? { total_count: 1, check_runs: [{ name: 'CodeQL', head_sha: H, status: 'completed', conclusion: 'success', app: { slug: 'github-advanced-security', id: 57789 }, output: { title: 'No new alerts in code changed by this pull request', summary: 'x' } }] }
+      : null;
+    return body === null ? { ok: false, status: 404, json: async () => ({}), headers: { get: () => null } } : { ok: true, status: 200, json: async () => body, headers: { get: () => null } };
+  };
+  const gh = await collectGithub({ repo: 'ysant77/yms-bank-demo', key: 'BANK-13', fetchFn, securityCheck: { mode: 'observe', appId: 57789 } });
+  assert.ok(seen.some((u) => u.includes(`/commits/${H}/check-runs`) && u.includes('app_id=57789')));
+  assert.deepEqual(gh.securityRuns, [{ name: 'CodeQL', appSlug: 'github-advanced-security', appId: 57789, headSha: H, status: 'completed', conclusion: 'success', title: 'No new alerts in code changed by this pull request', summary: 'x' }]);
+  const off = await collectGithub({ repo: 'ysant77/yms-bank-demo', key: 'BANK-13', fetchFn, securityCheck: { mode: 'off' } });
+  assert.equal(off.securityRuns, null);
+});
+
+test('the deployed config keeps the security check advisory until a bank PR shows the real check', async () => {
+  const { VERIFY_CONFIG } = await import('../src/verify-claim.js');
+  assert.equal(VERIFY_CONFIG.securityCheck.mode, 'observe');
+  assert.ok(VERIFY_CONFIG.reportTrustPaths.includes('.github/codeql/'));
+});
