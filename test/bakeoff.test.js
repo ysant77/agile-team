@@ -9,6 +9,7 @@ import { addCandidate } from '../bakeoff/add-model.js';
 import { chatSettings, loadConfig, ROLE_NAMES, roleModel, validateConfig } from '../bakeoff/models.js';
 import { bootstrap, latestRows, summariseRole } from '../bakeoff/report.js';
 import { rowKey } from '../bakeoff/run.js';
+import { GUARD_VERSION } from '../src/opinion.js';
 import { runDev, runDs, runQa } from '../bakeoff/tasks/code.js';
 import { DISPUTES, runLead } from '../bakeoff/tasks/lead.js';
 import { REQUESTS, runPm } from '../bakeoff/tasks/pm.js';
@@ -116,7 +117,7 @@ test('one task of difference in five is no clear winner, and the tie-break picks
 });
 
 test('a large difference is a clear winner', () => {
-  const rows = [...rowsFor('good', 'lead', Array(10).fill(1), { guardVersion: 2 }), ...rowsFor('weak', 'lead', Array(10).fill(0), { guardVersion: 2 })];
+  const rows = [...rowsFor('good', 'lead', Array(10).fill(1), { guardVersion: GUARD_VERSION }), ...rowsFor('weak', 'lead', Array(10).fill(0), { guardVersion: GUARD_VERSION })];
   const s = summariseRole(rows, 'lead', { good: 18, weak: 3 });
   assert.equal(s.verdict.kind, 'clear');
   assert.equal(s.verdict.pick, 'good');
@@ -151,7 +152,7 @@ test('adding a candidate keeps the config valid and refuses a bad tag', () => {
 });
 
 test('lead rows scored under older guards are left out of the ranking', () => {
-  const rows = [...rowsFor('old', 'lead', Array(10).fill(1)), ...rowsFor('new', 'lead', Array(10).fill(0), { guardVersion: 2 })];
+  const rows = [...rowsFor('old', 'lead', Array(10).fill(1)), ...rowsFor('new', 'lead', Array(10).fill(0), { guardVersion: GUARD_VERSION })];
   const s = summariseRole(rows, 'lead');
   assert.deepEqual(s.lines.map((l) => l.model), ['new']);
 });

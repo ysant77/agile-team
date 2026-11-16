@@ -75,7 +75,8 @@ export function buildPacket({ issueKey, ticket, domain, question, metric, higher
     add('diff', `${s.id}: ${s.diffLines ?? 'unknown'} changed lines in ${e.files?.length ?? 'unknown'} files${e.files?.length ? `: ${e.files.slice(0, 8).join(', ')}` : ''}`);
     const deps = newDependencies(e.baseReport, e.report);
     add('rule', `${s.id}: new dependencies: ${deps === null ? 'not compared (base or head report missing)' : deps.length ? deps.join(', ') : 'none'}; new failure modes: ${s.newFailureModes.length ? s.newFailureModes.join(', ') : 'none'}`);
-    if (e.pr?.body) add('review', `${s.id} description: ${short(e.pr.body)}`);
+    // The PR author wrote this text: the model sees it, but it grounds no number (opinion F7).
+    if (e.pr?.body) add('pr_text', `${s.id} description: ${short(e.pr.body)}`);
   }
   if (crossJob) {
     add('rule', `${metric}: cannot compare across jobs. Each pull request ran its benchmark in a different CI job. A report's spread shows jitter inside one job only. No side wins on performance.`);

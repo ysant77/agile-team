@@ -4,9 +4,10 @@
 import { canonical, sha256 } from './audit.js';
 import { HUMAN_DOMAINS } from './arbitration.js';
 
-// Version of the guards below. 2 (13 Nov): exact-match ids and numbers in risks. The bake-off
-// records it; lead rows scored under another version are re-run, not compared.
-export const GUARD_VERSION = 2;
+// Version of the guards below. 2 (13 Nov): exact-match ids and numbers in risks. 3 (16 Nov,
+// review F7): signed numbers, no grounding from author-written text, commit ids without digits.
+// The bake-off records it; lead rows scored under another version are re-run, not compared.
+export const GUARD_VERSION = 3;
 export const OPINION_PROMPT_VERSION = 'lead-opinion/1';
 export const MIN_CONFIDENCE = 0.7;
 export const MAX_REASONS = 5;
@@ -86,8 +87,10 @@ export function validateOpinion(raw) {
 export function idsIn(text) {
   const t = String(text ?? '');
   const shas = (t.match(/\b[0-9a-f]{7,40}\b/g) ?? []).filter((x) => /[0-9]/.test(x) && /[a-f]/.test(x));
+  // A hex id of letters only ("deadbeef") is an id when a word names it as a commit.
+  const named = [...t.matchAll(/\b(?:commit|sha|head)\s+([0-9a-f]{7,40})\b/gi)].map((m) => m[1]);
   const refs = t.match(/\b(PR ?#?\d+|E\d+|AC\d+|[A-Z][A-Z0-9]+-\d+)\b/g) ?? [];
-  return [...new Set([...shas, ...refs.map((r) => r.replace(/^PR ?#?/, 'PR'))])];
+  return [...new Set([...shas, ...named, ...refs.map((r) => r.replace(/^PR ?#?/, 'PR'))])];
 }
 
 // Evidence kinds whose text the PR author or issue reporter wrote. It is shown to the model as
