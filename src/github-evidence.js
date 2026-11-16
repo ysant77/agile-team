@@ -116,3 +116,18 @@ export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
   const patches = Object.fromEntries(files.filter((f) => f.filename.endsWith('.py')).map((f) => [f.filename, f.patch ?? null]));
   return { diffLines: (pr.additions ?? 0) + (pr.deletions ?? 0), files: files.map((f) => f.filename), patches };
 }
+
+// Changed files of one pull request with their patches, for the code reviewer (DESIGN 14a). At
+// most 100 files; GitHub leaves out the patch of a very large file, which stays null.
+export async function collectPrFiles({ repo, prNumber, token, fetchFn }) {
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'agile-team-forge-app',
+    'X-GitHub-Api-Version': '2022-11-28',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const response = await fetchFn(`${API}/repos/${repo}/pulls/${prNumber}/files?per_page=100`, { headers });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`GitHub pull request files: HTTP ${response.status}`);
+  return (await response.json()).map((f) => ({ filename: f.filename, status: f.status, patch: typeof f.patch === 'string' ? f.patch : null }));
+}

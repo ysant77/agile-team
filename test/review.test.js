@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
-  adoptProposal, applyReviewGuards, buildReviewPacket, MAX_HUNKS, MAX_PATCH_LINES, parseHunks,
+  adoptFromReviews, adoptProposal, applyReviewGuards, buildReviewPacket, MAX_HUNKS, MAX_PATCH_LINES, parseHunks,
   proposalStatus, REVIEW_LABEL, reviewGate, reviewSuggested,
 } from '../src/review.js';
 
@@ -149,4 +149,16 @@ test('the reviewer is suggested only where a code check cannot decide', () => {
   const infra = reviewSuggested({ result: 'cannot_verify', reason: 'no CI report' }, { ...ticket, acceptanceCriteria: [] });
   assert.equal(infra.suggest, false);
   assert.match(infra.why, /evidence/);
+});
+
+test('only a proposal from a guarded review can be adopted, with a reason', () => {
+  const spec = { key: 'BANK-4', acceptanceCriteria: s56.steps[0].context.ticket.acceptanceCriteria };
+  const record = { ...applyReviewGuards(good, packet), prNumber: 61 };
+  const ask = { prNumber: 61, testName: 'test_BANK4_concurrent_withdrawals_20_threads', reason: 'adopt for AC2' };
+  const ok = adoptFromReviews(spec, [record], ask);
+  assert.equal(ok.ok, true);
+  assert.equal(ok.spec.acceptanceCriteria[1].check.type, 'test_passes');
+  assert.equal(adoptFromReviews(spec, [record], { ...ask, reason: 'ok' }).ok, false);
+  assert.equal(adoptFromReviews(spec, [record], { ...ask, prNumber: 62 }).ok, false);
+  assert.equal(adoptFromReviews(spec, [{ ...record, outcome: 'invalid_review' }], ask).ok, false);
 });

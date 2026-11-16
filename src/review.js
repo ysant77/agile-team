@@ -276,7 +276,7 @@ export function reviewSuggested(verdict, ticket) {
 
 export function formatReview(issueKey, prNumber, record) {
   if (record.outcome === 'invalid_review' || !record.review) {
-    return `${REVIEW_LABEL} on ${issueKey} PR #${prNumber}: no valid review (guard ${record.guard}). The verdict is unchanged.`;
+    return `${REVIEW_LABEL} on ${issueKey} PR #${prNumber}: no valid review (guard ${record.guard}). The verdict stays as code decided it.`;
   }
   const r = record.review;
   return [
@@ -285,4 +285,20 @@ export function formatReview(issueKey, prNumber, record) {
     ...r.risks.map((x) => `- Risk: ${x}`),
     ...r.proposedChecks.map((c) => `- Proposed check for ${c.ac}: ${c.testName} in ${c.file}. It must assert: ${c.asserts}${c.failsBeforeFix ? ' It must fail before the fix.' : ''}`),
   ].join('\n');
+}
+
+// The panel's "Adopt check" button: only a proposal from a review that passed the guards can be
+// adopted, and only by a human with a reason. Returns the new ticket spec or an error.
+export function adoptFromReviews(spec, reviews, { prNumber, testName: name, reason }) {
+  if (String(reason ?? '').trim().length < 5) return { ok: false, error: 'A reason of at least 5 characters is required.' };
+  const proposal = (reviews ?? [])
+    .filter((r) => r.outcome === 'review' && r.prNumber === prNumber && r.review)
+    .flatMap((r) => r.review.proposedChecks)
+    .find((c) => c.testName === name);
+  if (!proposal) return { ok: false, error: `No valid review proposes ${name} for PR #${prNumber}.` };
+  try {
+    return { ok: true, proposal, spec: adoptProposal(spec, proposal) };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
 }

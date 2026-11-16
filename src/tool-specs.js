@@ -82,6 +82,32 @@ export const TOOL_SPECS = {
     good: { args: { issueKey: 'BANK-32', opinion: '{"decision":"PR5","reasons":[{"text":"PR5 changes 12 lines (E2).","evidence":["E2"]}],"confidence":0.8,"risks":[]}' }, why: 'Cites evidence ids; numbers from the evidence.' },
     bad: { args: { issueKey: 'BANK-32', opinion: '{"decision":"PR9","reasons":[],"confidence":1}' }, why: 'PR9 is not a side, and no reasons.' },
   },
+  'get-pr-diff': {
+    kind: 'read',
+    purpose: "Returns one pull request's patch hunks with hunk ids and line ranges, the ticket's ACs and the verifier's verdict.",
+    use: 'Before a code review: when the verdict is cannot_verify, an AC is manual(), a case asks about design or readability, or a user asks.',
+    avoid: 'Do not use it to decide whether work is done; get-verdicts reports the verdict.',
+    args: {
+      issueKey: { type: 'string', required: true, description: 'The work item, for example BANK-4.' },
+      prNumber: { type: 'number', required: true, description: 'One pull request number, for example 61.' },
+      trigger: { type: 'string', required: false, description: 'cannot_verify, manual_ac, design, readability or request.' },
+    },
+    good: { args: { issueKey: 'BANK-4', prNumber: 61, trigger: 'cannot_verify' }, why: 'The work item and the pull request the verdict names.' },
+    bad: { args: { issueKey: 'PR 61', prNumber: 4 }, why: 'The key and the pull request number are swapped.' },
+  },
+  'record-review': {
+    kind: 'write',
+    purpose: 'Records a code review marked "not verified": findings tied to hunk ids, risks and proposed checks. Code checks it; it never decides.',
+    use: 'Once after get-pr-diff, for the same work item and pull request.',
+    avoid: 'Never with a verdict or an approval, never with a hunk id, line, AC id or number that is not in the get-pr-diff result.',
+    args: {
+      issueKey: { type: 'string', required: true, description: 'The work item, for example BANK-4.' },
+      prNumber: { type: 'number', required: true, description: 'The pull request that get-pr-diff read.' },
+      review: { type: 'string', required: true, description: 'One JSON object: findings, risks, proposedChecks.' },
+    },
+    good: { args: { issueKey: 'BANK-4', prNumber: 61, review: '{"findings":[{"hunk":"P61:H1","file":"src/bank/accounts.py","line":41,"text":"The lock in P61:H1 covers the balance check and the debit."}],"risks":[],"proposedChecks":[{"testName":"test_BANK4_concurrent_withdrawals_20_threads","file":"tests/test_concurrency.py","ac":"AC2","asserts":"20 threads withdraw at the same time.","failsBeforeFix":true}]}' }, why: 'Hunk id, line and AC from the packet; a new test for the manual AC.' },
+    bad: { args: { issueKey: 'BANK-4', prNumber: 61, review: '{"approve":true,"findings":[{"hunk":"H1","file":"x","line":1,"text":"LGTM"}]}' }, why: 'Approves, and H1 is not a hunk id.' },
+  },
 };
 
 // The local twins' tool list for Ollama's `tools` field, built from the specs.
