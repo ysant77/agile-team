@@ -13,7 +13,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "23f7b48ba68b273cfaa40a57f557f86d66be29bc", "tests": [
           { "id": "tests/test_statements.py::test_BANK22_query_plan_uses_index", "outcome": "passed" } ],
           "metrics": { "statement_p95_ms": 212 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "23f7b48ba68b273cfaa40a57f557f86d66be29bc", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T04:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "23f7b48ba68b273cfaa40a57f557f86d66be29bc", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T04:00:00Z" } ]
       },
       "expect": { "result": "supported" }
     },
@@ -28,7 +28,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "e132d9841e18a98164f71a3ed2701107252fc35b", "tests": [
           { "id": "tests/test_statements.py::test_BANK22_query_plan_uses_index", "outcome": "failed" } ],
           "metrics": { "statement_p95_ms": 288 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "e132d9841e18a98164f71a3ed2701107252fc35b", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-26T02:30:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "e132d9841e18a98164f71a3ed2701107252fc35b", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-26T02:30:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK22_query_plan_uses_index: failed"] }
     },

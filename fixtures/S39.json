@@ -14,7 +14,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "5aaea4ec6c0968ca4256eed7bc93714db6956e0b", "tests": [
           { "id": "tests/ml/test_split.py::test_BANK39_split_is_time_based", "outcome": "passed" } ],
           "metrics": { "pr_auc": 0.46, "recall_at_1pct_fpr": 0.74 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "5aaea4ec6c0968ca4256eed7bc93714db6956e0b", "status": "completed", "conclusion": "success", "createdAt": "2026-12-04T05:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "5aaea4ec6c0968ca4256eed7bc93714db6956e0b", "status": "completed", "conclusion": "success", "createdAt": "2026-12-04T05:00:00Z" } ]
       },
       "expect": { "result": "supported" }
     },
@@ -30,7 +30,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "2c50c988022646164d00e14b5a67899afc00656d", "tests": [
           { "id": "tests/ml/test_split.py::test_BANK39_split_is_time_based", "outcome": "failed" } ],
           "metrics": { "pr_auc": 0.58, "recall_at_1pct_fpr": 0.81 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "2c50c988022646164d00e14b5a67899afc00656d", "status": "completed", "conclusion": "failure", "createdAt": "2026-12-04T03:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "2c50c988022646164d00e14b5a67899afc00656d", "status": "completed", "conclusion": "failure", "createdAt": "2026-12-04T03:00:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK39_split_is_time_based: failed"] }
     }

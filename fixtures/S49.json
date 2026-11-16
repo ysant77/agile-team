@@ -23,7 +23,8 @@
     {
       "kind": "verify",
       "claim": { "id": "s8", "type": "acs", "text": "repair plan balanced, reconciliation proof" },
-      "context": { "ticket": { "key": "BANK-49", "acceptanceCriteria": [
+      "context": {
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "dddddddddddddddddddddddddddddddddddddddd", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T00:00:00Z" } ], "ticket": { "key": "BANK-49", "acceptanceCriteria": [
           { "acId": "P1", "check": { "type": "repair_balanced" } },
           { "acId": "P2", "check": { "type": "recon_proof" } } ] },
         "pr": { "number": 52, "title": "BANK-49 repair plan", "headSha": "dddddddddddddddddddddddddddddddddddddddd" },
@@ -35,7 +36,8 @@
     {
       "kind": "verify",
       "claim": { "id": "s8b", "type": "acs", "text": "repair that edits ledger rows" },
-      "context": { "ticket": { "key": "BANK-49", "acceptanceCriteria": [ { "acId": "P1", "check": { "type": "repair_balanced" } } ] },
+      "context": {
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "dddddddddddddddddddddddddddddddddddddddd", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T00:00:00Z" } ], "ticket": { "key": "BANK-49", "acceptanceCriteria": [ { "acId": "P1", "check": { "type": "repair_balanced" } } ] },
         "pr": { "number": 52, "title": "BANK-49 repair plan", "headSha": "dddddddddddddddddddddddddddddddddddddddd" },
         "report": { "schema": "aat-ci-report/1", "head_sha": "dddddddddddddddddddddddddddddddddddddddd", "tests": [],
           "repair": { "debits_minor": 100, "credits_minor": 100, "rows_deleted": 0, "rows_updated": 12 } } },

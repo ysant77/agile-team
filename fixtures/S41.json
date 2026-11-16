@@ -14,7 +14,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "62a7c78dea2252f4498f40b8895193f11da6746b", "tests": [
           { "id": "tests/ml/test_churn.py::test_BANK41_feature_cutoff_30d", "outcome": "passed" } ],
           "metrics": { "expected_calibration_error": 0.031, "top_decile_lift": 2.9 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "62a7c78dea2252f4498f40b8895193f11da6746b", "status": "completed", "conclusion": "success", "createdAt": "2026-12-07T04:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "62a7c78dea2252f4498f40b8895193f11da6746b", "status": "completed", "conclusion": "success", "createdAt": "2026-12-07T04:00:00Z" } ]
       },
       "expect": { "result": "supported" }
     }

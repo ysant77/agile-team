@@ -71,11 +71,13 @@ test('a metric gate is not trusted when the PR changes how the metric is measure
   const ctx = (prFiles) => ({
     ticket: { key: 'BANK-17', type: 'Story', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'metric_at_least', args: ['pr_auc', 0.25] } }] },
     pr: { number: 3, title: 'BANK-17: ship fraud model v3', state: 'open', headSha: sha },
-    report: { schema: 'aat-ci-report/1', head_sha: sha, tests: [], metrics: { pr_auc: 0.9 } },
+    report: { schema: 'aat-ci-report/1', head_sha: sha, tests: [], metrics: { pr_auc: 0.9 }, workflow_files: { '.github/workflows/ci.yml': 'h' } },
     reportAuthor: 'github-actions[bot]',
-    workflowRuns: [{ name: 'CI', headSha: sha, status: 'completed', conclusion: 'success', createdAt: '2026-11-20T00:00:00Z' }],
+    reportComment: { createdAt: '2026-11-20T00:00:00Z', updatedAt: '2026-11-20T00:00:00Z' },
+    baseWorkflowFiles: { '.github/workflows/ci.yml': 'h' },
+    workflowRuns: [{ name: 'CI', path: '.github/workflows/ci.yml', headSha: sha, status: 'completed', conclusion: 'success', createdAt: '2026-11-20T00:00:00Z' }],
     prFiles,
-    config: { requiredWorkflows: ['CI'], guardedPaths: ['src/fraud/evaluate.py', 'src/bank/testing/'] },
+    config: { requiredWorkflowPaths: ['.github/workflows/ci.yml'], guardedPaths: ['src/fraud/evaluate.py', 'src/bank/testing/'] },
   });
   assert.equal(verify({ id: 'c', type: 'ready' }, ctx(['tests/test_bank17_gate.py'])).result, 'supported');
   const tampered = verify({ id: 'c', type: 'ready' }, ctx(['src/fraud/evaluate.py']));
