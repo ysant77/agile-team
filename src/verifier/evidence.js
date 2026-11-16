@@ -19,6 +19,10 @@ export function buildDoneEvidence(claim, ctx, checks, checkerVersion = null) {
   const code = hasCodeWork(ctx);
   const repro = ctx.report?.repro ?? null;
   const acParts = checks.find((c) => c.name === 'ac_mapped')?.parts ?? [];
+  const headRow = (name) => {
+    const t = name ? (ctx.report?.tests ?? []).find((x) => testName(x.id) === name) : null;
+    return t ? { outcome: t.outcome } : null;
+  };
   const acs = (ctx.ticket?.acceptanceCriteria ?? []).map((ac) => {
     const isTest = ac.check?.type === 'test_passes';
     const name = isTest ? String(ac.check.args?.[0] ?? '').replaceAll('{TOKEN}', key.replace('-', '')).replaceAll('{KEY}', key) : null;
@@ -28,7 +32,9 @@ export function buildDoneEvidence(claim, ctx, checks, checkerVersion = null) {
       check: ac.check?.type ?? null,
       testId: name,
       base: row ? { outcome: row.base?.outcome ?? null, excType: row.base?.exc_type ?? null } : null,
-      head: row ? { outcome: row.head?.outcome ?? null } : null,
+      // A test in a file the PR does not change has no repro row; its head outcome comes from
+      // the report (a Task's existing tests, benchmark I01).
+      head: row ? { outcome: row.head?.outcome ?? null } : headRow(name),
       status: acParts.find((p) => p.acId === ac.acId)?.status ?? null,
     };
   });
@@ -38,6 +44,7 @@ export function buildDoneEvidence(claim, ctx, checks, checkerVersion = null) {
     claimId: claim.id,
     checker: checkerVersion,
     codeWork: code,
+    ticketType: ctx.ticket?.type ?? null,
     acs,
     fullSuite: code && repro?.full_suite
       ? { outcome: repro.full_suite.outcome, passed: repro.full_suite.passed ?? null, failed: repro.full_suite.failed ?? null }
@@ -61,7 +68,9 @@ export function missingParts(record) {
   if (!record.codeWork) return [];
   const missing = [];
   for (const a of record.acs) {
-    if (a.testId && !(a.base?.outcome && a.head?.outcome)) missing.push(`${a.acId} base and head outcome`);
+    if (record.ticketType === 'Task') {
+      if (a.testId && !a.head?.outcome) missing.push(`${a.acId} head outcome`);
+    } else if (a.testId && !(a.base?.outcome && a.head?.outcome)) missing.push(`${a.acId} base and head outcome`);
   }
   if (!record.fullSuite) missing.push('full-suite result');
   if (!record.coverage) missing.push('coverage');

@@ -160,3 +160,20 @@ test('B26: a second open PR that names the key makes a done claim cannot_verify,
   assert.equal(v.result, 'cannot_verify', v.reason);
   assert.match(v.reason, /PRs #\d+, #\d+ all name BENCH-26/);
 });
+
+// (b2) A Task (a refactor, tests only, a chore) has no defect to reproduce: its AC tests must pass
+// on head with the full suite, coverage and the trust rules; the base outcome is recorded when
+// known but is not required to be a failure (benchmark I01, I02).
+test('I01 and I02: a Task is supported when its AC tests pass on head, with no reproduction on base', async () => {
+  for (const id of ['I01', 'I02']) {
+    const v = await run(id);
+    assert.equal(v.result, 'supported', `${id}: ${v.reason}`);
+  }
+});
+
+test('a Task whose AC test fails on head is still contradicted', async () => {
+  const c = load('I02');
+  for (const t of c.github.report.tests) if (/from_minor_negative_amounts/.test(t.id)) t.outcome = 'failed';
+  const v = await runCase(c);
+  assert.equal(v.result, 'contradicted', v.reason);
+});

@@ -101,7 +101,10 @@ export const CLAIM_CHECKS = {
   // (a spike, a parent of sub-tasks) keeps the sub-task, blocker and AC checks and the record.
   done: (ctx) => {
     const checks = [c.subtasksDone(ctx), c.blockedByDone(ctx), acMapped(ctx)];
-    if (c.hasCodeWork(ctx)) checks.push(c.onMain(ctx), c.mergedClean(ctx), c.reproduced(ctx), c.coverageOk(ctx), ...c.securityCheck(ctx, 'done'));
+    // A Task (refactor, tests only, chore) has no defect to reproduce: its AC tests pass on head,
+    // with the full suite, coverage and trust rules (benchmark I01, I02; DESIGN 15j).
+    const reproduce = ctx.ticket?.type === 'Task' ? [] : [c.reproduced(ctx)];
+    if (c.hasCodeWork(ctx)) checks.push(c.onMain(ctx), c.mergedClean(ctx), ...reproduce, c.coverageOk(ctx), ...c.securityCheck(ctx, 'done'));
     const replaced = c.acTestsRunNewCode(ctx);
     if (replaced) checks.push(replaced);
     const attempts = c.ciAttempts(ctx);
