@@ -20,8 +20,12 @@ export async function appendAudit({ actor, event, data }, store = kvs) {
     const next = nextEvent(head, { actor, event, data, at: new Date().toISOString() });
     try {
       await store.set(keyFor(next.seq), next, { keyPolicy: 'FAIL_IF_EXISTS' });
-    } catch {
-      head = (await store.get(keyFor(next.seq))) ?? head;
+    } catch (error) {
+      // A conflict means another writer took this sequence number: the key now exists. Any other
+      // error (storage down, quota) is thrown, not retried as a conflict.
+      const taken = await store.get(keyFor(next.seq));
+      if (!taken) throw error;
+      head = taken;
       continue;
     }
     await store.set(HEAD, { seq: next.seq, hash: next.hash, prevHash: next.prevHash, at: next.at });
@@ -30,12 +34,14 @@ export async function appendAudit({ actor, event, data }, store = kvs) {
   throw new Error('audit append failed after 20 attempts');
 }
 
+// Reads `count` events from `fromSeq`. A missing key is returned as a gap marker, so a deleted
+// middle or tail event makes verifyChain fail instead of looking like a shorter valid chain.
+// Callers pass count = head.seq + 1 - fromSeq.
 export async function readAudit(fromSeq, count, store = kvs) {
   const events = [];
   for (let seq = fromSeq; seq < fromSeq + count; seq += 1) {
     const e = await store.get(keyFor(seq));
-    if (!e) break;
-    events.push(e);
+    events.push(e && typeof e === 'object' ? e : { seq, missing: true });
   }
   return events;
 }
