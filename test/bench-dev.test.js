@@ -100,3 +100,23 @@ test('B29: an earlier attempt that failed in a setup step is not held against th
   const v = await run('B29');
   assert.doesNotMatch(v.reason, /attempt 1 failed/);
 });
+
+// (a6) An AC test that replaces the function the PR adds does not run the new code (benchmark I05).
+test('I05: an AC test that monkeypatches the new function sends the claim to a person', async () => {
+  const v = await run('I05');
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /replaces over_daily_limit/);
+});
+
+test('replacing a function the PR does not change is not flagged', async () => {
+  const { acTestsRunNewCode } = await import('../src/verifier/checks.js');
+  const ctx = {
+    ticket: { key: 'BANK-1', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'test_passes', args: ['test_x'] } }] },
+    report: { tests: [{ id: 'tests/test_a.py::test_x', outcome: 'passed' }] },
+    prPatches: {
+      'tests/test_a.py': '@@ -1 +1,3 @@\n+def test_x(monkeypatch):\n+    monkeypatch.setattr(clock, "now", lambda: 1)',
+      'src/bank/ledger.py': '@@ -1 +1,2 @@\n+def over_limit(x):\n+    return x > 1',
+    },
+  };
+  assert.equal(acTestsRunNewCode(ctx), null);
+});

@@ -436,6 +436,36 @@ function reproBlockGap(repro, headSha) {
   return null;
 }
 
+// An AC test that replaces (monkeypatch.setattr, mock.patch, patch.object) a function the PR
+// defines in non-test code does not run the new code (benchmark I05). Read from the added lines
+// of the test file's patch; per file, not per test function. Returns null when nothing is found.
+const REPLACE = /(?:monkeypatch\.setattr|patch\.object|patch)\(\s*(?:[\w.]+\s*,\s*)?["']([\w.]+)["']/g;
+export function acTestsRunNewCode(ctx) {
+  const patches = ctx.prPatches ?? {};
+  const added = (p) => String(p ?? '').split('\n').filter((l) => l.startsWith('+')).join('\n');
+  const defined = new Set();
+  for (const [file, patch] of Object.entries(patches)) {
+    if (/(^|\/)tests?\//.test(file) || /(^|\/)test_[^/]*\.py$/.test(file)) continue;
+    for (const m of added(patch).matchAll(/^\+\s*(?:async\s+)?def\s+(\w+)\s*\(/gm)) defined.add(m[1]);
+  }
+  if (!defined.size) return null;
+  const files = new Set();
+  for (const name of ticketTests(ctx)) {
+    const row = (ctx.report?.tests ?? []).find((t) => testName(t.id) === name);
+    if (row) files.add(row.id.split('::')[0]);
+  }
+  const replaced = [];
+  for (const file of files) {
+    for (const m of added(patches[file]).matchAll(REPLACE)) {
+      const name = m[1].split('.').pop();
+      if (defined.has(name)) replaced.push(`${file} replaces ${name}`);
+    }
+  }
+  return replaced.length
+    ? result('ac_tests_run_new_code', 'unknown', `${[...new Set(replaced)].join('; ')}, which this PR adds: the AC test does not run the new code, so a person checks`)
+    : null;
+}
+
 // Earlier attempts of a re-run on the head (benchmark B05, B29). A failure in a step that runs the
 // tests means the result changed with no code change: a flaky test, so a person checks. A failure
 // in a setup step (checkout, install) is a runner problem and does not count. Returns null when no
