@@ -41,6 +41,7 @@ export function packetForAgent(packet, suggestion) {
     hunks: packet.hunks,
     noPatch: packet.noPatch,
     notShown: packet.notShown,
+    filesTruncated: packet.filesTruncated,
     testsTouched: packet.testsTouched,
     existingTests: packet.existingTests,
   };
@@ -54,12 +55,16 @@ export async function getPrDiff(payload) {
   const token = process.env.GITHUB_TOKEN;
   const ticket = await collectJira(input.issueKey);
   const github = await collectGithub({ repo, key: input.issueKey, token, fetchFn: fetch, prNumber: input.prNumber });
-  if (!github.pr) return { ok: false, error: `pull request ${input.prNumber} not found in ${repo}` };
-  const files = (await collectPrFiles({ repo, prNumber: input.prNumber, token, fetchFn: fetch })) ?? [];
+  if (!github.pr) {
+    const where = github.truncated?.pulls ? `the latest 500 pull requests of ${repo}` : repo;
+    return { ok: false, error: `pull request ${input.prNumber} not found in ${where}` };
+  }
+  const { files, truncated } = await collectPrFiles({ repo, prNumber: input.prNumber, token, fetchFn: fetch });
+  // The verdict uses collectGithub's file list: every page, or null when it is cut.
   const verdict = verify({ id: `review:${input.issueKey}:${input.prNumber}`, type: 'ready', text: '' },
-    { ticket, ...github, prFiles: files.map((f) => f.filename), config: VERIFY_CONFIG });
+    { ticket, ...github, config: VERIFY_CONFIG });
   const packet = buildReviewPacket({
-    ticket, pr: { number: input.prNumber, headSha: github.pr.headSha }, files,
+    ticket, pr: { number: input.prNumber, headSha: github.pr.headSha }, files, filesTruncated: truncated,
     reportTests: (github.report?.tests ?? []).map((t) => t.id), verdict, trigger: input.trigger,
   });
   await kvs.set(reviewKey(input.issueKey, input.prNumber), { packet, retries: 0, at: new Date().toISOString() });

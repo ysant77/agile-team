@@ -81,6 +81,8 @@ export function buildReviewPacket(input) {
     },
     pr: { number: input.pr.number, headSha: input.pr.headSha ?? null },
     ...parsed,
+    // True when GitHub's file list was cut at the page limit: the packet does not show every file.
+    filesTruncated: Boolean(input.filesTruncated),
     existingTests: [...new Set((input.reportTests ?? []).map(testName))],
     verdict: input.verdict ? { result: input.verdict.result, reason: input.verdict.reason ?? '' } : null,
     trigger: TRIGGERS.includes(input.trigger) ? input.trigger : 'request',
