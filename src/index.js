@@ -2,6 +2,7 @@ import { Queue } from '@forge/events';
 import { kvs } from '@forge/kvs';
 import { appendAudit } from './audit-store.js';
 import { applyDecision, formatDecision, parseDecision } from './decision.js';
+import { admitClaim } from './claim-intake.js';
 import { readLatestCommit } from './github.js';
 import { addComment, createIssue, getComment } from './jira.js';
 import { malformedAcLines, normaliseAcs, parseAcLines } from './ticket-spec.js';
@@ -81,6 +82,11 @@ export async function onComment(event) {
   }
   const claim = parseClaim(text);
   if (!claim) return;
+  const admitted = await admitClaim({ issueKey, commentId }, kvs);
+  if (!admitted.ok) {
+    console.log('claim not queued', issueKey, admitted.reason);
+    return;
+  }
   await verifyQueue.push({
     body: { issueKey, claim: { id: `${issueKey}:${commentId}`, type: claim.type, text: claim.detail } },
     concurrency: { key: 'verify', limit: 1 },

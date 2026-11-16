@@ -21,7 +21,7 @@
         "pr": { "number": 41, "title": "BANK-7 round each daily posting", "state": "open", "headSha": "5f60a91addd6b179b199f38f9614411262463e33" },
         "report": { "schema": "aat-ci-report/1", "head_sha": "5f60a91addd6b179b199f38f9614411262463e33", "tests": [
           { "id": "tests/test_interest.py::test_BANK7_no_float_in_interest", "outcome": "passed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "5f60a91addd6b179b199f38f9614411262463e33", "status": "completed", "conclusion": "success", "createdAt": "2026-11-22T03:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "5f60a91addd6b179b199f38f9614411262463e33", "status": "completed", "conclusion": "success", "createdAt": "2026-11-22T03:00:00Z" } ]
       },
       "expect": { "result": "cannot_verify", "reasonIncludes": ["decision pending"] }
     },
@@ -35,7 +35,7 @@
         "pr": { "number": 42, "title": "BANK-7 round once at month end", "state": "open", "headSha": "fc51b55c42b31cb9008d904df21d021b40efde3d" },
         "report": { "schema": "aat-ci-report/1", "head_sha": "fc51b55c42b31cb9008d904df21d021b40efde3d", "tests": [
           { "id": "tests/test_interest.py::test_BANK7_no_float_in_interest", "outcome": "passed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "fc51b55c42b31cb9008d904df21d021b40efde3d", "status": "completed", "conclusion": "success", "createdAt": "2026-11-22T04:10:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "fc51b55c42b31cb9008d904df21d021b40efde3d", "status": "completed", "conclusion": "success", "createdAt": "2026-11-22T04:10:00Z" } ]
       },
       "expect": { "result": "cannot_verify", "reasonIncludes": ["decision pending"] }
     },

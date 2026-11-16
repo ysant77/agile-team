@@ -1,7 +1,7 @@
 // Deterministic checks. Each returns { name, status: 'pass' | 'fail' | 'unknown', reason }.
 // No model is involved. Unknown means "cannot verify": a human or more evidence is needed.
 
-import { sameFiles, testName, testsByName } from './report.js';
+import { namesKey, sameFiles, testName, testsByName } from './report.js';
 
 const BOT = 'github-actions[bot]';
 const result = (name, status, reason) => ({ name, status, reason });
@@ -10,17 +10,57 @@ function issueToken(key) {
   return String(key).replace('-', ''); // BANK-4 -> BANK4, used in test names
 }
 
+export const DEFAULT_WORKFLOW_PATHS = ['.github/workflows/ci.yml'];
+const runPath = (r) => String(r.path ?? '').split('@')[0];
+
+// Paths that decide how CI runs or how it writes the report. A PR that changes one of them can
+// make its own CI say anything, so its CI is not evidence (DESIGN 6, review of 16 Nov).
+export const DEFAULT_TRUST_PATHS = ['.github/workflows/'];
+const matchesPath = (file, paths) => paths.some((g) => (g.endsWith('/') ? file.startsWith(g) : file === g));
+
+export function pipelineChange(ctx) {
+  if (!Array.isArray(ctx.prFiles)) return 'pull request file list not available';
+  const paths = ctx.config?.reportTrustPaths ?? DEFAULT_TRUST_PATHS;
+  const touched = ctx.prFiles.filter((f) => matchesPath(f, paths));
+  return touched.length ? `PR changes ${touched.join(', ')}, which can change how CI runs or reports` : null;
+}
+
+// The report comment may be edited only by the pinned CI run that wrote it (the bank CI edits
+// its own comment on every push). An edit later than 60 s after that run ended is not trusted.
+const EDIT_SLACK_MS = 60 * 1000;
+function commentEditedLater(ctx) {
+  const c = ctx.reportComment;
+  if (!c?.updatedAt) return 'report comment times not available';
+  const paths = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
+  const runs = (ctx.workflowRuns ?? []).filter((r) => paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha);
+  if (runs.length === 0) return 'no pinned CI run for the head, so the report comment has no source';
+  const ended = Math.max(...runs.map((r) => Date.parse(r.updatedAt ?? r.createdAt)));
+  return Date.parse(c.updatedAt) > ended + EDIT_SLACK_MS ? 'report comment was edited after the CI run ended' : null;
+}
+
 // Guard: a report counts only if the bot wrote it, for the PR head, with unchanged workflows.
 export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSha) {
   if (!report) return result('report_trusted', 'unknown', 'no CI report');
-  if ((ctx.reportAuthor ?? report.author) !== BOT) {
+  // The author comes from the comment that carried the report; a field in the report body is
+  // written by the code under test and proves nothing.
+  if (ctx.reportAuthor !== BOT) {
     return result('report_trusted', 'unknown', `report not posted by ${BOT}`);
   }
   if (headSha && report.head_sha !== headSha) {
     return result('report_trusted', 'unknown', 'report is for an older commit, not the head');
   }
-  if (ctx.baseWorkflowFiles && !sameFiles(ctx.baseWorkflowFiles, report.workflow_files)) {
+  // Without the base fingerprint (ci-reports/main.json) a changed workflow cannot be seen.
+  if (!ctx.baseWorkflowFiles) return result('report_trusted', 'unknown', 'no base workflow fingerprint (ci-reports/main.json)');
+  if (!sameFiles(ctx.baseWorkflowFiles, report.workflow_files)) {
     return result('report_trusted', 'unknown', 'workflow changed in this PR');
+  }
+  if (report === ctx.report) {
+    // The fingerprint is written by the workflow under test, so the verifier also reads the PR's
+    // own file list.
+    const change = pipelineChange(ctx);
+    if (change) return result('report_trusted', 'unknown', change);
+    const edited = commentEditedLater(ctx);
+    if (edited) return result('report_trusted', 'unknown', edited);
   }
   return result('report_trusted', 'pass', 'bot report for the head commit');
 }
@@ -28,32 +68,42 @@ export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSh
 export function prLinked(ctx) {
   const pr = ctx.pr;
   if (!pr) return result('pr_linked', 'fail', `no pull request names ${ctx.ticket.key}`);
-  const named = `${pr.title} ${pr.branch ?? ''}`.includes(ctx.ticket.key);
+  // Two open or merged PRs that name the key: code cannot tell which one the claim means.
+  if ((ctx.prCandidates ?? []).length > 1) {
+    return result('pr_linked', 'unknown', `PRs ${ctx.prCandidates.map((n) => `#${n}`).join(', ')} all name ${ctx.ticket.key}; link one PR`);
+  }
+  const named = namesKey(pr.title, ctx.ticket.key) || namesKey(pr.branch, ctx.ticket.key);
   if (!named) return result('pr_linked', 'fail', `PR #${pr.number} does not name ${ctx.ticket.key}`);
   if (pr.state === 'closed' && !pr.merged) {
     return result('pr_linked', 'fail', `PR #${pr.number} is closed without merge`);
   }
-  return result('pr_linked', 'pass', `PR #${pr.number} names ${ctx.ticket.key}`);
+  // "fixed" and "ready" mean the change is done on its branch; "merged" is its own claim type.
+  const open = pr.state === 'open' ? ' (open, not merged)' : '';
+  return result('pr_linked', 'pass', `PR #${pr.number} names ${ctx.ticket.key}${open}`);
 }
 
+// The pinned workflow files whose runs decide ci_green. A run is matched by its workflow file,
+// never by its display name: a PR can add another workflow that is also named "CI".
+
 export function ciGreen(ctx) {
-  const required = ctx.config?.requiredWorkflows ?? ['CI'];
+  const required = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
   const head = ctx.pr?.headSha;
   if (!head) return result('ci_green', 'unknown', 'no head commit');
+  const change = pipelineChange(ctx);
+  if (change) return result('ci_green', 'unknown', change);
   const reasons = [];
   let unknown = false;
-  for (const name of required) {
-    const runs = (ctx.workflowRuns ?? [])
-      .filter((r) => r.name === name && r.headSha === head)
-      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-    const latest = runs[0];
-    if (!latest || latest.status !== 'completed') {
+  for (const path of required) {
+    // Every run of the pinned workflow on the head must succeed; a later success does not
+    // hide an earlier failure.
+    const runs = (ctx.workflowRuns ?? []).filter((r) => runPath(r) === path && r.headSha === head);
+    const failed = runs.find((r) => r.status === 'completed' && r.conclusion !== 'success');
+    if (failed) return result('ci_green', 'fail', `${path} concluded ${failed.conclusion} on ${head.slice(0, 7)}`);
+    if (runs.length === 0 || runs.some((r) => r.status !== 'completed')) {
       unknown = true;
-      reasons.push(`${name}: no completed run for ${head.slice(0, 7)}`);
-    } else if (latest.conclusion !== 'success') {
-      return result('ci_green', 'fail', `${name} concluded ${latest.conclusion} on ${head.slice(0, 7)}`);
+      reasons.push(`${path}: no completed run for ${head.slice(0, 7)}`);
     } else {
-      reasons.push(`${name}: success`);
+      reasons.push(`${path}: success`);
     }
   }
   return result('ci_green', unknown ? 'unknown' : 'pass', reasons.join('; '));

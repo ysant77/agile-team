@@ -33,16 +33,26 @@ test('report extraction needs the marker and the schema', () => {
   assert.equal(testName('tests/t.py::C::test_x[eur-2]'), 'test_x');
 });
 
+// A CI context the verifier trusts: the pinned workflow ran on the head, the PR changes no
+// workflow, and the report comment was written during that run.
+const trustedCi = (head) => ({
+  reportAuthor: 'github-actions[bot]',
+  baseWorkflowFiles: { '.github/workflows/ci.yml': 'h' },
+  prFiles: [],
+  reportComment: { createdAt: '2026-11-16T00:00:00Z', updatedAt: '2026-11-16T00:00:00Z' },
+  workflowRuns: [{ name: 'CI', path: '.github/workflows/ci.yml', headSha: head, status: 'completed', conclusion: 'success', createdAt: '2026-11-16T00:00:00Z' }],
+});
+
 test('too-good guard turns a passing metric into cannot_verify', () => {
   const head = 'f'.repeat(40);
   const v = verify(
     { id: 'c', type: 'acs' },
     {
-      reportAuthor: 'github-actions[bot]',
+      ...trustedCi(head),
       config: { tooGood: { auc: 0.98 } },
       ticket: { key: 'BANK-40', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'metric_at_least', args: ['auc', 0.88] } }] },
       pr: { headSha: head },
-      report: { schema: 'aat-ci-report/1', head_sha: head, metrics: { auc: 0.995 } },
+      report: { schema: 'aat-ci-report/1', head_sha: head, workflow_files: { '.github/workflows/ci.yml': 'h' }, metrics: { auc: 0.995 } },
     },
   );
   assert.equal(v.result, 'cannot_verify');
@@ -58,10 +68,10 @@ test('AC test names may use the {TOKEN} placeholder', () => {
   const v = verify(
     { id: 'c', type: 'acs' },
     {
-      reportAuthor: 'github-actions[bot]',
+      ...trustedCi(head),
       ticket: { key: 'BANK-7', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'test_passes', args: ['test_{TOKEN}_x'] } }] },
       pr: { headSha: head },
-      report: { schema: 'aat-ci-report/1', head_sha: head, tests: [{ id: 't.py::test_BANK7_x', outcome: 'passed' }] },
+      report: { schema: 'aat-ci-report/1', head_sha: head, workflow_files: { '.github/workflows/ci.yml': 'h' }, tests: [{ id: 't.py::test_BANK7_x', outcome: 'passed' }] },
     },
   );
   assert.equal(v.result, 'supported', v.reason);

@@ -1,12 +1,19 @@
 import api, { route } from '@forge/api';
 
-// Ticket data for the verifier, read as the app.
-export async function collectJira(issueKey) {
-  const response = await api
-    .asApp()
-    .requestJira(
-      route`/rest/api/3/issue/${issueKey}?fields=issuetype,status,subtasks,issuelinks,labels&properties=aat.ticket`,
-    );
+const asApp = (path, options) => api.asApp().requestJira(path, options);
+
+// A field value as the verifier compares it: an option's value or name, or the plain value.
+function plainValue(v) {
+  if (v === null || v === undefined) return v;
+  if (typeof v === 'object') return v.value ?? v.name ?? v.key ?? JSON.stringify(v);
+  return v;
+}
+
+// Ticket data for the verifier, read as the app. requestJira is injected in tests.
+export async function collectJira(issueKey, requestJira = asApp) {
+  const response = await requestJira(
+    route`/rest/api/3/issue/${issueKey}?fields=issuetype,status,subtasks,issuelinks,labels&properties=aat.ticket`,
+  );
   if (!response.ok) throw new Error(`Jira issue ${issueKey}: HTTP ${response.status}`);
   const issue = await response.json();
   const spec = issue.properties?.['aat.ticket'] ?? {};
@@ -19,10 +26,22 @@ export async function collectJira(issueKey) {
     }
     return [];
   });
+  // field_equals compares Jira fields by id; read only the fields the ACs name.
+  const names = [...new Set((spec.acceptanceCriteria ?? [])
+    .filter((a) => a.check?.type === 'field_equals' && a.check.args?.[0])
+    .map((a) => String(a.check.args[0])))];
+  let fields = {};
+  if (names.length) {
+    const read = await requestJira(route`/rest/api/3/issue/${issueKey}?fields=${names.join(',')}`);
+    if (!read.ok) throw new Error(`Jira fields of ${issueKey}: HTTP ${read.status}`);
+    const got = (await read.json()).fields ?? {};
+    fields = Object.fromEntries(names.filter((n) => n in got).map((n) => [n, plainValue(got[n])]));
+  }
   return {
     key: issue.key,
     type: issue.fields?.issuetype?.name,
     labels: issue.fields?.labels ?? [],
+    fields,
     status: issue.fields?.status?.name,
     subtasks: (issue.fields?.subtasks ?? []).map((s) => ({
       key: s.key,
