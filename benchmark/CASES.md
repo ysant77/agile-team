@@ -11,9 +11,21 @@ They are not targets.
 | Id | Workflow | How it is run |
 |---|---|---|
 | A1 | Standard GitHub: required checks (tests, lint, CodeQL), branch protection, one approval, branch up to date | Rule evaluation: the same CI results as C, read against the declared protection rules. No repository setting is changed. |
-| A2 | Hardened GitHub: A1, plus code owners on `.github/`, `tests/`, `conftest.py`, `pyproject.toml`, `uv.lock`, `scripts/`; the base-fails/head-passes job (`scripts/repro.py`) and the changed-line coverage job as required checks that fail the build | Rule evaluation, as A1. The repro job counts as failed when any ticket test does not fail on base by an assertion. |
+| A2 | Hardened GitHub: A1, plus code owners on `.github/`, `tests/`, `conftest.py`, `pyproject.toml`, `uv.lock`, `scripts/`; this project's own `scripts/repro.py` and `scripts/changed_coverage.py` as required checks that fail the build | Rule evaluation, as A1. See the A2 job rule below. |
 | B | A1 plus Atlassian Code Reviewer | Documentation-based capability notes only. No score unless the owner's account can run it without payment. |
 | C | This app: the verifier (`ready`, `done`), arbitration, audit record | The app code run on each case's evidence. |
+| D | C plus the Code Reviewer agent (unit 6) on the same cases, local open model, no Rovo credits | Runs after C, on the lead's model slot. A reviewer finding that cites a changed line and is rated blocking turns C's `supported` into `cannot_verify` (a human checks the finding). D never turns a result into `supported`. |
+
+**A2 is "what a team can build with the same scripts and no app".** It uses this project's
+own repro and coverage scripts, so any benefit of C over A2 must come from what the app adds:
+the tie to the Jira acceptance criterion, the handling of incomplete evidence, the trust rules
+and the decision record.
+
+**A2 job rule (one rule, fixed now).** The required repro job fails when any test that the PR
+adds or changes does not fail on base with `AssertionError`. A base result of `passed`, an import
+or collection error (`ImportError`, `ModuleNotFoundError`, any collection error), another
+exception type or no base result fails the job. The coverage job fails when changed-line coverage
+is below 80% or the total drops by more than 0.5 points. A1 has no code owners.
 
 For A1 and A2, "human review" is not simulated. A case that only a human reviewer could catch is
 scored "depends on the reviewer", and it counts as not caught by the rules.
@@ -36,7 +48,7 @@ or `untrusted`.
 |---|---|---|---|---|
 | invalid | any | `contradicted` | `cannot_verify` | `supported` |
 | valid | trusted | `supported` | none | `contradicted` (false block) |
-| valid | incomplete or untrusted | `cannot_verify` with the missing or untrusted item named | none | none |
+| valid | incomplete or untrusted | `cannot_verify` with the missing or untrusted item named | none | `contradicted` counts as a false block (metric 2) |
 
 The rows for each case below state the outcome explicitly. They decide over this table.
 
@@ -77,9 +89,9 @@ named in the run record.
 | B01 | 1 | Bug: fee rounding at half a cent. The fix and the AC test cover positive amounts only; negative amounts still round the wrong way. | invalid | trusted | `contradicted` or `cannot_verify`: the defect is not fixed. | merge / merge / **supported** (C sees only the AC test; expected miss) |
 | B02 | 1 | Bug: interest for a leap year. The fix returns the expected value only for the input that the AC test uses (special case). | invalid | trusted | `contradicted` or `cannot_verify`: the code is fitted to the test. | merge / merge / **supported** (expected miss) |
 | B03 | 2 | Bug: transfer to a closed account succeeds. The new test checks a behaviour that already holds on main; the code change does not touch the transfer path. | invalid | trusted | `contradicted`: the test passes on base, so it does not show the fix. | merge / blocked / contradicted |
-| B04 | 2 | Bug: statement total off by one entry. The fix is real, but the new test is weak and passes on base too. | valid | incomplete (no reproduction) | `cannot_verify` or `contradicted`: no evidence ties the test to the problem. Not `supported`. | merge / blocked / contradicted |
+| B04 | 2 | Bug: statement total off by one entry. The fix is real, but the new test is weak and passes on base too. | valid | incomplete (no reproduction) | `cannot_verify` only: the claim is true, but no evidence ties the test to the problem. A `contradicted` or `blocked` counts as a false block (metric 2, note "weak test"). | merge / blocked / contradicted (expected false block) |
 | B05 | 3 | Bug: double withdrawal under 20 threads. The AC test fails on head about 1 run in 3; a re-run of the workflow turns it green. | invalid | untrusted (failed run on the head) | `contradicted` or `cannot_verify`. | merge after re-run / merge after re-run / cannot_verify or contradicted (re-run handling not confirmed) |
-| B06 | 3 | Story: `is_zero` helper. The AC test asserts only that the function exists (`hasattr`), so it fails on base by an assertion and passes on head; the function returns the wrong value for negative zero minor units. | invalid | trusted | `contradicted` or `cannot_verify`: the test proves existence, not behaviour. | merge / merge / **supported** (stated limit) |
+| B06 | 3 | Story: `is_zero` helper. The AC test asserts only that the function exists (`hasattr`), so it fails on base by an assertion and passes on head; the function returns `True` for negative amounts (`minor <= 0`). | invalid | trusted | `contradicted` or `cannot_verify`: the test proves existence, not behaviour. | merge / merge / **supported** (stated limit) |
 | B07 | 4 | Bug fix PR that also edits `.github/workflows/ci.yml` to skip the failing test file. | invalid | untrusted | `cannot_verify`, with the workflow path named. | merge / human gate / cannot_verify |
 | B08 | 4 | Bug fix PR that adds `tests/conftest.py` with a hook that marks the AC test as passed. | invalid | untrusted | `cannot_verify`, with `tests/conftest.py` named. | merge / human gate / cannot_verify |
 | B09 | 4 | Bug fix PR that edits `scripts/repro.py` so the base run always reports `AssertionError`. | invalid | untrusted | `cannot_verify`, with `scripts/repro.py` named. | merge / human gate / cannot_verify |
@@ -95,12 +107,12 @@ named in the run record.
 | B19 | 9 | Fraud model PR raises recall by fitting on the test split; it edits the evaluation code. | invalid | untrusted | `cannot_verify`: a guarded evaluation path changed. | merge / human gate / cannot_verify |
 | B20 | 9 | Fraud model PR changes the decision threshold inside the metric code, so recall rises. | invalid | untrusted | `cannot_verify`: the metric method changed. | merge / human gate / cannot_verify |
 | B21 | 10 | Clean bug fix: the AC test fails on base by an assertion and passes on head; changed-line coverage 100%. **control** | valid | trusted | `supported`. | merge / merge / supported |
-| B22 | 10 | Clean story that adds a new module; the AC test imports it, so it cannot run on base (`ModuleNotFoundError`). **control** | valid | trusted | `supported`: for new behaviour, failing on base by an import error is expected. | merge / blocked or human (depends on the job rule) / cannot_verify (expected false cannot_verify) |
+| B22 | 10 | Clean story that adds a new module; the AC test imports it, so it cannot run on base (`ModuleNotFoundError`). **control** | valid | trusted | `supported`: for new behaviour, failing on base by an import error is expected. | merge / blocked (import error fails the A2 job: false block) / cannot_verify (expected false cannot_verify) |
 | B23 | 10 | Clean story in existing modules; the AC test fails on base by an assertion and passes on head. **control** | valid | trusted | `supported`. | merge / merge / supported |
 | B24 | 10 | Clean task with no code AC (a spike); all sub-tasks done and no blocker open. **control** | valid | trusted | `supported`. | merge / merge / supported |
 | B25 | 11 | Correct bug fix; the coverage step did not upload its block (runner error), the rest is complete. | valid | incomplete | `cannot_verify`, with the missing coverage block named. | merge / blocked / cannot_verify |
 | B26 | 11 | Correct bug fix, but two open PRs name the same key (an abandoned draft is still open). | valid | incomplete (which PR is unclear) | `cannot_verify`, with both PRs named. | merge / merge / cannot_verify |
-| B27 | 12 | Rounding rule change for fees (`money_semantics`); gates pass and repro passes. | valid only with the finance owner's approval | trusted | Not `supported` by code alone: a recorded human approval is required. | human gate if path owners are set / human gate / not known: check the `done` rule before scoring |
+| B27 | 12 | Rounding rule change for fees (`money_semantics`); gates pass and repro passes. | valid only with the finance owner's approval | trusted | Not `supported` by code alone: a recorded human approval is required. | merge / human gate / not known: check the `done` rule before scoring |
 | B28 | 10 | Clean bug fix that touches 40 files (formatting plus the fix), under the page limit. **control** | valid | trusted | `supported`. | merge / merge / supported |
 | B29 | 10 | Clean bug fix; the first CI run failed on a runner network error, the re-run passed with no code change. **control** | valid | trusted | `supported`: the failure was not in the code. | merge / merge / cannot_verify or contradicted (expected false result: every run must pass) |
 | B30 | 10 | Clean fraud story: recall rises honestly from a new feature; no guarded path changed; metric AC `metric_at_least(recall, 0.8)` met. **control** | valid | trusted | `supported`. | merge / merge / supported |
@@ -114,7 +126,23 @@ Totals (30):
   (all except B18).
 - Choice and high-stake: B17 (no code winner) and B27 (human approval needed).
 
-## 6. How the run is done (proposal for review)
+### Arm D predictions (pre-registered; D runs later)
+
+Unit 6 gets build time again only if D catches defects that C misses (B01, B02, B06 or
+independent cases) **and** raises no false result on the controls.
+
+| Case | C prediction | D prediction |
+|---|---|---|
+| B01 | supported (miss) | possible catch: the diff shows a branch for positive amounts only |
+| B02 | supported (miss) | likely catch: the diff special-cases one input value |
+| B06 | supported (miss) | likely catch: `minor <= 0` is visible in the diff |
+| B18 | code winner | same (D does not change arbitration) |
+| B21, B23, B24, B30 | supported | supported (no blocking finding) |
+| B22 | cannot_verify | cannot_verify (unchanged) |
+| B28 | supported | risk of a false blocking finding on the 40-file formatting diff |
+| B29 | cannot_verify or contradicted | unchanged |
+
+## 6. How the run is done (approved by the lead, 16 Nov)
 
 - **No push, no setting change, no Rovo credits.** Each case is a branch in a local clone of the
   bank. The bank CI commands run locally (`pytest` with the report plugin, `scripts/repro.py`,
@@ -125,11 +153,14 @@ Totals (30):
 - C runs as the app code (`verify`, `arbitrate`) on the case context. A1 and A2 are evaluated
   from the same CI results against the rules in section 1.
 - Each case context is saved as JSON with its hash before scoring. A second run checks metric 10.
-- **Live subset** (after the owner's approval, on the deployed site and real PRs): B03, B07, B21,
+- Arm D runs after C, on the lead's model slot, with no Rovo credits.
+- **Live subset** (waits for the owner's approval, on the deployed site and real PRs): B03, B07, B21,
   B22 and B17. These give metric 8 (steps and time) and confirm the local results.
 
 ## 7. Pass or fail (from the outside review, B3)
 
 C passes only with at least one material, reproducible benefit over A2, not only over A1. We
-report plainly if C shows a benefit over A1 only. We also report the false cannot_verify rate on
+report plainly if C shows a benefit over A1 only. Since A2 runs the same scripts, a benefit over
+A2 can only come from the Jira acceptance-criterion tie, the handling of incomplete evidence, the
+trust rules and the decision record. We also report the false cannot_verify rate on
 the controls; more than 1 in 5 is a stop signal (competitive review, section 6).
