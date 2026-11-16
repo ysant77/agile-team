@@ -12,6 +12,11 @@ export const VERIFY_CONFIG = {
   requiredWorkflowPaths: ['.github/workflows/ci.yml'],
   reportTrustPaths: ['.github/workflows/', '.github/actions/', '**/conftest.py', 'src/bank/testing/'],
   tooGood: { auc: 0.95 },
+  // Files that decide how a metric is measured or reported (DESIGN.md section 12, risk 12).
+  guardedPaths: [
+    'src/fraud/evaluate.py', 'src/fraud/model.py', 'src/bank/testing/', 'tests/conftest.py',
+    'tests/test_fraud_model.py', 'tests/test_bench.py', 'pyproject.toml',
+  ],
 };
 
 const SYMBOL = { supported: 'SUPPORTED', contradicted: 'CONTRADICTED', cannot_verify: 'CANNOT VERIFY' };
