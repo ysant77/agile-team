@@ -72,6 +72,12 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     ? pulls.filter((p) => p.number === prNumber)
     : pulls.filter((p) => sameRepo(p.head?.repo?.full_name) && (namesKey(p.title, key) || namesKey(p.head?.ref, key)));
   const live = naming.filter((p) => !(p.state === 'closed' && !p.merged_at));
+  // PRs from forks that name the key: not linked (their CI report is not posted), but not
+  // "no PR" either (benchmark I08).
+  const forkPrs = prNumber ? [] : pulls
+    .filter((p) => !sameRepo(p.head?.repo?.full_name) && (namesKey(p.title, key) || namesKey(p.head?.ref, key)))
+    .filter((p) => !(p.state === 'closed' && !p.merged_at))
+    .map((p) => p.number);
   const match = live[0] ?? naming[0];
   const prCandidates = prNumber ? [prNumber] : live.map((p) => p.number);
   const pr = match
@@ -194,6 +200,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
   return {
     pr,
     prCandidates,
+    forkPrs,
     truncated,
     report,
     reportAuthor,

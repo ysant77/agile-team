@@ -213,3 +213,11 @@ test('the same shape on a Bug stays cannot_verify', async () => {
   const v = await runCase(c);
   assert.equal(v.result, 'cannot_verify', v.reason);
 });
+
+// (b5) A PR from a fork is not "no PR": its CI report is not posted (the report job skips forks),
+// so the claim cannot be verified, and the fork PR is named (benchmark I08).
+test('I08: a fork PR that names the key makes the claim cannot_verify, not contradicted', async () => {
+  const v = await run('I08');
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /fork/);
+});

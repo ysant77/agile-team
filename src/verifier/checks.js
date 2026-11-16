@@ -82,11 +82,14 @@ export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSh
   return result('report_trusted', 'pass', 'bot report for the head commit');
 }
 
+const forkReason = (ctx) => `PR ${ctx.forkPrs.map((n) => `#${n}`).join(', ')} names ${ctx.ticket.key} but comes from a fork: CI does not post its report for forks, so a person checks, or the work moves to a branch of this repository`;
+
 export function prLinked(ctx) {
   const pr = ctx.pr;
   if (!pr && ctx.truncated?.pulls) {
     return result('pr_linked', 'unknown', `no pull request in the latest ones names ${ctx.ticket.key}; older ones were not read (page limit)`);
   }
+  if (!pr && ctx.forkPrs?.length) return result('pr_linked', 'unknown', forkReason(ctx));
   if (!pr) return result('pr_linked', 'fail', `no pull request names ${ctx.ticket.key}`);
   // Two open or merged PRs that name the key: code cannot tell which one the claim means.
   if ((ctx.prCandidates ?? []).length > 1) {
@@ -417,6 +420,7 @@ export function ticketTests(ctx) {
 // "done" means on main: the PR is merged.
 export function onMain(ctx) {
   const pr = ctx.pr;
+  if (!pr && ctx.forkPrs?.length) return result('on_main', 'unknown', forkReason(ctx));
   if (!pr) return result('on_main', 'fail', `no pull request for ${ctx.ticket.key}, so nothing is on main`);
   // Two open or merged PRs name the key: the same rule as pr_linked (benchmark B26).
   if ((ctx.prCandidates ?? []).length > 1) {
