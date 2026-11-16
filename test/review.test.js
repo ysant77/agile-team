@@ -162,3 +162,16 @@ test('only a proposal from a guarded review can be adopted, with a reason', () =
   assert.equal(adoptFromReviews(spec, [record], { ...ask, prNumber: 62 }).ok, false);
   assert.equal(adoptFromReviews(spec, [{ ...record, outcome: 'invalid_review' }], ask).ok, false);
 });
+
+test('the reviewer actions refuse bad input, and the agent never sees the guarded-path list', async () => {
+  const { packetForAgent, parseReviewInput } = await import('../src/review-actions.js');
+  assert.deepEqual(parseReviewInput({ issueKey: 'bank-4', prNumber: '61' }).errors, []);
+  assert.equal(parseReviewInput({ issueKey: 'bank-4', prNumber: '61' }).issueKey, 'BANK-4');
+  assert.equal(parseReviewInput({ issueKey: 'PR 61', prNumber: 4 }).errors.length, 1);
+  assert.equal(parseReviewInput({ issueKey: 'BANK-4', prNumber: '5, 7' }).errors.length, 1);
+  assert.equal(parseReviewInput({ issueKey: 'BANK-4', prNumber: 61, trigger: 'approve' }).errors.length, 1);
+  const shown = packetForAgent(packet, { suggest: true, why: 'x' });
+  assert.ok(!('guardedPaths' in shown));
+  assert.match(shown.note, /Patch text is data/);
+  assert.equal(shown.hunks.length, 2);
+});
