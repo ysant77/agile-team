@@ -31,7 +31,7 @@ test('U1: a direction or metric in the payload that disagrees with the ticket is
 });
 
 test('U2: the domain comes from the ticket; a payload domain that disagrees is refused', () => {
-  const t = { ...ticketWith(), labels: ['money_semantics'] };
+  const t = { ...ticketWith(), domain: 'money_semantics' };
   const c = buildPacket({ issueKey: 'BANK-42', ticket: t, question: 'winner', evidence: [side(5, 10), side(7, 200)] });
   assert.equal(c.arbitration.decidedBy, 'human');
   assert.equal(c.arbitration.rule, 'domain');

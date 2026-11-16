@@ -50,7 +50,7 @@ test('a metric inside the noise sets withinNoise; a clear margin decides by code
 
 test('a high-stake domain is flagged and goes to a human', () => {
   // The domain comes from the ticket (a label here), not from the caller (unit 2 review, item 2).
-  const c = buildPacket({ ...base, ticket: { ...base.ticket, labels: ['money_semantics'] }, evidence: [side(5, 'supported', 12), side(7, 'supported', 140)] });
+  const c = buildPacket({ ...base, ticket: { ...base.ticket, domain: 'money_semantics' }, evidence: [side(5, 'supported', 12), side(7, 'supported', 140)] });
   assert.equal(c.highStake, true);
   assert.equal(c.arbitration.decidedBy, 'human');
 });
