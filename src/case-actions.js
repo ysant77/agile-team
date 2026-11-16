@@ -41,9 +41,13 @@ export async function openCase(payload) {
   const evidence = [];
   for (const prNumber of input.prNumbers) {
     const github = await collectGithub({ repo, key: input.issueKey, token, fetchFn: fetch, prNumber });
-    if (!github.pr) return { ok: false, error: `pull request ${prNumber} not found in ${repo}` };
+    if (!github.pr) {
+      const where = github.truncated?.pulls ? `the latest 500 pull requests of ${repo}` : repo;
+      return { ok: false, error: `pull request ${prNumber} not found in ${where}` };
+    }
     const stats = await collectPrStats({ repo, prNumber, token, fetchFn: fetch });
-    const verdict = verify({ id: `case:${input.issueKey}:${prNumber}`, type: 'ready', text: '' }, { ticket, ...github, prFiles: stats.files, config: VERIFY_CONFIG });
+    // The file list from collectGithub: every page, or null when it is cut.
+    const verdict = verify({ id: `case:${input.issueKey}:${prNumber}`, type: 'ready', text: '' }, { ticket, ...github, config: VERIFY_CONFIG });
     evidence.push({ prNumber, pr: github.pr, report: github.report, baseReport: github.baseReport, verdict, ...stats });
   }
   const built = buildPacket({ ...input, ticket, evidence });
