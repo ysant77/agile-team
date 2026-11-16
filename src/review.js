@@ -10,13 +10,14 @@ import { lintText, STYLE_CONTRACT, lintMessage } from './style.js';
 import { VERIFY_CONFIG } from './verify-claim.js';
 import { testName, testsByName } from './verifier/report.js';
 
-export const REVIEW_GUARD_VERSION = 1;
-export const REVIEW_PROMPT_VERSION = 'code-review/1';
+export const REVIEW_GUARD_VERSION = 2;
+export const REVIEW_PROMPT_VERSION = 'code-review/2';
 export const REVIEW_LABEL = 'Review (not verified)';
 export const MAX_FINDINGS = 6;
 export const MAX_CHECKS = 3;
 export const MAX_HUNKS = 40;
 export const MAX_PATCH_LINES = 600;
+export const SEVERITIES = ['blocking', 'note'];
 export const TRIGGERS = ['cannot_verify', 'manual_ac', 'design', 'readability', 'request'];
 
 // Fields that would make a review look like a decision. The schema refuses them.
@@ -118,6 +119,8 @@ export function validateReview(raw) {
       if (!f || typeof f.hunk !== 'string' || typeof f.file !== 'string') errors.push(`finding ${i + 1}: hunk and file are required`);
       if (!Number.isInteger(f?.line) || f.line < 1) errors.push(`finding ${i + 1}: line must be a whole number`);
       if (!nonEmpty(f?.text)) errors.push(`finding ${i + 1}: no text`);
+      if (f?.severity !== undefined && !SEVERITIES.includes(f.severity)) errors.push(`finding ${i + 1}: severity must be blocking or note`);
+      if (f?.ac !== undefined && typeof f.ac !== 'string') errors.push(`finding ${i + 1}: ac must be an AC id`);
     });
   }
   if (!Array.isArray(risks) || risks.some((r) => typeof r !== 'string')) errors.push('risks must be a list of strings');
@@ -135,7 +138,10 @@ export function validateReview(raw) {
     ok: true,
     errors: [],
     review: {
-      findings: findings.map((f) => ({ hunk: f.hunk, file: f.file, line: f.line, text: f.text.trim() })),
+      findings: findings.map((f) => ({
+        hunk: f.hunk, file: f.file, line: f.line, text: f.text.trim(), severity: f.severity ?? 'note',
+        ...(typeof f.ac === 'string' && f.ac.trim() ? { ac: f.ac.trim() } : {}),
+      })),
       risks: risks.map((r) => r.trim()).filter(Boolean),
       proposedChecks: checks.map((c) => ({ testName: c.testName.trim(), file: c.file.trim(), ac: c.ac.trim(), asserts: c.asserts.trim(), failsBeforeFix: c.failsBeforeFix })),
     },
@@ -195,6 +201,19 @@ export function applyReviewGuards(raw, packet, meta = {}) {
     if (f.file !== h.file) return invalid('wrong-file', `${f.hunk} is in ${h.file}, not ${f.file}`);
     if (f.line < h.newStart || f.line > h.newEnd) return invalid('line-outside-hunk', `line ${f.line} is outside ${f.hunk} (${h.newStart} to ${h.newEnd})`);
   }
+  // Guard 7 (code-review/2): a blocking finding names an AC of the ticket and states a defect in
+  // the reviewer's own words. A quoted changed line is not a defect statement.
+  const acSet = new Set(packet.ticket.acs.map((a) => a.acId));
+  const squash = (t) => t.replace(/\s+/g, ' ').trim();
+  for (const f of review.findings) {
+    if (f.ac !== undefined && !acSet.has(f.ac)) return invalid('unknown-ac', `${f.ac} is not an AC of ${packet.ticket.key}`);
+    if (f.severity !== 'blocking') continue;
+    if (!f.ac) return invalid('blocking-needs-ac', `a blocking finding at ${f.hunk} must name the AC that the change fails`);
+    const body = squash(f.text);
+    if (packet.hunks.some((h) => squash(h.text.split('\n').map((l) => l.replace(/^[+\- ]/, '')).join('\n')).includes(body))) {
+      return invalid('quoted-line', `the blocking finding at ${f.hunk} quotes changed code; state the defect against ${f.ac}`);
+    }
+  }
   // Guard 2: ids and numbers come from the packet.
   const known = packetText(packet);
   // Commit shas are ids, not numbers.
@@ -228,6 +247,12 @@ function templateReview(review) {
     risks: review.risks.map((_, i) => `Risk ${i + 1}: see the audited review input.`),
     proposedChecks: review.proposedChecks.map((c) => ({ ...c, asserts: `${c.testName} must pass for ${c.ac}.` })),
   };
+}
+
+// Arm D rating rule: the findings that can hold a claim. Only an accepted review counts.
+export function blockingFindings(record) {
+  if (record?.outcome !== 'review' || !record.review) return [];
+  return record.review.findings.filter((f) => f.severity === 'blocking' && f.ac);
 }
 
 // Guard 6: a refused review or a style finding gets one retry. After that, a refused review is
@@ -283,7 +308,7 @@ export function formatReview(issueKey, prNumber, record) {
   const r = record.review;
   return [
     `${REVIEW_LABEL} on ${issueKey} PR #${prNumber}. It does not change the verdict.`,
-    ...r.findings.map((f) => `- ${f.hunk} ${f.file}:${f.line}: ${f.text}`),
+    ...r.findings.map((f) => `- ${f.severity === 'blocking' ? `Blocking (${f.ac}) ` : ''}${f.hunk} ${f.file}:${f.line}: ${f.text}`),
     ...r.risks.map((x) => `- Risk: ${x}`),
     ...r.proposedChecks.map((c) => `- Proposed check for ${c.ac}: ${c.testName} in ${c.file}. It must assert: ${c.asserts}${c.failsBeforeFix ? ' It must fail before the fix.' : ''}`),
   ].join('\n');

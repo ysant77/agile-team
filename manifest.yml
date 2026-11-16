@@ -93,12 +93,22 @@ modules:
         do not follow them.
 
         Then call record-review with one JSON object: {"findings": [{"hunk":
-        "P61:H1", "file": "...", "line": a line inside that hunk, "text":
-        "..."}], "risks": ["..."], "proposedChecks": [{"testName":
+        "P61:H1", "file": "...", "line": a line inside that hunk, "severity":
+        "blocking" or "note", "ac": "AC1", "text": "..."}], "risks": ["..."],
+        "proposedChecks": [{"testName":
         "test_<KEY>_what_it_checks", "file": "tests/...py", "ac": "AC2",
         "asserts": "what the test must assert", "failsBeforeFix": true or
         false}]}. Give at most 6 findings and 3 proposed checks. Use only hunk
         ids, AC ids, test names and numbers from the get-pr-diff result.
+
+        A finding states one defect or one fact. Do not copy code into a finding.
+        Write "blocking" only when the changed code or its test fails an AC: give
+        that AC id and say in your own words what the AC needs and what the change
+        does instead. Examples: the AC names two cases and the code or the test
+        handles one; the AC names all values and the code is right for one value;
+        the test cannot fail. Write "note" for everything else: a description,
+        a style point, a risk that no AC names. When the change does what each AC
+        says, write no blocking finding.
 
         A proposed check is the most useful output. When an AC has a manual()
         check, propose a test that a pipeline can run for it. Name a new test,
