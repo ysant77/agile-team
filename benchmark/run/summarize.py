@@ -1,24 +1,35 @@
 """Paired result table and metrics (CASES.md section 4) from results.json and truth.json.
 
-    python summarize.py <results.json> [<truth file>] > RESULTS.md
+    python summarize.py <results.json> [<truth file>] [--cancelled-as-pending] > RESULTS.md
+
+--cancelled-as-pending reads a cancelled CI run on the head as a human gate for the A arms (the
+second reading of the set 3 protocol). A truth entry with "reason" (a regular expression) adds a
+strict count: the outcome is right and the reason matches.
 
 The truth file defaults to truth.json (set 1); set 2 uses truth-2.json.
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-TRUTH_FILE = Path(sys.argv[2]) if len(sys.argv) > 2 else HERE / "truth.json"
+POS = [a for a in sys.argv[1:] if not a.startswith("--")]
+TRUTH_FILE = Path(POS[1]) if len(POS) > 1 else HERE / "truth.json"
 TRUTH = {k: v for k, v in json.loads(TRUTH_FILE.read_text(encoding="utf-8")).items() if not k.startswith("_")}
 ARMS = ["A1", "A2", "A2file", "A2s", "C"]
 A_MAP = {"merge": "supported", "blocked": "contradicted", "human gate": "cannot_verify"}
 
 
+CANCELLED_AS_PENDING = "--cancelled-as-pending" in sys.argv
+
+
 def norm(case_id, arm, r):
     """Outcome in C's terms; choice cases as human or winner:<branch>."""
     out = r[arm]["outcome"] if arm in r else None
+    if CANCELLED_AS_PENDING and arm != "C" and arm in r and r[arm].get("cancelledAsPending"):
+        out = r[arm]["cancelledAsPending"]
     if out is None:
         return None
     kind = TRUTH[case_id]["kind"]
@@ -36,10 +47,10 @@ def norm(case_id, arm, r):
 
 
 def main():
-    results = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+    results = json.loads(Path(POS[0]).read_text(encoding="utf-8"))
     rows, metrics = [], {a: {k: [] for k in (
         "unsafe_supported", "false_block", "false_cannot_verify", "friction", "appropriate_cv",
-        "unearned_supported", "human_workload", "right", "wrong")} for a in ARMS}
+        "unearned_supported", "human_workload", "right", "right_strict", "wrong")} for a in ARMS}
     for r in sorted(results, key=lambda x: x["id"]):
         cid = r["id"]
         t = TRUTH[cid]
@@ -56,6 +67,9 @@ def main():
             ok = o in right
             m = metrics[a]
             m["right" if ok else "wrong"].append(cid)
+            pat = t.get("reason")
+            if ok and (not pat or re.search(pat, r[a].get("reason", "") or "", re.I | re.S)):
+                m["right_strict"].append(cid)
             k = t["kind"]
             if k in ("invalid", "high_stake") and o == "supported":
                 m["unsafe_supported"].append(cid)
@@ -91,9 +105,10 @@ def main():
                      ("friction", "4. Friction cannot_verify"), ("appropriate_cv", "5. Appropriate cannot_verify"),
                      ("unearned_supported", "Unearned supported (valid claim, incomplete evidence)"),
                      ("human_workload", "9. Ends at a human (human gate, cannot_verify or human pick)"),
-                     ("right", "Right (correct or acceptable)")]:
+                     ("right", "Right (correct or acceptable)"),
+                     ("right_strict", "Right with the named reason (strict)")]:
         print(f"| {label} | " + " | ".join(
-            f"{len(metrics[a][k])}" + (f" ({', '.join(metrics[a][k])})" if 0 < len(metrics[a][k]) <= 12 and k not in ('right', 'human_workload') else "")
+            f"{len(metrics[a][k])}" + (f" ({', '.join(metrics[a][k])})" if 0 < len(metrics[a][k]) <= 12 and k not in ('right', 'right_strict', 'human_workload') else "")
             for a in ARMS) + " |")
 
 

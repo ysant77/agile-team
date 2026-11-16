@@ -1,0 +1,295 @@
+{
+ "model": "qwen3-coder:30b",
+ "options": {
+  "temperature": 0,
+  "num_ctx": 32768
+ },
+ "promptVersion": "code-review/2",
+ "rule": "blocking",
+ "results": [
+  {
+   "id": "S01",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/api.py:180: start date clamped to EARLIEST_DATE"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S02",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P102:H1 src/bank/seed_data.py:120: Code change updates accounts count to use len(owners) instead of accounts.",
+      "[blocking AC1] P102:H2 tests/test_seed_data.py:80: Test only checks for 10 accounts but does not assert the correct number of customer accounts."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S03",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P103:H1 src/bank/ledger.py:146: Function customer_totals sums balance_minor per currency.",
+      "[note AC1] P103:H2 tests/test_ledger.py:27: Test checks sum of balance_minor for each currency.",
+      "[note AC2] P103:H2 tests/test_ledger.py:42: Test checks empty dict for customer with no account."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S04",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P104:H2 src/bank/account_numbers/parse.py:10: Code parses YMS-0001-2345 to 12345. Test checks this.",
+      "[note AC2] P104:H2 src/bank/account_numbers/parse.py:10: Code round trips with ledger.account_number. Test checks this.",
+      "[note AC3] P104:H3 tests/test_account_numbers.py:15: Test checks ValueError for invalid account number formats."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S05",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note] P105:H1 README.md:64: Finding 1: see P105:H1, line 64."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S06",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P106:H1 README.md:59: Default statement window updated to 90 days in documentation.",
+      "[note AC1] P106:H2 src/bank/api.py:31: Default statement window updated to 90 days in code."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S07",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P107:H1 src/bank/api.py:226: Finding 1: see P107:H1, line 226.",
+      "[note AC1] P107:H2 src/bank/api.py:235: Finding 2: see P107:H2, line 235."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S08",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P108:H1 src/bank/web/index.html:6: Added meta robots noindex tag to prevent indexing.",
+      "[note AC1] P108:H2 tests/test_web.py:130: Test checks for the presence of meta robots noindex tag."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S09",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P109:H1 src/bank/ledger.py:219: Finding 1: see P109:H1, line 219.",
+      "[note AC1] P109:H2 tests/test_ledger.py:27: Finding 2: see P109:H2, line 27."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S10",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S11",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S12",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S13",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P113:H1 src/bank/api.py:67: balance_display uses fixed 2 decimals, not currency-specific.",
+      "[blocking AC1] P113:H2 tests/test_api.py:50: Test only checks EUR with 2 decimals, not all currencies in money.EXPONENTS."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S14",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P114:H1 src/bank/money.py:80: split_evenly does not distribute the minor units correctly for unequal division.",
+      "[note AC1] P114:H3 tests/test_money.py:62: test_split_evenly_is_stable only checks equality, not correct distribution."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S15",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S16",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S17",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S18",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P118:H1 src/bank/api.py:226: Finding 1: see P118:H1, line 226.",
+      "[note AC1] P118:H3 src/bank/ledger.py:307: Finding 2: see P118:H3, line 307."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S19",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S20",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  }
+ ]
+}

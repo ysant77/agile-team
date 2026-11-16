@@ -1,0 +1,278 @@
+{
+ "model": "qwen3-coder:30b",
+ "options": {
+  "temperature": 0,
+  "num_ctx": 32768
+ },
+ "promptVersion": "code-review/2",
+ "rule": "blocking",
+ "results": [
+  {
+   "id": "S01",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S02",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P102:H1 src/bank/seed_data.py:120: Finding 1: see P102:H1, line 120.",
+      "[note AC1] P102:H2 tests/test_seed_data.py:80: Finding 2: see P102:H2, line 80."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S03",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S04",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-outside-hunk",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S05",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "unknown-ac",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S06",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P106:H1 README.md:59: Documentation updated to reflect 90-day default window.",
+      "[note AC1] P106:H2 src/bank/api.py:31: Code changed to use 90-day default window.",
+      "[note AC1] P106:H3 tests/test_api.py:114: Test added to verify 90-day default window."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S07",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P107:H1 src/bank/api.py:226: Finding 1: see P107:H1, line 226.",
+      "[note] P107:H2 src/bank/api.py:235: Finding 2: see P107:H2, line 235."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S08",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S09",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S10",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S11",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S12",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S13",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P113:H1 src/bank/api.py:67: balance_display uses hardcoded 2 decimals. Does not use currency-specific exponents.",
+      "[note AC1] P113:H2 tests/test_api.py:50: Test only checks EUR with 2 decimals. Does not test JPY or BHD."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S14",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P114:H1 src/bank/money.py:80: split_evenly does not distribute the minor units correctly; it always returns equal parts.",
+      "[note AC1] P114:H3 tests/test_money.py:62: test_split_evenly_is_stable does not verify the sum of parts equals the input amount."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S15",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S16",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S17",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S18",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P118:H1 src/bank/api.py:226: Finding 1: see P118:H1, line 226.",
+      "[note AC1] P118:H3 src/bank/ledger.py:307: Finding 2: see P118:H3, line 307."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S19",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S20",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  }
+ ]
+}

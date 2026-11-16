@@ -31,3 +31,12 @@ Run facts for set 2 (not changes): the evidence used `scripts/repro.py` from the
 `fix/repro-base-test-names` (679c055). For S17, the runner also wrote evidence for the second
 manifest branch `case/S17-main-b2`; the scorer does not read it (a `baseMovedTo` case scores its
 first branch only, change 1). No case was re-run.
+
+## Set 3 (protocol ARM-CD-PROTOCOL-3.md)
+
+| # | Change | Seen set 3 results before? | Kind |
+|---|---|---|---|
+| 11 | A arms: a result field `cancelledAsPending` when a cancelled run on the head is the only reason for `blocked`; `summarize.py --cancelled-as-pending` scores that reading. | No (before set 3 is read) | Second reading, ordered by the lead. Set 1 and set 2 outcomes are unchanged. |
+| 12 | `summarize.py`: strict count (outcome right and the truth `reason` pattern matches the reason). | No | Reporting. For sets 1 and 2 the strict row equals the outcome row (no reason patterns). |
+| 13 | `run_ci.py --coverage-script` and `run_all.py --coverage-script`: copy the bank's fixed coverage script into the case tree. | No | Runner support for the frozen bank fix ba90b0f. |
+| 14 | `arm_d.mjs --rule blocking` and several `--manifest` options. The default rule stays `any-finding` (the set 2 protocol). | No | D harness for code-review/2. |

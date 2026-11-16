@@ -61,6 +61,7 @@ def main():
     ap.add_argument("--bench", action="store_true")
     ap.add_argument("--main-report", type=Path, help="base report (main.json) for the coverage totals")
     ap.add_argument("--repro-script", type=Path, help="use this scripts/repro.py (development re-score)")
+    ap.add_argument("--coverage-script", type=Path, help="use this scripts/changed_coverage.py (bank fix branch)")
     ap.add_argument("--drop-coverage-file", default="", help="remove this file from coverage.json (simulated CI fault)")
     ap.add_argument("--pr-head-branch", default="", help="branch whose tip is the PR head, when CI ran on an older commit")
     ap.add_argument("--base-tip-branch", default="", help="branch whose tip is the current base")
@@ -106,6 +107,8 @@ def main():
             data = json.loads(cov.read_text(encoding="utf-8"))
             data.get("files", {}).pop(args.drop_coverage_file, None)
             cov.write_text(json.dumps(data), encoding="utf-8")
+        if args.coverage_script:
+            shutil.copy(args.coverage_script.resolve(), tree / "scripts" / "changed_coverage.py")
         if report.is_file() and cov.is_file():
             cargs = ["--coverage", str(cov), "--head-report", str(report), "--head", head]
             if args.base != args.branch:

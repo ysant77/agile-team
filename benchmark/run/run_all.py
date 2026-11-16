@@ -24,6 +24,7 @@ def main():
     ap.add_argument("--jobs", type=int, default=4)
     ap.add_argument("--only", default="")
     ap.add_argument("--repro-script", default="")
+    ap.add_argument("--coverage-script", default="")
     args = ap.parse_args()
     only = set(filter(None, args.only.split(",")))
     jobs = []
@@ -51,6 +52,8 @@ def main():
                     cmd += ["--drop-coverage-file", g["dropCoverageFile"]]
                 if args.repro_script:
                     cmd += ["--repro-script", args.repro_script]
+                if args.coverage_script:
+                    cmd += ["--coverage-script", args.coverage_script]
                 if case.get("bench"):
                     cmd.append("--bench")
                 jobs.append(cmd)

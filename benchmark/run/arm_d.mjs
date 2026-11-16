@@ -21,11 +21,16 @@ const OUT = resolve(opt('--out')[0]);
 const LOG = resolve(opt('--log')[0]);
 const RUNS = Number(opt('--runs')[0] ?? 3);
 const ONLY = new Set((opt('--only')[0] ?? '').split(',').filter(Boolean));
-const manifest = JSON.parse(readFileSync(opt('--manifest')[0], 'utf8'));
+const manifest = opt('--manifest').flatMap((m) => JSON.parse(readFileSync(m, 'utf8')));
+// Rating rule: 'any-finding' (set 2 protocol, code-review/1) or 'blocking' (code-review/2: only a
+// blocking finding with an AC that passed the guards holds the claim).
+const RULE = opt('--rule')[0] ?? 'any-finding';
 const cResults = JSON.parse(readFileSync(opt('--results')[0], 'utf8'));
 const TRUTH = JSON.parse(readFileSync(opt('--truth')[0], 'utf8'));
 const imp = (p) => import(pathToFileURL(join(REV, p)).href);
-const { buildReviewPacket, applyReviewGuards, reviewGate, reviewSuggested, REVIEW_PROMPT_VERSION } = await imp('src/review.js');
+const reviewMod = await imp('src/review.js');
+const { buildReviewPacket, applyReviewGuards, reviewGate, reviewSuggested, REVIEW_PROMPT_VERSION } = reviewMod;
+if (RULE === 'blocking' && !reviewMod.blockingFindings) throw new Error('--rule blocking needs a reviewer with blockingFindings (code-review/2)');
 const { packetForAgent } = await imp('src/review-actions.js');
 
 const MODEL = 'qwen3-coder:30b';
@@ -117,9 +122,12 @@ async function runCase(c, n, cResult, seed) {
       messages.push({ role: 'tool', content: JSON.stringify(result), tool_name: name });
     }
   }
-  const findings = accepted?.outcome === 'review' ? (accepted.review?.findings ?? []) : [];
+  const findings = RULE === 'blocking'
+    ? (accepted ? reviewMod.blockingFindings(accepted) : [])
+    : (accepted?.outcome === 'review' ? (accepted.review?.findings ?? []) : []);
   return {
     D: findings.length > 0 ? 'cannot_verify' : cResult.outcome,
+    blocking: findings,
     review: accepted ? { outcome: accepted.outcome, guard: accepted.guard, style: accepted.style ?? null, review: accepted.review } : null,
     inputHash: accepted?.inputHash ?? null,
     trace,
@@ -152,8 +160,8 @@ for (const [n, c] of manifest.entries()) {
     const r = await runCase(c, n, cr, k);
     writeFileSync(join(LOG, `${c.id}-run${k}.json`), `${JSON.stringify(r, null, 1)}\n`);
     runs.push({ run: k, seed: k, D: r.D, review: r.review?.outcome ?? 'no review', guard: r.review?.guard ?? null,
-      findings: (r.review?.review?.findings ?? []).map((f) => `${f.hunk} ${f.file}:${f.line}: ${f.text}`) });
-    console.log(c.id, `run ${k}`, r.D, r.review?.outcome ?? 'no review', (r.review?.review?.findings ?? []).length);
+      findings: (r.review?.review?.findings ?? []).map((f) => `${f.severity ? `[${f.severity}${f.ac ? ` ${f.ac}` : ''}] ` : ''}${f.hunk} ${f.file}:${f.line}: ${f.text}`) });
+    console.log(c.id, `run ${k}`, r.D, r.review?.outcome ?? 'no review', r.review?.guard ?? '', `blocking ${r.blocking.length}`);
   }
   // Worst run per case (the run least favourable to the app): for a case whose correct outcome
   // is supported, any run with cannot_verify counts; otherwise D catches the case only when every
@@ -165,4 +173,4 @@ for (const [n, c] of manifest.entries()) {
   const allCaught = runs.every((r) => r.D === 'cannot_verify');
   out.push({ id: c.id, C: cr.outcome, D, allRunsCannotVerify: allCaught, runs });
 }
-writeFileSync(join(LOG, 'arm-d.json'), `${JSON.stringify({ model: MODEL, options: OPTIONS, promptVersion: REVIEW_PROMPT_VERSION, results: out }, null, 1)}\n`);
+writeFileSync(join(LOG, 'arm-d.json'), `${JSON.stringify({ model: MODEL, options: OPTIONS, promptVersion: REVIEW_PROMPT_VERSION, rule: RULE, results: out }, null, 1)}\n`);

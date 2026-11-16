@@ -85,7 +85,12 @@ function armA(c, ev, hardened, owners = OWNED, perTest = true) {
       if (cov.base_total != null && cov.head_total < cov.base_total - 0.5) why.push('coverage job: total dropped');
     }
   }
-  if (why.length) return { outcome: 'blocked', reason: why.join('; ') };
+  if (why.length) {
+    // Second reading (set 3 protocol): a cancelled run gave no result, so the PR waits for a re-run
+    // (a human gate), not a block. Only when the cancellation is the sole reason.
+    const onlyCancelled = why.every((w) => w === 'the CI run on the head was cancelled');
+    return { outcome: 'blocked', reason: why.join('; '), ...(onlyCancelled ? { cancelledAsPending: 'human gate' } : {}) };
+  }
   if (hardened) {
     const owned = files(ev.meta).filter(owners);
     if (owned.length) return { outcome: 'human gate', reason: `code owners: ${owned.join(', ')}` };
