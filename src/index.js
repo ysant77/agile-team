@@ -82,7 +82,7 @@ export async function onComment(event) {
   }
   const claim = parseClaim(text);
   if (!claim) return;
-  const admitted = await admitClaim({ issueKey, commentId }, kvs);
+  const admitted = await admitClaim({ issueKey, commentId, authorId: comment?.author?.accountId }, kvs);
   if (!admitted.ok) {
     console.log('claim not queued', issueKey, admitted.reason);
     return;

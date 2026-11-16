@@ -10,15 +10,17 @@ export const ACTIONS_BOT_ID = 41898282;
 const isActionsBot = (u) => u?.id === ACTIONS_BOT_ID && u?.type === 'Bot';
 
 // All changed file names of one PR (GitHub serves at most 3,000, in pages of 100). A renamed
-// file counts under both names.
+// file counts under both names. A full last page means the list may go on: the result is null
+// (not known), never a short list that hides a changed file (second review, item 1).
+export const FILE_PAGES = 30;
 export async function listPrFiles(get, repo, prNumber) {
   const names = [];
-  for (let page = 1; page <= 30; page += 1) {
-    const files = (await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`)) ?? [];
+  for (let page = 1; page <= FILE_PAGES; page += 1) {
+    const files = (await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`, { required: true })) ?? [];
     for (const f of files) names.push(f.filename, ...(f.previous_filename ? [f.previous_filename] : []));
-    if (files.length < 100) break;
+    if (files.length < 100) return names;
   }
-  return names;
+  return null;
 }
 
 // prNumber picks one pull request; without it, the latest one whose title or branch names the key.
@@ -41,25 +43,31 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     if (!response.ok) throw new Error(`GitHub ${path.split('?')[0]}: HTTP ${response.status}`);
     return response.json();
   };
-  // Pages of 100 until a short page or the page limit.
+  // Pages of 100 until a short page or the page limit. A full last page means the list may go
+  // on, so the caller gets `truncated` and must treat the missing part as not known.
   const getPages = async (path, maxPages, pick = (body) => body, options = {}) => {
     const items = [];
     for (let page = 1; page <= maxPages; page += 1) {
       const body = await get(`${path}${path.includes('?') ? '&' : '?'}per_page=100&page=${page}`, options);
       const list = pick(body) ?? [];
       items.push(...list);
-      if (list.length < 100) break;
+      if (list.length < 100) return { items, truncated: false };
     }
-    return items;
+    return { items, truncated: true };
   };
+  const truncated = { pulls: false, comments: false, runs: false, files: false };
 
   // The 500 most recently updated pull requests.
-  const pulls = await getPages(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc`, 5, (b) => b, { required: true });
+  const pullPages = await getPages(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc`, 5, (b) => b, { required: true });
+  const pulls = pullPages.items;
+  truncated.pulls = pullPages.truncated;
+  // GitHub compares owner and repository names without case.
+  const sameRepo = (name) => String(name ?? '').toLowerCase() === String(repo).toLowerCase();
   // A PR is linked when its title or branch names the key at a boundary, and its head branch is
   // in this repository (not a fork). Closed PRs that were not merged are abandoned work.
   const naming = prNumber
     ? pulls.filter((p) => p.number === prNumber)
-    : pulls.filter((p) => p.head?.repo?.full_name === repo && (namesKey(p.title, key) || namesKey(p.head?.ref, key)));
+    : pulls.filter((p) => sameRepo(p.head?.repo?.full_name) && (namesKey(p.title, key) || namesKey(p.head?.ref, key)));
   const live = naming.filter((p) => !(p.state === 'closed' && !p.merged_at));
   const match = live[0] ?? naming[0];
   const prCandidates = prNumber ? [prNumber] : live.map((p) => p.number);
@@ -82,8 +90,9 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
   let prFiles = null;
   let workflowRuns = [];
   if (pr) {
-    const runs = await getPages(`/repos/${repo}/actions/runs?head_sha=${pr.headSha}`, 3, (b) => b?.workflow_runs);
-    workflowRuns = runs.map((r) => ({
+    const runPages = await getPages(`/repos/${repo}/actions/runs?head_sha=${pr.headSha}`, 3, (b) => b?.workflow_runs);
+    truncated.runs = runPages.truncated;
+    workflowRuns = runPages.items.map((r) => ({
       name: r.name,
       path: r.path,
       headSha: r.head_sha,
@@ -95,8 +104,9 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
       url: r.html_url,
     }));
     // Comments come oldest first; the latest bot report can be on any page.
-    const comments = await getPages(`/repos/${repo}/issues/${pr.number}/comments`, 10);
-    const fromBot = comments.filter((c) => isActionsBot(c.user) && extractReport(c.body));
+    const commentPages = await getPages(`/repos/${repo}/issues/${pr.number}/comments`, 10);
+    truncated.comments = commentPages.truncated;
+    const fromBot = commentPages.items.filter((c) => isActionsBot(c.user) && extractReport(c.body));
     const latest = fromBot[fromBot.length - 1];
     if (latest) {
       report = extractReport(latest.body);
@@ -105,6 +115,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     }
     // Every changed file, so the verifier can see a change to the workflow or the report plugin.
     prFiles = await listPrFiles(get, repo, pr.number);
+    truncated.files = prFiles === null;
   }
 
   // Report for the default branch, written by CI to the `ci-reports` branch as main.json.
@@ -130,6 +141,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
   return {
     pr,
     prCandidates,
+    truncated,
     report,
     reportAuthor,
     reportComment,
@@ -156,9 +168,22 @@ export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
     return response.json();
   };
   const pr = await get(`/repos/${repo}/pulls/${prNumber}`);
-  const files = await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100`);
+  // Every page of changed files. A full last page means the list may go on, so the files and
+  // patches are null (not known), never a short list (second review of unit 1, item 1).
+  const files = [];
+  let complete = false;
+  for (let page = 1; page <= FILE_PAGES; page += 1) {
+    const list = await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`);
+    files.push(...list);
+    if (list.length < 100) {
+      complete = true;
+      break;
+    }
+  }
+  const diffLines = (pr.additions ?? 0) + (pr.deletions ?? 0);
+  if (!complete) return { diffLines, files: null, patches: null };
   // Patches of Python files, so a metric gate can see added lines that could tamper with a
   // measurement. GitHub leaves out the patch of a very large file; that is kept as null.
   const patches = Object.fromEntries(files.filter((f) => f.filename.endsWith('.py')).map((f) => [f.filename, f.patch ?? null]));
-  return { diffLines: (pr.additions ?? 0) + (pr.deletions ?? 0), files: files.map((f) => f.filename), patches };
+  return { diffLines, files: files.map((f) => f.filename), patches };
 }
