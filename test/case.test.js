@@ -6,7 +6,7 @@ import { applyGuards } from '../src/opinion.js';
 
 const side = (prNumber, result, diffLines, extra = {}) => ({
   prNumber, verdict: { result, reason: `${result} by checks` }, diffLines, files: ['src/bank/ledger.py'],
-  pr: { body: `Fix for PR${prNumber}` }, report: { metrics: {} }, ...extra,
+  pr: { body: `Fix for PR${prNumber}` }, report: { metrics: {} }, newFailureModes: [], newDependencies: [], ...extra,
 });
 const base = { issueKey: 'BANK-32', ticket: { acceptanceCriteria: [{ acId: 'AC1' }] }, domain: null, question: 'winner', metric: null };
 
@@ -37,17 +37,20 @@ test('a tie leaves the case to a human, and an opinion may be recorded', () => {
 
 test('a metric inside the noise sets withinNoise; a clear margin decides by code', () => {
   const m = (v) => ({ report: { metrics: { p95_ms: v } } });
-  const close = buildPacket({ ...base, metric: 'p95_ms', higherIsBetter: false,
+  // The metric and its direction come from the ticket's registered AC (unit 2 review, item 1).
+  const ticket = { acceptanceCriteria: [{ acId: 'AC1', check: { type: 'metric_at_most', args: ['p95_ms', 50] } }] };
+  const close = buildPacket({ ...base, ticket,
     evidence: [side(5, 'supported', 40, m(41)), side(7, 'supported', 40, m(43))] });
   assert.equal(close.packet.withinNoise, true);
-  const clear = buildPacket({ ...base, metric: 'p95_ms', higherIsBetter: false,
+  const clear = buildPacket({ ...base, ticket,
     evidence: [side(5, 'supported', 40, m(20)), side(7, 'supported', 40, m(43))] });
   assert.equal(clear.arbitration.decidedBy, 'code-metric');
   assert.equal(clear.arbitration.winner, 'PR5');
 });
 
 test('a high-stake domain is flagged and goes to a human', () => {
-  const c = buildPacket({ ...base, domain: 'money_semantics', evidence: [side(5, 'supported', 12), side(7, 'supported', 140)] });
+  // The domain comes from the ticket (a label here), not from the caller (unit 2 review, item 2).
+  const c = buildPacket({ ...base, ticket: { ...base.ticket, labels: ['money_semantics'] }, evidence: [side(5, 'supported', 12), side(7, 'supported', 140)] });
   assert.equal(c.highStake, true);
   assert.equal(c.arbitration.decidedBy, 'human');
 });

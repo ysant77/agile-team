@@ -91,3 +91,35 @@ test('U6: an edit outside the bug files is refused before anything runs', () => 
   assert.deepEqual(editsOutside(bug, [{ path: 'src/bank/ledger.py' }, { path: 'tests/conftest.py' }, { path: 'pyproject.toml' }]), ['tests/conftest.py', 'pyproject.toml']);
   assert.deepEqual(editsOutside(bug, [{ path: 'src/bank/ledger.py' }]), []);
 });
+
+test('U3: a PR size without line counts is unknown, not 0', async () => {
+  const { collectPrStats } = await import('../src/github-evidence.js');
+  const fetchFn = async (url) => ({ ok: true, status: 200, json: async () => (/\/files/.test(url) ? [] : {}) });
+  assert.equal((await collectPrStats({ repo: 'o/r', prNumber: 3, fetchFn })).diffLines, null);
+});
+
+test('U7: a PR picked by number is marked unlinked when it is a fork or does not name the key; numbers may not repeat', async () => {
+  const { collectGithub } = await import('../src/github-evidence.js');
+  const { parseCaseInput } = await import('../src/case-actions.js');
+  const pull = (number, title, full) => ({ number, title, state: 'open', head: { ref: 'b', sha: 'a'.repeat(40), repo: { full_name: full } } });
+  const fetchWith = (pulls) => async (url) => {
+    const page = Number(new URL(url).searchParams.get('page') ?? 1);
+    const body = /\/pulls\?/.test(url) ? (page === 1 ? pulls : []) : /\/files|\/comments/.test(url) ? [] : /\/actions\/runs/.test(url) ? { workflow_runs: [] } : null;
+    return body === null ? { ok: false, status: 404, json: async () => ({}), headers: { get: () => null } } : { ok: true, status: 200, json: async () => body, headers: { get: () => null } };
+  };
+  const fork = await collectGithub({ repo: 'o/r', key: 'BANK-42', prNumber: 5, fetchFn: fetchWith([pull(5, 'BANK-42 fix', 'evil/r')]) });
+  assert.equal(fork.pr.linked, false);
+  const other = await collectGithub({ repo: 'o/r', key: 'BANK-42', prNumber: 5, fetchFn: fetchWith([pull(5, 'BANK-7 fix', 'o/r')]) });
+  assert.equal(other.pr.linked, false);
+  const good = await collectGithub({ repo: 'o/r', key: 'BANK-42', prNumber: 5, fetchFn: fetchWith([pull(5, 'BANK-42 fix', 'o/r')]) });
+  assert.equal(good.pr.linked, true);
+  assert.match(parseCaseInput({ issueKey: 'BANK-42', prNumbers: '5,5' }).errors.join(), /repeat/);
+});
+
+test('U9: the metric margin works for negative values', () => {
+  const s = (id, v) => ({ id, gatesPassed: true, metrics: { median: v, iqrLow: v, iqrHigh: v }, newFailureModes: [], newDependencies: [], diffLines: 10 });
+  const close = arbitrate({ preRegistered: { metric: 'pnl', higherIsBetter: true, margin: 0.1 } }, [s('PR5', -1.9), s('PR7', -2.0)]);
+  assert.notEqual(close.decidedBy, 'code-metric');
+  const clear = arbitrate({ preRegistered: { metric: 'pnl', higherIsBetter: true, margin: 0.1 } }, [s('PR5', -1.0), s('PR7', -2.0)]);
+  assert.equal(clear.winner, 'PR5');
+});

@@ -18,7 +18,7 @@ export function arbitrate(ticket, sides) {
     return decision('human', null, 'domain', `${ticket.domain} is decided by a human`, sides);
   }
   if (!ticket.preRegistered?.metric && ticket.metricDisputed) {
-    return decision('human', null, 'metric', 'the metric was not pre-registered', sides);
+    return decision('human', null, 'metric', 'the ticket registers more than one metric, so code cannot pick the deciding one', sides);
   }
 
   // 1. Code gates.
@@ -36,15 +36,21 @@ export function arbitrate(ticket, sides) {
   // 2. Pre-registered metric with a clear margin and no IQR overlap.
   const pre = ticket.preRegistered;
   if (pre?.metric) {
+    // A registered metric missing on a side that passes the gates: code cannot compare.
+    const missing = alive.filter((s) => !s.metrics);
+    if (missing.length) {
+      return decision('human', null, 'metric', `${missing.map((s) => s.id).join(', ')} has no ${pre.metric} in its report`, sides);
+    }
     const ranked = [...alive].sort((a, b) =>
       pre.higherIsBetter === false ? a.metrics.median - b.metrics.median : b.metrics.median - a.metrics.median,
     );
     const [best, next] = ranked;
+    // The margin is relative to the larger absolute value, so it works for negative values and
+    // near zero (unit 2 review, item 9).
     const margin = pre.margin ?? 0.1;
-    const better =
-      pre.higherIsBetter === false
-        ? best.metrics.median <= next.metrics.median * (1 - margin)
-        : best.metrics.median >= next.metrics.median * (1 + margin);
+    const gap = Math.abs(best.metrics.median - next.metrics.median);
+    const scale = Math.max(Math.abs(best.metrics.median), Math.abs(next.metrics.median));
+    const better = best.metrics.median !== next.metrics.median && gap >= margin * scale;
     const separated =
       pre.higherIsBetter === false
         ? best.metrics.iqrHigh < next.metrics.iqrLow
@@ -60,7 +66,14 @@ export function arbitrate(ticket, sides) {
     }
   }
 
-  // 3. Team lead tie-breaks in fixed order.
+  // 3. Team lead tie-breaks in fixed order. A value nobody measured is not "none": any unknown
+  // input of a rule sends the case to a human (unit 2 review, item 3).
+  const unknown = (field, label) => alive.filter((s) => s[field] === null || s[field] === undefined)
+    .map((s) => `${s.id}: ${label} not known`);
+  for (const [field, label] of [['newFailureModes', 'new failure modes'], ['newDependencies', 'new dependencies'], ['diffLines', 'diff size']]) {
+    const gaps = unknown(field, label);
+    if (gaps.length) return decision('human', null, 'unknown input', gaps.join('; '), sides);
+  }
   const byFailureModes = minBy(alive, (s) => (s.newFailureModes ?? []).length);
   if (byFailureModes.length === 1) {
     return decision('lead-rule', byFailureModes[0].id, 'fewer new failure modes', describe(alive, 'newFailureModes'), sides);
@@ -69,7 +82,7 @@ export function arbitrate(ticket, sides) {
   if (byDeps.length === 1) {
     return decision('lead-rule', byDeps[0].id, 'no new dependency', describe(byFailureModes, 'newDependencies'), sides);
   }
-  const byDiff = minBy(byDeps, (s) => s.diffLines ?? 0);
+  const byDiff = minBy(byDeps, (s) => s.diffLines);
   if (byDiff.length === 1) {
     return decision('lead-rule', byDiff[0].id, 'smaller diff', `${byDiff[0].id} changes ${byDiff[0].diffLines} lines`, sides);
   }

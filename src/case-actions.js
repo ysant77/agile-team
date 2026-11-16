@@ -5,7 +5,7 @@ import { fetch } from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { HUMAN_DOMAINS } from './arbitration.js';
 import { appendAudit } from './audit-store.js';
-import { buildPacket, formatCase, formatOpinion, QUESTIONS } from './case.js';
+import { buildPacket, caseInputErrors, formatCase, formatOpinion, QUESTIONS } from './case.js';
 import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment } from './jira.js';
 import { collectJira } from './jira-evidence.js';
@@ -25,10 +25,12 @@ export function parseCaseInput(payload) {
   if (prNumbers.length < 2 || prNumbers.length > 3 || prNumbers.some((n) => !Number.isInteger(n) || n < 1)) {
     errors.push('prNumbers must list 2 or 3 pull request numbers');
   }
+  if (new Set(prNumbers).size !== prNumbers.length) errors.push('prNumbers must not repeat a number');
   if (!QUESTIONS.includes(question)) errors.push(`question must be one of ${QUESTIONS.join(', ')}`);
   if (domain && !HUMAN_DOMAINS.includes(domain)) errors.push(`domain must be empty or one of ${HUMAN_DOMAINS.join(', ')}`);
-  const metric = String(payload?.metric ?? '').trim() || null;
-  return { errors, issueKey, prNumbers, question, domain, metric, higherIsBetter: payload?.higherIsBetter !== false && payload?.higherIsBetter !== 'false' };
+  // metric, direction and domain are checked against the ticket in openCase; the case itself
+  // takes them only from the ticket (unit 2 review, items 1 and 2).
+  return { errors, issueKey, prNumbers, question, domain };
 }
 
 export async function openCase(payload) {
@@ -38,6 +40,8 @@ export async function openCase(payload) {
   if (!repo) return { ok: false, error: 'no repository configured' };
   const token = process.env.GITHUB_TOKEN;
   const ticket = await collectJira(input.issueKey);
+  const disagree = caseInputErrors(payload, ticket);
+  if (disagree.length) return { ok: false, error: disagree.join('; ') };
   const evidence = [];
   for (const prNumber of input.prNumbers) {
     const github = await collectGithub({ repo, key: input.issueKey, token, fetchFn: fetch, prNumber });
@@ -45,7 +49,15 @@ export async function openCase(payload) {
       const where = github.truncated?.pulls ? `the latest 500 pull requests of ${repo}` : repo;
       return { ok: false, error: `pull request ${prNumber} not found in ${where}` };
     }
-    const stats = await collectPrStats({ repo, prNumber, token, fetchFn: fetch });
+    // A PR given by number must still name the ticket and come from this repository (item 7).
+    if (!github.pr.linked) return { ok: false, error: `pull request ${prNumber} does not name ${input.issueKey} or comes from a fork` };
+    // A size that cannot be read is unknown, and an unknown size sends the case to a human (item 8).
+    let stats = { diffLines: null, files: null };
+    try {
+      stats = await collectPrStats({ repo, prNumber, token, fetchFn: fetch });
+    } catch (error) {
+      console.log('PR size not read', prNumber, error.message);
+    }
     // The file list from collectGithub: every page, or null when it is cut.
     const verdict = verify({ id: `case:${input.issueKey}:${prNumber}`, type: 'ready', text: '' }, { ticket, ...github, config: VERIFY_CONFIG });
     evidence.push({ prNumber, pr: github.pr, report: github.report, verdict, ...stats });
