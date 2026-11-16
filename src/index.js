@@ -1,4 +1,6 @@
 import { Queue } from '@forge/events';
+import { kvs } from '@forge/kvs';
+import { admitClaim } from './claim-intake.js';
 import { readLatestCommit } from './github.js';
 import { createIssue, getComment } from './jira.js';
 import { malformedAcLines, normaliseAcs, parseAcLines } from './ticket-spec.js';
@@ -53,6 +55,11 @@ export async function onComment(event) {
   if (comment?.author?.accountType === 'app') return; // ignore our own comments
   const claim = parseClaim(adfToText(comment.body));
   if (!claim) return;
+  const admitted = await admitClaim({ issueKey, commentId }, kvs);
+  if (!admitted.ok) {
+    console.log('claim not queued', issueKey, admitted.reason);
+    return;
+  }
   await verifyQueue.push({
     body: { issueKey, claim: { id: `${issueKey}:${commentId}`, type: claim.type, text: claim.detail } },
     concurrency: { key: 'verify', limit: 1 },
