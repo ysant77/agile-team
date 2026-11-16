@@ -79,6 +79,10 @@ const runners = {
   adopt(step) {
     const ctx = merge(defaults, step.context);
     ctx.report = withWorkflowFiles(ctx.report);
+    if (!step.context.reportComment) {
+      const run = (ctx.workflowRuns ?? []).find((r) => r.headSha === ctx.pr?.headSha);
+      if (run) ctx.reportComment = { createdAt: run.createdAt, updatedAt: run.createdAt };
+    }
     ctx.ticket = adoptProposal(ctx.ticket, step.proposal);
     const verdict = verify(step.claim, ctx);
     assert.equal(verdict.result, step.expect.result, verdict.reason);
