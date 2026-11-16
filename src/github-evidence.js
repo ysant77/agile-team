@@ -168,6 +168,18 @@ export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
     return response.json();
   };
   const pr = await get(`/repos/${repo}/pulls/${prNumber}`);
-  const files = await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100`);
-  return { diffLines: (pr.additions ?? 0) + (pr.deletions ?? 0), files: files.map((f) => f.filename) };
+  // Every page of changed files. A full last page means the list may go on, so the file list is
+  // null (not known), never a short list (second review of unit 1, item 1).
+  const files = [];
+  let complete = false;
+  for (let page = 1; page <= FILE_PAGES; page += 1) {
+    const list = await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`);
+    files.push(...list);
+    if (list.length < 100) {
+      complete = true;
+      break;
+    }
+  }
+  const diffLines = (pr.additions ?? 0) + (pr.deletions ?? 0);
+  return { diffLines, files: complete ? files.map((f) => f.filename) : null };
 }
