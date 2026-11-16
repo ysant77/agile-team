@@ -89,7 +89,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 20,
@@ -237,7 +245,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 20,
@@ -388,7 +404,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 20,
@@ -650,7 +674,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 1,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 20,
@@ -801,7 +833,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 20,
@@ -952,7 +992,15 @@
               "outcome": "failed",
               "passed": 2,
               "failed": 1
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 20,
@@ -1103,7 +1151,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 20,
@@ -1254,7 +1310,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 20,
@@ -1405,7 +1469,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 20,
@@ -1556,7 +1628,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 20,
@@ -1708,7 +1788,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           }
         },
         "baseReport": {
@@ -1851,7 +1939,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 20,
@@ -1984,7 +2080,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 20,
@@ -2134,7 +2238,15 @@
               "outcome": "passed",
               "passed": 3,
               "failed": 0
-            }
+            },
+            "head_sha": "ddddddddddddddddddddddddddddddddddddddd4",
+            "base_run": {
+              "rc": 1,
+              "collected": 2,
+              "report": true
+            },
+            "changed_support": [],
+            "removed_test_files": []
           },
           "coverage": {
             "changed_executable": 0,

@@ -116,3 +116,39 @@ test('the deployed config keeps the security check advisory until a bank PR show
   assert.equal(VERIFY_CONFIG.securityCheck.mode, 'observe');
   assert.ok(VERIFY_CONFIG.reportTrustPaths.includes('.github/codeql/'));
 });
+
+// Bank PR 14 review: the base run block must be complete and match the head, and a change to
+// pytest support, config or the report scripts makes D-repro unknown, never a pass or a fail.
+test('D-repro is unknown when the base run changed support files, wrote no report or ran badly', async () => {
+  const { reproduced } = await import('../src/verifier/checks.js');
+  const base = ctxOf(0);
+  assert.equal(reproduced(base).status, 'pass');
+  const cases = [
+    [(r) => { r.changed_support = ['tests/conftest.py', 'pyproject.toml']; }, /pytest support or config changed: tests\/conftest.py, pyproject.toml/],
+    [(r) => { r.base_run = { rc: 4, collected: null, report: false }; }, /base run wrote no report/],
+    [(r) => { delete r.base_run; }, /no base run record/],
+    [(r) => { r.base_run = { rc: 2, collected: 3, report: true }; }, /base run ended with pytest exit code 2/],
+    [(r) => { r.head_sha = 'c'.repeat(40); }, /repro block is for c{7}, not the report head/],
+    [(r) => { delete r.head_sha; }, /repro block names no head commit/],
+    [(r) => { delete r.changed_support; }, /no list of changed support files/],
+  ];
+  for (const [change, reason] of cases) {
+    const ctx = ctxOf(0);
+    change(ctx.report.repro);
+    const r = reproduced(ctx);
+    assert.equal(r.status, 'unknown', r.reason);
+    assert.match(r.reason, reason);
+  }
+});
+
+test('a PR that changes the report scripts is not trusted for its own report', async () => {
+  const { reportTrusted } = await import('../src/verifier/checks.js');
+  const { VERIFY_CONFIG } = await import('../src/verify-claim.js');
+  for (const file of ['scripts/repro.py', 'scripts/changed_coverage.py']) {
+    const ctx = { ...ctxOf(0), config: VERIFY_CONFIG };
+    ctx.prFiles = [...ctx.prFiles, file];
+    const r = reportTrusted(ctx);
+    assert.equal(r.status, 'unknown');
+    assert.match(r.reason, new RegExp(file.replace('.', '\\.')));
+  }
+});
