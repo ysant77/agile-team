@@ -59,6 +59,12 @@ export function runAcCheck(ctx, check) {
 export function acMapped(ctx) {
   const acs = ctx.ticket.acceptanceCriteria ?? [];
   if (acs.length === 0) {
+    // Work defined by sub-tasks: every sub-task done stands for the AC (benchmark B24). A ticket
+    // with no AC and no sub-task has nothing to check (B13).
+    const subs = ctx.ticket.subtasks ?? [];
+    if (subs.length && subs.every((t) => t.statusCategory === 'done')) {
+      return { name: 'ac_mapped', status: 'pass', reason: `no AC; the work is ${subs.length} sub-task(s), all done`, parts: [] };
+    }
     return { name: 'ac_mapped', status: 'fail', reason: 'ticket has no acceptance criteria', parts: [] };
   }
   const parts = acs.map((ac) => ({ acId: ac.acId, ...runAcCheck(ctx, ac.check) }));

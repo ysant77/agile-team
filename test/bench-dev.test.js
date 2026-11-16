@@ -177,3 +177,9 @@ test('a Task whose AC test fails on head is still contradicted', async () => {
   const v = await runCase(c);
   assert.equal(v.result, 'contradicted', v.reason);
 });
+// (b3) A ticket with no AC whose work is defined by sub-tasks that are all done (benchmark B24).
+// A ticket with no AC and no sub-task stays held (B13, in the regression net).
+test('B24: a Task with no AC and all sub-tasks done is supported', async () => {
+  const v = await run('B24');
+  assert.equal(v.result, 'supported', v.reason);
+});
