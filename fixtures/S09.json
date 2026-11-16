@@ -21,6 +21,7 @@
       "kind": "verify",
       "claim": { "id": "c2", "type": "done", "text": "Done, closing the ticket on the first claim" },
       "context": {
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "e77da3f5329d9b0b0d407d44a80f49768ec68d9f", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T00:00:00Z" } ],
         "ticket": { "key": "BANK-9", "type": "Bug", "acceptanceCriteria": [
           { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK9_end_date_inclusive"] } },
           { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK9_closing_balance_end_of_day_utc8"] } } ] },

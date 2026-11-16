@@ -6,6 +6,7 @@
       "kind": "verify",
       "claim": { "id": "c1", "type": "acs", "text": "Omar: balance cache meets AC2" },
       "context": {
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "a130b2d59dc42b6cafa2db782e3d2872fa9d69da", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T00:00:00Z" } ],
         "ticket": { "key": "BANK-22", "type": "Story", "acceptanceCriteria": [
           { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["statement_p95_ms", 300] } } ] },
         "pr": { "number": 46, "title": "BANK-22 10-minute balance cache", "state": "open", "headSha": "a130b2d59dc42b6cafa2db782e3d2872fa9d69da" },
@@ -18,6 +19,7 @@
       "kind": "verify",
       "claim": { "id": "c2", "type": "acs", "text": "Kai: index meets AC2" },
       "context": {
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "7b19c5a5e41aa364d100b9080885eec583fa762c", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T00:00:00Z" } ],
         "ticket": { "key": "BANK-22", "type": "Story", "acceptanceCriteria": [
           { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["statement_p95_ms", 300] } } ] },
         "pr": { "number": 32, "title": "BANK-22 index statement query on account_id, posted_at", "state": "open", "headSha": "7b19c5a5e41aa364d100b9080885eec583fa762c" },

@@ -6,6 +6,18 @@ import { extractReport, namesKey } from './verifier/report.js';
 const API = 'https://api.github.com';
 const BOT = 'github-actions[bot]';
 
+// All changed file names of one PR (GitHub serves at most 3,000, in pages of 100). A renamed
+// file counts under both names.
+export async function listPrFiles(get, repo, prNumber) {
+  const names = [];
+  for (let page = 1; page <= 30; page += 1) {
+    const files = (await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`)) ?? [];
+    for (const f of files) names.push(f.filename, ...(f.previous_filename ? [f.previous_filename] : []));
+    if (files.length < 100) break;
+  }
+  return names;
+}
+
 export async function collectGithub({ repo, key, token, fetchFn }) {
   const headers = {
     Accept: 'application/vnd.github+json',
@@ -45,6 +57,8 @@ export async function collectGithub({ repo, key, token, fetchFn }) {
 
   let report = null;
   let reportAuthor = null;
+  let reportComment = null;
+  let prFiles = null;
   let workflowRuns = [];
   if (pr) {
     const runs = await get(`/repos/${repo}/actions/runs?head_sha=${pr.headSha}&per_page=50`);
@@ -64,7 +78,10 @@ export async function collectGithub({ repo, key, token, fetchFn }) {
     if (latest) {
       report = extractReport(latest.body);
       reportAuthor = BOT;
+      reportComment = { createdAt: latest.created_at, updatedAt: latest.updated_at };
     }
+    // Every changed file, so the verifier can see a change to the workflow or the report plugin.
+    prFiles = await listPrFiles(get, repo, pr.number);
   }
 
   // Report for the default branch, written by CI to the `ci-reports` branch as main.json.
@@ -92,6 +109,8 @@ export async function collectGithub({ repo, key, token, fetchFn }) {
     prCandidates,
     report,
     reportAuthor,
+    reportComment,
+    prFiles,
     workflowRuns,
     baseReport,
     baseWorkflowFiles: baseReport?.workflow_files ?? null,

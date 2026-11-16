@@ -10,6 +10,34 @@ function issueToken(key) {
   return String(key).replace('-', ''); // BANK-4 -> BANK4, used in test names
 }
 
+export const DEFAULT_WORKFLOW_PATHS = ['.github/workflows/ci.yml'];
+const runPath = (r) => String(r.path ?? '').split('@')[0];
+
+// Paths that decide how CI runs or how it writes the report. A PR that changes one of them can
+// make its own CI say anything, so its CI is not evidence (DESIGN 6, review of 16 Nov).
+export const DEFAULT_TRUST_PATHS = ['.github/workflows/'];
+const matchesPath = (file, paths) => paths.some((g) => (g.endsWith('/') ? file.startsWith(g) : file === g));
+
+export function pipelineChange(ctx) {
+  if (!Array.isArray(ctx.prFiles)) return 'pull request file list not available';
+  const paths = ctx.config?.reportTrustPaths ?? DEFAULT_TRUST_PATHS;
+  const touched = ctx.prFiles.filter((f) => matchesPath(f, paths));
+  return touched.length ? `PR changes ${touched.join(', ')}, which can change how CI runs or reports` : null;
+}
+
+// The report comment may be edited only by the pinned CI run that wrote it (the bank CI edits
+// its own comment on every push). An edit later than 60 s after that run ended is not trusted.
+const EDIT_SLACK_MS = 60 * 1000;
+function commentEditedLater(ctx) {
+  const c = ctx.reportComment;
+  if (!c?.updatedAt) return 'report comment times not available';
+  const paths = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
+  const runs = (ctx.workflowRuns ?? []).filter((r) => paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha);
+  if (runs.length === 0) return 'no pinned CI run for the head, so the report comment has no source';
+  const ended = Math.max(...runs.map((r) => Date.parse(r.updatedAt ?? r.createdAt)));
+  return Date.parse(c.updatedAt) > ended + EDIT_SLACK_MS ? 'report comment was edited after the CI run ended' : null;
+}
+
 // Guard: a report counts only if the bot wrote it, for the PR head, with unchanged workflows.
 export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSha) {
   if (!report) return result('report_trusted', 'unknown', 'no CI report');
@@ -19,8 +47,18 @@ export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSh
   if (headSha && report.head_sha !== headSha) {
     return result('report_trusted', 'unknown', 'report is for an older commit, not the head');
   }
-  if (ctx.baseWorkflowFiles && !sameFiles(ctx.baseWorkflowFiles, report.workflow_files)) {
+  // Without the base fingerprint (ci-reports/main.json) a changed workflow cannot be seen.
+  if (!ctx.baseWorkflowFiles) return result('report_trusted', 'unknown', 'no base workflow fingerprint (ci-reports/main.json)');
+  if (!sameFiles(ctx.baseWorkflowFiles, report.workflow_files)) {
     return result('report_trusted', 'unknown', 'workflow changed in this PR');
+  }
+  if (report === ctx.report) {
+    // The fingerprint is written by the workflow under test, so the verifier also reads the PR's
+    // own file list.
+    const change = pipelineChange(ctx);
+    if (change) return result('report_trusted', 'unknown', change);
+    const edited = commentEditedLater(ctx);
+    if (edited) return result('report_trusted', 'unknown', edited);
   }
   return result('report_trusted', 'pass', 'bot report for the head commit');
 }
@@ -42,13 +80,13 @@ export function prLinked(ctx) {
 
 // The pinned workflow files whose runs decide ci_green. A run is matched by its workflow file,
 // never by its display name: a PR can add another workflow that is also named "CI".
-export const DEFAULT_WORKFLOW_PATHS = ['.github/workflows/ci.yml'];
-const runPath = (r) => String(r.path ?? '').split('@')[0];
 
 export function ciGreen(ctx) {
   const required = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
   const head = ctx.pr?.headSha;
   if (!head) return result('ci_green', 'unknown', 'no head commit');
+  const change = pipelineChange(ctx);
+  if (change) return result('ci_green', 'unknown', change);
   const reasons = [];
   let unknown = false;
   for (const path of required) {
