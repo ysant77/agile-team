@@ -27,6 +27,12 @@ const runners = {
   verify(step) {
     const ctx = merge(defaults, step.context);
     for (const key of ['report', 'baseReport', 'mergeReport']) ctx[key] = withWorkflowFiles(ctx[key]);
+    // Fixtures record no comment times: the report comment is taken as written at the start of
+    // the first pinned run, inside the window the verifier accepts.
+    if (!step.context.reportComment) {
+      const run = (ctx.workflowRuns ?? []).find((r) => r.headSha === ctx.pr?.headSha);
+      if (run) ctx.reportComment = { createdAt: run.createdAt, updatedAt: run.createdAt };
+    }
     const verdict = verify(step.claim, ctx);
     assert.equal(verdict.result, step.expect.result, verdict.reason);
     for (const text of step.expect.reasonIncludes ?? []) {

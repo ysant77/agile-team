@@ -25,17 +25,26 @@ export function pipelineChange(ctx) {
   return touched.length ? `PR changes ${touched.join(', ')}, which can change how CI runs or reports` : null;
 }
 
-// The report comment may be edited only by the pinned CI run that wrote it (the bank CI edits
-// its own comment on every push). An edit later than 60 s after that run ended is not trusted.
+// HEURISTIC, not a boundary (review B4c, 16 Nov). The bank CI edits its own report comment on
+// every push, so an edit alone proves nothing. The comment is trusted only when its last edit
+// lies inside a pinned workflow run on the head: from the run's start to 60 s after it ended.
+// Someone with write access can still edit inside that window. Plan (b2) replaces this with a
+// check run that no user can edit (DESIGN section 12).
 const EDIT_SLACK_MS = 60 * 1000;
+const HEURISTIC = 'report comment time-window heuristic';
 function commentEditedLater(ctx) {
   const c = ctx.reportComment;
-  if (!c?.updatedAt) return 'report comment times not available';
+  if (!c?.updatedAt) return `${HEURISTIC}: comment times not available`;
   const paths = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
   const runs = (ctx.workflowRuns ?? []).filter((r) => paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha);
-  if (runs.length === 0) return 'no pinned CI run for the head, so the report comment has no source';
-  const ended = Math.max(...runs.map((r) => Date.parse(r.updatedAt ?? r.createdAt)));
-  return Date.parse(c.updatedAt) > ended + EDIT_SLACK_MS ? 'report comment was edited after the CI run ended' : null;
+  if (runs.length === 0) return `${HEURISTIC}: no pinned CI run on the head, so the comment has no source`;
+  const edited = Date.parse(c.updatedAt);
+  const inside = runs.some((r) => {
+    const start = Date.parse(r.runStartedAt ?? r.createdAt);
+    const end = Date.parse(r.updatedAt ?? r.createdAt) + EDIT_SLACK_MS;
+    return edited >= start && edited <= end;
+  });
+  return inside ? null : `${HEURISTIC}: the comment was last edited outside the pinned CI run`;
 }
 
 // Guard: a report counts only if the bot wrote it, for the PR head, with unchanged workflows.
