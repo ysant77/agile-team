@@ -123,3 +123,30 @@ test('U9: the metric margin works for negative values', () => {
   const clear = arbitrate({ preRegistered: { metric: 'pnl', higherIsBetter: true, margin: 0.1 } }, [s('PR5', -1.0), s('PR7', -2.0)]);
   assert.equal(clear.winner, 'PR5');
 });
+
+test('U11: the too-good guard covers every AUC name, and guarded paths ignore case and sub-folders', async () => {
+  const { metricCompare } = await import('../src/verifier/checks.js');
+  const sha = 'a'.repeat(40);
+  const ctx = (metrics, prFiles = []) => ({
+    ticket: { key: 'BANK-17' }, pr: { headSha: sha }, prFiles,
+    report: { schema: 'aat-ci-report/1', head_sha: sha, tests: [], metrics, workflow_files: { '.github/workflows/ci.yml': 'h' } },
+    reportAuthor: 'github-actions[bot]', baseWorkflowFiles: { '.github/workflows/ci.yml': 'h' },
+    reportComment: { createdAt: '2026-11-20T00:00:00Z', updatedAt: '2026-11-20T00:00:00Z' },
+    workflowRuns: [{ path: '.github/workflows/ci.yml', headSha: sha, status: 'completed', conclusion: 'success', createdAt: '2026-11-20T00:00:00Z', updatedAt: '2026-11-20T00:00:30Z' }],
+    config: { requiredWorkflowPaths: ['.github/workflows/ci.yml'], tooGood: { auc: 0.95 }, guardedPaths: ['src/fraud/evaluate.py', 'src/bank/testing/'] },
+  });
+  for (const name of ['auc', 'pr_auc', 'AUC', 'roc_auc']) {
+    assert.equal(metricCompare(ctx({ [name]: 0.999 }), name, 0.5, 'min').status, 'unknown', name);
+  }
+  assert.equal(metricCompare(ctx({ recall: 0.999 }), 'recall', 0.5, 'min').status, 'pass');
+  for (const f of ['src/fraud/sub/evaluate.py', 'src/bank/Testing/x.py', 'SRC/fraud/evaluate.py']) {
+    assert.equal(metricCompare(ctx({ recall: 0.9 }, [f]), 'recall', 0.5, 'min').status, 'unknown', f);
+  }
+});
+
+test('U12: the protocol text is in the repository and the report header states the full rule', async () => {
+  const { readFileSync } = await import('node:fs');
+  const doc = readFileSync('docs/model-selection.md', 'utf8');
+  for (const part of ['bootstrap', 'repeat', 'tie-break', 'scorer version']) assert.match(doc, new RegExp(part, 'i'));
+  assert.match(readFileSync('bakeoff/report.js', 'utf8'), /spreads? across repeats do not overlap/);
+});
