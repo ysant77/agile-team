@@ -1,0 +1,79 @@
+{
+  "scenario": "S56",
+  "title": "An unverifiable claim becomes a code verdict through a proposed check",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "ready", "text": "Raj: withdrawals are safe under concurrency" },
+      "context": {
+        "ticket": { "key": "BANK-4", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "statement": "a withdrawal debits the account once", "check": { "type": "test_passes", "args": ["test_BANK4_single_withdrawal_debits_once"] } },
+          { "acId": "AC2", "statement": "20 concurrent withdrawals never overdraw the account", "check": { "type": "manual", "args": ["20 concurrent withdrawals never overdraw the account"] } } ] },
+        "pr": { "number": 61, "title": "BANK-4 lock the balance check and the debit", "state": "open", "headSha": "4c1e9a07b2d3f6e5a8c9d0b1e2f3a4b5c6d7e8f9" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "4c1e9a07b2d3f6e5a8c9d0b1e2f3a4b5c6d7e8f9", "tests": [
+          { "id": "tests/test_accounts.py::test_BANK4_single_withdrawal_debits_once", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "4c1e9a07b2d3f6e5a8c9d0b1e2f3a4b5c6d7e8f9", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T06:00:00Z" } ]
+      },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["AC2: needs a human"] }
+    },
+    {
+      "kind": "review",
+      "packet": {
+        "ticket": { "key": "BANK-4", "acceptanceCriteria": [
+          { "acId": "AC1", "statement": "a withdrawal debits the account once", "check": { "type": "test_passes", "args": ["test_BANK4_single_withdrawal_debits_once"] } },
+          { "acId": "AC2", "statement": "20 concurrent withdrawals never overdraw the account", "check": { "type": "manual", "args": ["20 concurrent withdrawals never overdraw the account"] } } ] },
+        "pr": { "number": 61, "headSha": "4c1e9a07b2d3f6e5a8c9d0b1e2f3a4b5c6d7e8f9" },
+        "files": [
+          { "filename": "src/bank/accounts.py", "status": "modified", "patch": "@@ -40,4 +40,5 @@ class Account:\n     def withdraw(self, amount_cents):\n-        if self.balance_cents < amount_cents:\n-            raise InsufficientFunds(self.id)\n-        self.balance_cents -= amount_cents\n+        with self._lock:\n+            if self.balance_cents < amount_cents:\n+                raise InsufficientFunds(self.id)\n+            self.balance_cents -= amount_cents" },
+          { "filename": "tests/test_accounts.py", "status": "added", "patch": "@@ -0,0 +1,7 @@\n+from bank.accounts import Account\n+\n+\n+def test_BANK4_single_withdrawal_debits_once():\n+    acct = Account(\"a1\", balance_cents=1000)\n+    acct.withdraw(300)\n+    assert acct.balance_cents == 700" }
+        ],
+        "reportTests": ["tests/test_accounts.py::test_BANK4_single_withdrawal_debits_once"],
+        "verdict": { "result": "cannot_verify", "reason": "AC2: needs a human: 20 concurrent withdrawals never overdraw the account" },
+        "trigger": "cannot_verify"
+      },
+      "review": {
+        "findings": [
+          { "hunk": "P61:H1", "file": "src/bank/accounts.py", "line": 41, "text": "The lock in P61:H1 covers the balance check and the debit." }
+        ],
+        "risks": ["No test runs 20 concurrent withdrawals, so AC2 has no code check."],
+        "proposedChecks": [
+          { "testName": "test_BANK4_concurrent_withdrawals_20_threads", "file": "tests/test_concurrency.py", "ac": "AC2",
+            "asserts": "20 threads withdraw at the same time. The final balance equals the start balance minus the successful withdrawals.", "failsBeforeFix": true }
+        ]
+      },
+      "expect": { "outcome": "review" }
+    },
+    {
+      "kind": "adopt",
+      "claim": { "id": "c2", "type": "ready", "text": "Raj: withdrawals are safe under concurrency" },
+      "proposal": { "ac": "AC2", "testName": "test_BANK4_concurrent_withdrawals_20_threads" },
+      "context": {
+        "ticket": { "key": "BANK-4", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "statement": "a withdrawal debits the account once", "check": { "type": "test_passes", "args": ["test_BANK4_single_withdrawal_debits_once"] } },
+          { "acId": "AC2", "statement": "20 concurrent withdrawals never overdraw the account", "check": { "type": "manual", "args": ["20 concurrent withdrawals never overdraw the account"] } } ] },
+        "pr": { "number": 61, "title": "BANK-4 lock the balance check and the debit", "state": "open", "headSha": "8d2f6b1c3a4e5f60718293a4b5c6d7e8f9a0b1c2" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "8d2f6b1c3a4e5f60718293a4b5c6d7e8f9a0b1c2", "tests": [
+          { "id": "tests/test_accounts.py::test_BANK4_single_withdrawal_debits_once", "outcome": "passed" },
+          { "id": "tests/test_concurrency.py::test_BANK4_concurrent_withdrawals_20_threads", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "8d2f6b1c3a4e5f60718293a4b5c6d7e8f9a0b1c2", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T07:00:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "adopt",
+      "claim": { "id": "c3", "type": "ready", "text": "Raj: withdrawals are safe under concurrency (the lock removed)" },
+      "proposal": { "ac": "AC2", "testName": "test_BANK4_concurrent_withdrawals_20_threads" },
+      "context": {
+        "ticket": { "key": "BANK-4", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "statement": "a withdrawal debits the account once", "check": { "type": "test_passes", "args": ["test_BANK4_single_withdrawal_debits_once"] } },
+          { "acId": "AC2", "statement": "20 concurrent withdrawals never overdraw the account", "check": { "type": "manual", "args": ["20 concurrent withdrawals never overdraw the account"] } } ] },
+        "pr": { "number": 62, "title": "BANK-4 debit without the lock", "state": "open", "headSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d", "tests": [
+          { "id": "tests/test_accounts.py::test_BANK4_single_withdrawal_debits_once", "outcome": "passed" },
+          { "id": "tests/test_concurrency.py::test_BANK4_concurrent_withdrawals_20_threads", "outcome": "failed" } ] },
+        "workflowRuns": [ { "name": "CI", "headSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T08:00:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK4_concurrent_withdrawals_20_threads: failed"] }
+    }
+  ]
+}
