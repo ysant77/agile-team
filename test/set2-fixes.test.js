@@ -1,0 +1,112 @@
+// Rule fixes for the defects that independent set 2 found (agile-team-bench RESULTS-2.md): S17,
+// S16, S18 and S03. Set 2 is not scored again with these fixes; a new blind set scores them.
+// Each test takes a set 1 development fixture and changes only the fact under test.
+
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { test } from 'node:test';
+import { collectGithub, collectPrStats } from '../src/github-evidence.js';
+import { checkHumanSignoff, ciGreen } from '../src/verifier/checks.js';
+import { decide } from '../src/verify-claim.js';
+import { fetchFrom } from './helpers/recorded-github.js';
+
+const load = (id) => JSON.parse(readFileSync(new URL(`../fixtures/bench/${id}.json`, import.meta.url), 'utf8'));
+
+async function verdictOf(c) {
+  const d = {
+    collectJira: async () => structuredClone(c.ticket),
+    env: () => ({ repo: 'ysant77/yms-bank-demo', token: 'local' }),
+    collectGithub, collectPrStats, fetchFn: fetchFrom(c.github),
+  };
+  const log = console.log;
+  console.log = () => {};
+  try {
+    return (await decide({ issueKey: c.ticket.key, claim: { id: `fix-${c.id}`, type: c.claim, text: '' } }, d)).verdict;
+  } finally {
+    console.log = log;
+  }
+}
+
+test('B23 is supported as recorded (the base of the changed fixtures below)', async () => {
+  const v = await verdictOf(load('B23'));
+  assert.equal(v.result, 'supported', v.reason);
+});
+
+// S17: a cancelled run gave no result. It is missing evidence, not evidence against the claim.
+test('S17: a cancelled CI run on the head gives cannot_verify, never contradicted', async () => {
+  const c = load('B23');
+  c.github.runs = c.github.runs.map((r) => ({ ...r, conclusion: 'cancelled' }));
+  const v = await verdictOf(c);
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /cancelled/);
+});
+
+test('S17: a cancelled run next to a successful run of the same workflow on the head is not held against the claim', () => {
+  const head = 'a'.repeat(40);
+  const run = (conclusion, id) => ({ id, path: '.github/workflows/ci.yml', headSha: head, status: 'completed', conclusion });
+  const ctx = { pr: { headSha: head }, prFiles: [], workflowRuns: [run('cancelled', 1), run('success', 2)] };
+  assert.equal(ciGreen(ctx).status, 'pass', ciGreen(ctx).reason);
+  assert.equal(ciGreen({ ...ctx, workflowRuns: [run('cancelled', 1)] }).status, 'unknown');
+  assert.equal(ciGreen({ ...ctx, workflowRuns: [run('failure', 1), run('success', 2)] }).status, 'fail');
+  assert.equal(ciGreen({ ...ctx, workflowRuns: [run('timed_out', 1)] }).status, 'fail');
+});
+
+// S16: the high-stake domain can come from a Jira label, not only from the stored ticket spec.
+test('S16: a money_semantics label starts the sign-off rule when the spec has no domain', async () => {
+  const c = load('B27');
+  c.ticket.domain = undefined;
+  c.ticket.labels = ['money_semantics'];
+  const v = await verdictOf(c);
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /money_semantics.*sign-off/);
+});
+
+test('S16: a label that is not a high-stake domain does not start the sign-off rule', () => {
+  const ctx = { ticket: { key: 'X-1', labels: ['frontend'] }, pr: { headSha: 'abc' } };
+  assert.equal(checkHumanSignoff(ctx), null);
+  assert.equal(checkHumanSignoff({ ...ctx, ticket: { key: 'X-1', labels: ['fairness'] } }).status, 'unknown');
+});
+
+// S18: a changed source file that the coverage data does not have is not covered; the coverage
+// block names it (bank scripts/changed_coverage.py, field unmeasured_files).
+test('S18: a changed file missing from the coverage data gives cannot_verify with the file named', async () => {
+  const c = load('B23');
+  c.github.report.coverage = { ...c.github.report.coverage, unmeasured_files: ['src/bank/ledger.py'] };
+  const v = await verdictOf(c);
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /src\/bank\/ledger\.py.*coverage data/);
+});
+
+test('S18: an empty unmeasured_files list changes nothing', async () => {
+  const c = load('B23');
+  c.github.report.coverage = { ...c.github.report.coverage, unmeasured_files: [] };
+  assert.equal((await verdictOf(c)).result, 'supported');
+});
+
+// S03: a Story that adds a function to an existing module. The AC test fails on base with
+// AttributeError because the function is missing: that is new behaviour, as for a new module.
+function withNewFunction(c, { type = 'Story', addDef = true } = {}) {
+  c.ticket.type = type;
+  const acs = new Set(c.ticket.acceptanceCriteria.map((a) => a.check.args[0]));
+  for (const t of c.github.report.repro.tests) {
+    if (acs.has(t.id.split('::')[1])) t.base = { outcome: 'failed', exc_type: 'AttributeError' };
+  }
+  for (const f of c.github.files) {
+    if (addDef && f.filename.startsWith('src/') && f.patch) f.patch += '\n+def strip_reference(text):\n+    return text.strip()';
+    if (f.filename.startsWith('tests/') && f.patch) f.patch += '\n+    assert ledger.strip_reference(" a ") == "a"';
+  }
+  return c;
+}
+
+test('S03: a Story test that fails on base with AttributeError for a function the PR adds reproduces', async () => {
+  const v = await verdictOf(withNewFunction(load('B23')));
+  assert.equal(v.result, 'supported', v.reason);
+});
+
+test('S03: the same AttributeError is still cannot_verify for a Bug, or when the PR adds no such function', async () => {
+  for (const opts of [{ type: 'Bug' }, { addDef: false }]) {
+    const v = await verdictOf(withNewFunction(load('B23'), opts));
+    assert.equal(v.result, 'cannot_verify', `${JSON.stringify(opts)}: ${v.reason}`);
+    assert.match(v.reason, /AttributeError/);
+  }
+});
