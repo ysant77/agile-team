@@ -24,7 +24,7 @@ export async function listPrFiles(get, repo, prNumber) {
 }
 
 // prNumber picks one pull request; without it, the latest one whose title or branch names the key.
-export async function collectGithub({ repo, key, token, fetchFn, prNumber = null }) {
+export async function collectGithub({ repo, key, token, fetchFn, prNumber = null, securityCheck = null }) {
   const headers = {
     Accept: 'application/vnd.github+json',
     'User-Agent': 'agile-team-forge-app',
@@ -55,7 +55,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     }
     return { items, truncated: true };
   };
-  const truncated = { pulls: false, comments: false, runs: false, files: false };
+  const truncated = { pulls: false, comments: false, runs: false, files: false, checks: false };
 
   // The 500 most recently updated pull requests.
   const pullPages = await getPages(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc`, 5, (b) => b, { required: true });
@@ -90,6 +90,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
   let reportComment = null;
   let prFiles = null;
   let workflowRuns = [];
+  let securityRuns = null;
   if (pr) {
     const runPages = await getPages(`/repos/${repo}/actions/runs?head_sha=${pr.headSha}`, 3, (b) => b?.workflow_runs);
     truncated.runs = runPages.truncated;
@@ -117,6 +118,23 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     // Every changed file, so the verifier can see a change to the workflow or the report plugin.
     prFiles = await listPrFiles(get, repo, pr.number);
     truncated.files = prFiles === null;
+    // The code-scanning result check of the head (small security check, DESIGN 14g). Public
+    // check runs need no token; the app id filter keeps the list short.
+    if (securityCheck && securityCheck.mode !== 'off') {
+      const appFilter = securityCheck.appId ? `?app_id=${securityCheck.appId}` : '';
+      const checkPages = await getPages(`/repos/${repo}/commits/${pr.headSha}/check-runs${appFilter}`, 1, (b) => b?.check_runs);
+      truncated.checks = checkPages.truncated;
+      securityRuns = checkPages.items.map((c) => ({
+        name: c.name,
+        appSlug: c.app?.slug ?? null,
+        appId: c.app?.id ?? null,
+        headSha: c.head_sha,
+        status: c.status,
+        conclusion: c.conclusion,
+        title: c.output?.title ?? null,
+        summary: c.output?.summary ?? null,
+      }));
+    }
   }
 
   // Report for the default branch, written by CI to the `ci-reports` branch as main.json.
@@ -147,6 +165,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     reportAuthor,
     reportComment,
     prFiles,
+    securityRuns,
     workflowRuns,
     baseReport,
     baseWorkflowFiles: baseReport?.workflow_files ?? null,

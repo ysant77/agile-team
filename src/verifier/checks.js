@@ -17,7 +17,7 @@ const runPath = (r) => String(r.path ?? '').split('@')[0];
 // make its own CI say anything, so its CI is not evidence (DESIGN 6, review of 16 Nov).
 // Entry forms: "dir/" (everything under it), "**/name" (a file with that name in any folder),
 // or an exact path. Composite actions and pytest's conftest.py run inside CI, so they count.
-export const DEFAULT_TRUST_PATHS = ['.github/workflows/', '.github/actions/', '**/conftest.py'];
+export const DEFAULT_TRUST_PATHS = ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py'];
 const matchesPath = (file, paths) => paths.some((g) => {
   if (g.endsWith('/')) return file.startsWith(g);
   if (g.startsWith('**/')) return file === g.slice(3) || file.endsWith(`/${g.slice(3)}`);
@@ -488,4 +488,46 @@ export function coverageOk(ctx) {
   }
   const changed = exec > 0 ? `${covered} of ${exec} changed lines covered` : 'no changed executable lines';
   return result('coverage', 'pass', `${changed}; total ${cov.head_total}% (base ${cov.base_total}%)`);
+}
+
+// ---- Small security check (DESIGN 14g, owner decision 16 Nov) ----
+// The code-scanning result check run on the PR head must be success. It is identified by the
+// GitHub app (id and slug) and the check name, never by display text alone: a workflow job named
+// "CodeQL" from another app does not count. Shapes read from real check runs on 16 Nov: name
+// "CodeQL", app github-advanced-security (id 57789); success has the title "No new alerts in code
+// changed by this pull request"; neutral means scanning "cannot determine the alerts introduced".
+const SCAN_WORKFLOW = 'dynamic/github-code-scanning/codeql';
+export function codeScanning(ctx) {
+  const label = 'code_scanning';
+  const conf = ctx.config?.securityCheck ?? {};
+  const head = ctx.pr?.headSha;
+  if (!head) return result(label, 'unknown', 'no head commit');
+  const change = pipelineChange(ctx);
+  if (change) return result(label, 'unknown', change);
+  if (!Array.isArray(ctx.securityRuns)) return result(label, 'unknown', 'check runs of the head not read');
+  if (ctx.truncated?.checks) return result(label, 'unknown', `check run list for ${head.slice(0, 7)} is not complete (page limit)`);
+  const runs = ctx.securityRuns.filter((r) => r.headSha === head && r.name === conf.checkName
+    && r.appSlug === conf.appSlug && (conf.appId === undefined || r.appId === conf.appId));
+  const scanning = (ctx.workflowRuns ?? []).some((r) => runPath(r) === SCAN_WORKFLOW && r.headSha === head && r.status !== 'completed');
+  if (runs.length === 0) {
+    return result(label, 'unknown', scanning ? 'code scanning is still running on the head'
+      : 'no code-scanning result on the head (scanning off, or not run for this commit)');
+  }
+  if (runs.some((r) => r.status !== 'completed')) return result(label, 'unknown', 'code scanning is still running on the head');
+  const failed = runs.find((r) => r.conclusion === 'failure');
+  if (failed) return result(label, 'fail', `${conf.checkName} failed: ${failed.title ?? 'no title'}`);
+  const other = runs.find((r) => r.conclusion !== 'success');
+  if (other) return result(label, 'unknown', `${conf.checkName} ${other.conclusion}: ${other.title ?? 'no title'}`);
+  return result(label, 'pass', `${conf.checkName}: ${runs[0].title ?? 'success'}`);
+}
+
+// The check as the claim types run it. mode "off": not run. mode "observe": run and shown, but
+// advisory (not counted), until the repository is confirmed to produce the check. mode "enforce":
+// counted for done, and for fixed and ready when onFixedReady is true.
+export function securityCheck(ctx, claimType) {
+  const conf = ctx.config?.securityCheck;
+  if (!conf || !conf.mode || conf.mode === 'off') return [];
+  if (claimType !== 'done' && conf.onFixedReady === false) return [];
+  const r = codeScanning(ctx);
+  return conf.mode === 'enforce' ? [r] : [{ ...r, advisory: true, reason: `advisory, not counted: ${r.reason}` }];
 }

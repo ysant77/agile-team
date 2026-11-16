@@ -51,7 +51,7 @@ export function buildDoneEvidence(claim, ctx, checks, checkerVersion = null) {
     ciRunUrl: code ? pinnedRunUrl(ctx) : null,
     adoptedChecks: ctx.adoptedChecks ?? [],
     humanDecisions: ctx.ticket?.decisions ?? [],
-    checks: checks.map((c) => ({ name: c.name, status: c.status })),
+    checks: checks.map((c) => ({ name: c.name, status: c.status, ...(c.advisory ? { advisory: true } : {}) })),
   };
   return { ...body, hash: sha256(canonical(body)) };
 }

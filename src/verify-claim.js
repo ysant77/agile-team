@@ -12,10 +12,13 @@ import { verify } from './verifier/verdict.js';
 
 export const VERIFY_CONFIG = {
   requiredWorkflowPaths: ['.github/workflows/ci.yml'],
-  reportTrustPaths: ['.github/workflows/', '.github/actions/', '**/conftest.py', 'src/bank/testing/'],
+  reportTrustPaths: ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py', 'src/bank/testing/'],
   tooGood: { auc: 0.95 },
   // D-cov (DESIGN 15c): fixed per repository before work starts, never per PR.
   coverage: { changedFloor: 0.8, maxDropPoints: 0.5 },
+  // Small security check (DESIGN 14g): "observe" (shown, not counted) until a bank PR shows the
+  // real check; then "enforce". No token, no new egress host.
+  securityCheck: { mode: 'observe', checkName: 'CodeQL', appSlug: 'github-advanced-security', appId: 57789, onFixedReady: true },
   // Files that decide how a metric is measured or reported (DESIGN.md section 12, risk 12).
   guardedPaths: [
     'src/fraud/evaluate.py', 'src/fraud/model.py', 'src/bank/testing/', 'tests/conftest.py',
@@ -138,7 +141,7 @@ export async function decide({ issueKey, claim }, d) {
   let githubError = null;
   if (repo) {
     try {
-      github = await d.collectGithub({ repo, key: issueKey, token, fetchFn: d.fetchFn });
+      github = await d.collectGithub({ repo, key: issueKey, token, fetchFn: d.fetchFn, securityCheck: VERIFY_CONFIG.securityCheck });
       if (github.pr) {
         // Patches of Python files for the metric tamper check; the file list comes from
         // collectGithub, which reads every page.

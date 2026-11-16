@@ -81,18 +81,20 @@ export const CLAIM_CHECKS = {
     acMapped(ctx),
     ...(ctx.ticket.type === 'Bug' ? [c.bugTestExists(ctx)] : []),
     ...(ctx.baseReport ? [c.testsNotRemoved(ctx)] : []),
+    ...c.securityCheck(ctx, 'fixed'),
   ],
   ready: (ctx) => [
     c.prLinked(ctx),
     c.ciGreen(ctx),
     acMapped(ctx),
     ...(ctx.baseReport ? [c.testsNotRemoved(ctx)] : []),
+    ...c.securityCheck(ctx, 'ready'),
   ],
   // DESIGN 15a: "done" means on main, reproduced, covered and recorded. A ticket with no code work
   // (a spike, a parent of sub-tasks) keeps the sub-task, blocker and AC checks and the record.
   done: (ctx) => {
     const checks = [c.subtasksDone(ctx), c.blockedByDone(ctx), acMapped(ctx)];
-    if (c.hasCodeWork(ctx)) checks.push(c.onMain(ctx), c.mergedClean(ctx), c.reproduced(ctx), c.coverageOk(ctx));
+    if (c.hasCodeWork(ctx)) checks.push(c.onMain(ctx), c.mergedClean(ctx), c.reproduced(ctx), c.coverageOk(ctx), ...c.securityCheck(ctx, 'done'));
     return [...checks, evidenceComplete({ id: ctx.claimId, type: 'done' }, ctx, checks)];
   },
   deployed: (ctx) => [c.deployed(ctx, ctx.claimArgs?.tag)],
@@ -112,8 +114,10 @@ export function verify(claim, ctx) {
     };
   }
   const checks = run({ ...ctx, claimArgs: claim.args, claimId: claim.id });
-  const failed = checks.filter((k) => k.status === 'fail');
-  const unknown = checks.filter((k) => k.status === 'unknown');
+  // An advisory check is shown but does not change the verdict.
+  const counted = checks.filter((k) => !k.advisory);
+  const failed = counted.filter((k) => k.status === 'fail');
+  const unknown = counted.filter((k) => k.status === 'unknown');
   const result = failed.length ? 'contradicted' : unknown.length ? 'cannot_verify' : 'supported';
   const reason = failed.length
     ? failed.map((k) => k.reason).join('; ')

@@ -106,3 +106,21 @@ Limits: the repro and coverage blocks are written by CI, like every report value
 stands for the merge result only while it is for the merge commit; after a later merge the check
 is `cannot_verify` until a human checks. A ticket with no code work (a spike, a parent of
 sub-tasks) keeps the sub-task, blocker and AC checks and gets a record without code parts.
+
+## Security check (code scanning)
+
+With CodeQL turned on in the repository, GitHub adds a result check to each pull request head.
+The verifier reads the head's check runs (public, no token) and keeps only the one from the app
+`github-advanced-security` (id 57789) with the name `CodeQL`. A workflow job with the same name
+from another app does not count.
+
+| Result | Check |
+|---|---|
+| `success` ("No new alerts in code changed by this pull request") | pass |
+| `failure` (new alerts at or above the repository's threshold) | fail |
+| `neutral` (scanning cannot determine the new alerts), any other result, still running, absent, a cut list, or a PR that changes `.github/codeql/` or a workflow | unknown |
+
+`VERIFY_CONFIG.securityCheck.mode` decides how it counts: `off` (not run), `observe` (shown as
+"advisory, not counted"; the deployed default until a bank PR shows the real check) or `enforce`
+(counted for `done`, and for `fixed` and `ready` when `onFixedReady` is true). Alert details,
+dismissals and dependency alerts need a token and are after the freeze (DESIGN 14g).
