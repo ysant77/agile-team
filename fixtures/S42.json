@@ -22,7 +22,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "33c0175db04e3282e2efc6df0c1010cc395a7c38", "tests": [
           { "id": "tests/ml/test_churn.py::test_BANK41_feature_cutoff_30d", "outcome": "passed" } ],
           "metrics": { "auc": 0.81, "top_decile_deposit_value_usd": 3600000 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "33c0175db04e3282e2efc6df0c1010cc395a7c38", "status": "completed", "conclusion": "success", "createdAt": "2026-12-08T02:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "33c0175db04e3282e2efc6df0c1010cc395a7c38", "status": "completed", "conclusion": "success", "createdAt": "2026-12-08T02:00:00Z" } ]
       },
       "expect": { "result": "cannot_verify", "reasonIncludes": ["the PM picks the primary metric"] }
     },
@@ -37,7 +37,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "9d269f18fde7a47e61fad86747f5f5881ea37fff", "tests": [
           { "id": "tests/ml/test_churn.py::test_BANK41_feature_cutoff_30d", "outcome": "passed" } ],
           "metrics": { "auc": 0.78, "top_decile_deposit_value_usd": 4100000 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "9d269f18fde7a47e61fad86747f5f5881ea37fff", "status": "completed", "conclusion": "success", "createdAt": "2026-12-08T02:20:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "9d269f18fde7a47e61fad86747f5f5881ea37fff", "status": "completed", "conclusion": "success", "createdAt": "2026-12-08T02:20:00Z" } ]
       },
       "expect": { "result": "cannot_verify", "reasonIncludes": ["the PM picks the primary metric"] }
     },

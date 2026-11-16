@@ -13,7 +13,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "bcd52d7a080cee6f87c4a2d12be4c84c24be5321", "tests": [
           { "id": "tests/test_transfers.py::test_BANK6_same_key_one_entry", "outcome": "passed" },
           { "id": "tests/test_transfers.py::test_BANK6_different_body_same_key_422", "outcome": "passed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "bcd52d7a080cee6f87c4a2d12be4c84c24be5321", "status": "completed", "conclusion": "success", "createdAt": "2026-11-20T03:15:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "bcd52d7a080cee6f87c4a2d12be4c84c24be5321", "status": "completed", "conclusion": "success", "createdAt": "2026-11-20T03:15:00Z" } ]
       },
       "expect": { "result": "supported" }
     },
@@ -29,7 +29,7 @@
         "report": { "schema": "aat-ci-report/1", "head_sha": "41a337cb33fecbf1feae59b836679d3f95bf013c", "tests": [
           { "id": "tests/test_transfers.py::test_BANK6_same_key_one_entry", "outcome": "passed" },
           { "id": "tests/test_transfers.py::test_BANK6_different_body_same_key_422", "outcome": "passed" } ] },
-        "workflowRuns": [ { "name": "CI", "headSha": "41a337cb33fecbf1feae59b836679d3f95bf013c", "status": "completed", "conclusion": "success", "createdAt": "2026-11-20T05:02:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "41a337cb33fecbf1feae59b836679d3f95bf013c", "status": "completed", "conclusion": "success", "createdAt": "2026-11-20T05:02:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK6_crash_between_key_and_debit is missing from the report"] }
     },

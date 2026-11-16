@@ -31,7 +31,10 @@ export function runAcCheck(ctx, check) {
         ? { name: 'link_exists', status: 'pass', reason: 'link found' }
         : { name: 'link_exists', status: 'fail', reason: 'no link' };
     case 'field_equals':
-      return ctx.ticket.fields?.[a[0]] === a[1]
+      if (!ctx.ticket.fields || !(a[0] in ctx.ticket.fields)) {
+        return { name: `field_equals(${a[0]})`, status: 'unknown', reason: `field ${a[0]} not read from Jira` };
+      }
+      return ctx.ticket.fields[a[0]] === a[1]
         ? { name: `field_equals(${a[0]})`, status: 'pass', reason: `${a[0]} = ${a[1]}` }
         : { name: `field_equals(${a[0]})`, status: 'fail', reason: `${a[0]} = ${ctx.ticket.fields?.[a[0]]}` };
     case 'deployed':

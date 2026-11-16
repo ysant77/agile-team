@@ -11,7 +11,7 @@
         "pr": { "number": 58, "title": "BANK-45 FPR per age band and region", "state": "open", "headSha": "480bcf7b5e9e2eb77f87dfe3ff2c764524c6fbb8" },
         "report": { "schema": "aat-ci-report/1", "head_sha": "480bcf7b5e9e2eb77f87dfe3ff2c764524c6fbb8", "tests": [],
           "metrics": { "fpr_ratio_max_min": 1.6 } },
-        "workflowRuns": [ { "name": "CI", "headSha": "480bcf7b5e9e2eb77f87dfe3ff2c764524c6fbb8", "status": "completed", "conclusion": "success", "createdAt": "2026-12-08T05:00:00Z" } ]
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "480bcf7b5e9e2eb77f87dfe3ff2c764524c6fbb8", "status": "completed", "conclusion": "success", "createdAt": "2026-12-08T05:00:00Z" } ]
       },
       "expect": { "result": "contradicted", "reasonIncludes": ["fpr_ratio_max_min = 1.6"] }
     },

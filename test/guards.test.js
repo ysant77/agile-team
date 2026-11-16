@@ -8,10 +8,11 @@ const sha = 'b'.repeat(40);
 const ctx = ({ prFiles = ['tests/test_bank17_gate.py'], metrics = { pr_auc: 0.39, auc: 0.89 }, checks, config = VERIFY_CONFIG, workflowFiles } = {}) => ({
   ticket: { key: 'BANK-17', type: 'Story', acceptanceCriteria: (checks ?? [['metric_at_least', 'pr_auc', 0.25]]).map(([type, ...args], i) => ({ acId: `AC${i + 1}`, check: { type, args } })) },
   pr: { number: 9, title: 'BANK-17: ship fraud model v3', state: 'open', headSha: sha },
-  report: { schema: 'aat-ci-report/1', head_sha: sha, tests: [], metrics, ...(workflowFiles ? { workflow_files: workflowFiles } : {}) },
+  report: { schema: 'aat-ci-report/1', head_sha: sha, tests: [], metrics, workflow_files: workflowFiles ?? { '.github/workflows/ci.yml': 'base' } },
   reportAuthor: 'github-actions[bot]',
-  workflowRuns: [{ name: 'CI', headSha: sha, status: 'completed', conclusion: 'success', createdAt: '2026-11-20T00:00:00Z' }],
-  baseWorkflowFiles: workflowFiles ? { '.github/workflows/ci.yml': 'base' } : null,
+  reportComment: { createdAt: '2026-11-20T00:00:00Z', updatedAt: '2026-11-20T00:00:00Z' },
+  workflowRuns: [{ name: 'CI', path: '.github/workflows/ci.yml', headSha: sha, status: 'completed', conclusion: 'success', createdAt: '2026-11-20T00:00:00Z' }],
+  baseWorkflowFiles: { '.github/workflows/ci.yml': 'base' },
   prFiles,
   config,
 });
@@ -37,9 +38,10 @@ test('a guarded directory matches by prefix only, a guarded file only exactly', 
   assert.equal(ready(ctx({ prFiles: ['src/bank/testing/new_plugin.py'] })).result, 'cannot_verify');
 });
 
-test('without a file list a metric gate cannot be verified; without guards it is judged', () => {
+test('without a file list no CI evidence is trusted, guards or not (review B4, 16 Nov)', () => {
   assert.equal(ready(ctx({ prFiles: null })).result, 'cannot_verify');
-  assert.equal(ready(ctx({ prFiles: null, config: { requiredWorkflows: ['CI'] } })).result, 'supported');
+  assert.equal(ready(ctx({ prFiles: null, config: { requiredWorkflowPaths: ['.github/workflows/ci.yml'] } })).result, 'cannot_verify');
+  assert.equal(ready(ctx({ prFiles: [], config: { requiredWorkflowPaths: ['.github/workflows/ci.yml'] } })).result, 'supported');
 });
 
 test('the guard applies to upper and lower bounds and wins over a passing value', () => {
