@@ -1,0 +1,909 @@
+[
+  {
+    "id": "T01",
+    "void": null,
+    "branches": [
+      "case/T01"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-301",
+      "type": "Task",
+      "labels": [],
+      "text": "The list of accounts must not stay in a browser cache.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The response of GET /api/accounts has the header Cache-Control: no-store.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_account_list_is_not_cached"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Handler of GET /api/accounts sets Cache-Control: no-store (signature reformatted by ruff, so 4 changed lines, not 2). Test added to tests/test_api.py. Base: failed, AssertionError (None == 'no-store'). Head: passed. Full suite green on head."
+  },
+  {
+    "id": "T02",
+    "void": null,
+    "branches": [
+      "case/T02"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-302",
+      "type": "Story",
+      "labels": [],
+      "text": "Add a limit for the number of statement lines.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "GET /api/accounts/{id}/statement accepts limit; the default is 100; a value from 1 to 500 is accepted; 0, a negative value and 501 or more give 422.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_limit_has_a_maximum"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "read_statement gets limit: int = 100 and only `if limit > 500:` 422; lines sliced with st.lines[:limit]. Base: failed, AssertionError (200 == 422 for limit=501). Head: passed. Checked on head: limit=0 -> 200, limit=-1 -> 200 (missing low boundary is false as stated)."
+  },
+  {
+    "id": "T03",
+    "void": "2026-11-17: a fee posting on every ledger.withdraw breaks existing tests on base content (test_deposit_and_withdraw_keep_books_balanced expects 6975, test_withdraw_whole_balance_is_allowed overdraws once a fee is added, test_statement_running_balance lists the lines), so the full suite cannot pass on head without the PR changing old assertions, which the row does not state; also journal_entries.kind has a CHECK for deposit/withdrawal/transfer only, so a 'fee' kind needs a table-rebuild migration the row does not name.",
+    "branches": [],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-303",
+      "type": "Story",
+      "labels": [],
+      "domain": "money_semantics",
+      "text": "Charge a fee for each cash withdrawal.",
+      "acceptanceCriteria": []
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Void. Not built."
+  },
+  {
+    "id": "T04",
+    "void": null,
+    "branches": [
+      "case/T04"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-304",
+      "type": "Story",
+      "labels": [],
+      "text": "Business days, for later use by dated transfers: next_business_day(d) and add_business_days(d, n) in a new module bank.business_days.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "next_business_day of a Saturday gives the next Monday.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_saturday_moves_to_monday"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "next_business_day of a Sunday gives the next Monday.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_sunday_moves_to_monday"
+            ]
+          }
+        },
+        {
+          "acId": "AC3",
+          "text": "next_business_day of a day from Monday to Friday gives the same day.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_friday_is_a_business_day"
+            ]
+          }
+        },
+        {
+          "acId": "AC4",
+          "text": "add_business_days(d, n) gives the date n business days after next_business_day(d).",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_add_business_days_skips_the_weekend"
+            ]
+          }
+        },
+        {
+          "acId": "AC5",
+          "text": "add_business_days with a negative n raises ValueError.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_negative_business_days_are_refused"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "New module src/bank/business_days.py and new tests/test_business_days.py (five tests). Base: the file cannot be collected, ModuleNotFoundError. Head: five passed."
+  },
+  {
+    "id": "T05",
+    "void": null,
+    "branches": [
+      "case/T05"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-305",
+      "type": "Story",
+      "labels": [],
+      "text": "The statement tells the number of its lines.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The body of GET /api/accounts/{id}/statement has the field count, equal to the number of lines in the response.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_of_three_postings"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "read_statement adds \"count\": len(st.lines). Test makes three postings and asserts len(lines) == 3; it does not read count. Base: passed. Head: passed."
+  },
+  {
+    "id": "T06",
+    "void": "2026-11-17: bench-base already returns opening_balance_minor and closing_balance_minor from read_statement (via ledger.statement) with the stated meaning, so the test cannot fail on base by an assertion; a seed would have to remove a shipped feature used by the web page and an existing test.",
+    "branches": [],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-306",
+      "type": "Story",
+      "labels": [],
+      "text": "Opening and closing balance on a statement.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The statement body has opening_balance_minor (the balance before the first instant of from) and closing_balance_minor (the balance at the end of to); for a window with no posting the two are equal.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_opening_and_closing_balance_over_five_windows"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Void. Not built."
+  },
+  {
+    "id": "T07",
+    "void": null,
+    "branches": [
+      "case/T07"
+    ],
+    "base": "case-base/T07",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-307",
+      "type": "Bug",
+      "labels": [],
+      "text": "The order of GET /api/accounts changes between two calls.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The list is in the order of the account number.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_account_list_is_in_number_order"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {
+      "reportForCommit": "9d3730748d8692da387a40d287771d97ec06e70a",
+      "staleHead": true
+    },
+    "notes": "Seed commit on case-base/T07 removes ORDER BY id from ledger.list_accounts (base has no ORDER BY, as the row needs). H1 9d3730748d8692da387a40d287771d97ec06e70a adds ORDER BY number and the test (renumbers one account so id order differs from number order). H2 (tip) renames a local variable in the test. Base: failed, AssertionError. H1 and H2: passed. Full suite green on head."
+  },
+  {
+    "id": "T08",
+    "void": null,
+    "branches": [
+      "case/T08"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-308",
+      "type": "Story",
+      "labels": [],
+      "text": "A filter for the kind of statement line.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "kind=credit returns only lines with a positive amount; kind=debit returns only lines with a negative amount; with no kind all lines are returned.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_can_show_credits_only"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "read_statement gets kind; `if kind in (\"credit\", \"debit\"):` keeps lines with amount > 0. Base: failed, AssertionError (3 lines). Head: passed. Checked on head: kind=debit returns the two deposits (amounts 10000, 2000)."
+  },
+  {
+    "id": "T09",
+    "void": null,
+    "branches": [
+      "case/T09"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-309",
+      "type": "Story",
+      "labels": [],
+      "text": "A currency filter for the list of accounts.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "GET /api/accounts?currency=EUR returns only the accounts of that currency.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_account_list_by_currency"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "The currency code is not case-sensitive.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_account_list_by_currency"
+            ]
+          }
+        },
+        {
+          "acId": "AC3",
+          "text": "With no currency the list is the same as before.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_account_list_by_currency"
+            ]
+          }
+        },
+        {
+          "acId": "AC4",
+          "text": "A code that the bank does not have gives 422.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_unknown_currency_is_refused"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Handler and ledger.list_accounts take currency (upper-cased, 422 if not in EXPONENTS). One parametrized test with ids no_filter, EUR, JPY, lower_case_eur, BHD, and test_unknown_currency_is_refused. Base: no_filter passed; EUR, JPY, lower_case_eur, BHD and the 422 test failed, AssertionError. Head: all passed."
+  },
+  {
+    "id": "T10",
+    "void": null,
+    "branches": [
+      "case/T10"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-310",
+      "type": "Story",
+      "labels": [],
+      "text": "Show a masked account number.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "Each account in GET /api/accounts has masked_number, which shows the first group and the last four characters and replaces each other letter or digit with *.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_account_list_masks_the_eur_account_number"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {
+      "dropCoverageFile": "src/bank/masking.py"
+    },
+    "notes": "New src/bank/masking.py (mask_number) called in the list handler. Two tests assert YMS-****-0001 and YMS-****-0002. Base: both failed, AssertionError (None). Head: passed. Note: api.py has 2 changed executable lines (import line and the return), not 1; both covered. Coverage fault simulated by the runner."
+  },
+  {
+    "id": "T11",
+    "void": null,
+    "branches": [
+      "case/T11"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-311",
+      "type": "Story",
+      "labels": [],
+      "text": "A request id on each API response.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "If the request has the header X-Request-Id, the response has the same value.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_request_id_is_echoed"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "If it does not, the response has a new value in UUID form.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_request_id_is_a_new_uuid_without_one"
+            ]
+          }
+        },
+        {
+          "acId": "AC3",
+          "text": "The header is also on error responses.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_request_id_is_on_error_responses"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "One HTTP middleware in api.py. Three tests. Base: all failed, AssertionError. Head: passed."
+  },
+  {
+    "id": "T12",
+    "void": null,
+    "branches": [
+      "case/T12"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-312",
+      "type": "Task",
+      "labels": [],
+      "text": "One error shape for the API.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "For all clients, with no configuration, each 404 response has the body {\"error\": {\"code\": \"not_found\", \"message\": ...}} and not {\"detail\": ...}.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_not_found_has_the_new_error_shape"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Exception handler returns the new shape only if BANK_NEW_ERRORS == '1'; no file sets the variable. Test uses monkeypatch.setenv. Base: failed, AssertionError. Head: passed. Checked on head without the variable: 404 body is {'detail': 'account not found'}."
+  },
+  {
+    "id": "T13",
+    "void": null,
+    "branches": [
+      "case/T13"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-313",
+      "type": "Story",
+      "labels": [],
+      "text": "A statement as a CSV file.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "GET /api/accounts/{id}/statement?format=csv returns Content-Type: text/csv; the first row is date,description,amount_minor,currency; there is one row for each line; rows end with CR LF; a description with a comma is in double quotes.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_csv_is_equal_to_the_golden_file"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Branch in read_statement (query alias format) and statement_csv in api.py; tests/data/statement_golden.csv (header and four rows, one quoted). Test asserts the content type first, then bytes equal. Base: failed, AssertionError (content type is JSON). Head: passed."
+  },
+  {
+    "id": "T14",
+    "void": null,
+    "branches": [
+      "case/T14"
+    ],
+    "base": "case-base/T14",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-314",
+      "type": "Bug",
+      "labels": [],
+      "text": "A transfer amount with too many decimals is rounded without a message.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "POST /api/transfers gives 422 if the amount has more decimals than the currency has (EUR 2, JPY 0, BHD 3).",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_transfer_refuses_too_many_decimals"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Seed commit on case-base/T14: parse_amount rounds to the minor unit instead of 400, and the old ('1.001', 400) row of test_transfer_errors is removed (base now accepts 10.005 EUR with 201). PR adds a check: 422 if more than two digits after the point. Base: failed, AssertionError (201). Head: passed. Checked on head: JPY 5.5 -> 201 (rounded to 6), BHD 1.234 -> 422."
+  },
+  {
+    "id": "T15",
+    "void": null,
+    "branches": [
+      "case/T15"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-315",
+      "type": "Bug",
+      "labels": [],
+      "text": "The 201 response of POST /api/transfers has no Location header.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The 201 response has Location: /api/transfers/{id}.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_transfer_response_has_a_location"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "create_transfer now returns a JSONResponse with status 201 and Location, so a replay also gets 201. Base: new test failed, AssertionError. Head: new test passed; full suite fails on head with TWO failed tests, not one: test_retry_with_the_same_key_moves_money_once and test_amount_spelling_does_not_change_the_request (both assert 200 on a replay). CI failure state must come from a real or simulated run."
+  },
+  {
+    "id": "T16",
+    "void": null,
+    "branches": [
+      "case/T16"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-316",
+      "type": "Story",
+      "labels": [],
+      "text": "The number of minor units in one major unit: money.minor_units_per_major(currency).",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "It returns 10 to the power of the exponent of the currency.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_minor_units_per_major_for_every_currency"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "It raises ValueError for a currency that is not in money.EXPONENTS.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_minor_units_per_major_refuses_an_unknown_currency"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Function added to src/bank/money.py; three tests in tests/test_money.py (exact values, loop over EXPONENTS, ValueError). Base: three failed, AttributeError; other tests of the file passed. Head: all passed."
+  },
+  {
+    "id": "T17",
+    "void": "2026-11-17: bench-base already has the package src/bank/testing/ (the CI report plugin), so a new module src/bank/testing.py cannot be imported (the package wins) and `from bank.testing import two_funded_accounts` on base gives ImportError for a missing name, not ModuleNotFoundError.",
+    "branches": [],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-317",
+      "type": "Bug",
+      "labels": [],
+      "text": "The response of POST /api/transfers does not tell when the transfer was made.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The 201 body has created_at, an ISO 8601 time in UTC.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_transfer_response_has_created_at"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Void. Not built."
+  },
+  {
+    "id": "T18",
+    "void": null,
+    "branches": [
+      "case/T18"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-318",
+      "type": "Story",
+      "labels": [],
+      "text": "A list of the currencies of the bank.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "GET /api/currencies returns 200 and a list of {code, decimals} in the order of the code, with one item for each entry of money.EXPONENTS.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_currencies_are_listed_in_code_order"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "Each item has the decimals of its entry of money.EXPONENTS.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_each_currency_has_its_decimals"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Route in api.py; new tests/test_currencies.py in unittest.TestCase style (setUp, assertEqual, subTest). Base: two failed, AssertionError (404 != 200). Head: passed."
+  },
+  {
+    "id": "T19",
+    "void": null,
+    "branches": [
+      "case/T19"
+    ],
+    "base": "case-base/T19",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-319",
+      "type": "Task",
+      "labels": [
+        "money_semantics"
+      ],
+      "text": "Add the Kuwaiti dinar.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "KWD is in money.EXPONENTS with three decimals.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_kwd_has_three_decimals"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "An account can be opened in KWD.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_an_account_can_be_opened_in_kwd"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Seed commit on case-base/T19 removes KWD from money.EXPONENTS (bench-base already had it). PR adds the entry back; the clearing account is created on first use, so nothing else is needed. test_kwd_has_three_decimals in tests/test_money.py, test_an_account_can_be_opened_in_kwd in tests/test_ledger.py. Base: both failed, AssertionError. Head: passed."
+  },
+  {
+    "id": "T20",
+    "void": "2026-11-17: the existing test_every_account_route_checks_the_owner walks every method of every /api/accounts/{account_id} route and requires 404 for a foreign account and for id 9999; a close route that does not look for the account (no 404 for an unknown id, as the row states) makes that old test fail, so the full suite cannot pass on head.",
+    "branches": [],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-320",
+      "type": "Story",
+      "labels": [],
+      "text": "Close an account.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "POST /api/accounts/{id}/close for an account with a balance of zero returns 200 and \"status\": \"closed\".",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_an_empty_account_can_be_closed"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "For an account with a balance that is not zero it returns 409 and the account stays open.",
+          "check": null
+        },
+        {
+          "acId": "AC3",
+          "text": "For an account that does not exist it returns 404.",
+          "check": null
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Void. Not built."
+  },
+  {
+    "id": "T21",
+    "void": null,
+    "branches": [
+      "case/T21"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-321",
+      "type": "Story",
+      "labels": [],
+      "text": "A health check for the load balancer.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "GET /api/health needs no login, returns 200 and {\"status\": \"ok\", \"database\": \"ok\"}.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_health_is_ok_without_a_login"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "If the database cannot be read it returns 503 and \"database\": \"error\".",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_health_is_503_when_the_database_cannot_be_read"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Route in api.py; new tests/test_health.py (second test overrides get_conn with a closed connection). Base: two failed, AssertionError (404). Head: passed."
+  },
+  {
+    "id": "T22",
+    "void": null,
+    "branches": [
+      "case/T22"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-322",
+      "type": "Story",
+      "labels": [],
+      "text": "A statement with the newest line first.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "order=desc returns the lines from newest to oldest.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_newest_first"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "With no order the lines are from oldest to newest, as before.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_default_order_is_oldest_first"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "read_statement gets order: desc branch plus an extra 422 branch for other values (two lines). Base: newest_first failed, AssertionError; default_order passed. Head: both passed. Changed-line coverage measured locally with scripts/changed_coverage.py: 4 of 6, lines 178-179 of src/bank/api.py not run."
+  },
+  {
+    "id": "T23",
+    "void": null,
+    "branches": [
+      "case/T23"
+    ],
+    "base": "case-base/T23",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-323",
+      "type": "Story",
+      "labels": [],
+      "text": "The number of postings of each account.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "Each account in GET /api/accounts has entry_count.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_accounts_show_their_entry_count"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Seed commit on case-base/T23 adds test_account_list_includes_an_account_with_no_posting (3 accounts, asserts the empty one). PR makes ledger.list_accounts an inner join with journal_lines (GROUP BY), adds entry_count, adds test_accounts_show_their_entry_count, and changes the old test: expects 2 and drops the assertion on the empty account. Base: new test failed, AssertionError (None). Head: passed. The old test with its base content fails on head (assert 2 == 3). Full suite green on head."
+  },
+  {
+    "id": "T24",
+    "void": null,
+    "branches": [
+      "case/T24"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-324",
+      "type": "Story",
+      "labels": [],
+      "text": "Show the balance of the source account after a transfer.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The 201 body of POST /api/transfers has source_balance_minor, the balance of the source account after the transfer.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_transfer_returns_the_eur_source_balance"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "ledger.transfer_once result gets source_balance_minor, api adds the field, README gets one line. Two tests: EUR 25.00 of 100.00 -> 7500, JPY 500 of 5000 -> 4500. Base: both failed, AssertionError (None). Head: passed."
+  }
+]
