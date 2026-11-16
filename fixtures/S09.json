@@ -1,0 +1,36 @@
+{
+  "scenario": "S09",
+  "title": "Statement misses the last day",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Fixed: < changed to <=." },
+      "context": {
+        "ticket": { "key": "BANK-9", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK9_end_date_inclusive"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK9_closing_balance_end_of_day_utc8"] } } ] },
+        "pr": { "number": 19, "title": "BANK-9 include entries on the statement end date", "state": "open", "headSha": "e77da3f5329d9b0b0d407d44a80f49768ec68d9f" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "e77da3f5329d9b0b0d407d44a80f49768ec68d9f", "tests": [
+          { "id": "tests/test_statements.py::test_BANK9_end_date_inclusive", "outcome": "passed" },
+          { "id": "tests/test_statements.py::test_BANK9_closing_balance_end_of_day_utc8", "outcome": "failed" } ] },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "e77da3f5329d9b0b0d407d44a80f49768ec68d9f", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-24T04:20:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK9_closing_balance_end_of_day_utc8: failed"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "done", "text": "Done, closing the ticket on the first claim" },
+      "context": {
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "e77da3f5329d9b0b0d407d44a80f49768ec68d9f", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T00:00:00Z" } ],
+        "ticket": { "key": "BANK-9", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK9_end_date_inclusive"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK9_closing_balance_end_of_day_utc8"] } } ] },
+        "pr": { "number": 19, "title": "BANK-9 include entries on the statement end date", "state": "open", "headSha": "e77da3f5329d9b0b0d407d44a80f49768ec68d9f" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "e77da3f5329d9b0b0d407d44a80f49768ec68d9f", "tests": [
+          { "id": "tests/test_statements.py::test_BANK9_end_date_inclusive", "outcome": "passed" },
+          { "id": "tests/test_statements.py::test_BANK9_closing_balance_end_of_day_utc8", "outcome": "failed" } ] }
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["AC2: test_BANK9_closing_balance_end_of_day_utc8: failed"] }
+    }
+  ]
+}

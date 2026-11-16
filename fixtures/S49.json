@@ -1,0 +1,63 @@
+{
+  "scenario": "S49",
+  "title": "YMS Bank is down and balances are wrong",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "s1", "type": "deployed", "text": "transfers frozen", "args": { "tag": "flags-freeze-1" } },
+      "context": { "ticket": { "key": "BANK-49" }, "fixAt": "2026-12-05T08:00:00Z",
+        "deployRuns": [ { "name": "deploy", "tag": "flags-freeze-1", "conclusion": "success", "createdAt": "2026-12-05T08:04:00Z" } ] },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "s3", "type": "acs", "text": "rollback to 2.2 is safe (evidence only; humans decide)" },
+      "context": { "ticket": { "key": "BANK-49", "acceptanceCriteria": [
+          { "acId": "R1", "check": { "type": "migration_additive", "args": ["0007"] } },
+          { "acId": "R2", "check": { "type": "manual", "args": ["incident lead chooses rollback or roll forward"] } } ] },
+        "pr": { "number": 49, "title": "BANK-49 evidence", "headSha": "dddddddddddddddddddddddddddddddddddddddd" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "dddddddddddddddddddddddddddddddddddddddd", "tests": [],
+          "migrations": [ { "number": "0007", "operations": ["ADD COLUMN", "UPDATE"] } ] } },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["incident lead chooses"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "s8", "type": "acs", "text": "repair plan balanced, reconciliation proof" },
+      "context": {
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "dddddddddddddddddddddddddddddddddddddddd", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T00:00:00Z" } ], "ticket": { "key": "BANK-49", "acceptanceCriteria": [
+          { "acId": "P1", "check": { "type": "repair_balanced" } },
+          { "acId": "P2", "check": { "type": "recon_proof" } } ] },
+        "pr": { "number": 52, "title": "BANK-49 repair plan", "headSha": "dddddddddddddddddddddddddddddddddddddddd" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "dddddddddddddddddddddddddddddddddddddddd", "tests": [],
+          "repair": { "debits_minor": 1834200, "credits_minor": 1834200, "rows_deleted": 0, "rows_updated": 0 },
+          "recon": { "accounts": 200000, "accounts_matching": 200000, "diff_minor": 0 } } },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "s8b", "type": "acs", "text": "repair that edits ledger rows" },
+      "context": {
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "dddddddddddddddddddddddddddddddddddddddd", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T00:00:00Z" } ], "ticket": { "key": "BANK-49", "acceptanceCriteria": [ { "acId": "P1", "check": { "type": "repair_balanced" } } ] },
+        "pr": { "number": 52, "title": "BANK-49 repair plan", "headSha": "dddddddddddddddddddddddddddddddddddddddd" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "dddddddddddddddddddddddddddddddddddddddd", "tests": [],
+          "repair": { "debits_minor": 100, "credits_minor": 100, "rows_deleted": 0, "rows_updated": 12 } } },
+      "expect": { "result": "contradicted", "reasonIncludes": ["ledger rows changed"] }
+    },
+    {
+      "kind": "arbitrate",
+      "ticket": { "key": "BANK-49", "domain": "data_repair" },
+      "sides": [ { "id": "raj", "gatesPassed": true, "metrics": {} }, { "id": "kai", "gatesPassed": true, "metrics": {} } ],
+      "expect": { "decidedBy": "human", "winner": null }
+    },
+    {
+      "kind": "audit",
+      "events": [
+        { "actor": "pm-agent", "event": "incident.opened", "data": { "key": "BANK-49" }, "at": "2026-12-05T08:00:00Z" },
+        { "actor": "lead", "event": "verdict", "data": { "claim": "s1", "result": "supported" }, "at": "2026-12-05T08:05:00Z" },
+        { "actor": "human", "event": "decision", "data": { "rollback": false, "reason": "additive migration" }, "at": "2026-12-05T08:20:00Z" }
+      ],
+      "tamper": { "index": 1, "data": { "claim": "s1", "result": "contradicted" } },
+      "expect": { "ok": false }
+    }
+  ]
+}

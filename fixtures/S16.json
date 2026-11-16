@@ -1,0 +1,40 @@
+{
+  "scenario": "S16",
+  "title": "Silent recall drop after a data change",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Fixed: amounts rescaled from cents on load." },
+      "context": {
+        "ticket": { "key": "BANK-16", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK16_units_check_rejects_cents"] } },
+          { "acId": "AC2", "check": { "type": "metric_at_least", "args": ["recall_at_1pct_fpr", 0.80] } },
+          { "acId": "AC3", "check": { "type": "test_passes", "args": ["test_BANK16_alert_on_metric_drop"] } } ] },
+        "pr": { "number": 26, "title": "BANK-16 guard amount units in the fraud pipeline", "state": "open", "headSha": "1afb716add94c2c0fe8b5ed178ce12aa6b6d8403" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "1afb716add94c2c0fe8b5ed178ce12aa6b6d8403", "tests": [
+          { "id": "tests/ml/test_schema.py::test_BANK16_units_check_rejects_cents", "outcome": "failed" },
+          { "id": "tests/ml/test_alerts.py::test_BANK16_alert_on_metric_drop", "outcome": "passed" } ],
+          "metrics": { "recall_at_1pct_fpr": 0.83 } },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "1afb716add94c2c0fe8b5ed178ce12aa6b6d8403", "status": "completed", "conclusion": "failure", "createdAt": "2026-12-03T03:00:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK16_units_check_rejects_cents: failed"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "fixed", "text": "Fixed: batches in cents are rejected; alert added." },
+      "context": {
+        "ticket": { "key": "BANK-16", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK16_units_check_rejects_cents"] } },
+          { "acId": "AC2", "check": { "type": "metric_at_least", "args": ["recall_at_1pct_fpr", 0.80] } },
+          { "acId": "AC3", "check": { "type": "test_passes", "args": ["test_BANK16_alert_on_metric_drop"] } } ] },
+        "pr": { "number": 26, "title": "BANK-16 guard amount units in the fraud pipeline", "state": "open", "headSha": "c10aacefb788c5ed02224a40073386aea8a067c8" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "c10aacefb788c5ed02224a40073386aea8a067c8", "tests": [
+          { "id": "tests/ml/test_schema.py::test_BANK16_units_check_rejects_cents", "outcome": "passed" },
+          { "id": "tests/ml/test_alerts.py::test_BANK16_alert_on_metric_drop", "outcome": "passed" } ],
+          "metrics": { "recall_at_1pct_fpr": 0.83 } },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "c10aacefb788c5ed02224a40073386aea8a067c8", "status": "completed", "conclusion": "success", "createdAt": "2026-12-03T05:40:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    }
+  ]
+}

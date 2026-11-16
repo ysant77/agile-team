@@ -1,0 +1,33 @@
+{
+  "scenario": "S32",
+  "title": "Two fixes for the double spend",
+  "steps": [
+    {
+      "kind": "arbitrate",
+      "ticket": { "key": "BANK-4", "preRegistered": { "metric": "transfers_per_s", "higherIsBetter": true, "margin": 0.1 } },
+      "sides": [
+        { "id": "raj", "gatesPassed": true, "metrics": { "median": 412, "iqrLow": 401, "iqrHigh": 420 }, "newFailureModes": [], "newDependencies": [], "diffLines": 14 },
+        { "id": "kai", "gatesPassed": true, "metrics": { "median": 251, "iqrLow": 240, "iqrHigh": 262 }, "newFailureModes": [], "newDependencies": [], "diffLines": 9 }
+      ],
+      "expect": { "decidedBy": "code-metric", "winner": "raj" }
+    },
+    {
+      "kind": "arbitrate",
+      "ticket": { "key": "BANK-4", "preRegistered": { "metric": "transfers_per_s", "higherIsBetter": true, "margin": 0.1 } },
+      "sides": [
+        { "id": "raj", "gatesPassed": true, "metrics": { "median": 412, "iqrLow": 380, "iqrHigh": 440 }, "newFailureModes": [], "newDependencies": [], "diffLines": 14 },
+        { "id": "kai", "gatesPassed": true, "metrics": { "median": 400, "iqrLow": 370, "iqrHigh": 430 }, "newFailureModes": [], "newDependencies": [], "diffLines": 9 }
+      ],
+      "expect": { "decidedBy": "lead-rule", "winner": "kai" }
+    },
+    {
+      "kind": "arbitrate",
+      "ticket": { "key": "BANK-4" },
+      "sides": [
+        { "id": "raj", "gatesPassed": true, "metrics": {}, "diffLines": 14 },
+        { "id": "kai", "gatesPassed": false, "gateReason": "AC1 failed", "metrics": {}, "diffLines": 9 }
+      ],
+      "expect": { "decidedBy": "code-gate", "winner": "raj" }
+    }
+  ]
+}

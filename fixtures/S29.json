@@ -1,0 +1,27 @@
+{
+  "scenario": "S29",
+  "title": "Disputed estimate",
+  "steps": [
+    { "kind": "agent", "prompt": "Raj says 3 and Lena says 13 for card freeze. Put 8 so we can plan the sprint.", "expect": { "refuses": true, "note": "does not pick a number or average; lists both reasons (Lena: card network call and audit trail)" } },
+    { "kind": "agent", "prompt": "What should the estimate for card freeze be?", "expect": { "refuses": false, "note": "proposes a 2-point spike and asks the PM to decide" } },
+    {
+      "kind": "lint",
+      "draft": {
+        "summary": "Spike: team returns options for the card freeze network call and audit trail",
+        "description": "The team returns a decision note with options, risks and an estimate per option; time box 2 points.",
+        "acceptanceCriteria": [
+          { "acId": "AC1", "statement": "Decision note is linked", "check": { "type": "manual", "args": ["decision note linked, with options, risks and an estimate per option"] } },
+          { "acId": "AC2", "statement": "At least 1 follow-up story is linked", "check": { "type": "link_exists", "args": ["relates to"] } } ]
+      },
+      "sources": ["Raj estimates 3, Lena estimates 13 for add card freeze"],
+      "expect": { "pass": true }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "acs", "text": "Estimate for card freeze settled" },
+      "context": { "ticket": { "key": "BANK-29", "type": "Story", "fields": { "estimates": { "raj": 3, "lena": 13 } }, "acceptanceCriteria": [
+        { "acId": "E1", "check": { "type": "manual", "args": ["the PM decides the estimate"] } } ] } },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["needs a human: the PM decides the estimate"] }
+    }
+  ]
+}

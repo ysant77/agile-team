@@ -1,0 +1,37 @@
+{
+  "scenario": "S27",
+  "title": "True claim, no test",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Fixed: end of day in the bank time zone (checked by hand)." },
+      "context": {
+        "ticket": { "key": "BANK-9", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK9_end_date_inclusive"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK9_closing_balance_end_of_day_utc8"] } } ] },
+        "pr": { "number": 37, "title": "BANK-9 use bank time zone for statement end", "state": "open", "headSha": "5de314aae9f7dacde30f5b9c2d3265a4dbf2e97b" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "5de314aae9f7dacde30f5b9c2d3265a4dbf2e97b", "tests": [
+          { "id": "tests/test_statements.py::test_statement_pages", "outcome": "passed" },
+          { "id": "tests/test_statements.py::test_statement_totals", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "5de314aae9f7dacde30f5b9c2d3265a4dbf2e97b", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T06:00:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["the change may be right, but nothing proves it"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "fixed", "text": "Fixed; tests for BANK-9 added." },
+      "context": {
+        "ticket": { "key": "BANK-9", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK9_end_date_inclusive"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK9_closing_balance_end_of_day_utc8"] } } ] },
+        "pr": { "number": 37, "title": "BANK-9 use bank time zone for statement end", "state": "open", "headSha": "104cf6117a74c70fa8546cf7f038b342edd5ca13" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "104cf6117a74c70fa8546cf7f038b342edd5ca13", "tests": [
+          { "id": "tests/test_statements.py::test_statement_pages", "outcome": "passed" },
+          { "id": "tests/test_statements.py::test_BANK9_end_date_inclusive", "outcome": "passed" },
+          { "id": "tests/test_statements.py::test_BANK9_closing_balance_end_of_day_utc8", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "104cf6117a74c70fa8546cf7f038b342edd5ca13", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T09:00:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    }
+  ]
+}

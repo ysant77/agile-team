@@ -1,0 +1,34 @@
+{
+  "scenario": "S02",
+  "title": "Make the statement page better",
+  "steps": [
+    {
+      "kind": "lint",
+      "draft": { "summary": "Make the statement page better", "description": "Customers hate the statement page, make it better.", "acceptanceCriteria": [] },
+      "sources": ["Customers hate the statement page, make it better."],
+      "expect": { "pass": false, "rules": ["vague-verb", "no-result", "no-ac"] }
+    },
+    {
+      "kind": "lint",
+      "draft": {
+        "summary": "Statement rows show the running balance",
+        "description": "Each statement row shows the balance after that entry for the customer; the last row equals the account balance.",
+        "acceptanceCriteria": [
+          { "acId": "AC1", "statement": "Each row shows the balance after the entry", "check": { "type": "test_passes", "args": ["test_BANK2_running_balance_per_row"] } },
+          { "acId": "AC2", "statement": "Last row equals the account balance", "check": { "type": "test_passes", "args": ["test_BANK2_last_row_equals_balance"] } } ]
+      },
+      "sources": ["Customers hate the statement page, make it better.", "Which complaint: running balance"],
+      "expect": { "pass": true }
+    },
+    {
+      "kind": "lint",
+      "draft": {
+        "summary": "Statement loads within 300 ms for the customer",
+        "description": "The statement page returns page 1 within 300 ms.",
+        "acceptanceCriteria": [ { "acId": "AC1", "statement": "p95 under 300 ms", "check": { "type": "metric_at_most", "args": ["statement_p95_ms", 300] } } ]
+      },
+      "sources": ["Customers hate the statement page, make it better."],
+      "expect": { "pass": false, "rules": ["ungrounded-number"] }
+    }
+  ]
+}

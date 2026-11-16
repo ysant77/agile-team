@@ -1,0 +1,23 @@
+{
+  "scenario": "S30",
+  "title": "Re-opened ticket",
+  "steps": [
+    { "kind": "reward", "input": { "onTime": true, "firstClaimSupported": true, "contradictions": 0, "reopenedWithin7d": false }, "expect": { "r": 1, "note": "BANK-1 Done on day 3" } },
+    { "kind": "reward", "input": { "onTime": true, "firstClaimSupported": true, "contradictions": 0, "reopenedWithin7d": true }, "expect": { "r": 0.4, "note": "re-opened on day 6: quality 0; this replaces the first reward" } },
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Still fixed: same build as on day 3" },
+      "context": {
+        "ticket": { "key": "BANK-1", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK1_send_button_360_to_430_viewport"] } },
+          { "acId": "AC2", "check": { "type": "test_passes", "args": ["test_BANK1_balance_after_send"] } } ] },
+        "pr": { "number": 11, "title": "BANK-1: show Send button on small screens", "state": "closed", "merged": true, "headSha": "010447be9788d5870b357383e30a5dbca117a528" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "010447be9788d5870b357383e30a5dbca117a528", "tests": [
+          { "id": "tests/test_web.py::test_BANK1_send_button_small_viewport", "outcome": "passed" },
+          { "id": "tests/test_web.py::test_BANK1_balance_after_send", "outcome": "passed" } ] },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "010447be9788d5870b357383e30a5dbca117a528", "status": "completed", "conclusion": "success", "createdAt": "2026-11-20T10:00:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK1_send_button_360_to_430_viewport is missing from the report"] }
+    }
+  ]
+}

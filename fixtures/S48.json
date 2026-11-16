@@ -1,0 +1,34 @@
+{
+  "scenario": "S48",
+  "title": "Training and serving give different scores",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "Fixed: serving rounds amounts to 2 decimals." },
+      "context": {
+        "ticket": { "key": "BANK-48", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK48_train_serve_parity"] } } ] },
+        "pr": { "number": 61, "title": "BANK-48 train and serve feature parity", "state": "open", "headSha": "30cb1ce61c76cf8d1408dada8a5a5554852378ae" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "30cb1ce61c76cf8d1408dada8a5a5554852378ae", "tests": [
+          { "id": "tests/ml/test_parity.py::test_BANK48_train_serve_parity", "outcome": "failed" } ],
+          "metrics": { "parity_max_abs_diff": 0.0004 } },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "30cb1ce61c76cf8d1408dada8a5a5554852378ae", "status": "completed", "conclusion": "failure", "createdAt": "2026-12-09T05:00:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK48_train_serve_parity: failed"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "fixed", "text": "Fixed: serving computes features in minor units, as training does." },
+      "context": {
+        "ticket": { "key": "BANK-48", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK48_train_serve_parity"] } } ] },
+        "pr": { "number": 61, "title": "BANK-48 train and serve feature parity", "state": "open", "headSha": "c1d7f8d3fd1014ddec4191fc119521ab4da0a04c" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "c1d7f8d3fd1014ddec4191fc119521ab4da0a04c", "tests": [
+          { "id": "tests/ml/test_parity.py::test_BANK48_train_serve_parity", "outcome": "passed" } ],
+          "metrics": { "parity_max_abs_diff": 0.0 } },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "c1d7f8d3fd1014ddec4191fc119521ab4da0a04c", "status": "completed", "conclusion": "success", "createdAt": "2026-12-09T07:00:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    }
+  ]
+}

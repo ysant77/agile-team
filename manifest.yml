@@ -1,38 +1,180 @@
 modules:
   rovo:agent:
-    - key: agile-team-hello-world-agent
-      name: agile-team
-      description: An agent for testing Forge agent functionality
+    - key: pm-agent
+      name: Agile PM
+      description: Turns a request into a Jira ticket with story points, after the
+        user confirms.
       prompt: >
-        You are a simple agent that helps Forge developers build their first
-        Rovo agent.
+        You are the product manager and scrum master of a small software team.
 
-        You can create Forge logs by using the hello-world-logger action.
+        When the user asks for a ticket, write a one-line summary and a
+        description with acceptance criteria as checkable statements. Propose a
+        story point value from 1, 2, 3, 5, 8 or 13. Show the draft and ask the
+        user to confirm before you call the create-ticket action. Never create a
+        ticket without confirmation.
 
-        If the user hasn't provided a message when they ask you to create a log
-        ask them to provide one.
+        Before you show a draft, call lint-requirement with the user's request
+        and your draft. Fix every finding; after two rounds with findings left,
+        ask the user one question instead of guessing.
+
+        Pass acceptance criteria to create-ticket as lines "AC1 | statement |
+        check". Use test_passes(test_{TOKEN}_name) for behaviour a test can prove;
+        write {TOKEN} literally, because the key does not exist yet. Use
+        metric_at_least(name, value) or metric_at_most(name, value) for a measured
+        bound, and manual() when only a human can judge it.
+
+        You can read the latest commit of a public GitHub repository with the
+        read-github-commit action.
       conversationStarters:
-        - Log a message to Forge logs
+        - Create a ticket for a small bug
       actions:
-        - hello-world-logger
+        - lint-requirement
+        - create-ticket
+        - read-github-commit
+    - key: lead-agent
+      name: Agile Team Lead
+      description: Explains evidence from the code host. It never changes tickets.
+      prompt: >
+        You are the team lead. You explain evidence. You never create, edit or
+        close tickets. When the user asks about a repository, call the
+        read-github-commit action and report the commit id, author date and
+        message exactly as returned. If the action fails, say that the evidence
+        cannot be verified.
+      conversationStarters:
+        - Show the latest commit of octocat/Hello-World
+      actions:
+        - read-github-commit
   action:
-    - key: hello-world-logger
-      name: Log a message
-      function: messageLogger
+    - key: lint-requirement
+      name: Lint requirement
+      function: lintRequirement
       actionVerb: GET
       description: >
-        When a user asks to log a message, this action logs the message to the
-        Forge logs.
+        Checks a draft requirement by fixed rules: vague verbs, missing actor or
+        observable result, missing acceptance criteria or checks, and numbers that
+        do not appear in the request. Returns findings.
       inputs:
-        message:
-          title: Message
+        request:
+          title: Original request
           type: string
           required: true
-          description: |
-            "The message that the user has requested be logged to Forge logs"
+          description: The user's request in their own words.
+        summary:
+          title: Summary
+          type: string
+          required: true
+          description: Draft one-line summary.
+        description:
+          title: Description
+          type: string
+          required: true
+          description: Draft description.
+        acceptanceCriteria:
+          title: Acceptance criteria
+          type: string
+          required: false
+          description: Lines "AC1 | statement | check".
+    - key: create-ticket
+      name: Create ticket with story points
+      function: createTicket
+      actionVerb: CREATE
+      description: >
+        Creates a Jira work item in the given project with a summary, a
+        description and a story point value. Call it only after the user has
+        confirmed the draft.
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: true
+          description: The Jira project key, for example BANK.
+        summary:
+          title: Summary
+          type: string
+          required: true
+          description: One-line summary of the work item.
+        description:
+          title: Description
+          type: string
+          required: true
+          description: Description with acceptance criteria.
+        storyPoints:
+          title: Story points
+          type: number
+          required: true
+          description: One of 1, 2, 3, 5, 8, 13.
+        acceptanceCriteria:
+          title: Acceptance criteria
+          type: string
+          required: false
+          description: >
+            One line per criterion, "AC1 | statement | check", where check is one of
+            test_passes(test_name), metric_at_least(name, value), metric_at_most(name, value),
+            subtasks_done(), deployed(tag) or manual().
+        issueType:
+          title: Work type
+          type: string
+          required: false
+          description: Task, Story or Bug. Default Task.
+    - key: read-github-commit
+      name: Read latest GitHub commit
+      function: readGithubCommit
+      actionVerb: GET
+      description: >
+        Reads the latest commit of a public GitHub repository and returns its
+        id, author date and message.
+      inputs:
+        repository:
+          title: Repository
+          type: string
+          required: false
+          description: owner/name, for example octocat/Hello-World.
+  trigger:
+    - key: comment-claim-trigger
+      function: onComment
+      events:
+        - avi:jira:commented:issue
+  jira:issuePanel:
+    - key: aat-issue-panel
+      resource: panel
+      resolver:
+        function: panelResolver
+      render: native
+      title: Agile team verifier
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+  consumer:
+    - key: verify-consumer
+      queue: verify-queue
+      function: verifyConsumer
   function:
-    - key: messageLogger
-      handler: index.messageLogger
+    - key: verifyConsumer
+      handler: consumer.handler
+      timeoutSeconds: 300
+    - key: createTicket
+      handler: index.createTicket
+    - key: lintRequirement
+      handler: index.lintRequirementAction
+    - key: panelResolver
+      handler: resolvers.handler
+    - key: readGithubCommit
+      handler: index.readGithubCommit
+    - key: onComment
+      handler: index.onComment
+resources:
+  - key: panel
+    path: src/frontend/panel.jsx
+permissions:
+  scopes:
+    - read:jira-work
+    - write:jira-work
+    - read:project:jira
+    - read:board-scope:jira-software
+    - read:board-scope.admin:jira-software
+    - storage:app
+  external:
+    fetch:
+      backend:
+        - address: api.github.com
 app:
   runtime:
     name: nodejs24.x

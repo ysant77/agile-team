@@ -1,0 +1,54 @@
+{
+  "scenario": "S42",
+  "title": "Disputed metric for churn",
+  "steps": [
+    {
+      "kind": "arbitrate",
+      "ticket": { "key": "BANK-41", "metricDisputed": true },
+      "sides": [
+        { "id": "nora", "gatesPassed": true, "metrics": { "median": 0.81 }, "newFailureModes": [], "newDependencies": [], "diffLines": 120 },
+        { "id": "theo", "gatesPassed": true, "metrics": { "median": 4100000 }, "newFailureModes": [], "newDependencies": [], "diffLines": 140 }
+      ],
+      "expect": { "decidedBy": "human", "winner": null }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "ready", "text": "Nora: churn model ready (AUC 0.81)" },
+      "context": {
+        "ticket": { "key": "BANK-41", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC3", "check": { "type": "test_passes", "args": ["test_BANK41_feature_cutoff_30d"] } },
+          { "acId": "M1", "check": { "type": "manual", "args": ["the PM picks the primary metric (not pre-registered)"] } } ] },
+        "pr": { "number": 54, "title": "BANK-41 churn model, AUC-optimised", "state": "open", "headSha": "33c0175db04e3282e2efc6df0c1010cc395a7c38" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "33c0175db04e3282e2efc6df0c1010cc395a7c38", "tests": [
+          { "id": "tests/ml/test_churn.py::test_BANK41_feature_cutoff_30d", "outcome": "passed" } ],
+          "metrics": { "auc": 0.81, "top_decile_deposit_value_usd": 3600000 } },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "33c0175db04e3282e2efc6df0c1010cc395a7c38", "status": "completed", "conclusion": "success", "createdAt": "2026-12-08T02:00:00Z" } ]
+      },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["the PM picks the primary metric"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "ready", "text": "Theo: churn model ready (USD 4.1M retained in top decile)" },
+      "context": {
+        "ticket": { "key": "BANK-41", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC3", "check": { "type": "test_passes", "args": ["test_BANK41_feature_cutoff_30d"] } },
+          { "acId": "M1", "check": { "type": "manual", "args": ["the PM picks the primary metric (not pre-registered)"] } } ] },
+        "pr": { "number": 55, "title": "BANK-41 churn model, value-weighted", "state": "open", "headSha": "9d269f18fde7a47e61fad86747f5f5881ea37fff" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "9d269f18fde7a47e61fad86747f5f5881ea37fff", "tests": [
+          { "id": "tests/ml/test_churn.py::test_BANK41_feature_cutoff_30d", "outcome": "passed" } ],
+          "metrics": { "auc": 0.78, "top_decile_deposit_value_usd": 4100000 } },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "9d269f18fde7a47e61fad86747f5f5881ea37fff", "status": "completed", "conclusion": "success", "createdAt": "2026-12-08T02:20:00Z" } ]
+      },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["the PM picks the primary metric"] }
+    },
+    {
+      "kind": "arbitrate",
+      "ticket": { "key": "BANK-41", "preRegistered": { "metric": "top_decile_deposit_value_usd", "higherIsBetter": true, "margin": 0.1 } },
+      "sides": [
+        { "id": "nora", "gatesPassed": true, "metrics": { "median": 3600000, "iqrLow": 3450000, "iqrHigh": 3750000 }, "newFailureModes": [], "newDependencies": [], "diffLines": 120 },
+        { "id": "theo", "gatesPassed": true, "metrics": { "median": 4100000, "iqrLow": 3950000, "iqrHigh": 4250000 }, "newFailureModes": [], "newDependencies": [], "diffLines": 140 }
+      ],
+      "expect": { "decidedBy": "code-metric", "winner": "theo", "note": "after the PM set the metric; nora is arbitrated_out" }
+    }
+  ]
+}

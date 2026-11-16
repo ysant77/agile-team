@@ -1,0 +1,25 @@
+{
+  "scenario": "S26",
+  "title": "False fixed claim",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "fixed", "text": "fixed" },
+      "context": {
+        "ticket": { "key": "BANK-4", "type": "Bug", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK4_concurrent_withdrawals_20_threads"] } } ] },
+        "pr": { "number": 14, "title": "BANK-4 guard withdraw", "state": "open", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1", "tests": [
+          { "id": "tests/test_transfers.py::test_BANK4_concurrent_withdrawals_20_threads", "outcome": "failed" } ] },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-18T09:00:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK4_concurrent_withdrawals_20_threads: failed"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "fixed", "text": "fixed (no pull request at all)" },
+      "context": { "ticket": { "key": "BANK-4", "type": "Bug", "acceptanceCriteria": [] }, "pr": null },
+      "expect": { "result": "contradicted", "reasonIncludes": ["no pull request"] }
+    }
+  ]
+}

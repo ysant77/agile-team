@@ -1,0 +1,46 @@
+{
+  "scenario": "S22",
+  "title": "Slow statement query",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "ready", "text": "Index on (account_id, posted_at); page 1 in 212 ms." },
+      "context": {
+        "ticket": { "key": "BANK-22", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK22_query_plan_uses_index"] } },
+          { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["statement_p95_ms", 300] } } ] },
+        "pr": { "number": 32, "title": "BANK-22 index statement query on account_id, posted_at", "state": "open", "headSha": "23f7b48ba68b273cfaa40a57f557f86d66be29bc" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "23f7b48ba68b273cfaa40a57f557f86d66be29bc", "tests": [
+          { "id": "tests/test_statements.py::test_BANK22_query_plan_uses_index", "outcome": "passed" } ],
+          "metrics": { "statement_p95_ms": 212 } },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "23f7b48ba68b273cfaa40a57f557f86d66be29bc", "status": "completed", "conclusion": "success", "createdAt": "2026-11-26T04:00:00Z" } ]
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "ready", "text": "Index added (on posted_at only); fast on this runner." },
+      "context": {
+        "ticket": { "key": "BANK-22", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "test_passes", "args": ["test_BANK22_query_plan_uses_index"] } },
+          { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["statement_p95_ms", 300] } } ] },
+        "pr": { "number": 32, "title": "BANK-22 index statement query on account_id, posted_at", "state": "open", "headSha": "e132d9841e18a98164f71a3ed2701107252fc35b" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "e132d9841e18a98164f71a3ed2701107252fc35b", "tests": [
+          { "id": "tests/test_statements.py::test_BANK22_query_plan_uses_index", "outcome": "failed" } ],
+          "metrics": { "statement_p95_ms": 288 } },
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "e132d9841e18a98164f71a3ed2701107252fc35b", "status": "completed", "conclusion": "failure", "createdAt": "2026-11-26T02:30:00Z" } ]
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["test_BANK22_query_plan_uses_index: failed"] }
+    },
+    {
+      "kind": "assign",
+      "seed": 7,
+      "tickets": [ { "key": "BANK-22", "points": 3, "skills": ["data", "backend"] } ],
+      "twins": [
+        { "id": "kai", "skills": { "ops": 4, "backend": 3, "data": 2 }, "capacity": 13, "load": 2 },
+        { "id": "omar", "skills": { "ml": 4, "data": 3, "backend": 2 }, "capacity": 13, "load": 10 }
+      ],
+      "expect": { "assignments": { "BANK-22": "kai" }, "note": "equal match; Omar is busy with BANK-15" }
+    }
+  ]
+}

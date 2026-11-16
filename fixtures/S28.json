@@ -1,0 +1,38 @@
+{
+  "scenario": "S28",
+  "title": "Dependency between tickets",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "done", "text": "Multi-currency PDF done" },
+      "context": {
+        "ticket": { "key": "BANK-25", "type": "Story",
+          "links": [ { "type": "is blocked by", "key": "BANK-23", "statusCategory": "indeterminate" } ],
+          "subtasks": [ { "key": "BANK-64", "statusCategory": "done" }, { "key": "BANK-65", "statusCategory": "done" } ],
+          "acceptanceCriteria": [ { "acId": "AC1", "check": { "type": "subtasks_done" } } ] }
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["blocked by open BANK-23"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "done", "text": "Multi-currency PDF done (BANK-23 now Done)" },
+      "context": {
+        "ticket": { "key": "BANK-25", "type": "Story",
+          "links": [ { "type": "is blocked by", "key": "BANK-23", "statusCategory": "done" } ],
+          "subtasks": [ { "key": "BANK-64", "statusCategory": "done" }, { "key": "BANK-65", "statusCategory": "done" } ],
+          "acceptanceCriteria": [ { "acId": "AC1", "check": { "type": "subtasks_done" } } ] }
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "assign",
+      "seed": 7,
+      "tickets": [ { "key": "BANK-25", "points": 2, "skills": ["frontend"], "blockedBy": [ { "key": "BANK-23", "statusCategory": "indeterminate" } ] } ],
+      "twins": [
+        { "id": "ava", "skills": { "frontend": 4, "qa": 3, "backend": 2 }, "capacity": 13, "load": 2 },
+        { "id": "mei", "skills": { "frontend": 3, "backend": 2 }, "capacity": 13, "load": 4 }
+      ],
+      "expect": { "assignments": { "BANK-25": null }, "note": "the helper does not propose BANK-25 while BANK-23 is open" }
+    }
+  ]
+}

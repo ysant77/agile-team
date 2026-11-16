@@ -1,0 +1,28 @@
+{
+  "scenario": "S47",
+  "title": "Shadow test blocks a promotion",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "deployed", "text": "v4 promoted", "args": { "tag": "rec-v4" } },
+      "context": { "ticket": { "key": "BANK-47" },
+        "deployRuns": [ { "name": "deploy", "tag": "rec-v3", "conclusion": "success", "createdAt": "2026-12-01T03:00:00Z" } ] },
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["no deploy run yet"] }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "acs", "text": "v4 promoted (deploy plus shadow report)" },
+      "context": {
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "ed9cb36f6930b05fb1195bd95c84d51a1fe4959c", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T00:00:00Z" } ],
+        "ticket": { "key": "BANK-47", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC1", "check": { "type": "metric_at_least", "args": ["suitability_pass", 1.0] } },
+          { "acId": "AC2", "check": { "type": "deployed", "args": ["rec-v4"] } } ] },
+        "deployRuns": [ { "name": "deploy", "tag": "rec-v3", "conclusion": "success", "createdAt": "2026-12-01T03:00:00Z" } ],
+        "pr": { "number": 60, "title": "BANK-47 recommender v4 shadow run", "state": "open", "headSha": "ed9cb36f6930b05fb1195bd95c84d51a1fe4959c" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "ed9cb36f6930b05fb1195bd95c84d51a1fe4959c", "tests": [],
+          "metrics": { "suitability_pass": 0.997, "shadow_sessions": 10000 } }
+      },
+      "expect": { "result": "contradicted", "reasonIncludes": ["suitability_pass = 0.997"] }
+    }
+  ]
+}

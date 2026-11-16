@@ -1,0 +1,41 @@
+{
+  "scenario": "S36",
+  "title": "Index or cache for the slow statement query",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": { "id": "c1", "type": "acs", "text": "Omar: balance cache meets AC2" },
+      "context": {
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "a130b2d59dc42b6cafa2db782e3d2872fa9d69da", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T00:00:00Z" } ],
+        "ticket": { "key": "BANK-22", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["statement_p95_ms", 300] } } ] },
+        "pr": { "number": 46, "title": "BANK-22 10-minute balance cache", "state": "open", "headSha": "a130b2d59dc42b6cafa2db782e3d2872fa9d69da" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "a130b2d59dc42b6cafa2db782e3d2872fa9d69da", "tests": [],
+          "metrics": { "statement_p95_ms": 197, "statement_p95_ms_median": 197, "statement_p95_ms_iqr_low": 183, "statement_p95_ms_iqr_high": 214 } }
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "verify",
+      "claim": { "id": "c2", "type": "acs", "text": "Kai: index meets AC2" },
+      "context": {
+        "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "7b19c5a5e41aa364d100b9080885eec583fa762c", "status": "completed", "conclusion": "success", "createdAt": "2026-11-30T00:00:00Z" } ],
+        "ticket": { "key": "BANK-22", "type": "Story", "acceptanceCriteria": [
+          { "acId": "AC2", "check": { "type": "metric_at_most", "args": ["statement_p95_ms", 300] } } ] },
+        "pr": { "number": 32, "title": "BANK-22 index statement query on account_id, posted_at", "state": "open", "headSha": "7b19c5a5e41aa364d100b9080885eec583fa762c" },
+        "report": { "schema": "aat-ci-report/1", "head_sha": "7b19c5a5e41aa364d100b9080885eec583fa762c", "tests": [],
+          "metrics": { "statement_p95_ms": 205, "statement_p95_ms_median": 205, "statement_p95_ms_iqr_low": 190, "statement_p95_ms_iqr_high": 221 } }
+      },
+      "expect": { "result": "supported" }
+    },
+    {
+      "kind": "arbitrate",
+      "ticket": { "key": "BANK-22", "preRegistered": { "metric": "statement_p95_ms", "higherIsBetter": false, "margin": 0.1 } },
+      "sides": [
+        { "id": "kai", "gatesPassed": true, "metrics": { "median": 205, "iqrLow": 190, "iqrHigh": 221 }, "newFailureModes": [], "newDependencies": [], "diffLines": 6 },
+        { "id": "omar", "gatesPassed": true, "metrics": { "median": 197, "iqrLow": 183, "iqrHigh": 214 }, "newFailureModes": ["cache without a stale-read test"], "newDependencies": [], "diffLines": 48 }
+      ],
+      "expect": { "decidedBy": "lead-rule", "winner": "kai" }
+    }
+  ]
+}
