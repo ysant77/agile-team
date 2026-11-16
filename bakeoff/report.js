@@ -3,8 +3,10 @@
 //
 // Per role: each model's score with the number of tasks, a 90% bootstrap interval over tasks, the
 // spread across repeats, latency and peak memory. The leader and the runner-up are compared on the
-// same tasks; when the 90% interval of the paired difference includes 0 the report says "no clear
-// winner" and applies the pre-registered tie-break (smaller peak memory, then lower median latency).
+// same tasks. The leader is a clear winner only when the 90% interval of the paired difference is
+// above 0 and, when both have repeats, their score spreads across repeats do not overlap. Else the
+// report says "no clear winner" and applies the pre-registered tie-break (smaller peak memory, then
+// lower median latency). The protocol is docs/model-selection.md.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
