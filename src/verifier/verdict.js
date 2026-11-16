@@ -78,6 +78,7 @@ export const CLAIM_CHECKS = {
   fixed: (ctx) => [
     c.prLinked(ctx),
     c.ciGreen(ctx),
+    ...[c.ciAttempts(ctx)].filter(Boolean),
     acMapped(ctx),
     ...[c.measurementUnchanged(ctx)].filter(Boolean),
     ...(ctx.ticket.type === 'Bug' ? [c.bugTestExists(ctx)] : []),
@@ -87,6 +88,7 @@ export const CLAIM_CHECKS = {
   ready: (ctx) => [
     c.prLinked(ctx),
     c.ciGreen(ctx),
+    ...[c.ciAttempts(ctx)].filter(Boolean),
     ...[c.baseCurrent(ctx)].filter(Boolean),
     acMapped(ctx),
     ...[c.measurementUnchanged(ctx)].filter(Boolean),
@@ -98,6 +100,8 @@ export const CLAIM_CHECKS = {
   done: (ctx) => {
     const checks = [c.subtasksDone(ctx), c.blockedByDone(ctx), acMapped(ctx)];
     if (c.hasCodeWork(ctx)) checks.push(c.onMain(ctx), c.mergedClean(ctx), c.reproduced(ctx), c.coverageOk(ctx), ...c.securityCheck(ctx, 'done'));
+    const attempts = c.ciAttempts(ctx);
+    if (attempts) checks.push(attempts);
     const measured = c.measurementUnchanged(ctx);
     if (measured) checks.push(measured);
     const signoff = c.checkHumanSignoff(ctx);

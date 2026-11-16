@@ -86,3 +86,17 @@ test('I09: a base that moved after CI makes a ready claim cannot_verify, with bo
   assert.equal(v.result, 'cannot_verify', v.reason);
   assert.match(v.reason, /base moved/);
 });
+
+// (a5) A re-run hides a failed attempt: GitHub lists only the latest attempt of a run. An
+// earlier attempt that failed in a test step means a flaky test (benchmark B05); one that failed
+// in a setup step is a runner problem (benchmark B29) and does not count.
+test('B05: an earlier attempt that failed in the test step sends the claim to a person', async () => {
+  const v = await run('B05');
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /attempt 1 failed in step .*pytest/);
+});
+
+test('B29: an earlier attempt that failed in a setup step is not held against the claim', async () => {
+  const v = await run('B29');
+  assert.doesNotMatch(v.reason, /attempt 1 failed/);
+});

@@ -96,6 +96,8 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     const runPages = await getPages(`/repos/${repo}/actions/runs?head_sha=${pr.headSha}`, 3, (b) => b?.workflow_runs);
     truncated.runs = runPages.truncated;
     workflowRuns = runPages.items.map((r) => ({
+      id: r.id,
+      attempt: r.run_attempt ?? 1,
       name: r.name,
       path: r.path,
       headSha: r.head_sha,
@@ -106,6 +108,23 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
       runStartedAt: r.run_started_at,
       url: r.html_url,
     }));
+    // GitHub lists only the latest attempt of a run. For a re-run, read the job steps of each
+    // earlier attempt, so a failed attempt stays visible (benchmark B05).
+    for (const run of workflowRuns) {
+      run.earlierFailures = [];
+      for (let n = 1; n < (run.attempt ?? 1) && n <= 5; n += 1) {
+        const jobs = await get(`/repos/${repo}/actions/runs/${run.id}/attempts/${n}/jobs`);
+        if (!jobs) {
+          run.earlierFailures = null; // not known
+          break;
+        }
+        for (const job of jobs.jobs ?? []) {
+          for (const step of job.steps ?? []) {
+            if (step.conclusion === 'failure') run.earlierFailures.push({ attempt: n, job: job.name, step: step.name });
+          }
+        }
+      }
+    }
     // Comments come oldest first; the latest bot report can be on any page.
     const commentPages = await getPages(`/repos/${repo}/issues/${pr.number}/comments`, 10);
     truncated.comments = commentPages.truncated;

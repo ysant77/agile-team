@@ -436,6 +436,22 @@ function reproBlockGap(repro, headSha) {
   return null;
 }
 
+// Earlier attempts of a re-run on the head (benchmark B05, B29). A failure in a step that runs the
+// tests means the result changed with no code change: a flaky test, so a person checks. A failure
+// in a setup step (checkout, install) is a runner problem and does not count. Returns null when no
+// pinned run was re-run.
+const TEST_STEP = /pytest|\btests?\b/i;
+export function ciAttempts(ctx) {
+  const paths = ctx.config?.requiredWorkflowPaths ?? [];
+  const runs = (ctx.workflowRuns ?? []).filter((r) => paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha && (r.attempt ?? 1) > 1);
+  if (!runs.length) return null;
+  if (runs.some((r) => r.earlierFailures === null)) return result('ci_attempts', 'unknown', 'an earlier attempt of the CI run could not be read');
+  const flaky = runs.flatMap((r) => r.earlierFailures ?? []).filter((f) => TEST_STEP.test(f.step));
+  return flaky.length
+    ? result('ci_attempts', 'unknown', flaky.map((f) => `attempt ${f.attempt} failed in step "${f.step}" and a re-run passed with no code change: a person checks for a flaky test`).join('; '))
+    : result('ci_attempts', 'pass', 'earlier attempts failed only in setup steps, or not at all');
+}
+
 // The report must be for the current base tip (benchmark I09). GitHub's "branch up to date" rule
 // does the same; here the reason names both commits. Returns null when the tip or the report's
 // base is not known, or the PR is merged.
