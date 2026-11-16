@@ -153,3 +153,10 @@ test('a Bug with no AC test needs at least one key-named test that reproduces', 
 
 
 
+
+// Two live PRs name the key: a done claim cannot tell which one it means (benchmark B26).
+test('B26: a second open PR that names the key makes a done claim cannot_verify, with both PRs named', async () => {
+  const v = await run('B26');
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /PRs #\d+, #\d+ all name BENCH-26/);
+});

@@ -414,6 +414,10 @@ export function ticketTests(ctx) {
 export function onMain(ctx) {
   const pr = ctx.pr;
   if (!pr) return result('on_main', 'fail', `no pull request for ${ctx.ticket.key}, so nothing is on main`);
+  // Two open or merged PRs name the key: the same rule as pr_linked (benchmark B26).
+  if ((ctx.prCandidates ?? []).length > 1) {
+    return result('on_main', 'unknown', `PRs ${ctx.prCandidates.map((n) => `#${n}`).join(', ')} all name ${ctx.ticket.key}; link one PR`);
+  }
   if (!pr.merged) return result('on_main', 'fail', `PR #${pr.number} is not merged, so the work is not on main`);
   return result('on_main', 'pass', `PR #${pr.number} merged${ctx.mergeSha ? ` as ${String(ctx.mergeSha).slice(0, 7)}` : ''}`);
 }
