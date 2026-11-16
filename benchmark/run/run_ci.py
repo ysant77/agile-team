@@ -80,6 +80,11 @@ def main():
         report = tree / "ci-report.json"
         cov = tree / "coverage.json"
         marker = ["-m", "bench or not bench"] if args.bench else []
+        # The CI commands are the PR's own workflow: keep the --ignore / --deselect flags that
+        # its report step passes to pytest (a PR can change them; case B07).
+        wf = tree / ".github" / "workflows" / "ci.yml"
+        line = next((x for x in wf.read_text(encoding="utf-8").splitlines() if "--ci-report=" in x), "") if wf.is_file() else ""
+        marker += [t for t in line.split() if t.startswith(("--ignore=", "--deselect="))]
         tests = run(
             [py, "-m", "pytest", "-q", *marker, "--cov=src", "--cov-branch",
              f"--cov-report=json:{cov}", f"--ci-report={report}"],

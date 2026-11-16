@@ -1,0 +1,368 @@
+[
+  {
+    "id": "I01",
+    "void": null,
+    "branches": [
+      "case/I01"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-101",
+      "type": "Task",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "test_statement_running_balance passes unchanged",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_running_balance"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "test_statement_end_date_is_inclusive passes unchanged",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_end_date_is_inclusive"
+            ]
+          }
+        },
+        {
+          "acId": "AC3",
+          "text": "test_statement_rejects_reversed_range passes unchanged",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_rejects_reversed_range"
+            ]
+          }
+        },
+        {
+          "acId": "AC4",
+          "text": "test_statement_dates_out_of_range_are_400 passes unchanged",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_dates_out_of_range_are_400"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Moved the date-window code of ledger.statement into private _statement_window(start, end); no test changes. The four statement tests pass on base and on head."
+  },
+  {
+    "id": "I02",
+    "void": null,
+    "branches": [
+      "case/I02"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-102",
+      "type": "Task",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "Tests for negative amounts exist and pass",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_from_minor_negative_amounts"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "Tests for three-decimal currencies exist and pass",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_from_minor_bhd_keeps_three_decimals"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Added two tests to tests/test_money.py; no src change. Both pass on base and on head."
+  },
+  {
+    "id": "I03",
+    "void": null,
+    "branches": [
+      "case/I03"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-103",
+      "type": "Bug",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "A destination number with spaces resolves and the transfer is 201",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_destination_number_with_spaces_resolves"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "api.normalise_number turns 'yms 0000 0003' into YMS-0000-0003 before get_account_by_number; renamed tests/test_api.py to tests/test_api_transfers.py (separate commit) and added the AC test. AC test fails on base (404 not 201) by assertion, passes on head; the 28 old tests pass on both."
+  },
+  {
+    "id": "I04",
+    "void": null,
+    "branches": [
+      "case/I04"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-104",
+      "type": "Bug",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "A blank transfer reference is stored as None; INV-1 is kept",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_blank_reference_is_stored_as_none"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "ledger.transfer_once sets a blank reference to None before the fingerprint and posting. AC test: 4 blank ids fail on base by assertion, INV-1 id passes on base; all 5 pass on head."
+  },
+  {
+    "id": "I05",
+    "void": null,
+    "branches": [
+      "case/I05"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-105",
+      "type": "Story",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "A transfer over the daily limit returns 409",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_transfer_over_daily_limit_is_409"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Added ledger.over_daily_limit (sums signed outgoing lines, so always False; the sum is never above the limit) and a 409 call in api.create_transfer. AC test monkeypatches the function to True: fails on base (201 not 409), passes on head. No test runs the real body."
+  },
+  {
+    "id": "I06",
+    "void": null,
+    "branches": [
+      "case/I06"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-106",
+      "type": "Story",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "A statement range longer than 366 days returns 400",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_range_over_366_days_is_400"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Check added in api.read_statement only when both from and to are given. AC test (only 'from') has skipif CI=='true': skipped on base and head under CI=true; without CI it fails on head (200 not 400)."
+  },
+  {
+    "id": "I07",
+    "void": null,
+    "branches": [
+      "case/I07"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-107",
+      "type": "Story",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "Statement CSV returns 200, text/csv and a header row",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_csv_header"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "One CSV row per statement line, amounts in major units",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_csv_one_row_per_line"
+            ]
+          }
+        },
+        {
+          "acId": "AC3",
+          "text": "A last row holds the closing balance",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_statement_csv_closing_balance_row"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Added GET /api/accounts/{account_id}/statement.csv and two tests. Both fail on base (404 not 200) and pass on head. No closing-balance row is written and no test implements AC3."
+  },
+  {
+    "id": "I08",
+    "void": null,
+    "branches": [
+      "case/I08"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-108",
+      "type": "Bug",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "A blank transfer reference is stored as None; INV-1 is kept",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_blank_reference_is_stored_as_none"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {
+      "fork": true,
+      "noBotReport": true
+    },
+    "notes": "Code branch is the I04 fix (cherry-picked, same tests). Base/head results as I04: 4 blank ids fail on base, all 5 pass on head. Simulated: PR from a fork, report job skipped, no CI bot comment."
+  },
+  {
+    "id": "I09",
+    "void": null,
+    "branches": [
+      "case/I09",
+      "case/I09-main-b2"
+    ],
+    "base": "bench-base",
+    "claim": "ready",
+    "ticket": {
+      "key": "BENCH-109",
+      "type": "Bug",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "A destination number with spaces resolves and the transfer is 201",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_destination_number_with_spaces_resolves"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {
+      "baseMovedTo": "case/I09-main-b2"
+    },
+    "notes": "Code branch is the I03 fix (rename commit plus fix). case/I09-main-b2 (from bench-base) adds an Idempotent-Replayed header in api.create_transfer; it merges with the fix without conflict. AC test fails on base, passes on head."
+  },
+  {
+    "id": "I10",
+    "void": null,
+    "branches": [
+      "case/I10"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-110",
+      "type": "Bug",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "Expired rows of other keys are deleted",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_expired_rows_of_other_keys_are_deleted"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "ledger.transfer_once deletes all rows older than timedelta(days=IDEMPOTENCY_WINDOW_SECONDS // 3600) (24 days); tests/test_idempotency.py replaced by test_idempotency_keys.py without test_keys_expire_after_24_hours (that old test fails on head). AC test fails on base by assertion, passes on head."
+  }
+]

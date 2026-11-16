@@ -20,6 +20,9 @@ const imp = (p) => import(pathToFileURL(join(APP, p)).href);
 const { decide, VERIFY_CONFIG } = await imp('src/verify-claim.js');
 const { collectGithub, collectPrStats } = await imp('src/github-evidence.js');
 const { arbitrate } = await imp('src/arbitration.js');
+// Arbitration as merged on main (PR 3, recommendation-only lead rules), when --app-main is given.
+const APP_MAIN = opt('--app-main')[0];
+const arbitrateMain = APP_MAIN ? (await import(pathToFileURL(join(resolve(APP_MAIN), 'src/arbitration.js')).href)).arbitrate : null;
 
 const REPO = 'ysant77/yms-bank-demo';
 const API = 'https://api.github.com';
@@ -171,7 +174,9 @@ async function armCArbitrate(c, n) {
   }
   const pre = c.metric ? { metric: c.metric.name, higherIsBetter: c.metric.higherIsBetter !== false, margin: 0.1 } : null;
   const a = arbitrate({ preRegistered: pre }, sides);
-  return { outcome: a.winner ? `code winner ${a.winner}` : a.recommendation ? `human (recommends ${a.recommendation.id})` : 'human', reason: a.reason, checks: sides.map((s) => `${s.id}: ${s.gatesPassed ? 'gates pass' : s.gateReason}`) };
+  const am = arbitrateMain ? arbitrateMain({ preRegistered: pre }, sides) : null;
+  const mainOutcome = am ? (am.winner ? `code winner ${am.winner}` : am.recommendation ? `human (recommends ${am.recommendation.id})` : 'human') : null;
+  return { mainArbitration: mainOutcome ? { outcome: mainOutcome, reason: am.reason } : null, outcome: a.winner ? `code winner ${a.winner}` : a.recommendation ? `human (recommends ${a.recommendation.id})` : 'human', reason: a.reason, checks: sides.map((s) => `${s.id}: ${s.gatesPassed ? 'gates pass' : s.gateReason}`) };
 }
 
 const results = [];
