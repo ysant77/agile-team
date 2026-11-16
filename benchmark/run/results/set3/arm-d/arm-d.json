@@ -1,0 +1,520 @@
+{
+ "model": "qwen3-coder:30b",
+ "options": {
+  "temperature": 0,
+  "num_ctx": 32768
+ },
+ "promptVersion": "code-review/2",
+ "rule": "blocking",
+ "results": [
+  {
+   "id": "T01",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T02",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P102:H1 src/bank/api.py:175: limit parameter added with default 100.",
+      "[note AC1] P102:H1 src/bank/api.py:177: Validation for limit > 500 added.",
+      "[note AC1] P102:H2 src/bank/api.py:205: Limit applied to st.lines slice."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P102:H1 src/bank/api.py:175: limit parameter added with default 100.",
+      "[note AC1] P102:H1 src/bank/api.py:177: Validation for limit > 500 added.",
+      "[note AC1] P102:H2 src/bank/api.py:205: Limit applied to st.lines slice."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P102:H1 src/bank/api.py:175: limit parameter added with default 100.",
+      "[note AC1] P102:H1 src/bank/api.py:177: Validation for limit > 500 added.",
+      "[note AC1] P102:H2 src/bank/api.py:205: Limit applied to st.lines slice."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "T04",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T05",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T07",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T08",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P108:H2 src/bank/api.py:187: Finding 1: see P108:H2, line 187.",
+      "[blocking AC1] P108:H4 tests/test_api.py:123: Finding 2: see P108:H4, line 123."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P108:H2 src/bank/api.py:187: Finding 1: see P108:H2, line 187.",
+      "[blocking AC1] P108:H4 tests/test_api.py:123: Finding 2: see P108:H4, line 123."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P108:H2 src/bank/api.py:187: Finding 1: see P108:H2, line 187.",
+      "[blocking AC1] P108:H4 tests/test_api.py:123: Finding 2: see P108:H4, line 123."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "T09",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T10",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T11",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T12",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P112:H2 src/bank/api.py:142: Missing check for 404 error shape in non-BANK_NEW_ERRORS mode.",
+      "[note AC1] P112:H3 tests/test_api.py:63: Test only checks new error shape, not the old one."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P112:H2 src/bank/api.py:142: Missing check for 404 error shape in non-BANK_NEW_ERRORS mode.",
+      "[note AC1] P112:H3 tests/test_api.py:63: Test only checks new error shape, not the old one."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P112:H2 src/bank/api.py:142: Missing check for 404 error shape in non-BANK_NEW_ERRORS mode.",
+      "[note AC1] P112:H3 tests/test_api.py:63: Test only checks new error shape, not the old one."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "T13",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T14",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ungrounded-number",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ungrounded-number",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ungrounded-number",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T15",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T16",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P116:H1 src/bank/money.py:28: Function returns 10 ** exponent for any currency in EXPONENTS.",
+      "[note AC1] P116:H3 tests/test_money.py:65: Test covers exact values for EUR, JPY, BHD.",
+      "[note AC1] P116:H3 tests/test_money.py:71: Test checks all currencies in EXPONENTS."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P116:H1 src/bank/money.py:28: Function returns 10 ** exponent for any currency in EXPONENTS.",
+      "[note AC1] P116:H3 tests/test_money.py:65: Test covers exact values for EUR, JPY, BHD.",
+      "[note AC1] P116:H3 tests/test_money.py:71: Test checks all currencies in EXPONENTS."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P116:H1 src/bank/money.py:28: Function returns 10 ** exponent for any currency in EXPONENTS.",
+      "[note AC1] P116:H3 tests/test_money.py:65: Test covers exact values for EUR, JPY, BHD.",
+      "[note AC1] P116:H3 tests/test_money.py:71: Test checks all currencies in EXPONENTS."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "T18",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P118:H2 src/bank/api.py:143: Function name 'list_currencies' is not consistent with other list functions.",
+      "[note AC1] P118:H3 tests/test_currencies.py:20: Test uses sorted(EXPONENTS) which may not be the intended order."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P118:H2 src/bank/api.py:143: Function name 'list_currencies' is not consistent with other list functions.",
+      "[note AC1] P118:H3 tests/test_currencies.py:20: Test uses sorted(EXPONENTS) which may not be the intended order."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P118:H2 src/bank/api.py:143: Function name 'list_currencies' is not consistent with other list functions.",
+      "[note AC1] P118:H3 tests/test_currencies.py:20: Test uses sorted(EXPONENTS) which may not be the intended order."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "T19",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T21",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P121:H2 src/bank/api.py:140: Health endpoint returns dict or JSONResponse.",
+      "[note AC2] P121:H3 tests/test_health.py:25: Test checks database error case with closed connection."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P121:H2 src/bank/api.py:140: Health endpoint returns dict or JSONResponse.",
+      "[note AC2] P121:H3 tests/test_health.py:25: Test checks database error case with closed connection."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P121:H2 src/bank/api.py:140: Health endpoint returns dict or JSONResponse.",
+      "[note AC2] P121:H3 tests/test_health.py:25: Test checks database error case with closed connection."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "T22",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T23",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T24",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P124:H2 src/bank/api.py:256: source_balance_minor set from result.get or from_balance_minor.",
+      "[note AC1] P124:H3 src/bank/ledger.py:358: source_balance_minor set to from_balance_minor in ledger."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P124:H2 src/bank/api.py:256: source_balance_minor set from result.get or from_balance_minor.",
+      "[note AC1] P124:H3 src/bank/ledger.py:358: source_balance_minor set to from_balance_minor in ledger."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P124:H2 src/bank/api.py:256: source_balance_minor set from result.get or from_balance_minor.",
+      "[note AC1] P124:H3 src/bank/ledger.py:358: source_balance_minor set to from_balance_minor in ledger."
+     ]
+    }
+   ]
+  }
+ ]
+}

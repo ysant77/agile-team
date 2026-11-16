@@ -1,0 +1,117 @@
+{
+ "D": "cannot_verify",
+ "blocking": [
+  {
+   "hunk": "P108:H2",
+   "file": "src/bank/api.py",
+   "line": 187,
+   "text": "Finding 1: see P108:H2, line 187.",
+   "severity": "blocking",
+   "ac": "AC1"
+  },
+  {
+   "hunk": "P108:H4",
+   "file": "tests/test_api.py",
+   "line": 123,
+   "text": "Finding 2: see P108:H4, line 123.",
+   "severity": "blocking",
+   "ac": "AC1"
+  }
+ ],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "fallback",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P108:H2",
+     "file": "src/bank/api.py",
+     "line": 187,
+     "text": "Finding 1: see P108:H2, line 187.",
+     "severity": "blocking",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P108:H4",
+     "file": "tests/test_api.py",
+     "line": 123,
+     "text": "Finding 2: see P108:H4, line 123.",
+     "severity": "blocking",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "Risk 1: see the audited review input.",
+    "Risk 2: see the audited review input."
+   ],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH308_statement_can_show_debits_only",
+     "file": "tests/test_api.py",
+     "ac": "AC1",
+     "asserts": "test_BENCH308_statement_can_show_debits_only must pass for AC1.",
+     "failsBeforeFix": true
+    }
+   ]
+  }
+ },
+ "inputHash": "f4552c895dd2ca41b5b433d8c31771fadb524feb47a85db7465a28210d3f1f9e",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-308",
+      "prNumber": 108
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-308",
+      "prNumber": 108,
+      "review": "{\"findings\": [{\"hunk\": \"P108:H2\", \"file\": \"src/bank/api.py\", \"line\": 187, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Code does not handle kind=debit case for filtering lines.\"}, {\"hunk\": \"P108:H4\", \"file\": \"tests/test_api.py\", \"line\": 123, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Test only checks kind=credit, missing kind=debit case.\"}], \"risks\": [\"The filtering logic for kind=debit is not implemented in the code.\", \"The test suite does not cover the debit kind case, which could lead to undetected bugs.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH308_statement_can_show_debits_only\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"The test should assert that when kind=debit is specified, only lines with negative amounts are returned.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-308",
+      "prNumber": 108,
+      "review": "{\"findings\": [{\"hunk\": \"P108:H2\", \"file\": \"src/bank/api.py\", \"line\": 187, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Code filters lines for kind=credit but not for kind=debit.\"}, {\"hunk\": \"P108:H4\", \"file\": \"tests/test_api.py\", \"line\": 123, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Test checks only kind=credit, not kind=debit.\"}], \"risks\": [\"The filtering logic for kind=debit is missing in the code.\", \"The test suite does not cover the debit kind case, which could lead to undetected bugs.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH308_statement_can_show_debits_only\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Assert that when kind=debit is specified, only lines with negative amounts are returned.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

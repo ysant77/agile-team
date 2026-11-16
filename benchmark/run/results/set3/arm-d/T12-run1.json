@@ -1,0 +1,87 @@
+{
+ "D": "cannot_verify",
+ "blocking": [
+  {
+   "hunk": "P112:H2",
+   "file": "src/bank/api.py",
+   "line": 142,
+   "text": "Missing check for 404 error shape in non-BANK_NEW_ERRORS mode.",
+   "severity": "blocking",
+   "ac": "AC1"
+  }
+ ],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P112:H2",
+     "file": "src/bank/api.py",
+     "line": 142,
+     "text": "Missing check for 404 error shape in non-BANK_NEW_ERRORS mode.",
+     "severity": "blocking",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P112:H3",
+     "file": "tests/test_api.py",
+     "line": 63,
+     "text": "Test only checks new error shape, not the old one.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The change may break existing clients expecting old error format in non-BANK_NEW_ERRORS mode."
+   ],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH312_404_error_shape_in_old_mode",
+     "file": "tests/test_api.py",
+     "ac": "AC1",
+     "asserts": "In BANK_NEW_ERRORS != '1' mode, 404 responses have old error shape with 'detail' key.",
+     "failsBeforeFix": true
+    }
+   ]
+  }
+ },
+ "inputHash": "4e15a6dd3a829223f40a007c0eac7ec9a577dea9c3ac90ddef81aaeb0d32302f",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-312",
+      "prNumber": 112
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-312",
+      "prNumber": 112,
+      "review": "{\"findings\": [{\"hunk\": \"P112:H2\", \"file\": \"src/bank/api.py\", \"line\": 142, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Missing check for 404 error shape in non-BANK_NEW_ERRORS mode.\"}, {\"hunk\": \"P112:H3\", \"file\": \"tests/test_api.py\", \"line\": 63, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test only checks new error shape, not the old one.\"}], \"risks\": [\"The change may break existing clients expecting old error format in non-BANK_NEW_ERRORS mode.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH312_404_error_shape_in_old_mode\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"In BANK_NEW_ERRORS != '1' mode, 404 responses have old error shape with 'detail' key.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}
