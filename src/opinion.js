@@ -6,8 +6,10 @@ import { HUMAN_DOMAINS } from './arbitration.js';
 
 // Version of the guards below. 2 (13 Nov): exact-match ids and numbers in risks. 3 (16 Nov,
 // review F7): signed numbers, no grounding from author-written text, commit ids without digits.
-// The bake-off records it; lead rows scored under another version are re-run, not compared.
-export const GUARD_VERSION = 3;
+// 4 (16 Nov, second review item 6): numbers read by value, and ids neither need nor give
+// grounding. The bake-off records it; lead rows scored under another version are re-run, not
+// compared.
+export const GUARD_VERSION = 4;
 export const OPINION_PROMPT_VERSION = 'lead-opinion/1';
 export const MIN_CONFIDENCE = 0.7;
 export const MAX_REASONS = 5;
@@ -97,20 +99,28 @@ export function idsIn(text) {
 // data, but its numbers do not ground an opinion (review F7, 16 Nov).
 export const UNTRUSTED_KINDS = ['pr_text', 'issue_text'];
 
-// Numbers with their sign: "-12" and "12" differ. A hyphen after a letter or digit (a date, an
-// id) is not a sign.
+// Ids are not numbers: a ticket key (BANK-32), "#12", a word that starts with a letter and holds a
+// digit (E2, AC1, PR5, test_BANK1_x) and a hex commit id. They are removed before numbers are read,
+// so the digits inside an id neither need grounding nor ground anything (second review, item 6).
+const ID_TOKENS = /\b[A-Z][A-Z0-9]*-\d+\b|#\d+\b|\b[A-Za-z]\w*\d\w*\b|\b(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b/g;
+const NUMBER = /(?<![\w.])[-+−]?(?:\d{1,3}(?:,\d{3})+(?![\d,])|\d+(?:[.,]\d+)?|\.\d+)(?:[eE][-+]?\d+)?/g;
+
+// Numbers with their sign and value: "-12" and "12" differ, ".99" is 0.99, "1e9" is 1000000000,
+// "12.0" is 12. A hyphen after a letter or digit (a date) is not a sign. "1,000" is one thousand;
+// "1,5" is 1.5.
 export function quantitiesIn(text) {
-  return (String(text ?? '').match(/(?<![\w.])[-+\u2212]?\d+(?:[.,]\d+)?/g) ?? [])
-    .map((n) => n.replace(',', '.').replace('\u2212', '-').replace(/^\+/, ''));
+  const plain = String(text ?? '').replace(ID_TOKENS, ' ');
+  return (plain.match(NUMBER) ?? []).map((raw) => {
+    let n = raw.replace('−', '-').replace(/^\+/, '');
+    n = /^-?\d{1,3}(,\d{3})+$/.test(n) ? n.replace(/,/g, '') : n.replace(',', '.');
+    const value = Number(n);
+    return Number.isFinite(value) ? String(value) : n;
+  });
 }
 
+// Numbers are grounded by the values in trusted evidence text, never by ids.
 function groundedNumbers(packet) {
-  const texts = [
-    ...packet.evidence.flatMap((e) => (UNTRUSTED_KINDS.includes(e.kind) ? [e.id] : [e.id, e.text])),
-    ...packet.sides.map((s) => s.id),
-    packet.ticket?.key ?? '',
-    ...(packet.ticket?.acs ?? []).map((a) => a.acId),
-  ];
+  const texts = packet.evidence.filter((e) => !UNTRUSTED_KINDS.includes(e.kind)).map((e) => e.text);
   return new Set(texts.flatMap(quantitiesIn));
 }
 

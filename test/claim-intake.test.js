@@ -6,7 +6,12 @@ import { admitClaim } from '../src/claim-intake.js';
 
 const store = () => {
   const m = new Map();
-  return { get: async (k) => m.get(k), set: async (k, v) => { m.set(k, v); } };
+  // Like Forge KVS: FAIL_IF_EXISTS refuses a key that exists (item 8 of the second review).
+  return {
+    get: async (k) => m.get(k),
+    set: async (k, v, o) => { if (o?.keyPolicy === 'FAIL_IF_EXISTS' && m.has(k)) throw new Error('exists'); m.set(k, v); },
+    delete: async (k) => { m.delete(k); },
+  };
 };
 const now = Date.parse('2026-11-16T10:20:00Z');
 
