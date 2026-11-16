@@ -60,6 +60,7 @@ def main():
     ap.add_argument("--env", action="append", default=[])
     ap.add_argument("--bench", action="store_true")
     ap.add_argument("--main-report", type=Path, help="base report (main.json) for the coverage totals")
+    ap.add_argument("--repro-script", type=Path, help="use this scripts/repro.py (development re-score)")
     args = ap.parse_args()
     clone = args.clone.resolve()
     py = str(clone / ".venv" / "bin" / "python")
@@ -92,6 +93,8 @@ def main():
         )
         steps = {"lint_rc": lint.returncode, "tests_rc": tests.returncode,
                  "tests_tail": tests.stdout[-600:]}
+        if args.repro_script:
+            shutil.copy(args.repro_script.resolve(), tree / "scripts" / "repro.py")
         if report.is_file() and args.base != args.branch:
             r = run([py, "scripts/repro.py", "--base", base, "--head", head, "--head-report", str(report)], tree, env)
             steps["repro_rc"] = r.returncode

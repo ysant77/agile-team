@@ -93,7 +93,8 @@ function armA(c, ev, hardened, owners = OWNED, perTest = true) {
 }
 
 // ---- C: the app on a simulated GitHub ----
-function fakeGithub(c, ev, prNumber) {
+// The simulated GitHub of one case as plain data, so it can also be saved as an app fixture.
+function recordGithub(c, ev, prNumber) {
   const g = c.github ?? {};
   const head = ev.meta.head;
   const prHead = g.staleHead ? `${head.slice(0, 32)}00000001` : head;
@@ -103,37 +104,55 @@ function fakeGithub(c, ev, prNumber) {
     merged_at: merged ? at(30) : null, merge_commit_sha: merged ? head : null,
     html_url: `https://github.com/${REPO}/pull/${number}`,
     head: { ref: `case-${c.id.toLowerCase()}`, sha: prHead, repo: { full_name: g.fork ? 'someone/yms-bank-demo' : REPO } },
+    base: { ref: 'main', sha: ev.meta.merge_base },
     ...extra,
   });
   const pulls = [pull(prNumber)];
   if (g.secondOpenPr) pulls.push(pull(prNumber + 500, { state: 'open', merged_at: null, merge_commit_sha: null, head: { ref: `draft-${c.id.toLowerCase()}`, sha: 'f'.repeat(40), repo: { full_name: REPO } } }));
   const runOk = ev.meta.steps.tests_rc === 0 && ev.meta.steps.lint_rc === 0;
-  const runs = [{ name: 'CI', path: CI_PATH, head_sha: head, status: 'completed', conclusion: runOk ? 'success' : 'failure',
-    created_at: at(0), updated_at: at(9), run_started_at: at(0), run_attempt: g.failedRunThenRerun || g.infraFailureThenRerun ? 2 : 1, html_url: 'x' }];
+  const rerun = g.failedRunThenRerun || g.infraFailureThenRerun;
+  const runs = [{ id: 9000 + prNumber, name: 'CI', path: CI_PATH, head_sha: head, status: 'completed', conclusion: runOk ? 'success' : 'failure',
+    created_at: at(0), updated_at: at(9), run_started_at: at(0), run_attempt: rerun ? 2 : 1, html_url: 'x' }];
+  // Earlier attempts of a re-run: the job steps, with the step that failed.
+  const step = (name, conclusion) => ({ name, conclusion });
+  const attempts = rerun ? { 1: { jobs: [{ name: 'test', conclusion: 'failure', steps: g.failedRunThenRerun
+    ? [step('Set up job', 'success'), step('Run uv sync --locked --extra fraud', 'success'), step('Run uv run pytest -q --cov=src --cov-branch --cov-report=json:coverage.json', 'failure')]
+    : [step('Set up job', 'success'), step('Run uv sync --locked --extra fraud', 'failure')] }] } } : {};
   let report = ev.report ? structuredClone(ev.report) : null;
+  if (report) for (const t of report.tests ?? []) delete t.duration_s;
   if (report && g.noCoverageBlock) delete report.coverage;
   if (report && g.reportEditedByUser) {
     for (const t of report.tests) if (t.outcome !== 'passed') t.outcome = 'passed';
     if (report.repro?.full_suite) report.repro.full_suite = { outcome: 'passed', passed: report.tests.length, failed: 0 };
   }
-  const comments = report && !g.noBotReport
-    ? [{ user: BOT, created_at: at(8), updated_at: g.reportEditedByUser ? at(120) : at(9),
-        body: `<!-- aat-ci-report -->\n\`\`\`json\n${JSON.stringify(report)}\n\`\`\`` }]
-    : [];
-  // After a merge the main report is the merge commit's report (fast-forward merge here).
-  const main = merged && report ? { ...report, head_sha: head } : mainReport;
-  const prFiles = ev.meta.files.map((f) => ({ filename: f.filename, previous_filename: f.previous_filename, patch: f.patch }));
+  // The bot comment carries the report; after a merge the main report is the merge commit's
+  // report (fast-forward merge here). Both are built from `report` when served.
+  const comment = report && !g.noBotReport ? { created_at: at(8), updated_at: g.reportEditedByUser ? at(120) : at(9) } : null;
+  const main = merged && report ? 'report' : mainReport;
+  const files = ev.meta.files.map((f) => ({ filename: f.filename, status: f.status, previous_filename: f.previous_filename, patch: f.patch }));
+  const baseTip = g.baseMovedTo ? (c.baseTipSha ?? 'b'.repeat(40)) : ev.meta.merge_base;
+  return { pulls, runs, attempts, report, comment, files, filesTruncated: Boolean(g.filesTruncated), runs404: Boolean(g.runs404),
+    stats: { additions: ev.meta.additions, deletions: ev.meta.deletions }, prHead, main, baseTip };
+}
+
+export function fetchFrom(d) {
   const page = (u) => Number(new URL(u).searchParams.get('page') ?? 1);
   const routes = [
-    [/\/pulls\?/, (u) => (page(u) === 1 ? pulls : [])],
-    [/\/actions\/runs\?head_sha=/, (u) => (g.runs404 ? 404 : { workflow_runs: page(u) === 1 ? runs : [] })],
-    [/\/issues\/\d+\/comments/, (u) => (page(u) === 1 ? comments : [])],
-    [/\/pulls\/\d+\/files/, (u) => (g.filesTruncated
+    [/\/pulls\?/, (u) => (page(u) === 1 ? d.pulls : [])],
+    [/\/actions\/runs\/\d+\/attempts\/(\d+)\/jobs/, (u) => d.attempts?.[/attempts\/(\d+)/.exec(u)[1]] ?? 404],
+    [/\/actions\/runs\?head_sha=/, (u) => (d.runs404 ? 404 : { workflow_runs: page(u) === 1 ? d.runs : [] })],
+    [/\/issues\/\d+\/comments/, (u) => (page(u) === 1 && d.comment ? [{ user: BOT, ...d.comment,
+      body: `<!-- aat-ci-report -->\n\`\`\`json\n${JSON.stringify(d.report)}\n\`\`\`` }] : [])],
+    [/\/pulls\/\d+\/files/, (u) => (d.filesTruncated
       ? Array.from({ length: 100 }, (_, i) => ({ filename: `src/gen/f${page(u)}_${i}.py`, patch: '' }))
-      : page(u) === 1 ? prFiles.slice(0, 100) : prFiles.slice((page(u) - 1) * 100, page(u) * 100))],
-    [/\/pulls\/\d+$/, () => ({ additions: ev.meta.additions, deletions: ev.meta.deletions })],
-    [/\/check-runs/, () => ({ check_runs: [{ name: 'CodeQL', app: { slug: 'github-advanced-security', id: 57789 }, head_sha: prHead, status: 'completed', conclusion: 'success', output: { title: 'No new alerts' } }] })],
-    [/\/contents\/main\.json/, () => (main ? { content: Buffer.from(JSON.stringify(main)).toString('base64') } : 404)],
+      : d.files.slice((page(u) - 1) * 100, page(u) * 100))],
+    [/\/pulls\/\d+$/, () => d.stats],
+    [/\/branches\/main$/, () => ({ name: 'main', commit: { sha: d.baseTip } })],
+    [/\/check-runs/, () => ({ check_runs: [{ name: 'CodeQL', app: { slug: 'github-advanced-security', id: 57789 }, head_sha: d.prHead, status: 'completed', conclusion: 'success', output: { title: 'No new alerts' } }] })],
+    [/\/contents\/main\.json/, () => {
+      const main = d.main === 'report' ? { ...d.report, head_sha: d.runs[0].head_sha } : d.main;
+      return main ? { content: Buffer.from(JSON.stringify(main)).toString('base64') } : 404;
+    }],
   ];
   return async (url) => {
     const hit = routes.find(([p]) => p.test(url));
@@ -143,8 +162,11 @@ function fakeGithub(c, ev, prNumber) {
   };
 }
 
+const DUMP = opt('--dump')[0];
 async function armC(c, ev, n) {
-  const fetchFn = fakeGithub(c, ev, 1000 + n);
+  const data = recordGithub(c, ev, 1000 + n);
+  if (DUMP) writeFileSync(join(resolve(DUMP), `${c.id}.json`), `${JSON.stringify({ id: c.id, ticket: c.ticket, claim: c.claim, github: data })}\n`);
+  const fetchFn = fetchFrom(data);
   const d = {
     collectJira: async () => structuredClone(c.ticket),
     env: () => ({ repo: REPO, token: 'local' }),
@@ -196,6 +218,7 @@ for (const [n, c] of manifests.entries()) {
     continue;
   }
   const ev = evidenceOf(c.branches[0]);
+  if (c.github?.baseMovedTo) c.baseTipSha = evidenceOf(c.github.baseMovedTo).meta?.head;
   if (!ev.meta) {
     results.push({ id: c.id, error: 'no evidence: run_ci.py not run for this branch' });
     continue;

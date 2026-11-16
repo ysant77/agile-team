@@ -23,6 +23,7 @@ def main():
     ap.add_argument("--case-set", action="append", required=True)
     ap.add_argument("--jobs", type=int, default=4)
     ap.add_argument("--only", default="")
+    ap.add_argument("--repro-script", default="")
     args = ap.parse_args()
     only = set(filter(None, args.only.split(",")))
     jobs = []
@@ -38,6 +39,8 @@ def main():
                        "--out", str(args.out / branch.replace("/", "_")),
                        "--main-report", str(args.main_report)]
                 cmd += [x for e in env for x in ("--env", e)]
+                if args.repro_script:
+                    cmd += ["--repro-script", args.repro_script]
                 if case.get("bench"):
                     cmd.append("--bench")
                 jobs.append(cmd)
