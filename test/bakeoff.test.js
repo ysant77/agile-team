@@ -124,8 +124,8 @@ test('a large difference is a clear winner', () => {
 
 test('overlapping repeat spreads make a winner unclear', () => {
   const rows = [
-    ...rowsFor('a', 'pm', Array(10).fill(1), { lintVersion: 2 }), ...rowsFor('b', 'pm', Array(10).fill(0), { lintVersion: 2 }),
-    ...rowsFor('a', 'pm', [1, 1, 1, 0, 0, 0, 0, 0, 0, 0], { repeat: 1, lintVersion: 2 }), ...rowsFor('b', 'pm', [1, 1, 1, 1, 1, 0, 0, 0, 0, 0], { repeat: 1, lintVersion: 2 }),
+    ...rowsFor('a', 'pm', Array(10).fill(1), { lintVersion: 3 }), ...rowsFor('b', 'pm', Array(10).fill(0), { lintVersion: 3 }),
+    ...rowsFor('a', 'pm', [1, 1, 1, 0, 0, 0, 0, 0, 0, 0], { repeat: 1, lintVersion: 3 }), ...rowsFor('b', 'pm', [1, 1, 1, 1, 1, 0, 0, 0, 0, 0], { repeat: 1, lintVersion: 3 }),
   ];
   assert.equal(summariseRole(rows, 'pm').verdict.kind, 'noise');
 });

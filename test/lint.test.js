@@ -34,3 +34,18 @@ test('a ticket may not invent a number, unit or threshold (live case of 13 Nov: 
   assert.equal(ticketGrounding({ ...invented, request: 'Pages must load in 3 seconds on 3G.' }), null);
   assert.match(ticketGrounding({ ...open, request: '' }), /Pass the user's request/);
 });
+
+test('lint v3: bare counts and HTTP codes from a fixed list are allowed; quantities still need a source', async () => {
+  const { lintRequirement, LINT_VERSION } = await import('../src/lint.js');
+  assert.equal(LINT_VERSION, 3);
+  const request = ['A tester saw another customer\'s statement by changing the number in the URL.'];
+  const draft = (description, statement = 'the API refuses the request') => ({ summary: 'Owner check on statements', description,
+    acceptanceCriteria: [{ acId: 'AC1', statement, check: { type: 'manual', args: [] } }] });
+  const ungrounded = (d) => lintRequirement(d, request).findings.filter((f) => f.rule === 'ungrounded-number').map((f) => f.message.split(' ')[0]);
+  assert.deepEqual(ungrounded(draft('The API returns 404 for another customer\'s account and logs 2 fields.')), []);
+  assert.deepEqual(ungrounded(draft('The API returns 418 for another customer\'s account.')), ['418']);
+  assert.deepEqual(ungrounded(draft('The page loads within 3 seconds on a 3G network.')), ['3']);
+  assert.deepEqual(ungrounded(draft('The service handles 5 requests per second.')), ['5']);
+  assert.deepEqual(ungrounded(draft('Twenty threads run; 20 threads withdraw at once.')), ['20']);
+  assert.deepEqual(ungrounded(draft('The balance never goes below 0.00.')), ['0.00']);
+});

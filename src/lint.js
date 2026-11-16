@@ -9,9 +9,19 @@ const CHECK_TYPES = new Set([
   'migration_additive', 'repair_balanced', 'recon_proof', 'evidence_linked', 'ci_green', 'manual',
 ]);
 
-// Version of the rules below; the bake-off records it with PM rows. 2 (13 Nov): no exempt small
-// numbers, ids stripped first, numbers in AC checks grounded too.
-export const LINT_VERSION = 2;
+// Version of the rules below; the bake-off records it with PM rows.
+// 2 (13 Nov): no exempt small numbers, ids stripped first, numbers in AC checks grounded too.
+// 3 (16 Nov): a number with a unit, a threshold or a time limit must still come from the request.
+//   Two kinds of number are allowed without it, each from a fixed list: a bare count of 1 to 9
+//   that only enumerates ("2 fields"), and a standard HTTP status code after HTTP, status, code,
+//   returns, gets or responds with. "3 s on 3G" still fails.
+export const LINT_VERSION = 3;
+
+const HTTP_CODES = '200|201|202|204|301|302|304|400|401|403|404|405|409|410|422|429|500|502|503|504';
+const HTTP_CONTEXT = new RegExp(`\\b(HTTP|status(?: code)?|code|returns?|gets?|responds? with)\\s+(${HTTP_CODES})\\b`, 'gi');
+// Units, limits and money: a number before one of these is a quantity, never a bare count.
+const UNIT_WORDS = 'ms|s|sec|secs|seconds?|minutes?|mins?|hours?|hrs?|h|days?|weeks?|months?|years?|kb|mb|gb|tb|bytes?|percent|pct|eur|usd|sgd|jpy|gbp|cents?|requests?|rps|tps|times|x|g';
+const BARE_COUNT = new RegExp(`\\b([1-9])\\s+(?!(?:${UNIT_WORDS})\\b)([a-z]+s)\\b`, 'gi');
 
 export function numbersIn(text) {
   return (String(text).match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => n.replace(',', '.'));
@@ -26,7 +36,10 @@ export function quantityText(text) {
     .replace(/\{TOKEN\}/g, ' ')
     .replace(/\btest_\w+/g, ' ')
     // A story point estimate is the PM's own proposal, written as "2 points" (Fibonacci only).
-    .replace(/\b(1|2|3|5|8|13)[ -]points?\b/g, ' ');
+    .replace(/\b(1|2|3|5|8|13)[ -]points?\b/g, ' ')
+    // Version 3: standard HTTP status codes in context, and bare enumerating counts.
+    .replace(HTTP_CONTEXT, '$1 ')
+    .replace(BARE_COUNT, ' $2');
 }
 
 // draft: { summary, description, acceptanceCriteria: [{ acId, statement, check }] }
