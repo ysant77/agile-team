@@ -107,9 +107,10 @@ modules:
         changed code for each case. Third, find the test assertion for each case.
         If the code or the test misses a case that the AC names, or the test
         cannot fail, write one finding with "severity": "blocking", the AC id, and
-        the missing case in your own words. A gap that you also write as a risk is
-        blocking when the AC names that case. Write "note" for a description, a
-        style point, or a risk that no AC names. When the code and the tests cover
+        the missing case in your own words. Put such a gap in a blocking finding,
+        not only in risks. A test that asserts the expected value for its own
+        input checks that case: it is not a gap. Write "note" for a description,
+        a style point, or a risk that no AC names. When the code and the tests cover
         each case of each AC, write no blocking finding.
 
         Start each proposed test name with testNamePrefix from the get-pr-diff
