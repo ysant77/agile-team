@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import { collectGithub } from '../src/github-evidence.js';
 import * as checks from '../src/verifier/checks.js';
 import { verify } from '../src/verifier/verdict.js';
+import { buildDoneEvidence, formatEvidence } from '../src/verifier/evidence.js';
 import { withReader } from './helpers/reader.js';
 
 const H = 'a'.repeat(40);
@@ -108,4 +109,45 @@ test('item 4: no PR found in a complete pull request list keeps no PR gate for n
     const v = verify({ id: 'd', type: 'done' }, noPrDoneCtx(type, args, COMPLETE));
     assert.equal(v.result, 'supported', `${type}: ${v.reason}`);
   }
+});
+
+// ---- Item 6: recorded limits, and the pre-field report ----
+
+// LIMIT (a): the app judges the head commit only. A failure on the previous head followed by a
+// new commit whose CI passes gives a green ci_green: the new head is what the claim is about.
+test('item 6 limit (a): a failure on the previous head does not count against a green new head', () => {
+  const old = run({ id: 3, headSha: 'b'.repeat(40), conclusion: 'failure', createdAt: '2026-11-17T00:50:00Z' });
+  const r = checks.ciGreen(ciCtx([old, success]));
+  assert.equal(r.status, 'pass', r.reason);
+});
+
+const removalCtx = (repro) => ({
+  ticket: { key: 'X-1' },
+  baseReport: { tests: [{ id: 'tests/test_x.py::test_a', outcome: 'passed' }] },
+  report: { tests: [{ id: 'tests/test_x.py::test_a', outcome: 'passed' }], repro },
+});
+
+test('item 6 (b): a repro block with base_collect but no base_test_ids gives unknown', () => {
+  for (const base_collect of [{ rc: null, modules_without_ids: [] }, { rc: 0, modules_without_ids: [] }, { rc: 5, modules_without_ids: [] }]) {
+    const r = checks.testsNotRemoved(removalCtx({ base_collect }));
+    assert.equal(r.status, 'unknown', `${JSON.stringify(base_collect)}: ${r.reason}`);
+    assert.match(r.reason, /base_test_ids/);
+  }
+});
+
+test('item 6 (b): a repro block with neither base_test_ids nor base_collect is marked as a pre-field report', () => {
+  const ctx = withReader({
+    ...removalCtx({ head_sha: H, tests: [] }),
+    ticket: { key: 'X-1', type: 'Bug', acceptanceCriteria: [] },
+    pr: { headSha: H },
+  });
+  // The old reading stays: no base record to check, so no gap from it.
+  assert.equal(checks.testsNotRemoved(ctx).status, 'pass');
+  const e = buildDoneEvidence({ id: 'd', type: 'done' }, ctx, []);
+  assert.equal(e.baseRecord, 'pre-field report');
+  assert.match(formatEvidence(e), /pre-field report/);
+  ctx.report.repro = { head_sha: H, tests: [], base_test_ids: ['tests/test_x.py::test_a'], base_collect: { rc: 0, modules_without_ids: [] } };
+  assert.equal(buildDoneEvidence({ id: 'd', type: 'done' }, ctx, []).baseRecord, 'recorded');
+  delete ctx.report.repro;
+  assert.equal(buildDoneEvidence({ id: 'd', type: 'done' }, ctx, []).baseRecord, null);
 });
