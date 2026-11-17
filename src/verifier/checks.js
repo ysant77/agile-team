@@ -1,6 +1,7 @@
 // Deterministic checks. Each returns { name, status: 'pass' | 'fail' | 'unknown', reason }.
 // No model is involved. Unknown means "cannot verify": a human or more evidence is needed.
 
+import { canonical, sha256 } from '../audit.js';
 import { namesKey, sameFiles, testName, testsByName } from './report.js';
 
 const BOT = 'github-actions[bot]';
@@ -252,6 +253,29 @@ export function metricIntegrity(ctx, name) {
   return null;
 }
 
+// Guarded paths ignore case. A folder entry ("src/bank/testing/") covers everything under it; a
+// file entry ("src/fraud/evaluate.py") also covers a file of that name in any sub-folder of its
+// folder (unit 2 review, item 11).
+function guardedMatch(file, entry) {
+  const f = String(file).toLowerCase();
+  const g = String(entry).toLowerCase();
+  if (g.endsWith('/')) return f.startsWith(g);
+  if (f === g) return true;
+  const cut = g.lastIndexOf('/');
+  return f.startsWith(g.slice(0, cut + 1)) && f.endsWith(`/${g.slice(cut + 1)}`);
+}
+
+// A too-good limit for "auc" also covers pr_auc, roc_auc and AUC: the key matches the whole name
+// or its last underscore part, without case (unit 2 review, item 11).
+function tooGoodLimit(limits, name) {
+  const n = String(name).toLowerCase();
+  for (const [key, limit] of Object.entries(limits ?? {})) {
+    const k = key.toLowerCase();
+    if (n === k || n.endsWith(`_${k}`)) return limit;
+  }
+  return undefined;
+}
+
 export function metricCompare(ctx, name, bound, direction) {
   const label = `metric_${direction === 'min' ? 'at_least' : 'at_most'}(${name}, ${bound})`;
   if (!isText(name) || !isNum(bound) || (direction !== 'min' && direction !== 'max')) {
@@ -275,7 +299,7 @@ export function metricCompare(ctx, name, bound, direction) {
   const guardedPaths = ctx.config?.guardedPaths ?? [];
   if (guardedPaths.length) {
     if (!Array.isArray(ctx.prFiles)) return result(label, 'unknown', 'pull request file list not available');
-    const touched = ctx.prFiles.filter((f) => guardedPaths.some((g) => (g.endsWith('/') ? f.startsWith(g) : f === g)));
+    const touched = ctx.prFiles.filter((f) => guardedPaths.some((g) => guardedMatch(f, g)));
     if (touched.length) {
       return result(label, 'unknown', `PR changes ${touched.join(', ')}, which can change how ${name} is measured: human review`);
     }
@@ -302,7 +326,7 @@ export function metricCompare(ctx, name, bound, direction) {
   if (/^psi/i.test(name) && hashes?.train && hashes.train === hashes.live) {
     return result(label, 'unknown', 'data hashes for training and live data are equal: the drift number compares a dataset with itself');
   }
-  const guard = ctx.config?.tooGood?.[name];
+  const guard = tooGoodLimit(ctx.config?.tooGood, name);
   if (guard !== undefined && value > guard) {
     return result(label, 'unknown', `${name} = ${shown} is above ${guard}: too good, human review`);
   }
@@ -497,11 +521,23 @@ const resolveName = (ctx, name) => {
 // The AC list: none stored gives an empty list; a value that is not a list is malformed (null).
 const acsOf = (ctx) => (ctx.ticket?.acceptanceCriteria == null ? [] : isList(ctx.ticket.acceptanceCriteria) ? ctx.ticket.acceptanceCriteria : null);
 
-// A ticket has code work when an AC is a test, or it is a Bug. A spike or a parent ticket with
-// only sub-task or link checks has no code gate.
+// AC types whose evidence comes from CI or the PR head. An AC of one of these types is code
+// work: "done" needs the PR merged (PR 8 review, item 7).
+export const CODE_AC_TYPES = ['test_passes', 'metric_at_least', 'metric_at_most', 'version_at_least', 'migration_additive',
+  'repair_balanced', 'recon_proof', 'ci_green', 'path_absent'];
+
+// A ticket has code work when an AC needs CI evidence, or it is a Bug. A spike or a parent ticket
+// with only sub-task, link or manual checks has no code gate.
 export function hasCodeWork(ctx) {
   const acs = acsOf(ctx) ?? [];
-  return ctx.ticket?.type === 'Bug' || acs.some((a) => a.check?.type === 'test_passes');
+  return ctx.ticket?.type === 'Bug' || acs.some((a) => CODE_AC_TYPES.includes(a.check?.type));
+}
+
+// D-repro applies to a Bug and to a ticket with an AC test. A Task has no defect to reproduce,
+// and a ticket gated only by metrics, CI or paths has no test to run on base.
+export function needsRepro(ctx) {
+  if (ctx.ticket?.type === 'Task') return false;
+  return ctx.ticket?.type === 'Bug' || (acsOf(ctx) ?? []).some((a) => a.check?.type === 'test_passes');
 }
 
 // The tests that must reproduce the problem: every AC test, and for a Bug every test named for
@@ -587,7 +623,8 @@ export function acTestsRunNewCode(ctx) {
 // pinned run was re-run.
 const TEST_STEP = /pytest|\btests?\b/i;
 export function ciAttempts(ctx) {
-  const paths = optList(ctx.config?.requiredWorkflowPaths) ?? [];
+  // No configured path means the default pinned workflow (PR 8 review, item 11).
+  const paths = ctx.config?.requiredWorkflowPaths === undefined ? DEFAULT_WORKFLOW_PATHS : optList(ctx.config.requiredWorkflowPaths) ?? [];
   const all = optList(ctx.workflowRuns);
   if (!all) return result('ci_attempts', 'unknown', 'the workflow run list is malformed');
   const pinned = all.filter((r) => paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha);
@@ -597,6 +634,8 @@ export function ciAttempts(ctx) {
   const runs = pinned.filter((r) => (r.attempt ?? 1) > 1);
   if (!runs.length) return null;
   if (runs.some((r) => !isList(r.earlierFailures))) return result('ci_attempts', 'unknown', 'an earlier attempt of the CI run could not be read');
+  const unread = runs.find((r) => r.earlierUnread > 0);
+  if (unread) return result('ci_attempts', 'unknown', `${unread.earlierUnread} earlier attempt(s) of the CI run were not read (read limit): a person checks for a flaky test`);
   const flaky = runs.flatMap((r) => r.earlierFailures ?? []).filter((f) => TEST_STEP.test(f.step));
   return flaky.length
     ? result('ci_attempts', 'unknown', flaky.map((f) => `attempt ${f.attempt} failed in step "${f.step}" and a re-run passed with no code change: a person checks for a flaky test`).join('; '))
@@ -622,7 +661,7 @@ export function measurementUnchanged(ctx) {
   const guarded = ctx.config?.guardedPaths ?? [];
   if (!guarded.length || !ctx.pr) return null;
   if (!Array.isArray(ctx.prFiles)) return null; // the trust checks already report a missing file list
-  const touched = ctx.prFiles.filter((f) => guarded.some((g) => (g.endsWith('/') ? f.startsWith(g) : f === g)));
+  const touched = ctx.prFiles.filter((f) => guarded.some((g) => guardedMatch(f, g)));
   return touched.length
     ? result('measurement_unchanged', 'unknown', `PR changes ${touched.join(', ')}, which can change how results are measured: a person reviews`)
     : null;
@@ -643,7 +682,22 @@ export function checkHumanSignoff(ctx) {
   const sha = ctx.pr?.mergeSha ?? ctx.pr?.headSha ?? null;
   if (!isText(s?.by)) return result('human_signoff', 'unknown', `${domain}: a person's sign-off of the merged change is required, and none is recorded`);
   if (!sha || s.sha !== sha) return result('human_signoff', 'unknown', `${domain}: the sign-off is for ${String(s.sha ?? 'no commit').slice(0, 7)}, not the merged commit ${String(sha ?? 'unknown').slice(0, 7)}`);
-  return result('human_signoff', 'pass', `${domain}: signed off by ${s.by} at ${s.at}`);
+  // Any issue editor can write the aat.signoff property by REST. Only the sign-off button also
+  // writes an audit event, so the property must match one (PR 8 review, item 10).
+  if (!signoffAudited(ctx, s)) {
+    return result('human_signoff', 'unknown', `${domain}: the sign-off has no matching audit event from the sign-off button, so it may not come from the app; sign off again in the panel`);
+  }
+  if (!ctx.claimant) return result('human_signoff', 'unknown', `${domain}: the claimant is not known, so the sign-off cannot be shown to come from another person`);
+  if (ctx.claimant === s.by) return result('human_signoff', 'unknown', `${domain}: the claimant signed off their own claim; another person must sign off`);
+  return result('human_signoff', 'pass', `${domain}: signed off by ${s.by} at ${s.at} (audit seq ${s.auditSeq})`);
+}
+
+function signoffAudited(ctx, s) {
+  const e = ctx.signoffEvent;
+  if (!Number.isInteger(s.auditSeq) || !e || typeof e !== 'object') return false;
+  const { hash, ...body } = e;
+  return e.seq === s.auditSeq && e.event === 'change.signed_off' && e.actor === s.by
+    && e.data?.key === ctx.ticket?.key && e.data?.sha === s.sha && sha256(canonical(body)) === hash;
 }
 
 // A Story's AC test that cannot import on base because the PR adds the module (benchmark B22):
@@ -744,6 +798,16 @@ export function reproduced(ctx) {
   return result('reproduced', 'pass', `${names.length} test(s) fail on base by an assertion and pass on head; full suite passed`);
 }
 
+// Non-test Python files whose patch adds or removes a line that is not blank and not a comment.
+const isTestFile = (f) => /(^|\/)tests?\//.test(f) || /(^|\/)test_[^/]*\.py$/.test(f) || /(^|\/)conftest\.py$/.test(f);
+function changedSourceFiles(ctx) {
+  return (ctx.prFiles ?? []).filter((f) => f.endsWith('.py') && !isTestFile(f)).filter((f) => {
+    const patch = ctx.prPatches?.[f];
+    if (typeof patch !== 'string') return true; // patch not read: assume code changed
+    return patch.split('\n').some((l) => /^[+-]/.test(l) && !/^(\+\+\+|---)/.test(l) && !/^[+-]\s*(#.*)?$/.test(l));
+  });
+}
+
 // D-cov: changed executable lines covered at or above the floor, and total coverage not below
 // base minus the allowed drop. A PR that changes the coverage settings or adds an exclusion
 // gives unknown.
@@ -766,6 +830,12 @@ export function coverageOk(ctx) {
   const exec = cov.changed_executable;
   const covered = cov.changed_covered;
   if (!isNum(exec) || !isNum(covered)) return result('coverage', 'unknown', 'changed-line counts missing');
+  // Zero changed executable lines while a source file gains or loses code means the coverage
+  // tool did not see the change (PR 8 review, item 9).
+  if (exec === 0) {
+    const code = changedSourceFiles(ctx);
+    if (code.length) return result('coverage', 'unknown', `no changed executable lines reported, but ${code.join(', ')} changed code`);
+  }
   const floorPct = Math.round(conf.changedFloor * 100);
   if (exec > 0 && covered / exec < conf.changedFloor) {
     return result('coverage', 'fail', `${covered} of ${exec} changed lines covered (${Math.round((covered / exec) * 100)}%), floor ${floorPct}%`);

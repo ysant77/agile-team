@@ -96,7 +96,10 @@ export async function recordReview(payload) {
   }
   const record = { ...gate.record, prNumber: input.prNumber, at: new Date().toISOString() };
   await kvs.set(reviewKey(input.issueKey, input.prNumber), { ...stored, retries: 0 });
-  await appendReviewProperty(input.issueKey, record);
+  // A review that is not saved on the issue is not audited or posted.
+  if (!(await appendReviewProperty(input.issueKey, record))) {
+    return { ok: false, error: `the review for ${input.issueKey} PR ${input.prNumber} was not saved on the issue; try again` };
+  }
   const audit = await appendAudit({ actor: 'code-reviewer', event: 'review', data: {
     issueKey: input.issueKey, prNumber: input.prNumber, outcome: record.outcome, guard: record.guard,
     findings: record.review?.findings.length ?? 0, proposedChecks: (record.review?.proposedChecks ?? []).map((c) => c.testName),

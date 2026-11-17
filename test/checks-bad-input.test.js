@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as c from '../src/verifier/checks.js';
+import { nextEvent } from '../src/audit.js';
 
 const BAD = { null: null, empty_string: '', empty_array: [], NaN: Number.NaN, Infinity: Number.POSITIVE_INFINITY };
 const HEAD = 'a'.repeat(40);
@@ -44,13 +45,16 @@ function good() {
       key: 'X-1',
       type: 'Bug',
       domain: 'money_semantics',
-      signoff: { by: 'pat', at: '2026-11-16T12:00:00Z', sha: MERGE },
+      signoff: { by: 'pat', at: '2026-11-16T12:00:00Z', sha: MERGE, auditSeq: 7 },
       subtasks: [{ key: 'X-2', statusCategory: 'done' }],
       links: [{ type: 'is blocked by', key: 'X-3', statusCategory: 'done' }],
       acceptanceCriteria: [{ acId: 'AC1', check: { type: 'test_passes', args: ['test_X1_fix'] } }],
     },
     pr: { number: 5, title: 'X-1 fix rounding', branch: 'fix/x-1', state: 'closed', merged: true, headSha: HEAD, mergeSha: MERGE },
     prCandidates: [5],
+    // The sign-off button's audit event (PR 8 review, item 10) and a claimant who is not the signer.
+    claimant: 'dev',
+    signoffEvent: nextEvent({ seq: 6, hash: 'f'.repeat(64) }, { actor: 'pat', event: 'change.signed_off', data: { key: 'X-1', sha: MERGE }, at: '2026-11-16T12:00:00Z' }),
     report,
     reportAuthor: 'github-actions[bot]',
     reportComment: { updatedAt: '2026-11-16T10:03:00Z' },
@@ -159,10 +163,10 @@ function call(name, ctx, args) {
   return c[name](ctx, ...args);
 }
 
-test('every exported check of checks.js is in the table, except the two helpers that are not checks', () => {
+test('every exported check of checks.js is in the table, except the helpers that are not checks', () => {
   const fns = Object.entries(c).filter(([, v]) => typeof v === 'function').map(([k]) => k);
   const covered = new Set(ROWS.map(([n]) => n));
-  assert.deepEqual(fns.filter((n) => !covered.has(n)).sort(), ['hasCodeWork', 'ticketTests']);
+  assert.deepEqual(fns.filter((n) => !covered.has(n)).sort(), ['hasCodeWork', 'needsRepro', 'ticketTests']);
 });
 
 for (const [name, keys, opts = {}] of ROWS) {

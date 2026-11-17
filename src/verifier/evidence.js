@@ -14,6 +14,14 @@ function pinnedRunUrl(ctx) {
   return run?.url ?? null;
 }
 
+// The human decisions the record can prove: a sign-off that passed its check, with the audit
+// seq the sign-off button wrote. Nothing else sets them.
+function humanDecisions(ctx, checks) {
+  const s = ctx.ticket?.signoff;
+  if (checks.find((c) => c.name === 'human_signoff')?.status !== 'pass' || !s) return [];
+  return [{ by: s.by, seq: s.auditSeq, text: `signed off ${s.sha}: ${s.reason ?? ''}`.trim() }];
+}
+
 export function buildDoneEvidence(claim, ctx, checks, checkerVersion = null) {
   const key = ctx.ticket?.key ?? '';
   const code = hasCodeWork(ctx);
@@ -57,7 +65,7 @@ export function buildDoneEvidence(claim, ctx, checks, checkerVersion = null) {
     mergeSha: code ? (ctx.mergeSha ?? null) : null,
     ciRunUrl: code ? pinnedRunUrl(ctx) : null,
     adoptedChecks: ctx.adoptedChecks ?? [],
-    humanDecisions: ctx.ticket?.decisions ?? [],
+    humanDecisions: humanDecisions(ctx, checks),
     checks: checks.map((c) => ({ name: c.name, status: c.status, ...(c.advisory ? { advisory: true } : {}) })),
   };
   return { ...body, hash: sha256(canonical(body)) };

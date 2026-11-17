@@ -69,10 +69,19 @@ test('a recorded report from before unmeasured_files gives cannot_verify for don
   }
 });
 
-test('every invalid case of set 1 is in the regression net or a named fix or limit', () => {
-  const invalid = ['B01', 'B02', 'B03', 'B05', 'B06', 'B07', 'B08', 'B09', 'B11', 'B12', 'B13', 'B19', 'B20', 'I05', 'I06', 'I07', 'I10'];
-  const fixOrLimit = ['B01', 'B05', 'B19', 'B20', 'I05', 'I10'];
-  for (const id of invalid) assert.ok(id in KEEP || fixOrLimit.includes(id), id);
+// Every invalid case of set 1 runs through the checks: none may be supported, except a named
+// limit. A limit that stops being supported must leave this list (PR 8 review, item 11).
+const INVALID = ['B01', 'B02', 'B03', 'B05', 'B06', 'B07', 'B08', 'B09', 'B11', 'B12', 'B13', 'B19', 'B20', 'I05', 'I06', 'I07', 'I10'];
+const LIMITS = ['B01'];
+for (const id of INVALID) {
+  test(`invalid case ${id} is ${LIMITS.includes(id) ? 'a named limit (still supported)' : 'not supported'}`, async () => {
+    const v = await run(id);
+    if (LIMITS.includes(id)) assert.equal(v.result, 'supported', `${id} is no longer a limit: remove it from LIMITS`);
+    else assert.notEqual(v.result, 'supported', `${id}: ${v.reason}`);
+  });
+}
+
+test('set 1 has all its cases', () => {
   assert.equal(readdirSync(DIR).filter((f) => f.endsWith('.json')).length >= 39, true);
 });
 
@@ -86,7 +95,10 @@ test('B27: a money_semantics ticket is not done without a recorded sign-off of t
 
 test('B27: a sign-off of the merged commit by a person lets the evidence decide again', async () => {
   const { checkHumanSignoff } = await import('../src/verifier/checks.js');
-  const ctx = { ticket: { key: 'BENCH-27', domain: 'money_semantics', signoff: { by: 'acc-1', sha: 'abc', at: '2026-11-16T12:00:00Z' } }, pr: { merged: true, mergeSha: 'abc', headSha: 'def' } };
+  const { nextEvent } = await import('../src/audit.js');
+  // The sign-off button writes the audit event; the claimant is another person (PR 8 review, item 10).
+  const signoffEvent = nextEvent(null, { actor: 'acc-1', event: 'change.signed_off', data: { key: 'BENCH-27', sha: 'abc', reason: 'checked' }, at: '2026-11-16T12:00:00Z' });
+  const ctx = { ticket: { key: 'BENCH-27', domain: 'money_semantics', signoff: { by: 'acc-1', sha: 'abc', at: '2026-11-16T12:00:00Z', auditSeq: 0 } }, pr: { merged: true, mergeSha: 'abc', headSha: 'def' }, claimant: 'acc-2', signoffEvent };
   assert.equal(checkHumanSignoff(ctx).status, 'pass');
   assert.equal(checkHumanSignoff({ ...ctx, ticket: { ...ctx.ticket, signoff: { ...ctx.ticket.signoff, sha: 'old' } } }).status, 'unknown');
   assert.equal(checkHumanSignoff({ ...ctx, ticket: { key: 'X', domain: null } }), null);

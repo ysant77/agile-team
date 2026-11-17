@@ -68,9 +68,8 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
   const sameRepo = (name) => String(name ?? '').toLowerCase() === String(repo).toLowerCase();
   // A PR is linked when its title or branch names the key at a boundary, and its head branch is
   // in this repository (not a fork). Closed PRs that were not merged are abandoned work.
-  const naming = prNumber
-    ? pulls.filter((p) => p.number === prNumber)
-    : pulls.filter((p) => sameRepo(p.head?.repo?.full_name) && (namesKey(p.title, key) || namesKey(p.head?.ref, key)));
+  const linkedTo = (p) => sameRepo(p.head?.repo?.full_name) && (namesKey(p.title, key) || namesKey(p.head?.ref, key));
+  const naming = prNumber ? pulls.filter((p) => p.number === prNumber) : pulls.filter(linkedTo);
   const live = naming.filter((p) => !(p.state === 'closed' && !p.merged_at));
   // PRs from forks that name the key: not linked (their CI report is not posted), but not
   // "no PR" either (benchmark I08).
@@ -88,6 +87,9 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
         state: match.state,
         merged: Boolean(match.merged_at),
         mergeSha: match.merged_at ? (match.merge_commit_sha ?? null) : null,
+        // Whether the PR names the key and comes from this repository; false for a PR picked by
+        // number that does not (unit 2 review, item 7).
+        linked: linkedTo(match),
         headSha: match.head?.sha,
         url: match.html_url,
         body: match.body ?? '',
@@ -120,9 +122,12 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     }));
     // GitHub lists only the latest attempt of a run. For a re-run, read the job steps of each
     // earlier attempt, so a failed attempt stays visible (benchmark B05).
+    // At most MAX_ATTEMPTS earlier attempts are read; the rest are counted in earlierUnread.
+    const MAX_ATTEMPTS = 5;
     for (const run of workflowRuns) {
       run.earlierFailures = [];
-      for (let n = 1; n < (run.attempt ?? 1) && n <= 5; n += 1) {
+      run.earlierUnread = Math.max(0, (run.attempt ?? 1) - 1 - MAX_ATTEMPTS);
+      for (let n = 1; n < (run.attempt ?? 1) && n <= MAX_ATTEMPTS; n += 1) {
         const jobs = await get(`/repos/${repo}/actions/runs/${run.id}/attempts/${n}/jobs`);
         if (!jobs) {
           run.earlierFailures = null; // not known
@@ -248,7 +253,8 @@ export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
       break;
     }
   }
-  const diffLines = (pr.additions ?? 0) + (pr.deletions ?? 0);
+  // Missing counts are unknown, not 0: a 0 would win "smaller diff" (unit 2 review, item 3).
+  const diffLines = typeof pr?.additions === 'number' && typeof pr?.deletions === 'number' ? pr.additions + pr.deletions : null;
   if (!complete) return { diffLines, files: null, patches: null };
   // Patches of Python files, so a metric gate can see added lines that could tamper with a
   // measurement. GitHub leaves out the patch of a very large file; that is kept as null.

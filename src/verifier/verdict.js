@@ -3,7 +3,8 @@
 import * as c from './checks.js';
 import { evidenceComplete } from './evidence.js';
 
-export const CHECKER_VERSION = 'verifier/1';
+// verifier/2: definition of done (on main, reproduced, covered, recorded, signed off).
+export const CHECKER_VERSION = 'verifier/2';
 
 // One acceptance-criterion check, from { type, args }.
 export function runAcCheck(ctx, check) {
@@ -108,8 +109,9 @@ export const CLAIM_CHECKS = {
   done: (ctx) => {
     const checks = [c.subtasksDone(ctx), c.blockedByDone(ctx), acMapped(ctx)];
     // A Task (refactor, tests only, chore) has no defect to reproduce: its AC tests pass on head,
-    // with the full suite, coverage and trust rules (benchmark I01, I02; DESIGN 15j).
-    const reproduce = ctx.ticket?.type === 'Task' ? [] : [c.reproduced(ctx)];
+    // with the full suite, coverage and trust rules (benchmark I01, I02; DESIGN 15j). A ticket
+    // with no AC test (only metric, CI or path ACs) has nothing to reproduce either.
+    const reproduce = c.needsRepro(ctx) ? [c.reproduced(ctx)] : [];
     if (c.hasCodeWork(ctx)) checks.push(c.onMain(ctx), c.mergedClean(ctx), ...reproduce, c.coverageOk(ctx), ...c.securityCheck(ctx, 'done'));
     const replaced = c.acTestsRunNewCode(ctx);
     if (replaced) checks.push(replaced);
