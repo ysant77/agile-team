@@ -144,6 +144,14 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
           }
         }
       }
+      // A run without a result (cancelled, stale, skipped): read the steps of its own attempt. A
+      // later success counts only when no step of this run failed (ci_green). null: not known.
+      if (run.status === 'completed' && ['cancelled', 'stale', 'skipped'].includes(run.conclusion)) {
+        const jobs = await get(`/repos/${repo}/actions/runs/${run.id}/attempts/${run.attempt ?? 1}/jobs`);
+        run.stepFailures = jobs ? (jobs.jobs ?? []).flatMap((job) => (job.steps ?? [])
+          .filter((step) => step.conclusion === 'failure')
+          .map((step) => ({ attempt: run.attempt ?? 1, job: job.name, step: step.name }))) : null;
+      }
     }
     // Comments come oldest first; the latest bot report can be on any page.
     const commentPages = await getPages(`/repos/${repo}/issues/${pr.number}/comments`, 10);

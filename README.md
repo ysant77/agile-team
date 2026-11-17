@@ -46,6 +46,19 @@ Exceptions, where an empty list is a valid read result and not missing evidence:
 `test/checks-bad-input.test.js` feeds each exported check the values `null`, `""`, `[]`, `NaN`
 and `Infinity` in its key inputs and asserts that the result is never `pass`.
 
+## A success after a run without a result
+
+An author can cancel a failing CI run and start a new one. So for `ci_green`, a successful run
+of a pinned workflow on the head counts after a cancelled, stale or skipped run of the same
+workflow file on the same head only when all of these hold:
+
+- the success was created after the run without a result;
+- the verifier read the steps of the run without a result, and no step failed;
+- no earlier attempt of that run failed (`earlierConclusions`, `earlierFailures`).
+
+If the evidence cannot show this, the result is `unknown`. A cancelled earlier attempt of the
+successful run's own run id, followed by a re-run, also gives `unknown`: a person checks.
+
 ## Run the tests
 
 You need Node.js 24 (the Forge runtime is `nodejs24.x`).

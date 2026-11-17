@@ -169,6 +169,21 @@ function earlierAttemptsGap(run) {
     : null;
 }
 
+// A run without a result is clean when its steps were read and none failed, and no earlier attempt
+// of it failed. Returns a reason when that is not known, else null.
+const isStepList = (v) => isList(v) && v.every(isObj);
+function noResultGap(run) {
+  const name = `run ${run.id ?? '(no id)'} (${run.conclusion})`;
+  if (!isStepList(run.stepFailures)) return `the steps of ${name} were not read, so it may have failed before it ended`;
+  if (run.stepFailures.length) return `${name} failed in step "${run.stepFailures[0].step}" before it ended: a person checks`;
+  if ((run.attempt ?? 1) === 1) return null;
+  const failed = (run.earlierConclusions ?? []).find((a) => a?.conclusion === 'failure');
+  if (failed) return `attempt ${failed.attempt} of ${name} failed: a person checks`;
+  if (!isStepList(run.earlierFailures)) return `the earlier attempts of ${name} were not read`;
+  if (run.earlierFailures.length) return `attempt ${run.earlierFailures[0].attempt} of ${name} failed in step "${run.earlierFailures[0].step}": a person checks`;
+  return null;
+}
+
 export function ciGreen(ctx) {
   const required = ctx.config?.requiredWorkflowPaths === undefined ? DEFAULT_WORKFLOW_PATHS : ctx.config.requiredWorkflowPaths;
   const head = ctx.pr?.headSha;
@@ -197,6 +212,17 @@ export function ciGreen(ctx) {
     // A cancelled or stale run gave no result (benchmark set 2, S17): it is missing evidence, not
     // evidence against the claim. A later completed run of the workflow on the head decides.
     const runs = all.filter((r) => !(r.status === 'completed' && NO_RESULT.includes(r.conclusion)));
+    // Rule (README, "A success after a run without a result"): an author can cancel a failing
+    // run. A later success counts only when every run without a result is known to have no
+    // failed step (stepFailures) and no failed earlier attempt (earlierConclusions,
+    // earlierFailures). A cancelled earlier attempt of the success's own run id gives unknown
+    // (earlierAttemptsGap).
+    const unclean = all.filter((r) => !runs.includes(r)).map(noResultGap).filter(Boolean);
+    if (runs.length && unclean.length) {
+      unknown = true;
+      reasons.push(`${path}: ${unclean.join('; ')}`);
+      continue;
+    }
     if (runs.length === 0 && all.length > 0) {
       unknown = true;
       reasons.push(`${path}: the run on ${head.slice(0, 7)} concluded ${all[0].conclusion}, so no result exists for the head`);
