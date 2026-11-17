@@ -46,3 +46,11 @@ test('a ticket with only sub-task, blocker, link or manual ACs still has no code
   const acs = ['subtasks_done', 'blocked_by_done', 'link_exists', 'manual'].map((type, i) => ({ acId: `AC${i}`, check: { type, args: [] } }));
   assert.equal(checks.hasCodeWork({ ticket: { key: 'BANK-65', type: 'Story', acceptanceCriteria: acs } }), false);
 });
+
+test('a Story with only a ci_green AC is done once its PR is merged, with no repro step', () => {
+  const ctx = ctxOf(0);
+  ctx.ticket = { key: 'BANK-4', type: 'Story', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'ci_green', args: [] } }] };
+  const v = verify({ id: 'd7m', type: 'done' }, ctx);
+  assert.equal(v.result, 'supported', v.reason);
+  assert.equal(v.checks.some((k) => k.name === 'reproduced'), false);
+});

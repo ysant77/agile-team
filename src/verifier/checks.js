@@ -420,11 +420,23 @@ const resolveName = (ctx, name) => {
   return String(name).replaceAll('{TOKEN}', key.replace('-', '')).replaceAll('{KEY}', key);
 };
 
-// A ticket has code work when an AC is a test, or it is a Bug. A spike or a parent ticket with
-// only sub-task or link checks has no code gate.
+// AC types whose evidence comes from CI or the PR head. An AC of one of these types is code
+// work: "done" needs the PR merged (PR 8 review, item 7).
+export const CODE_AC_TYPES = ['test_passes', 'metric_at_least', 'metric_at_most', 'version_at_least', 'migration_additive',
+  'repair_balanced', 'recon_proof', 'ci_green', 'path_absent'];
+
+// A ticket has code work when an AC needs CI evidence, or it is a Bug. A spike or a parent ticket
+// with only sub-task, link or manual checks has no code gate.
 export function hasCodeWork(ctx) {
   const acs = ctx.ticket?.acceptanceCriteria ?? [];
-  return ctx.ticket?.type === 'Bug' || acs.some((a) => a.check?.type === 'test_passes');
+  return ctx.ticket?.type === 'Bug' || acs.some((a) => CODE_AC_TYPES.includes(a.check?.type));
+}
+
+// D-repro applies to a Bug and to a ticket with an AC test. A Task has no defect to reproduce,
+// and a ticket gated only by metrics, CI or paths has no test to run on base.
+export function needsRepro(ctx) {
+  if (ctx.ticket?.type === 'Task') return false;
+  return ctx.ticket?.type === 'Bug' || (ctx.ticket?.acceptanceCriteria ?? []).some((a) => a.check?.type === 'test_passes');
 }
 
 // The tests that must reproduce the problem: every AC test, and for a Bug every test named for
