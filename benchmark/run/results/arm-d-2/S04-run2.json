@@ -1,0 +1,71 @@
+{
+ "D": "supported",
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "ungrounded-id",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "ad14297970ef65c615aae17bc1659a774141349da760a0f32f4fa5e3b837bef3",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-204",
+      "prNumber": 104
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-204",
+      "prNumber": 104,
+      "review": "{\"findings\": [{\"hunk\": \"P104:H2\", \"file\": \"src/bank/account_numbers/parse.py\", \"line\": 10, \"text\": \"return int(match.group(1)) * 10_000 + int(match.group(2))\"}, {\"hunk\": \"P104:H3\", \"file\": \"tests/test_account_numbers.py\", \"line\": 15, \"text\": \"@pytest.mark.parametrize(\\\"sequence\\\", [1, 9999, 10000, 99999999])\"}], \"risks\": [\"The regex pattern may not fully validate account number formats.\", \"The test coverage for edge cases might be insufficient.\"], \"proposedChecks\": [{\"testName\": \"test_parse_handles_zero_padded_sequences\", \"file\": \"tests/test_account_numbers.py\", \"ac\": \"AC1\", \"asserts\": \"parse_account_number('YMS-0000-0001') == 1\", \"failsBeforeFix\": true}, {\"testName\": \"test_parse_rejects_overly_long_sequences\", \"file\": \"tests/test_account_numbers.py\", \"ac\": \"AC3\", \"asserts\": \"parse_account_number('YMS-9999-99999') raises ValueError\", \"failsBeforeFix\": true}, {\"testName\": \"test_parse_round_trip_edge_cases\", \"file\": \"tests/test_account_numbers.py\", \"ac\": \"AC2\", \"asserts\": \"parse_account_number(ledger.account_number(0)) == 0 and parse_account_number(ledger.account_number(99999999)) == 99999999\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ungrounded-id",
+   "reasons": [
+    "YMS-9999 not in the packet"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-204",
+      "prNumber": 104,
+      "review": "{\"findings\": [{\"hunk\": \"P104:H2\", \"file\": \"src/bank/account_numbers/parse.py\", \"line\": 10, \"text\": \"return int(match.group(1)) * 10_000 + int(match.group(2))\"}, {\"hunk\": \"P104:H3\", \"file\": \"tests/test_account_numbers.py\", \"line\": 15, \"text\": \"@pytest.mark.parametrize(\\\"sequence\\\", [1, 9999, 10000, 99999999])\"}], \"risks\": [\"The regex pattern may not fully validate account number formats.\", \"The test coverage for edge cases might be insufficient.\"], \"proposedChecks\": [{\"testName\": \"test_parse_handles_zero_padded_sequences\", \"file\": \"tests/test_account_numbers.py\", \"ac\": \"AC1\", \"asserts\": \"parse_account_number('YMS-0000-0001') == 1\", \"failsBeforeFix\": true}, {\"testName\": \"test_parse_rejects_overly_long_sequences\", \"file\": \"tests/test_account_numbers.py\", \"ac\": \"AC3\", \"asserts\": \"parse_account_number('YMS-9999-99999') raises ValueError\", \"failsBeforeFix\": true}, {\"testName\": \"test_parse_round_trip_edge_cases\", \"file\": \"tests/test_account_numbers.py\", \"ac\": \"AC2\", \"asserts\": \"parse_account_number(ledger.account_number(0)) == 0 and parse_account_number(ledger.account_number(99999999)) == 99999999\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "ungrounded-id",
+   "reasons": [
+    "YMS-9999 not in the packet"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

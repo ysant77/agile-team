@@ -1,0 +1,524 @@
+{
+ "model": "qwen3-coder:30b",
+ "options": {
+  "temperature": 0,
+  "num_ctx": 32768
+ },
+ "promptVersion": "code-review/1",
+ "results": [
+  {
+   "id": "S01",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P101:H1 src/bank/api.py:180: start = start or max(EARLIEST_DATE, end - timedelta(days=STATEMENT_DAYS - 1))",
+      "P101:H2 tests/test_api.py:114: def test_default_start_is_not_before_the_earliest_date(bank):"
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P101:H1 src/bank/api.py:180: start = start or max(EARLIEST_DATE, end - timedelta(days=STATEMENT_DAYS - 1))",
+      "P101:H2 tests/test_api.py:114: def test_default_start_is_not_before_the_earliest_date(bank):"
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P101:H1 src/bank/api.py:180: start = start or max(EARLIEST_DATE, end - timedelta(days=STATEMENT_DAYS - 1))",
+      "P101:H2 tests/test_api.py:114: def test_default_start_is_not_before_the_earliest_date(bank):"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S02",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P102:H1 src/bank/seed_data.py:118: return Summary(customers, len(owners), entries, first_day, last_day)",
+      "P102:H2 tests/test_seed_data.py:80: summary = seed_data.build(\n        conn, customers=10, accounts=8, days=3, end=date(2026, 3, 10), now=now\n    )\n    assert summary.accounts == 10"
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P102:H1 src/bank/seed_data.py:118: return Summary(customers, len(owners), entries, first_day, last_day)",
+      "P102:H2 tests/test_seed_data.py:80: summary = seed_data.build(\n        conn, customers=10, accounts=8, days=3, end=date(2026, 3, 10), now=now\n    )\n    assert summary.accounts == 10"
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P102:H1 src/bank/seed_data.py:118: return Summary(customers, len(owners), entries, first_day, last_day)",
+      "P102:H2 tests/test_seed_data.py:80: summary = seed_data.build(\n        conn, customers=10, accounts=8, days=3, end=date(2026, 3, 10), now=now\n    )\n    assert summary.accounts == 10"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S03",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S04",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ungrounded-id",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ungrounded-id",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ungrounded-id",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S05",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "unknown-ac",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "unknown-ac",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "unknown-ac",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S06",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P106:H1 README.md:59: | `GET /api/accounts/{id}/statement?from=YYYY-MM-DD&to=YYYY-MM-DD` | Lines with a running balance; both dates inclusive; default is the last 90 days. |",
+      "P106:H2 src/bank/api.py:31: STATEMENT_DAYS = 90",
+      "P106:H3 tests/test_api.py:114: def test_default_statement_window_is_90_days(bank):",
+      "P106:H3 tests/test_api.py:117: response = client.get(f\"/api/accounts/{bank['eur'].id}/statement?to=2026-05-31\")",
+      "P106:H3 tests/test_api.py:120: assert body[\"from\"] == \"2026-03-03\""
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P106:H1 README.md:59: | `GET /api/accounts/{id}/statement?from=YYYY-MM-DD&to=YYYY-MM-DD` | Lines with a running balance; both dates inclusive; default is the last 90 days. |",
+      "P106:H2 src/bank/api.py:31: STATEMENT_DAYS = 90",
+      "P106:H3 tests/test_api.py:114: def test_default_statement_window_is_90_days(bank):",
+      "P106:H3 tests/test_api.py:117: response = client.get(f\"/api/accounts/{bank['eur'].id}/statement?to=2026-05-31\")",
+      "P106:H3 tests/test_api.py:120: assert body[\"from\"] == \"2026-03-03\""
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P106:H1 README.md:59: | `GET /api/accounts/{id}/statement?from=YYYY-MM-DD&to=YYYY-MM-DD` | Lines with a running balance; both dates inclusive; default is the last 90 days. |",
+      "P106:H2 src/bank/api.py:31: STATEMENT_DAYS = 90",
+      "P106:H3 tests/test_api.py:114: def test_default_statement_window_is_90_days(bank):",
+      "P106:H3 tests/test_api.py:117: response = client.get(f\"/api/accounts/{bank['eur'].id}/statement?to=2026-05-31\")",
+      "P106:H3 tests/test_api.py:120: assert body[\"from\"] == \"2026-03-03\""
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S07",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P107:H1 src/bank/api.py:226: Finding 1: see P107:H1, line 226.",
+      "P107:H2 src/bank/api.py:235: Finding 2: see P107:H2, line 235."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P107:H1 src/bank/api.py:226: Finding 1: see P107:H1, line 226.",
+      "P107:H2 src/bank/api.py:235: Finding 2: see P107:H2, line 235."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P107:H1 src/bank/api.py:226: Finding 1: see P107:H1, line 226.",
+      "P107:H2 src/bank/api.py:235: Finding 2: see P107:H2, line 235."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S08",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P108:H1 src/bank/web/index.html:6: <meta name=\"robots\" content=\"noindex\">",
+      "P108:H2 tests/test_web.py:130: def test_index_page_asks_not_to_be_indexed(tmp_path):"
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P108:H1 src/bank/web/index.html:6: <meta name=\"robots\" content=\"noindex\">",
+      "P108:H2 tests/test_web.py:130: def test_index_page_asks_not_to_be_indexed(tmp_path):"
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P108:H1 src/bank/web/index.html:6: <meta name=\"robots\" content=\"noindex\">",
+      "P108:H2 tests/test_web.py:130: def test_index_page_asks_not_to_be_indexed(tmp_path):"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S09",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P109:H1 src/bank/ledger.py:219: Finding 1: see P109:H1, line 219.",
+      "P109:H2 tests/test_ledger.py:27: Finding 2: see P109:H2, line 27."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P109:H1 src/bank/ledger.py:219: Finding 1: see P109:H1, line 219.",
+      "P109:H2 tests/test_ledger.py:27: Finding 2: see P109:H2, line 27."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P109:H1 src/bank/ledger.py:219: Finding 1: see P109:H1, line 219.",
+      "P109:H2 tests/test_ledger.py:27: Finding 2: see P109:H2, line 27."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S10",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S11",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S12",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S13",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P113:H1 src/bank/api.py:67: \"balance_display\": f\"{account.balance_minor / 100:,.2f}\",",
+      "P113:H2 tests/test_api.py:50: def test_accounts_show_a_display_balance(bank):"
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P113:H1 src/bank/api.py:67: \"balance_display\": f\"{account.balance_minor / 100:,.2f}\",",
+      "P113:H2 tests/test_api.py:50: def test_accounts_show_a_display_balance(bank):"
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P113:H1 src/bank/api.py:67: \"balance_display\": f\"{account.balance_minor / 100:,.2f}\",",
+      "P113:H2 tests/test_api.py:50: def test_accounts_show_a_display_balance(bank):"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S14",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S15",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S16",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P116:H1 src/bank/money.py:2: half-up rounding",
+      "P116:H2 src/bank/money.py:33: ROUND_HALF_UP",
+      "P116:H3 tests/test_money.py:21: assert to_minor(\"0.125\", \"EUR\") == 13"
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P116:H1 src/bank/money.py:2: half-up rounding",
+      "P116:H2 src/bank/money.py:33: ROUND_HALF_UP",
+      "P116:H3 tests/test_money.py:21: assert to_minor(\"0.125\", \"EUR\") == 13"
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P116:H1 src/bank/money.py:2: half-up rounding",
+      "P116:H2 src/bank/money.py:33: ROUND_HALF_UP",
+      "P116:H3 tests/test_money.py:21: assert to_minor(\"0.125\", \"EUR\") == 13"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S17",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S18",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P118:H1 src/bank/api.py:226: reference = body.reference.strip() if body.reference is not None else None",
+      "P118:H2 src/bank/api.py:235: reference,",
+      "P118:H3 src/bank/ledger.py:307: [from_account_id, to_account_id, amount.minor, amount.currency, (reference or \"\").strip()],",
+      "P118:H4 tests/test_api.py:136: assert second.json()[\"replayed\"] is True"
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P118:H1 src/bank/api.py:226: reference = body.reference.strip() if body.reference is not None else None",
+      "P118:H2 src/bank/api.py:235: reference,",
+      "P118:H3 src/bank/ledger.py:307: [from_account_id, to_account_id, amount.minor, amount.currency, (reference or \"\").strip()],",
+      "P118:H4 tests/test_api.py:136: assert second.json()[\"replayed\"] is True"
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "P118:H1 src/bank/api.py:226: reference = body.reference.strip() if body.reference is not None else None",
+      "P118:H2 src/bank/api.py:235: reference,",
+      "P118:H3 src/bank/ledger.py:307: [from_account_id, to_account_id, amount.minor, amount.currency, (reference or \"\").strip()],",
+      "P118:H4 tests/test_api.py:136: assert second.json()[\"replayed\"] is True"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S19",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S20",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  }
+ ]
+}

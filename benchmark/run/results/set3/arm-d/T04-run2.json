@@ -1,0 +1,59 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [],
+   "risks": [],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH304_add_business_days_with_zero_n",
+     "file": "tests/test_business_days.py",
+     "ac": "AC4",
+     "asserts": "add_business_days(d, 0) returns next_business_day(d)",
+     "failsBeforeFix": true
+    }
+   ]
+  }
+ },
+ "inputHash": "da4ba23f157ad98949dd8e0787b72e1dd251a555ce108d5f387428efb73d53e8",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-304",
+      "prNumber": 104
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-304",
+      "prNumber": 104,
+      "review": "{\"findings\": [], \"risks\": [], \"proposedChecks\": [{\"testName\": \"test_BENCH304_add_business_days_with_zero_n\", \"file\": \"tests/test_business_days.py\", \"ac\": \"AC4\", \"asserts\": \"add_business_days(d, 0) returns next_business_day(d)\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

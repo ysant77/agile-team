@@ -1,0 +1,114 @@
+{
+ "D": "cannot_verify",
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P106:H1",
+     "file": "README.md",
+     "line": 59,
+     "text": "| `GET /api/accounts/{id}/statement?from=YYYY-MM-DD&to=YYYY-MM-DD` | Lines with a running balance; both dates inclusive; default is the last 90 days. |"
+    },
+    {
+     "hunk": "P106:H2",
+     "file": "src/bank/api.py",
+     "line": 31,
+     "text": "STATEMENT_DAYS = 90"
+    },
+    {
+     "hunk": "P106:H3",
+     "file": "tests/test_api.py",
+     "line": 114,
+     "text": "def test_default_statement_window_is_90_days(bank):"
+    },
+    {
+     "hunk": "P106:H3",
+     "file": "tests/test_api.py",
+     "line": 117,
+     "text": "response = client.get(f\"/api/accounts/{bank['eur'].id}/statement?to=2026-05-31\")"
+    },
+    {
+     "hunk": "P106:H3",
+     "file": "tests/test_api.py",
+     "line": 120,
+     "text": "assert body[\"from\"] == \"2026-03-03\""
+    }
+   ],
+   "risks": [
+    "The change increases the default statement window from 30 to 90 days. This may affect performance or data handling expectations."
+   ],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH206_default_statement_window_is_90_days",
+     "file": "tests/test_api.py",
+     "ac": "AC1",
+     "asserts": "The default statement window is 90 days, and the 'from' date is 90 days before the 'to' date.",
+     "failsBeforeFix": false
+    }
+   ]
+  }
+ },
+ "inputHash": "9649d5a61c30cf540561b41d678f80b3f569994c358f31d18d0dfbcd6f89b708",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-206",
+      "prNumber": 106
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-206",
+      "prNumber": 106,
+      "review": "{\"findings\": [{\"hunk\": \"P106:H1\", \"file\": \"README.md\", \"line\": 59, \"text\": \"| `GET /api/accounts/{id}/statement?from=YYYY-MM-DD&to=YYYY-MM-DD` | Lines with a running balance; both dates inclusive; default is the last 90 days. |\"}, {\"hunk\": \"P106:H2\", \"file\": \"src/bank/api.py\", \"line\": 31, \"text\": \"STATEMENT_DAYS = 90\"}, {\"hunk\": \"P106:H3\", \"file\": \"tests/test_api.py\", \"line\": 114, \"text\": \"def test_default_statement_window_is_90_days(bank):\"}, {\"hunk\": \"P106:H3\", \"file\": \"tests/test_api.py\", \"line\": 117, \"text\": \"    response = client.get(f\\\"/api/accounts/{bank['eur'].id}/statement?to=2026-05-31\\\")\"}, {\"hunk\": \"P106:H3\", \"file\": \"tests/test_api.py\", \"line\": 120, \"text\": \"    assert body[\\\"from\\\"] == \\\"2026-03-03\\\"\"}], \"risks\": [\"The change increases the default statement window from 30 to 90 days. This may affect performance or data handling expectations.\"], \"proposedChecks\": [{\"testName\": \"test_default_statement_window_is_90_days\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"The default statement window is 90 days, and the 'from' date is 90 days before the 'to' date.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "test-name",
+   "reasons": [
+    "test_default_statement_window_is_90_days must look like test_BENCH206_what_it_checks"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-206",
+      "prNumber": 106,
+      "review": "{\"findings\": [{\"hunk\": \"P106:H1\", \"file\": \"README.md\", \"line\": 59, \"text\": \"| `GET /api/accounts/{id}/statement?from=YYYY-MM-DD&to=YYYY-MM-DD` | Lines with a running balance; both dates inclusive; default is the last 90 days. |\"}, {\"hunk\": \"P106:H2\", \"file\": \"src/bank/api.py\", \"line\": 31, \"text\": \"STATEMENT_DAYS = 90\"}, {\"hunk\": \"P106:H3\", \"file\": \"tests/test_api.py\", \"line\": 114, \"text\": \"def test_default_statement_window_is_90_days(bank):\"}, {\"hunk\": \"P106:H3\", \"file\": \"tests/test_api.py\", \"line\": 117, \"text\": \"    response = client.get(f\\\"/api/accounts/{bank['eur'].id}/statement?to=2026-05-31\\\")\"}, {\"hunk\": \"P106:H3\", \"file\": \"tests/test_api.py\", \"line\": 120, \"text\": \"    assert body[\\\"from\\\"] == \\\"2026-03-03\\\"\"}], \"risks\": [\"The change increases the default statement window from 30 to 90 days. This may affect performance or data handling expectations.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH206_default_statement_window_is_90_days\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"The default statement window is 90 days, and the 'from' date is 90 days before the 'to' date.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

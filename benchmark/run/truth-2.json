@@ -1,0 +1,134 @@
+{
+  "_note": "Copied from the frozen rows of CASES-2-INDEPENDENT.md (fe77128, tag bench-set2-freeze-2026-11-16). Kinds as in truth.json. S16 is high_stake (money rule needs the finance owner's approval).",
+  "S01": {
+    "kind": "valid_trusted",
+    "correct": [
+      "supported"
+    ]
+  },
+  "S02": {
+    "kind": "valid_trusted",
+    "correct": [
+      "supported"
+    ]
+  },
+  "S03": {
+    "kind": "valid_trusted",
+    "correct": [
+      "supported"
+    ]
+  },
+  "S04": {
+    "kind": "valid_trusted",
+    "correct": [
+      "supported"
+    ]
+  },
+  "S05": {
+    "kind": "valid_trusted",
+    "correct": [
+      "supported"
+    ]
+  },
+  "S06": {
+    "kind": "valid_trusted",
+    "correct": [
+      "supported"
+    ]
+  },
+  "S07": {
+    "kind": "valid_trusted",
+    "correct": [
+      "supported"
+    ]
+  },
+  "S08": {
+    "kind": "valid_trusted",
+    "correct": [
+      "supported"
+    ]
+  },
+  "S09": {
+    "kind": "invalid",
+    "correct": [
+      "contradicted",
+      "cannot_verify"
+    ]
+  },
+  "S10": {
+    "kind": "invalid",
+    "correct": [
+      "contradicted",
+      "cannot_verify"
+    ]
+  },
+  "S11": {
+    "kind": "invalid",
+    "correct": [
+      "contradicted",
+      "cannot_verify"
+    ]
+  },
+  "S12": {
+    "kind": "invalid",
+    "correct": [
+      "contradicted",
+      "cannot_verify"
+    ]
+  },
+  "S13": {
+    "kind": "invalid",
+    "correct": [
+      "contradicted",
+      "cannot_verify"
+    ]
+  },
+  "S14": {
+    "kind": "invalid",
+    "correct": [
+      "contradicted",
+      "cannot_verify"
+    ]
+  },
+  "S15": {
+    "kind": "invalid",
+    "correct": [
+      "contradicted",
+      "cannot_verify"
+    ]
+  },
+  "S16": {
+    "kind": "high_stake",
+    "correct": [
+      "cannot_verify"
+    ],
+    "accept": [
+      "contradicted"
+    ]
+  },
+  "S17": {
+    "kind": "valid_incomplete",
+    "correct": [
+      "cannot_verify"
+    ],
+    "note": "stale head; never contradicted"
+  },
+  "S18": {
+    "kind": "valid_incomplete",
+    "correct": [
+      "cannot_verify"
+    ]
+  },
+  "S19": {
+    "kind": "valid_rule",
+    "correct": [
+      "cannot_verify"
+    ]
+  },
+  "S20": {
+    "kind": "valid_incomplete",
+    "correct": [
+      "cannot_verify"
+    ]
+  }
+}

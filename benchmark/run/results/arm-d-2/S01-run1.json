@@ -1,0 +1,96 @@
+{
+ "D": "cannot_verify",
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P101:H1",
+     "file": "src/bank/api.py",
+     "line": 180,
+     "text": "start = start or max(EARLIEST_DATE, end - timedelta(days=STATEMENT_DAYS - 1))"
+    },
+    {
+     "hunk": "P101:H2",
+     "file": "tests/test_api.py",
+     "line": 114,
+     "text": "def test_default_start_is_not_before_the_earliest_date(bank):"
+    }
+   ],
+   "risks": [
+    "The change modifies the default start date logic to ensure it is never before EARLIEST_DATE. This could affect existing behavior if clients rely on dates before EARLIEST_DATE."
+   ],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH201_default_start_is_not_before_the_earliest_date",
+     "file": "tests/test_api.py",
+     "ac": "AC1",
+     "asserts": "The default start date is never before api.EARLIEST_DATE.",
+     "failsBeforeFix": true
+    }
+   ]
+  }
+ },
+ "inputHash": "64200167e41c54bb3e399443c84a9d09910653421d3caef1fad02290c743c4e3",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-201",
+      "prNumber": 101
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-201",
+      "prNumber": 101,
+      "review": "{\"findings\": [{\"hunk\": \"P101:H1\", \"file\": \"src/bank/api.py\", \"line\": 180, \"text\": \"        start = start or max(EARLIEST_DATE, end - timedelta(days=STATEMENT_DAYS - 1))\"}, {\"hunk\": \"P101:H2\", \"file\": \"tests/test_api.py\", \"line\": 114, \"text\": \"def test_default_start_is_not_before_the_earliest_date(bank):\"}], \"risks\": [\"The change modifies the default start date logic to ensure it is never before EARLIEST_DATE. This could affect existing behavior if clients rely on dates before EARLIEST_DATE.\"], \"proposedChecks\": [{\"testName\": \"test_default_start_is_not_before_the_earliest_date\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"The default start date is never before api.EARLIEST_DATE.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "test-name",
+   "reasons": [
+    "test_default_start_is_not_before_the_earliest_date must look like test_BENCH201_what_it_checks"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-201",
+      "prNumber": 101,
+      "review": "{\"findings\": [{\"hunk\": \"P101:H1\", \"file\": \"src/bank/api.py\", \"line\": 180, \"text\": \"        start = start or max(EARLIEST_DATE, end - timedelta(days=STATEMENT_DAYS - 1))\"}, {\"hunk\": \"P101:H2\", \"file\": \"tests/test_api.py\", \"line\": 114, \"text\": \"def test_default_start_is_not_before_the_earliest_date(bank):\"}], \"risks\": [\"The change modifies the default start date logic to ensure it is never before EARLIEST_DATE. This could affect existing behavior if clients rely on dates before EARLIEST_DATE.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH201_default_start_is_not_before_the_earliest_date\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"The default start date is never before api.EARLIEST_DATE.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

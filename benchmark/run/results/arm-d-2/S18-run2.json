@@ -1,0 +1,108 @@
+{
+ "D": "cannot_verify",
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P118:H1",
+     "file": "src/bank/api.py",
+     "line": 226,
+     "text": "reference = body.reference.strip() if body.reference is not None else None"
+    },
+    {
+     "hunk": "P118:H2",
+     "file": "src/bank/api.py",
+     "line": 235,
+     "text": "reference,"
+    },
+    {
+     "hunk": "P118:H3",
+     "file": "src/bank/ledger.py",
+     "line": 307,
+     "text": "[from_account_id, to_account_id, amount.minor, amount.currency, (reference or \"\").strip()],"
+    },
+    {
+     "hunk": "P118:H4",
+     "file": "tests/test_api.py",
+     "line": 136,
+     "text": "assert second.json()[\"replayed\"] is True"
+    }
+   ],
+   "risks": [
+    "The change may introduce a regression if reference stripping is not consistently applied in all code paths."
+   ],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH218_spaces_around_the_reference_do_not_change_the_request",
+     "file": "tests/test_api.py",
+     "ac": "AC1",
+     "asserts": "The API correctly strips whitespace from references and treats them as identical even with leading/trailing spaces.",
+     "failsBeforeFix": true
+    }
+   ]
+  }
+ },
+ "inputHash": "e85ad7e7e38ee36ce43238c14b8e726dd3b6f5cf050f38937831c08549399456",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-218",
+      "prNumber": 118
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-218",
+      "prNumber": 118,
+      "review": "{\"findings\": [{\"hunk\": \"P118:H1\", \"file\": \"src/bank/api.py\", \"line\": 226, \"text\": \"        reference = body.reference.strip() if body.reference is not None else None\"}, {\"hunk\": \"P118:H2\", \"file\": \"src/bank/api.py\", \"line\": 235, \"text\": \"                reference,\"}, {\"hunk\": \"P118:H3\", \"file\": \"src/bank/ledger.py\", \"line\": 307, \"text\": \"        [from_account_id, to_account_id, amount.minor, amount.currency, (reference or \\\"\\\").strip()],\"}, {\"hunk\": \"P118:H4\", \"file\": \"tests/test_api.py\", \"line\": 136, \"text\": \"    assert second.json()[\\\"replayed\\\"] is True\"}], \"risks\": [\"The change may introduce a regression if reference stripping is not consistently applied in all code paths.\"], \"proposedChecks\": [{\"testName\": \"test_reference_stripping_handles_edge_cases\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"The API correctly strips whitespace from references and treats them as identical even with leading/trailing spaces.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "test-name",
+   "reasons": [
+    "test_reference_stripping_handles_edge_cases must look like test_BENCH218_what_it_checks"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-218",
+      "prNumber": 118,
+      "review": "{\"findings\": [{\"hunk\": \"P118:H1\", \"file\": \"src/bank/api.py\", \"line\": 226, \"text\": \"        reference = body.reference.strip() if body.reference is not None else None\"}, {\"hunk\": \"P118:H2\", \"file\": \"src/bank/api.py\", \"line\": 235, \"text\": \"                reference,\"}, {\"hunk\": \"P118:H3\", \"file\": \"src/bank/ledger.py\", \"line\": 307, \"text\": \"        [from_account_id, to_account_id, amount.minor, amount.currency, (reference or \\\"\\\").strip()],\"}, {\"hunk\": \"P118:H4\", \"file\": \"tests/test_api.py\", \"line\": 136, \"text\": \"    assert second.json()[\\\"replayed\\\"] is True\"}], \"risks\": [\"The change may introduce a regression if reference stripping is not consistently applied in all code paths.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH218_spaces_around_the_reference_do_not_change_the_request\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"The API correctly strips whitespace from references and treats them as identical even with leading/trailing spaces.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

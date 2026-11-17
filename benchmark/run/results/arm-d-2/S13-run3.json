@@ -1,0 +1,97 @@
+{
+ "D": "cannot_verify",
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P113:H1",
+     "file": "src/bank/api.py",
+     "line": 67,
+     "text": "\"balance_display\": f\"{account.balance_minor / 100:,.2f}\","
+    },
+    {
+     "hunk": "P113:H2",
+     "file": "tests/test_api.py",
+     "line": 50,
+     "text": "def test_accounts_show_a_display_balance(bank):"
+    }
+   ],
+   "risks": [
+    "The balance display format may not match all currency requirements.",
+    "The test only checks one account's balance display."
+   ],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH213_accounts_show_a_display_balance_for_all_currencies",
+     "file": "tests/test_api.py",
+     "ac": "AC1",
+     "asserts": "Each account's balance_display matches the expected format for its currency (e.g., EUR 12,345.67, JPY 5,000, BHD 1,234.567).",
+     "failsBeforeFix": true
+    }
+   ]
+  }
+ },
+ "inputHash": "9f6a79c9007d576f95199a70a571233294e2bc7b3982a48a64e682621814e732",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-213",
+      "prNumber": 113
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-213",
+      "prNumber": 113,
+      "review": "{\"findings\": [{\"hunk\": \"P113:H1\", \"file\": \"src/bank/api.py\", \"line\": 67, \"text\": \"\\\"balance_display\\\": f\\\"{account.balance_minor / 100:,.2f}\\\",\"}, {\"hunk\": \"P113:H2\", \"file\": \"tests/test_api.py\", \"line\": 50, \"text\": \"def test_accounts_show_a_display_balance(bank):\"}], \"risks\": [\"The balance display format may not match all currency requirements.\", \"The test only checks one account's balance display.\"], \"proposedChecks\": [{\"testName\": \"test_accounts_show_a_display_balance_for_all_currencies\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Each account's balance_display matches the expected format for its currency (e.g., EUR 12,345.67, JPY 5,000, BHD 1,234.567).\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "test-name",
+   "reasons": [
+    "test_accounts_show_a_display_balance_for_all_currencies must look like test_BENCH213_what_it_checks"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-213",
+      "prNumber": 113,
+      "review": "{\"findings\": [{\"hunk\": \"P113:H1\", \"file\": \"src/bank/api.py\", \"line\": 67, \"text\": \"\\\"balance_display\\\": f\\\"{account.balance_minor / 100:,.2f}\\\",\"}, {\"hunk\": \"P113:H2\", \"file\": \"tests/test_api.py\", \"line\": 50, \"text\": \"def test_accounts_show_a_display_balance(bank):\"}], \"risks\": [\"The balance display format may not match all currency requirements.\", \"The test only checks one account's balance display.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH213_accounts_show_a_display_balance_for_all_currencies\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Each account's balance_display matches the expected format for its currency (e.g., EUR 12,345.67, JPY 5,000, BHD 1,234.567).\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

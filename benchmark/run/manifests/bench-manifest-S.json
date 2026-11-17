@@ -1,0 +1,679 @@
+[
+  {
+    "id": "S01",
+    "void": null,
+    "branches": [
+      "case/S01"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-201",
+      "type": "Bug",
+      "labels": [],
+      "text": "The default start date of a statement can be before the earliest allowed date (GET statement?to=1900-01-10 returns from 1899-12-12).",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The default start date is never before api.EARLIEST_DATE.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_default_start_is_not_before_the_earliest_date"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "api.read_statement default start is max(EARLIEST_DATE, end-29d); added test to tests/test_api.py. AC test: base fails (1899-12-12 != 1900-01-01), head passes."
+  },
+  {
+    "id": "S02",
+    "void": null,
+    "branches": [
+      "case/S02"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-202",
+      "type": "Bug",
+      "labels": [],
+      "text": "The summary of seed_data.build gives the number of accounts asked for, not the number made.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "summary.accounts equals the number of customer accounts in the database.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_entries_after_now_are_cut_and_the_summary_says_so"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "seed_data.build returns len(owners); existing test now uses customers=10 and asserts summary.accounts == 10 (old assertions kept). AC test: base fails (8 == 10), head passes."
+  },
+  {
+    "id": "S03",
+    "void": null,
+    "branches": [
+      "case/S03"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-203",
+      "type": "Story",
+      "labels": [],
+      "text": "Add a total for each currency of a customer: ledger.customer_totals(conn, customer_id).",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "customer_totals sums balance_minor per currency",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_customer_totals_sum_each_currency"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "customer_totals returns {} for a customer with no account",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_customer_totals_of_a_customer_with_no_account"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Added ledger.customer_totals (NotFound for unknown customer) and 2 tests in tests/test_ledger.py. Base: both fail AttributeError, other 19 tests pass; head: pass."
+  },
+  {
+    "id": "S04",
+    "void": null,
+    "branches": [
+      "case/S04"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-204",
+      "type": "Story",
+      "labels": [],
+      "text": "Read an account number back to its sequence: new package bank.account_numbers with parse_account_number.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "parse gives exact value",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_parse_gives_the_sequence"
+            ]
+          }
+        },
+        {
+          "acId": "AC2",
+          "text": "round trip with ledger.account_number",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_parse_round_trips_with_account_number"
+            ]
+          }
+        },
+        {
+          "acId": "AC3",
+          "text": "ValueError for text that is not an account number",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_parse_refuses_text_that_is_not_an_account_number"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "New package src/bank/account_numbers (__init__, parse) and tests/test_account_numbers.py (3 test functions, parametrized; 8 cases). Base: collection error ModuleNotFoundError; head: 8 passed."
+  },
+  {
+    "id": "S05",
+    "void": null,
+    "branches": [
+      "case/S05"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-205",
+      "type": "Task",
+      "labels": [],
+      "text": "Document the status codes of POST /api/transfers in the README.",
+      "acceptanceCriteria": [],
+      "subtasks": [
+        {
+          "key": "BENCH-205a",
+          "statusCategory": "done"
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "README.md only: new section with a table of 201, 200, 400, 401, 404, 409, 422. No code change; no AC test."
+  },
+  {
+    "id": "S06",
+    "void": null,
+    "branches": [
+      "case/S06"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-206",
+      "type": "Task",
+      "labels": [],
+      "text": "Change the default statement window from 30 days to 90 days.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The default statement window is 90 days.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_default_statement_window_is_90_days"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "api.STATEMENT_DAYS 30 -> 90, README sentence updated, test added. AC test: base fails (2026-05-02 != 2026-03-03), head passes."
+  },
+  {
+    "id": "S07",
+    "void": null,
+    "branches": [
+      "case/S07"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-207",
+      "type": "Bug",
+      "labels": [],
+      "text": "A transfer reference keeps its leading and trailing spaces, so a retry with the same Idempotency-Key and the trimmed reference gives 422.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "Spaces around the reference do not change the request.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_spaces_around_the_reference_do_not_change_the_request"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "api.create_transfer strips body.reference before transfer_once; test added; unrelated comment above SCALE in seed_data.py reworded. AC test: base fails (422 != 200), head passes."
+  },
+  {
+    "id": "S08",
+    "void": null,
+    "branches": [
+      "case/S08"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-208",
+      "type": "Task",
+      "labels": [],
+      "text": "The start page must ask search engines not to index it.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The page served at / contains <meta name=\"robots\" content=\"noindex\">.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_index_page_asks_not_to_be_indexed"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Added the meta tag to src/bank/web/index.html and test in tests/test_web.py. AC test: base fails by assertion, head passes. No .py under src changed."
+  },
+  {
+    "id": "S09",
+    "void": null,
+    "branches": [
+      "case/S09"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-209",
+      "type": "Bug",
+      "labels": [],
+      "text": "A posting with a blank description is stored with blank text. For deposit and withdraw a blank description must be stored as the default text.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "For deposit and for withdraw, a blank description is stored as the default text (Cash deposit, Cash withdrawal).",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_blank_deposit_description_gets_the_default"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "ledger._post: only kind == 'deposit' branch added; withdraw not handled (verified: withdraw description='' still stored blank on head). AC test covers deposit only; base fails, head passes."
+  },
+  {
+    "id": "S10",
+    "void": null,
+    "branches": [
+      "case/S10"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-210",
+      "type": "Bug",
+      "labels": [],
+      "text": "seed_data.build stops with IndexError when a currency has only one account.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The build completes and ledger.check_invariants returns no problem.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_seed_with_one_account_in_a_currency"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Pre-check: customers=3, accounts=5, days=3, end=2026-01-31 raises IndexError on base and LedgerError ('cannot transfer to the same account') on head. Fallback is 2 lines (others list + choice) not 1. Test wraps everything in try/except Exception: pass; passes on base and head."
+  },
+  {
+    "id": "S11",
+    "void": null,
+    "branches": [
+      "case/S11"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-211",
+      "type": "Bug",
+      "labels": [],
+      "text": "Reference defect of S07: spaces around the reference do not change the request.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "Spaces around the reference do not change the request.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_spaces_around_the_reference_do_not_change_the_request"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Two commits: 42e8f20 fix + S07 test + README sentence; e3d2279 'revert reference trimming' restores api.py and tests/test_api.py to base. Head = e3d2279; diff to base is README only. Head has no AC test; S07 test copied onto head fails (422 != 200)."
+  },
+  {
+    "id": "S12",
+    "void": null,
+    "branches": [
+      "case/S12"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-212",
+      "type": "Bug",
+      "labels": [],
+      "text": "ledger.open_account with an unknown currency (XXX) raises ValueError; it must raise ledger.LedgerError.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "open_account with an unknown currency raises ledger.LedgerError.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_open_account_refuses_an_unknown_currency"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Added currency = currency.strip().upper() in open_account; test with @pytest.mark.xfail(reason=...), no xfail_strict. Base and head: xfailed, suite green."
+  },
+  {
+    "id": "S13",
+    "void": null,
+    "branches": [
+      "case/S13"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-213",
+      "type": "Story",
+      "labels": [],
+      "text": "Show a display balance for each account, with thousands separators and the decimals of the currency.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "For all currencies in money.EXPONENTS, each account in GET /api/accounts has balance_display with a comma between thousands and the number of decimals of the currency (EUR 12,345.67, JPY 5,000, BHD 1,234.567).",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_accounts_show_a_display_balance"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "api.account_json adds balance_display = f'{minor / 100:,.2f}'; test checks the EUR account only. AC test: base fails (None), head passes. JPY 5000 shows 50.00 on head."
+  },
+  {
+    "id": "S14",
+    "void": null,
+    "branches": [
+      "case/S14"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-214",
+      "type": "Story",
+      "labels": [],
+      "text": "Split an amount into equal parts: money.split_evenly(amount, parts).",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "split_evenly returns parts amounts that sum to the amount and differ by at most one minor unit.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_split_evenly_is_stable"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "money.split_evenly = [Money(minor // parts, currency)] * parts; test compares two calls and checks length 3. Test uses money.split_evenly (module attribute) so base fails AttributeError; head passes. 100 EUR minor in 3 parts loses 1."
+  },
+  {
+    "id": "S15",
+    "void": null,
+    "branches": [
+      "case/S15"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-215",
+      "type": "Bug",
+      "labels": [],
+      "text": "The default start date of a statement can be before the earliest allowed date (ticket of S01).",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The default start date is never before api.EARLIEST_DATE.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_default_start_is_not_before_the_earliest_date"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "Branch has the S02 seed fix and changed seed test only (seed_data.py, test_seed_data.py); api.read_statement unchanged. The AC test does not exist on head; the S01 test copied onto head fails (1899-12-12 != 1900-01-01). Base: also fails."
+  },
+  {
+    "id": "S16",
+    "void": null,
+    "branches": [
+      "case/S16"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-216",
+      "type": "Story",
+      "labels": [
+        "money_semantics"
+      ],
+      "text": "Round half up when an amount is converted to minor units. The finance owner must approve the rule before done.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "to_minor rounds half up.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_half_even_rounding"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "money.to_minor uses ROUND_HALF_UP, docstring updated; first assertion of test_half_even_rounding now == 13 (name unchanged). AC test: base fails (12 != 13), head passes. No approval recorded."
+  },
+  {
+    "id": "S17",
+    "void": null,
+    "branches": [
+      "case/S17",
+      "case/S17-main-b2"
+    ],
+    "base": "bench-base",
+    "claim": "ready",
+    "ticket": {
+      "key": "BENCH-217",
+      "type": "Bug",
+      "labels": [],
+      "text": "Default statement start before the earliest date (fix of S01).",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The default start date is never before api.EARLIEST_DATE.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_default_start_is_not_before_the_earliest_date"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {
+      "reportForCommit": "9288d9ff5747b96e3b063ab31406860aae72adac",
+      "cancelledRunOnHead": true,
+      "baseMovedTo": "case/S17-main-b2"
+    },
+    "notes": "H = S01 fix commit; case/S17-main-b2 (B2) is a README-only commit on bench-base; head M = merge of B2 into case/S17. Fix still correct on M: AC test fails on base, passes on H and M."
+  },
+  {
+    "id": "S18",
+    "void": null,
+    "branches": [
+      "case/S18"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-218",
+      "type": "Bug",
+      "labels": [],
+      "text": "Reference defect of S07: spaces around the reference do not change the request.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "Spaces around the reference do not change the request.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_spaces_around_the_reference_do_not_change_the_request"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {
+      "dropCoverageFile": "src/bank/ledger.py"
+    },
+    "notes": "Fix in api.create_transfer and ledger.request_fingerprint (strip) with S07 test. AC test: base fails (422 != 200), head passes."
+  },
+  {
+    "id": "S19",
+    "void": null,
+    "branches": [
+      "case/S19"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-219",
+      "type": "Bug",
+      "labels": [],
+      "text": "The summary of seed_data.build gives the number of accounts asked for, not the number made.",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "summary.accounts equals the number of customer accounts in the database.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_entries_after_now_are_cut_and_the_summary_says_so"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {},
+    "notes": "S02 fix and test; also scripts/changed_coverage.py gets log_line() (log line adds changed_files count) with test_the_log_line_counts_the_changed_files in tests/test_changed_coverage.py. AC test: base fails, head passes."
+  },
+  {
+    "id": "S20",
+    "void": null,
+    "branches": [
+      "case/S20"
+    ],
+    "base": "bench-base",
+    "claim": "done",
+    "ticket": {
+      "key": "BENCH-220",
+      "type": "Bug",
+      "labels": [],
+      "text": "Default statement start before the earliest date (fix of S01).",
+      "acceptanceCriteria": [
+        {
+          "acId": "AC1",
+          "text": "The default start date is never before api.EARLIEST_DATE.",
+          "check": {
+            "type": "test_passes",
+            "args": [
+              "test_default_start_is_not_before_the_earliest_date"
+            ]
+          }
+        }
+      ]
+    },
+    "env": {
+      "CI": "true"
+    },
+    "github": {
+      "reportFromWorkflow": "nightly",
+      "cancelledRunOnHead": true
+    },
+    "notes": "S01 fix and test on case/S20. AC test: base fails, head passes."
+  }
+]

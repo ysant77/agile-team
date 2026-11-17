@@ -1,0 +1,96 @@
+{
+ "D": "cannot_verify",
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P102:H1",
+     "file": "src/bank/seed_data.py",
+     "line": 118,
+     "text": "return Summary(customers, len(owners), entries, first_day, last_day)"
+    },
+    {
+     "hunk": "P102:H2",
+     "file": "tests/test_seed_data.py",
+     "line": 80,
+     "text": "summary = seed_data.build(\n        conn, customers=10, accounts=8, days=3, end=date(2026, 3, 10), now=now\n    )\n    assert summary.accounts == 10"
+    }
+   ],
+   "risks": [
+    "The change in P102:H1 modifies the summary.accounts count to use len(owners) instead of accounts. This could lead to a mismatch if owners and accounts are not equal, potentially causing incorrect reporting."
+   ],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH202_summary_accounts_matches_owners_count",
+     "file": "tests/test_seed_data.py",
+     "ac": "AC1",
+     "asserts": "The summary.accounts should match the count of owners in the database after seeding.",
+     "failsBeforeFix": true
+    }
+   ]
+  }
+ },
+ "inputHash": "55b8463b3951fd53342fecd0e6482729059c039d4f6300ff2f1a94be92db57ea",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-202",
+      "prNumber": 102
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-202",
+      "prNumber": 102,
+      "review": "{\"findings\": [{\"hunk\": \"P102:H1\", \"file\": \"src/bank/seed_data.py\", \"line\": 118, \"text\": \"    return Summary(customers, len(owners), entries, first_day, last_day)\"}, {\"hunk\": \"P102:H2\", \"file\": \"tests/test_seed_data.py\", \"line\": 80, \"text\": \"    summary = seed_data.build(\\n        conn, customers=10, accounts=8, days=3, end=date(2026, 3, 10), now=now\\n    )\\n    assert summary.accounts == 10\"}], \"risks\": [\"The change in P102:H1 modifies the summary.accounts count to use len(owners) instead of accounts. This could lead to a mismatch if owners and accounts are not equal, potentially causing incorrect reporting.\"], \"proposedChecks\": [{\"testName\": \"test_summary_accounts_matches_owners_count\", \"file\": \"tests/test_seed_data.py\", \"ac\": \"AC1\", \"asserts\": \"The summary.accounts should match the count of owners in the database after seeding.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "test-name",
+   "reasons": [
+    "test_summary_accounts_matches_owners_count must look like test_BENCH202_what_it_checks"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-202",
+      "prNumber": 102,
+      "review": "{\"findings\": [{\"hunk\": \"P102:H1\", \"file\": \"src/bank/seed_data.py\", \"line\": 118, \"text\": \"    return Summary(customers, len(owners), entries, first_day, last_day)\"}, {\"hunk\": \"P102:H2\", \"file\": \"tests/test_seed_data.py\", \"line\": 80, \"text\": \"    summary = seed_data.build(\\n        conn, customers=10, accounts=8, days=3, end=date(2026, 3, 10), now=now\\n    )\\n    assert summary.accounts == 10\"}], \"risks\": [\"The change in P102:H1 modifies the summary.accounts count to use len(owners) instead of accounts. This could lead to a mismatch if owners and accounts are not equal, potentially causing incorrect reporting.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH202_summary_accounts_matches_owners_count\", \"file\": \"tests/test_seed_data.py\", \"ac\": \"AC1\", \"asserts\": \"The summary.accounts should match the count of owners in the database after seeding.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

@@ -1,0 +1,86 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P118:H2",
+     "file": "src/bank/api.py",
+     "line": 143,
+     "text": "Function name 'list_currencies' is not consistent with other list functions.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P118:H3",
+     "file": "tests/test_currencies.py",
+     "line": 20,
+     "text": "Test uses sorted(EXPONENTS) which may not be the intended order.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The test for AC1 only checks the order of codes but not the actual values.",
+    "The implementation assumes that EXPONENTS is a dictionary with string keys and integer values."
+   ],
+   "proposedChecks": [
+    {
+     "testName": "test_BENCH318_currencies_are_listed_in_code_order",
+     "file": "tests/test_currencies.py",
+     "ac": "AC1",
+     "asserts": "The response contains currencies in the exact order of money.EXPONENTS keys",
+     "failsBeforeFix": true
+    },
+    {
+     "testName": "test_BENCH318_each_currency_has_its_decimals",
+     "file": "tests/test_currencies.py",
+     "ac": "AC2",
+     "asserts": "Each currency's decimals match its entry in money.EXPONENTS",
+     "failsBeforeFix": true
+    }
+   ]
+  }
+ },
+ "inputHash": "8fe7d7d08c6cb561d5180537934840b56cd95af773253c63b09ac8b95c80d108",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-318",
+      "prNumber": 118
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-318",
+      "prNumber": 118,
+      "review": "{\"findings\": [{\"hunk\": \"P118:H2\", \"file\": \"src/bank/api.py\", \"line\": 143, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Function name 'list_currencies' is not consistent with other list functions.\"}, {\"hunk\": \"P118:H3\", \"file\": \"tests/test_currencies.py\", \"line\": 20, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test uses sorted(EXPONENTS) which may not be the intended order.\"}], \"risks\": [\"The test for AC1 only checks the order of codes but not the actual values.\", \"The implementation assumes that EXPONENTS is a dictionary with string keys and integer values.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH318_currencies_are_listed_in_code_order\", \"file\": \"tests/test_currencies.py\", \"ac\": \"AC1\", \"asserts\": \"The response contains currencies in the exact order of money.EXPONENTS keys\", \"failsBeforeFix\": true}, {\"testName\": \"test_BENCH318_each_currency_has_its_decimals\", \"file\": \"tests/test_currencies.py\", \"ac\": \"AC2\", \"asserts\": \"Each currency's decimals match its entry in money.EXPONENTS\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}
