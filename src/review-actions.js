@@ -1,6 +1,7 @@
 // Rovo actions for the Agile Code Reviewer (DESIGN 14a). get-pr-diff is read-only: it builds the
 // hunk packet and says whether a review can help. record-review checks a review with code guards
-// and stores it as "Review (not verified)". Neither action changes a verdict.
+// and stores it as "Review (not verified)". Neither action sets a verdict; a stored blocking finding
+// can only hold a supported claim for the same head commit (src/review-hold.js).
 
 import api, { fetch, route } from '@forge/api';
 import { kvs } from '@forge/kvs';
@@ -44,6 +45,8 @@ export function packetForAgent(packet, suggestion) {
     filesTruncated: packet.filesTruncated,
     testsTouched: packet.testsTouched,
     existingTests: packet.existingTests,
+    // The name guard needs this exact prefix (test_<KEY without the dash>_).
+    testNamePrefix: `test_${packet.ticket.key.replace('-', '')}_`,
   };
 }
 
@@ -94,7 +97,8 @@ export async function recordReview(payload) {
     await kvs.set(reviewKey(input.issueKey, input.prNumber), { ...stored, retries: (stored.retries ?? 0) + 1 });
     return { ok: false, error: gate.message };
   }
-  const record = { ...gate.record, prNumber: input.prNumber, at: new Date().toISOString() };
+  // The head commit lets the verifier use the review only for the code it read.
+  const record = { ...gate.record, prNumber: input.prNumber, headSha: stored.packet.pr.headSha ?? null, at: new Date().toISOString() };
   await kvs.set(reviewKey(input.issueKey, input.prNumber), { ...stored, retries: 0 });
   // A review that is not saved on the issue is not audited or posted.
   if (!(await appendReviewProperty(input.issueKey, record))) {
@@ -111,6 +115,6 @@ export async function recordReview(payload) {
     guard: record.guard,
     reasons: record.reasons,
     proposedChecks: (record.review?.proposedChecks ?? []).map((c) => c.testName),
-    note: 'The review does not change the verdict. A proposed check counts only after a human adopts it and CI runs the test.',
+    note: 'The review never passes a claim. A blocking finding with an AC id holds a supported claim on the same head for a person to check. A proposed check counts only after a human adopts it and CI runs the test.',
   };
 }

@@ -57,6 +57,15 @@ export async function collectJira(issueKey, requestJira = asApp) {
   };
 }
 
+// Stored reviews (aat.reviews, written by record-review). No property means no review.
+export async function collectReviews(issueKey, requestJira = asApp) {
+  const response = await requestJira(route`/rest/api/3/issue/${issueKey}/properties/aat.reviews`);
+  if (response.status === 404) return [];
+  if (!response.ok) throw new Error(`Jira reviews of ${issueKey}: HTTP ${response.status}`);
+  const value = (await response.json()).value;
+  return Array.isArray(value) ? value : [];
+}
+
 export async function addVerdictProperty(issueKey, verdict) {
   const path = route`/rest/api/3/issue/${issueKey}/properties/aat.verdicts`;
   const current = await api.asApp().requestJira(path);
