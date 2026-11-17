@@ -12,7 +12,7 @@ function plainValue(v) {
 // Ticket data for the verifier, read as the app. requestJira is injected in tests.
 export async function collectJira(issueKey, requestJira = asApp) {
   const response = await requestJira(
-    route`/rest/api/3/issue/${issueKey}?fields=issuetype,status,subtasks,issuelinks&properties=aat.ticket`,
+    route`/rest/api/3/issue/${issueKey}?fields=issuetype,status,subtasks,issuelinks,labels&properties=aat.ticket`,
   );
   if (!response.ok) throw new Error(`Jira issue ${issueKey}: HTTP ${response.status}`);
   const issue = await response.json();
@@ -40,6 +40,7 @@ export async function collectJira(issueKey, requestJira = asApp) {
   return {
     key: issue.key,
     type: issue.fields?.issuetype?.name,
+    labels: issue.fields?.labels ?? [],
     fields,
     status: issue.fields?.status?.name,
     subtasks: (issue.fields?.subtasks ?? []).map((s) => ({

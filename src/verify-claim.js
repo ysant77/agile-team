@@ -6,12 +6,18 @@ import { appendAudit } from './audit-store.js';
 import { collectGithub } from './github-evidence.js';
 import { addComment, findComment } from './jira.js';
 import { addVerdictProperty, collectJira } from './jira-evidence.js';
+import { parseTwin } from './monitor.js';
 import { verify } from './verifier/verdict.js';
 
 export const VERIFY_CONFIG = {
   requiredWorkflowPaths: ['.github/workflows/ci.yml'],
   reportTrustPaths: ['.github/workflows/', '.github/actions/', '**/conftest.py', 'src/bank/testing/'],
   tooGood: { auc: 0.95 },
+  // Files that decide how a metric is measured or reported (DESIGN.md section 12, risk 12).
+  guardedPaths: [
+    'src/fraud/evaluate.py', 'src/fraud/model.py', 'src/bank/testing/', 'tests/conftest.py',
+    'tests/test_fraud_model.py', 'tests/test_bench.py', 'pyproject.toml',
+  ],
 };
 
 const SYMBOL = { supported: 'SUPPORTED', contradicted: 'CONTRADICTED', cannot_verify: 'CANNOT VERIFY' };
@@ -125,7 +131,13 @@ export async function decide({ issueKey, claim }, d) {
   if ((githubError || !repo) && verdict.result === 'contradicted' && verdict.checks.some((c) => c.name === 'pr_linked' && c.status === 'fail')) {
     verdict = { ...verdict, result: 'cannot_verify', reason: `code host not reachable${githubError ? `: ${githubError}` : ''}` };
   }
-  const record = { claimId: claim.id, type: claim.type, result: verdict.result, reason: verdict.reason, checker: verdict.checkerVersion, at: new Date().toISOString(), headSha: github.pr?.headSha ?? null };
+  // Twin and origin come from the PR body the scenario generator writes; the skill is the
+  // ticket's first label. They feed the monitor's assignment posterior, never the verdict.
+  const { twin, origin } = parseTwin(github.pr?.body);
+  const record = {
+    claimId: claim.id, type: claim.type, result: verdict.result, reason: verdict.reason, checker: verdict.checkerVersion,
+    at: new Date().toISOString(), headSha: github.pr?.headSha ?? null, twin, origin, skill: ticket.labels?.[0] ?? null,
+  };
   const comment = formatVerdict(issueKey, claim, verdict, { prUrl: github.pr?.url, githubConfigured: Boolean(repo) });
   console.log('verdict', issueKey, claim.type, verdict.result, JSON.stringify(github.meta ?? {}));
   return { verdict, record, comment };

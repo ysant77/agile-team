@@ -1,7 +1,7 @@
 // Rule lint for requirement text. No model. Findings drive the PM agent's rewrite.
 
 const VAGUE = /\b(fix|fixed|improve|better|handle|support|optimi[sz]e|enhance|clean ?up|make (it )?work|doesn'?t work|does nothing)\b/i;
-const ACTOR = /\b(user|customer|admin|operator|system|api|service|page|job|team|manager|agent)\b/i;
+const ACTOR = /\b(users?|customers?|admins?|operators?|systems?|apis?|services?|pages?|jobs?|teams?|managers?|agents?)\b/i;
 const OBSERVABLE = /\b(shows?|returns?|displays?|is|are|equals?|within|at most|at least|under|over|never|always|rejects?|creates?|sends?)\b/i;
 const CHECK_TYPES = new Set([
   'test_passes', 'metric_at_least', 'metric_at_most', 'version_at_least', 'path_absent',

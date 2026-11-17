@@ -1,8 +1,10 @@
 import { Queue } from '@forge/events';
 import { kvs } from '@forge/kvs';
+import { appendAudit } from './audit-store.js';
+import { applyDecision, formatDecision, parseDecision } from './decision.js';
 import { admitClaim } from './claim-intake.js';
 import { readLatestCommit } from './github.js';
-import { createIssue, getComment } from './jira.js';
+import { addComment, createIssue, getComment } from './jira.js';
 import { malformedAcLines, normaliseAcs, parseAcLines } from './ticket-spec.js';
 import { adfToText, checkStoryPoints, parseClaim } from './text.js';
 
@@ -53,7 +55,13 @@ export async function onComment(event) {
   }
   const comment = await getComment(issueKey, commentId);
   if (comment?.author?.accountType === 'app') return; // ignore our own comments
-  const claim = parseClaim(adfToText(comment.body));
+  const text = adfToText(comment.body);
+  const decision = parseDecision(text);
+  if (decision) {
+    await recordDecision(issueKey, decision, { by: comment.author?.accountId ?? null, at: new Date().toISOString() });
+    return;
+  }
+  const claim = parseClaim(text);
   if (!claim) return;
   const admitted = await admitClaim({ issueKey, commentId, authorId: comment?.author?.accountId }, kvs);
   if (!admitted.ok) {
@@ -67,4 +75,20 @@ export async function onComment(event) {
   console.log('claim queued', issueKey, claim.type);
 }
 
+// A human's "decision: PR<n> because ..." comment on an open arbitration case.
+async function recordDecision(issueKey, parsed, meta) {
+  const key = `case:${issueKey}`;
+  const result = applyDecision(await kvs.get(key), parsed, meta);
+  if (!result.ok) {
+    await addComment(issueKey, `Decision not recorded: ${result.error}.`);
+    return;
+  }
+  await kvs.set(key, result.kase);
+  const audit = await appendAudit({ actor: meta.by ?? 'unknown', event: 'decision', data: { issueKey, ...result.record } });
+  await addComment(issueKey, `${formatDecision(issueKey, result.record)}\nAudit seq ${audit.seq}.`);
+  console.log('decision recorded', issueKey, result.record.side);
+}
+
 export { lintRequirementAction } from './lint-action.js';
+export { openCase, recordOpinion } from './case-actions.js';
+export { getVerdicts } from './verdicts-action.js';

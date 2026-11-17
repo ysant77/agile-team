@@ -31,19 +31,39 @@ modules:
         - lint-requirement
         - create-ticket
         - read-github-commit
+      skills:
+        - write-checkable-ticket
     - key: lead-agent
       name: Agile Team Lead
-      description: Explains evidence from the code host. It never changes tickets.
+      description: Explains evidence and gives an opinion on disputes that code cannot
+        decide. It never changes tickets and never decides.
       prompt: >
         You are the team lead. You explain evidence. You never create, edit or
         close tickets. When the user asks about a repository, call the
         read-github-commit action and report the commit id, author date and
         message exactly as returned. If the action fails, say that the evidence
         cannot be verified.
+
+        When two or three pull requests compete for one ticket, call open-case
+        with the issue key and the pull request numbers. Code decides first. If
+        the result says an opinion is allowed, read the evidence in the result
+        and call record-opinion with one JSON object: {"decision": a side id
+        such as "PR7" or "human", "reasons": [{"text": "...", "evidence":
+        ["E1"]}], "confidence": 0 to 1, "risks": ["..."]}. Cite evidence ids for
+        every reason and use only numbers that appear in the evidence. Never pick
+        a side that failed a gate. Say "human" when the evidence does not justify
+        a choice. Your answer is an opinion, never a verdict: do not say
+        "verified" or "supported" about it. A human decides.
       conversationStarters:
         - Show the latest commit of octocat/Hello-World
+        - Open an arbitration case for two pull requests
       actions:
         - read-github-commit
+        - open-case
+        - record-opinion
+        - get-verdicts
+      skills:
+        - explain-verdicts
   action:
     - key: lint-requirement
       name: Lint requirement
@@ -129,6 +149,102 @@ modules:
           type: string
           required: false
           description: owner/name, for example octocat/Hello-World.
+    - key: open-case
+      name: Open arbitration case
+      function: openCase
+      actionVerb: CREATE
+      description: >
+        Collects the evidence for two or three pull requests on one ticket,
+        runs the fixed arbitration rule, stores the case and posts it on the
+        work item. Returns whether code decided and whether an opinion is allowed.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: The work item, for example BANK-32.
+        prNumbers:
+          title: Pull request numbers
+          type: string
+          required: true
+          description: Two or three numbers separated by commas, for example "12, 14".
+        question:
+          title: Question
+          type: string
+          required: false
+          description: winner (default), design, readability or manual_ac.
+        domain:
+          title: Domain
+          type: string
+          required: false
+          description: >
+            Empty, or a high-stake domain that a human decides: money_semantics,
+            security_exception, data_repair, model_risk, fairness, product_behaviour.
+        metric:
+          title: Pre-registered metric
+          type: string
+          required: false
+          description: The CI report metric agreed before the work started, if any.
+    - key: record-opinion
+      name: Record team lead opinion
+      function: recordOpinion
+      actionVerb: CREATE
+      description: >
+        Records the AI team lead's opinion on an open arbitration case. Code
+        checks the schema and the guards; the opinion never decides.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: The work item with an open case, for example BANK-32.
+        opinion:
+          title: Opinion JSON
+          type: string
+          required: true
+          description: >
+            One JSON object with decision, reasons (each with text and evidence
+            ids), confidence from 0 to 1, and risks.
+    - key: get-verdicts
+      name: Get verdicts
+      function: getVerdicts
+      actionVerb: GET
+      description: >
+        Read-only. Returns the team lead verifier's latest verdicts on one work
+        item (claim type, result, reason, checker version, commit), the
+        arbitration case if there is one, and the audit chain head. Returns
+        nothing for a work item the caller cannot see.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: The work item, for example BANK-4.
+        limit:
+          title: Limit
+          type: number
+          required: false
+          description: How many of the latest verdicts to return, 1 to 20. Default 5.
+  rovo:mcp:
+    - key: agile-team-mcp
+      name: Agile Team Verifier
+      tools:
+        - lint-requirement
+        - get-verdicts
+        - read-github-commit
+  rovo:skill:
+    - key: write-checkable-ticket
+      source:
+        dir: skills/write-checkable-ticket
+      dependencies:
+        tools:
+          - lint-requirement
+    - key: explain-verdicts
+      source:
+        dir: skills/explain-verdicts
+      dependencies:
+        tools:
+          - get-verdicts
   trigger:
     - key: comment-claim-trigger
       function: onComment
@@ -142,6 +258,13 @@ modules:
       render: native
       title: Agile team verifier
       icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+  jira:globalPage:
+    - key: aat-monitor
+      resource: monitor
+      resolver:
+        function: panelResolver
+      render: native
+      title: Agile team monitor
   consumer:
     - key: verify-consumer
       queue: verify-queue
@@ -160,9 +283,17 @@ modules:
       handler: index.readGithubCommit
     - key: onComment
       handler: index.onComment
+    - key: openCase
+      handler: index.openCase
+    - key: recordOpinion
+      handler: index.recordOpinion
+    - key: getVerdicts
+      handler: index.getVerdicts
 resources:
   - key: panel
     path: src/frontend/panel.jsx
+  - key: monitor
+    path: src/frontend/monitor.jsx
 permissions:
   scopes:
     - read:jira-work

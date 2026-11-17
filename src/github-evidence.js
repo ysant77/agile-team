@@ -23,7 +23,8 @@ export async function listPrFiles(get, repo, prNumber) {
   return null;
 }
 
-export async function collectGithub({ repo, key, token, fetchFn }) {
+// prNumber picks one pull request; without it, the latest one whose title or branch names the key.
+export async function collectGithub({ repo, key, token, fetchFn, prNumber = null }) {
   const headers = {
     Accept: 'application/vnd.github+json',
     'User-Agent': 'agile-team-forge-app',
@@ -64,10 +65,11 @@ export async function collectGithub({ repo, key, token, fetchFn }) {
   const sameRepo = (name) => String(name ?? '').toLowerCase() === String(repo).toLowerCase();
   // A PR is linked when its title or branch names the key at a boundary, and its head branch is
   // in this repository (not a fork). Closed PRs that were not merged are abandoned work.
-  const naming = pulls.filter((p) => sameRepo(p.head?.repo?.full_name) && (namesKey(p.title, key) || namesKey(p.head?.ref, key)));
+  const linkedTo = (p) => sameRepo(p.head?.repo?.full_name) && (namesKey(p.title, key) || namesKey(p.head?.ref, key));
+  const naming = prNumber ? pulls.filter((p) => p.number === prNumber) : pulls.filter(linkedTo);
   const live = naming.filter((p) => !(p.state === 'closed' && !p.merged_at));
   const match = live[0] ?? naming[0];
-  const prCandidates = live.map((p) => p.number);
+  const prCandidates = prNumber ? [prNumber] : live.map((p) => p.number);
   const pr = match
     ? {
         number: match.number,
@@ -75,8 +77,12 @@ export async function collectGithub({ repo, key, token, fetchFn }) {
         branch: match.head?.ref,
         state: match.state,
         merged: Boolean(match.merged_at),
+        // Whether the PR names the key and comes from this repository; false for a PR picked by
+        // number that does not (unit 2 review, item 7).
+        linked: linkedTo(match),
         headSha: match.head?.sha,
         url: match.html_url,
+        body: match.body ?? '',
       }
     : null;
 
@@ -148,4 +154,35 @@ export async function collectGithub({ repo, key, token, fetchFn }) {
     deployRuns,
     meta: { calls, rateRemaining, authenticated: Boolean(token) },
   };
+}
+
+// Size of one pull request: changed lines and file names (two calls).
+export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'agile-team-forge-app',
+    'X-GitHub-Api-Version': '2022-11-28',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const get = async (path) => {
+    const response = await fetchFn(`${API}${path}`, { headers });
+    if (!response.ok) throw new Error(`GitHub ${path.split('?')[0]}: HTTP ${response.status}`);
+    return response.json();
+  };
+  const pr = await get(`/repos/${repo}/pulls/${prNumber}`);
+  // Every page of changed files. A full last page means the list may go on, so the file list is
+  // null (not known), never a short list (second review of unit 1, item 1).
+  const files = [];
+  let complete = false;
+  for (let page = 1; page <= FILE_PAGES; page += 1) {
+    const list = await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`);
+    files.push(...list);
+    if (list.length < 100) {
+      complete = true;
+      break;
+    }
+  }
+  // Missing counts are unknown, not 0: a 0 would win "smaller diff" (unit 2 review, item 3).
+  const diffLines = typeof pr?.additions === 'number' && typeof pr?.deletions === 'number' ? pr.additions + pr.deletions : null;
+  return { diffLines, files: complete ? files.map((f) => f.filename) : null };
 }

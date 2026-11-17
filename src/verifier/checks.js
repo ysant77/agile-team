@@ -156,23 +156,68 @@ export function bugTestExists(ctx) {
   return result('bug_test_exists', 'pass', `${tests.length} test(s) for ${ctx.ticket.key} passed`);
 }
 
+// Guarded paths ignore case. A folder entry ("src/bank/testing/") covers everything under it; a
+// file entry ("src/fraud/evaluate.py") also covers a file of that name in any sub-folder of its
+// folder (unit 2 review, item 11).
+function guardedMatch(file, entry) {
+  const f = String(file).toLowerCase();
+  const g = String(entry).toLowerCase();
+  if (g.endsWith('/')) return f.startsWith(g);
+  if (f === g) return true;
+  const cut = g.lastIndexOf('/');
+  return f.startsWith(g.slice(0, cut + 1)) && f.endsWith(`/${g.slice(cut + 1)}`);
+}
+
+// A too-good limit for "auc" also covers pr_auc, roc_auc and AUC: the key matches the whole name
+// or its last underscore part, without case (unit 2 review, item 11).
+function tooGoodLimit(limits, name) {
+  const n = String(name).toLowerCase();
+  for (const [key, limit] of Object.entries(limits ?? {})) {
+    const k = key.toLowerCase();
+    if (n === k || n.endsWith(`_${k}`)) return limit;
+  }
+  return undefined;
+}
+
 export function metricCompare(ctx, name, bound, direction) {
   const label = `metric_${direction === 'min' ? 'at_least' : 'at_most'}(${name}, ${bound})`;
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
-  const value = ctx.report.metrics?.[name];
+  // A repeated benchmark reports {median, iqr_low, iqr_high, runs}; the gate uses the median.
+  const raw = ctx.report.metrics?.[name];
+  const value = typeof raw === 'number' ? raw : typeof raw?.median === 'number' ? raw.median : undefined;
   if (typeof value !== 'number') return result(label, 'fail', `${name} not reported`);
+  // JSON 1e999 parses to Infinity. A non-finite value or bound cannot be compared; a null or ""
+  // bound must not coerce to 0 (PR 4 review, finding 1).
+  if (!Number.isFinite(value)) return result(label, 'unknown', `${name} = ${value} is not a finite number`);
+  if (typeof bound !== 'number' || !Number.isFinite(bound)) {
+    return result(label, 'unknown', `bound ${JSON.stringify(bound) ?? 'missing'} for ${name} is not a finite number`);
+  }
+  const shown = typeof raw === 'number' ? `${value}` : `median ${value} (IQR ${raw.iqr_low ?? '?'} to ${raw.iqr_high ?? '?'}${raw.runs ? `, ${raw.runs} runs` : ''})`;
+  // Metrics are written by the code under test. A PR that changes how they are measured
+  // cannot pass a metric gate by itself (DESIGN.md section 12, risk 12).
+  const guardedPaths = ctx.config?.guardedPaths ?? [];
+  if (guardedPaths.length) {
+    if (!Array.isArray(ctx.prFiles)) return result(label, 'unknown', 'pull request file list not available');
+    const touched = ctx.prFiles.filter((f) => guardedPaths.some((g) => guardedMatch(f, g)));
+    if (touched.length) {
+      return result(label, 'unknown', `PR changes ${touched.join(', ')}, which can change how ${name} is measured: human review`);
+    }
+  }
   // Drift metrics compare two datasets; equal data hashes make the number meaningless.
   const hashes = ctx.report.data_hashes;
   if (/^psi/i.test(name) && hashes?.train && hashes.train === hashes.live) {
     return result(label, 'unknown', 'data hashes for training and live data are equal: the drift number compares a dataset with itself');
   }
-  const guard = ctx.config?.tooGood?.[name];
+  const guard = tooGoodLimit(ctx.config?.tooGood, name);
+  if (guard !== undefined && !(typeof guard === 'number' && Number.isFinite(guard))) {
+    return result(label, 'unknown', `too-good limit for ${name} is not a finite number: fix the config`);
+  }
   if (guard !== undefined && value > guard) {
-    return result(label, 'unknown', `${name} = ${value} is above ${guard}: too good, human review`);
+    return result(label, 'unknown', `${name} = ${shown} is above ${guard}: too good, human review`);
   }
   const ok = direction === 'min' ? value >= bound : value <= bound;
-  return result(label, ok ? 'pass' : 'fail', `${name} = ${value}`);
+  return result(label, ok ? 'pass' : 'fail', `${name} = ${shown}`);
 }
 
 function compareVersions(a, b) {
