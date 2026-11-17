@@ -26,15 +26,23 @@ const CHECK_TYPES = new Set([
 //   id of the draft. "TIMEOUT-30 seconds" and "MAX-5 retries" are quantities. Text is normalised
 //   (NFKC, whitespace collapsed) and each field is checked alone. A plural after a status code
 //   ("500 errors", "200 responses") is a count. A number in a test name ("test_500ms") is checked.
+//   List markers ("1. ", "2) " at line start), status phrases ("200 OK"), joined codes
+//   ("200 and 404") and thousands separators ("1,000" = "1000") are not flagged.
 export const LINT_VERSION = 6;
 
 const HTTP_CODES = '200|201|202|204|301|302|304|400|401|403|404|405|409|410|422|429|500|502|503|504';
 // Words that may follow a status code. Any other word makes the number a quantity.
-// "and" or "or" may join two status codes, but never a quantity ("200 or more credits").
-// Singular only: "500 errors" and "200 responses" read as counts.
-const STATUS_NEXT = 'error|status|response|code|when|if|for|(?:and|or)(?!\\s+(?:more|less|fewer|above|below|over|under|greater|higher|lower|up|at)\\b)';
+// "and" or "or" may join two status codes, but never a quantity ("200 or more credits", "200 and
+// 5 items"). Singular only: "500 errors" and "200 responses" read as counts.
+const STATUS_PHRASES = 'OK|Created|Accepted|No Content|Moved Permanently|Not Modified|Bad Request|Unauthorized'
+  + '|Forbidden|Not Found|Method Not Allowed|Conflict|Gone|Unprocessable Entity|Unprocessable Content'
+  + '|Too Many Requests|Internal Server Error|Bad Gateway|Service Unavailable|Gateway Timeout';
+const STATUS_NEXT = `error|status|response|code|when|if|for|${STATUS_PHRASES}`
+  + '|(?:and|or)(?!\\s+(?:\\d|(?:more|less|fewer|above|below|over|under|greater|higher|lower|up|at)\\b))';
+// One code, or a list of codes joined by commas, "and" or "or" ("401, 403 or 404").
+const CODE_LIST = `(?:${HTTP_CODES})(?:\\s*,\\s*(?:${HTTP_CODES})|,?\\s+(?:and|or)\\s+(?:${HTTP_CODES}))*`;
 const HTTP_CONTEXT = new RegExp(
-  `\\b(HTTP|status(?: code)?|code|returns?|gets?|gives?|responds? with)\\s+((?:an?|the)\\s+)?(?:HTTP\\s+)?(${HTTP_CODES})\\b`
+  `\\b(HTTP|status(?: code)?|code|returns?|gets?|gives?|responds? with)\\s+((?:an?|the)\\s+)?(?:HTTP\\s+)?${CODE_LIST}\\b`
   + `(?=\\s*(?:[.,;:!?)](?![\\d/])|$)|\\s+(?:${STATUS_NEXT})\\b)`, 'gi');
 
 export function numbersIn(text) {
@@ -49,13 +57,18 @@ export function idsIn(text) {
   return [...String(text ?? '').matchAll(KEY), ...String(text ?? '').matchAll(AC_ID)].map((m) => m[0]);
 }
 
+// NFKC turns wide digits into ASCII and "½" into "1⁄2". List markers at line start go first;
+// then line breaks count as spaces, so "500\nms" reads as "500 ms". "1,000" becomes "1000".
+export function normalise(text) {
+  return String(text ?? '').normalize('NFKC')
+    .replace(/^[ \t]*\d{1,2}[.)][ \t]+/gm, '')
+    .replace(/\s+/g, ' ')
+    .replace(/\b\d{1,3}(?:,\d{3})+(?![\d,])/g, (n) => n.replace(/,/g, ''))
+    .trim();
+}
+
 // Ids are not quantities: known issue keys and AC ids, {TOKEN} and test names are removed before
 // numbers are compared with the request. A key-shaped token that is not in `known` stays.
-// NFKC turns wide digits into ASCII and "½" into "1⁄2". Line breaks count as spaces, so
-// "500\nms" reads as "500 ms".
-export function normalise(text) {
-  return String(text ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim();
-}
 
 export function quantityText(text, known = new Set()) {
   const drop = (id) => (known.has(id) ? ' ' : id);
