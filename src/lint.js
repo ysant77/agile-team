@@ -26,7 +26,8 @@ export const LINT_VERSION = 5;
 
 const HTTP_CODES = '200|201|202|204|301|302|304|400|401|403|404|405|409|410|422|429|500|502|503|504';
 // Words that may follow a status code. Any other word makes the number a quantity.
-const STATUS_NEXT = 'errors?|status|responses?|code|when|if|for|and|or';
+// "and" or "or" may join two status codes, but never a quantity ("200 or more credits").
+const STATUS_NEXT = 'errors?|status|responses?|code|when|if|for|(?:and|or)(?!\\s+(?:more|less|fewer|above|below|over|under|greater|higher|lower|up|at)\\b)';
 const HTTP_CONTEXT = new RegExp(
   `\\b(HTTP|status(?: code)?|code|returns?|gets?|gives?|responds? with)\\s+((?:an?|the)\\s+)?(?:HTTP\\s+)?(${HTTP_CODES})\\b`
   + `(?=[ \\t]*(?:[.,;:!?)](?![\\d/])|\\r?\\n|$)|\\s+(?:${STATUS_NEXT})\\b)`, 'gi');

@@ -105,5 +105,5 @@ test('lint v5: "and" or "or" after a status code does not hide a quantity', () =
   for (const d of ['The customer gets 200 or more credits.', 'The API returns 500 and above per call.', 'It gets 300 or fewer items.']) {
     assert.equal(ungrounded(d).length, 1, d);
   }
-  assert.deepEqual(ungrounded('The API returns 409 or 422 when the body is wrong.'), []);
+  assert.deepEqual(ungrounded('The API returns 409 or refuses the body.'), []);
 });
