@@ -9,8 +9,16 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 export const BANK = resolve(process.env.BANK_REPO ?? join(HERE, '..', '..', 'ledger-demo'));
 const WORK = join(HERE, '.work');
 
+// Model-written code runs through sh(), so it gets only what a build needs: no tokens, keys or
+// other secrets from the caller's environment (unit 2 review, item 6). This is not a sandbox; see
+// bakeoff/README.md.
+const ENV_KEEP = ['PATH', 'HOME', 'LANG', 'LC_ALL', 'TMPDIR', 'UV_CACHE_DIR', 'UV_PYTHON'];
+export function safeEnv(env = process.env) {
+  return Object.fromEntries(ENV_KEEP.filter((k) => env[k] !== undefined).map((k) => [k, env[k]]));
+}
+
 export function sh(cmd, args, cwd, timeoutMs = 300_000) {
-  const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024 });
+  const r = spawnSync(cmd, args, { cwd, env: safeEnv(), encoding: 'utf8', timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024 });
   return { code: r.status ?? (r.error ? -1 : 0), out: `${r.stdout ?? ''}${r.stderr ?? ''}`, timedOut: r.error?.code === 'ETIMEDOUT' };
 }
 

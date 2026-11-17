@@ -137,3 +137,16 @@ test('ids in an opinion must match the evidence exactly', () => {
   assert.equal(applyGuards(op('PR9 is smaller.'), packet).guard, 'ungrounded-id');
   assert.equal(applyGuards(op('PR7 is smaller (E1).', ['PR7 adds 40 lines.']), packet).guard, 'ungrounded-number');
 });
+
+test('an id in an opinion matches a packet id on token boundaries only', () => {
+  const packet = { ticket: { key: 'BANK-32', domain: null, acs: [{ acId: 'AC12' }] }, withinNoise: false,
+    sides: [{ id: 'PR12', gatesPassed: true }, { id: 'PR7', gatesPassed: true }],
+    evidence: [{ id: 'E12', kind: 'diff', text: 'PR12 head b941c25: 12 changed lines' }] };
+  const op = (text) => ({ decision: 'PR12', reasons: [{ text, evidence: ['E12'] }], confidence: 0.8, risks: [] });
+  assert.equal(applyGuards(op('PR12 at b941c25 meets AC12 of BANK-32 (E12).'), packet).outcome, 'opinion');
+  assert.equal(applyGuards(op('PR1 is smaller.'), packet).guard, 'ungrounded-id');
+  assert.equal(applyGuards(op('E1 shows it.'), packet).guard, 'ungrounded-id');
+  assert.equal(applyGuards(op('AC1 holds.'), packet).guard, 'ungrounded-id');
+  assert.equal(applyGuards(op('BANK-3 is the ticket.'), packet).guard, 'ungrounded-id');
+  assert.equal(applyGuards(op('Head b941c2 is new.'), packet).outcome, 'opinion'); // 6 hex: not an id
+});
