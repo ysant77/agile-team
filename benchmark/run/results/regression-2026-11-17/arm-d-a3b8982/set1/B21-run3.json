@@ -1,0 +1,111 @@
+{
+ "D": "cannot_verify",
+ "blocking": [
+  {
+   "hunk": "P121:H3",
+   "file": "src/bank/money.py",
+   "line": 62,
+   "text": "Finding 1: see P121:H3, line 62.",
+   "severity": "blocking",
+   "ac": "AC1"
+  },
+  {
+   "hunk": "P121:H4",
+   "file": "tests/test_bench21_money_input.py",
+   "line": 17,
+   "text": "Finding 2: see P121:H4, line 17.",
+   "severity": "blocking",
+   "ac": "AC1"
+  }
+ ],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "fallback",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P121:H3",
+     "file": "src/bank/money.py",
+     "line": 62,
+     "text": "Finding 1: see P121:H3, line 62.",
+     "severity": "blocking",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P121:H4",
+     "file": "tests/test_bench21_money_input.py",
+     "line": 17,
+     "text": "Finding 2: see P121:H4, line 17.",
+     "severity": "blocking",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "Risk 1: see the audited review input.",
+    "Risk 2: see the audited review input."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "e1a8726e582b6263a409768a615a226b34039ded231f9cd295785a0b832a45e3",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-21",
+      "prNumber": 121
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-21",
+      "prNumber": 121,
+      "review": "{\"findings\": [{\"hunk\": \"P121:H3\", \"file\": \"src/bank/money.py\", \"line\": 62, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Code does not reject underscores or spaces in amount strings.\"}, {\"hunk\": \"P121:H4\", \"file\": \"tests/test_bench21_money_input.py\", \"line\": 17, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Test does not cover all underscore and space cases.\"}], \"risks\": [\"The regex may not fully prevent all invalid inputs.\", \"The test coverage might miss edge cases in amount string parsing.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH21_amount_with_underscore_or_space_is_rejected\", \"file\": \"tests/test_bench21_money_input.py\", \"ac\": \"AC1\", \"asserts\": \"All amount strings with underscores or spaces are rejected by Money.of()\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-21",
+      "prNumber": 121,
+      "review": "{\"findings\": [{\"hunk\": \"P121:H3\", \"file\": \"src/bank/money.py\", \"line\": 62, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Code does not reject underscores or spaces in amount strings.\"}, {\"hunk\": \"P121:H4\", \"file\": \"tests/test_bench21_money_input.py\", \"line\": 17, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Test does not cover all underscore and space cases.\"}], \"risks\": [\"The regex may not fully prevent all invalid inputs.\", \"The test coverage might miss edge cases in amount string parsing.\"], \"proposedChecks\": []}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

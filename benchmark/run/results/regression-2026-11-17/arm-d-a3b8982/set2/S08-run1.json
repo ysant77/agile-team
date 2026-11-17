@@ -1,0 +1,85 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P108:H1",
+     "file": "src/bank/web/index.html",
+     "line": 6,
+     "text": "Added meta robots noindex tag to prevent indexing.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The change only adds a meta tag, which is a low-risk modification."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "92d77a710f4bd844bf92cfec31484b0687a365ea57a48d961d270b67112e9a46",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-208",
+      "prNumber": 108
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-208",
+      "prNumber": 108,
+      "review": "{\"findings\": [{\"hunk\": \"P108:H1\", \"file\": \"src/bank/web/index.html\", \"line\": 6, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Added meta robots noindex tag to prevent indexing.\"}], \"risks\": [\"The change only adds a meta tag, which is a low-risk modification.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH208_index_page_asks_not_to_be_indexed\", \"file\": \"tests/test_web.py\", \"ac\": \"AC1\", \"asserts\": \"The index page contains <meta name=\\\"robots\\\" content=\\\"noindex\\\">\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-208",
+      "prNumber": 108,
+      "review": "{\"findings\": [{\"hunk\": \"P108:H1\", \"file\": \"src/bank/web/index.html\", \"line\": 6, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Added meta robots noindex tag to prevent indexing.\"}], \"risks\": [\"The change only adds a meta tag, which is a low-risk modification.\"], \"proposedChecks\": []}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}
