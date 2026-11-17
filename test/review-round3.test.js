@@ -79,10 +79,12 @@ test('item 5: a failed save of the review property is an error, and no comment i
   t.mock.method(kvs, 'get', async (k) => structuredClone(store.get(k)));
   t.mock.method(kvs, 'set', async (k, v) => { store.set(k, structuredClone(v)); });
   const calls = [];
+  // route`...` returns an object that holds the path in value_.
+  const pathOf = (r) => r?.value_ ?? String(r);
   t.mock.method(api, 'asApp', () => ({
     requestJira: async (path, opts) => {
-      calls.push({ path: String(path), method: opts?.method ?? 'GET' });
-      if (String(path).includes('aat.reviews')) {
+      calls.push({ path: pathOf(path), method: opts?.method ?? 'GET' });
+      if (pathOf(path).includes('aat.reviews')) {
         return { ok: false, status: opts?.method === 'PUT' ? 500 : 404, json: async () => ({}) };
       }
       return { ok: true, status: 201, json: async () => ({}) };
@@ -92,5 +94,6 @@ test('item 5: a failed save of the review property is an error, and no comment i
   const out = await recordReview({ issueKey: 'BANK-4', prNumber: 61, review: good });
   assert.equal(out.ok, false);
   assert.match(out.error, /review/);
+  assert.ok(calls.some((c) => c.method === 'PUT' && c.path.endsWith('/aat.reviews')), 'the save was tried');
   assert.ok(!calls.some((c) => c.path.endsWith('/comment')), 'no comment after a failed save');
 });
