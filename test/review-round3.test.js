@@ -97,3 +97,21 @@ test('item 5: a failed save of the review property is an error, and no comment i
   assert.ok(calls.some((c) => c.method === 'PUT' && c.path.endsWith('/aat.reviews')), 'the save was tried');
   assert.ok(!calls.some((c) => c.path.endsWith('/comment')), 'no comment after a failed save');
 });
+
+test('adoption is refused when the ticket has two ACs with the same id', () => {
+  const ticket = {
+    key: 'BANK-4',
+    acceptanceCriteria: [
+      { acId: 'AC3', statement: 'first', check: { type: 'manual' } },
+      { acId: 'AC3', statement: 'second', check: { type: 'manual' } },
+    ],
+  };
+  assert.throws(() => adoptProposal(ticket, { ac: 'AC3', testName: 'test_BANK4_x' }), /not unique/);
+  const spec = { key: 'BANK-4', acceptanceCriteria: ticket.acceptanceCriteria };
+  const record = { ...applyReviewGuards(good, packet), prNumber: 61 };
+  const name = record.review.proposedChecks[0].testName;
+  record.review.proposedChecks[0] = { ...record.review.proposedChecks[0], ac: 'AC3' };
+  const out = adoptFromReviews(spec, [record], { prNumber: 61, testName: name, reason: 'adopt for AC3' });
+  assert.equal(out.ok, false);
+  assert.match(out.error, /not unique/);
+});
