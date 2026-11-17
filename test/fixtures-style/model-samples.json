@@ -1,0 +1,12 @@
+[
+  {"id": "m1", "kind": "description", "needSource": true, "text": "Great question! It seems the fixed claim on BANK-4 was probably contradicted because the concurrency test was failing at that point, which is a really common issue with race conditions."},
+  {"id": "m2", "kind": "description", "needSource": true, "text": "The claim was contradicted. The check ac_mapped failed: test_BANK4_concurrent_withdrawals_20_threads failed at commit 55a7340. The next claim at b941c25 passed every check."},
+  {"id": "m3", "kind": "instruction", "needSource": false, "text": "To fix this, you should probably just add a lock around the withdrawal so that the balance is checked and debited inside one transaction, which should make it robust."},
+  {"id": "m4", "kind": "instruction", "needSource": false, "text": "Add one acceptance criterion per line. Give each criterion a check. Use only numbers from the request."},
+  {"id": "m5", "kind": "description", "needSource": true, "text": "PR7 is clearly the better choice since it is simply more elegant and the code was written in a very readable way."},
+  {"id": "m6", "kind": "description", "needSource": true, "text": "PR5 changes 12 lines in 1 file (E2). PR7 changes 140 lines in 6 files (E2). The smaller diff rule picks PR5."},
+  {"id": "m7", "kind": "description", "needSource": false, "text": "This requirement might be a bit vague, so it would perhaps be good to make it somewhat more specific before a ticket is created by the agent."},
+  {"id": "m8", "kind": "description", "needSource": false, "text": "The requirement has a vague verb: improve. It has no actor and no observable result. Name the actor and the result."},
+  {"id": "m9", "kind": "description", "needSource": true, "text": "The model looks great now and the metrics seem fine, so it appears ready to ship."},
+  {"id": "m10", "kind": "description", "needSource": true, "text": "The holdout PR-AUC is 0.39 (E1). The gate needs at least 0.25. The check metric_at_least passes."}
+]

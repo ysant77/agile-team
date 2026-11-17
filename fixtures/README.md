@@ -22,5 +22,7 @@ synthetic evidence and the expected outcome, and runs as a unit test (`npm test`
 Step kinds: `verify` (claim and context; expects `result`), `arbitrate` (`ticket`, `sides`;
 expects `decidedBy`, `winner`), `lint` (`draft`, `sources`; expects `pass`, `rules`), `assign`
 (`tickets`, `twins`, `seed`; expects `assignments`), `reward` (`input`; expects `r`),
-`audit` (`events`, `tamper`; expects `ok`), `agent` (a behaviour of a Rovo agent that code
+`audit` (`events`, `tamper`; expects `ok`), `review` (`packet`, or the name of an entry in the
+fixture's `packets`, and the raw `review`; expects `outcome` and `guard`), `adopt` (`proposal`,
+`claim`, `context`; a human adopts a proposed check, then the verifier runs; expects `result`), `agent` (a behaviour of a Rovo agent that code
 cannot test; expects `refuses` and is checked by hand in the demo).

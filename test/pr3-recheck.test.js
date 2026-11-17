@@ -8,7 +8,7 @@ import { editsOutside } from '../bakeoff/tasks/code.js';
 
 const side = (prNumber, diffLines, metrics = {}, extra = {}) => ({
   prNumber, verdict: { result: 'supported', reason: 'all checks passed' }, diffLines, files: ['src/fraud/model.py'],
-  pr: { body: '' }, report: { metrics }, newFailureModes: [], newDependencies: [], ...extra,
+  pr: { body: '' }, report: { job_id: 'job-1', metrics }, newFailureModes: [], newDependencies: [], ...extra,
 });
 const ac = (acId, type, name, bound) => ({ acId, check: { type, args: [name, bound] } });
 const ticketWith = (...acs) => ({ key: 'BANK-42', acceptanceCriteria: acs });

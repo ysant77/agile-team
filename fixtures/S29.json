@@ -11,7 +11,7 @@
         "description": "The team returns a decision note with options, risks and an estimate per option; time box 2 points.",
         "acceptanceCriteria": [
           { "acId": "AC1", "statement": "Decision note is linked", "check": { "type": "manual", "args": ["decision note linked, with options, risks and an estimate per option"] } },
-          { "acId": "AC2", "statement": "At least 1 follow-up story is linked", "check": { "type": "link_exists", "args": ["relates to"] } } ]
+          { "acId": "AC2", "statement": "A follow-up story is linked", "check": { "type": "link_exists", "args": ["relates to"] } } ]
       },
       "sources": ["Raj estimates 3, Lena estimates 13 for add card freeze"],
       "expect": { "pass": true }

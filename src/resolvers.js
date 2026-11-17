@@ -3,6 +3,7 @@ import Resolver from '@forge/resolver';
 import { appendAudit, readAudit } from './audit-store.js';
 import { monitorForViewer } from './monitor.js';
 import { kvs } from '@forge/kvs';
+import { adoptFromReviews } from './review.js';
 
 const resolver = new Resolver();
 
@@ -13,12 +14,13 @@ async function getProperty(key, name) {
 
 resolver.define('getPanel', async ({ context }) => {
   const key = context.extension.issue.key;
-  const [spec, verdicts, approval] = await Promise.all([
+  const [spec, verdicts, approval, reviews] = await Promise.all([
     getProperty(key, 'aat.ticket'),
     getProperty(key, 'aat.verdicts'),
     getProperty(key, 'aat.approval'),
+    getProperty(key, 'aat.reviews'),
   ]);
-  return { key, spec, verdicts: verdicts ?? [], approval };
+  return { key, spec, verdicts: verdicts ?? [], approval, reviews: reviews ?? [] };
 });
 
 resolver.define('approve', async ({ payload, context }) => {
@@ -35,6 +37,27 @@ resolver.define('approve', async ({ payload, context }) => {
   if (!response.ok) return { ok: false, error: `Jira refused the approval (HTTP ${response.status}).` };
   const audit = await appendAudit({ actor: context.accountId, event: 'requirement.approved', data: { key, reason } });
   return { ok: true, approval, auditSeq: audit.seq };
+});
+
+// A human adopts a proposed check from a review (DESIGN 14a). The AC then names the test; CI and
+// the verifier decide the result. As the user: only someone who can edit the issue can adopt.
+resolver.define('adoptCheck', async ({ payload, context }) => {
+  const key = context.extension.issue.key;
+  const [spec, reviews] = await Promise.all([getProperty(key, 'aat.ticket'), getProperty(key, 'aat.reviews')]);
+  const result = adoptFromReviews({ key, ...(spec ?? {}) }, reviews, {
+    prNumber: Number(payload?.prNumber), testName: String(payload?.testName ?? ''), reason: payload?.reason,
+  });
+  if (!result.ok) return result;
+  const { key: _, ...next } = result.spec;
+  const response = await api.asUser().requestJira(route`/rest/api/3/issue/${key}/properties/aat.ticket`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(next),
+  });
+  if (!response.ok) return { ok: false, error: `Jira refused the change (HTTP ${response.status}).` };
+  const audit = await appendAudit({ actor: context.accountId, event: 'check.adopted', data: {
+    key, ac: result.proposal.ac, testName: result.proposal.testName, prNumber: Number(payload?.prNumber), reason: String(payload.reason).trim() } });
+  return { ok: true, auditSeq: audit.seq };
 });
 
 // Monitor page: the whole audit chain (small in the demo), checked and replayed.

@@ -1,0 +1,19 @@
+[
+ {
+  "id": "live-lead-1",
+  "agent": "Agile Team Lead",
+  "prompt": "Explain the verdicts on BANK-3.",
+  "kind": "description",
+  "needSource": true,
+  "text": "The latest verdict for BANK-3 is supported.\nThe claim type is fixed.\nThe reason is all checks passed.\nThe checker version is verifier/1.\nThe commit is 7f23f972e09bbcef114eb92205761383227062e0.\nThe audit head sequence is 4 and the hash is d1f7a1649528c9c7b0d875d91a83dfcb51d43dea54086b8ef6058201f932aabf."
+ },
+ {
+  "id": "live-pm-1",
+  "agent": "Agile PM",
+  "prompt": "Is this requirement checkable: \"The login page should work better on slow networks.\" Lint and suggest a fix only; do not create a ticket.",
+  "kind": "description",
+  "needSource": false,
+  "text": "The requirement \"The login page should work better on slow networks\" is not checkable. It uses the vague term \"better\" and does not define a measurable result.\n\nFindings\n\nVague Verb: \"Work better\" has no observable result.\n\nNo Result: The requirement does not state what a user sees or what a test measures.\n\nSuggested Fix\n\nTo make this checkable, define a specific performance metric and an actor.\n\nSummary: Reduce login page load time on 3G networks\nDescription: A user sees the login page load within 3 seconds on a 3G network.\nAcceptance Criteria:\nAC1 | The login page loads within 3 seconds on a 3G network | metric_at_most(page_load_time_3g, 3s)",
+  "note": "Invents 3 s and 3G (not in the request): the skill says ask for the number."
+ }
+]
