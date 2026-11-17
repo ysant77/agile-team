@@ -2,6 +2,7 @@
 // evidence, these build the sides, run the rule and the packet the AI team lead may see.
 
 import { arbitrate, HUMAN_DOMAINS } from './arbitration.js';
+import { finiteNumber } from './verifier/report.js';
 
 export const QUESTIONS = ['winner', 'design', 'readability', 'manual_ac'];
 
@@ -10,9 +11,9 @@ export const QUESTIONS = ['winner', 'design', 'readability', 'manual_ac'];
 // median; a present one that is not finite makes the metric missing.
 function metricOf(report, name) {
   const value = report?.metrics?.[name];
-  if (typeof value === 'number') return Number.isFinite(value) ? { median: value, iqrLow: value, iqrHigh: value } : null;
-  if (!value || !Number.isFinite(value.median)) return null;
-  const bound = (b) => (b === undefined || b === null ? value.median : Number.isFinite(b) ? b : null);
+  if (typeof value === 'number') return finiteNumber(value) === null ? null : { median: value, iqrLow: value, iqrHigh: value };
+  if (!value || finiteNumber(value.median) === null) return null;
+  const bound = (b) => (b === undefined || b === null ? value.median : finiteNumber(b));
   const iqrLow = bound(value.iqr_low);
   const iqrHigh = bound(value.iqr_high);
   if (iqrLow === null || iqrHigh === null) return null;

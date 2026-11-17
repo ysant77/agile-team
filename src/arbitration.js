@@ -4,6 +4,8 @@
 // tie-breaks (fewer failure modes, fewer dependencies, smaller diff) cannot show that two
 // sides are equal in function, so they give a "recommendation" only and a human decides.
 
+import { finiteNumber } from './verifier/report.js';
+
 export const HUMAN_DOMAINS = [
   'money_semantics',
   'security_exception',
@@ -45,7 +47,7 @@ export function arbitrate(ticket, sides) {
   if (pre?.metric) {
     // A registered metric missing on a side that passes the gates: code cannot compare.
     // Only finite numbers count, here as well as in the case builder (PR 3 check, item a).
-    const finite = (m) => m && Number.isFinite(m.median) && Number.isFinite(m.iqrLow) && Number.isFinite(m.iqrHigh);
+    const finite = (m) => m && [m.median, m.iqrLow, m.iqrHigh].every((v) => finiteNumber(v) !== null);
     const missing = alive.filter((s) => !finite(s.metrics));
     if (missing.length) {
       return decision('human', null, 'metric', `${missing.map((s) => s.id).join(', ')} has no ${pre.metric} in its report`, sides);
