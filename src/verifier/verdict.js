@@ -1,8 +1,10 @@
 // Turns a claim plus collected evidence into a verdict. Deterministic; version-stamped.
 
 import * as c from './checks.js';
+import { evidenceComplete } from './evidence.js';
 
-export const CHECKER_VERSION = 'verifier/1';
+// verifier/2: definition of done (on main, reproduced, covered, recorded, signed off).
+export const CHECKER_VERSION = 'verifier/2';
 
 // One acceptance-criterion check, from { type, args }.
 export function runAcCheck(ctx, check) {
@@ -58,6 +60,12 @@ export function runAcCheck(ctx, check) {
 export function acMapped(ctx) {
   const acs = ctx.ticket.acceptanceCriteria ?? [];
   if (acs.length === 0) {
+    // Work defined by sub-tasks: every sub-task done stands for the AC (benchmark B24). A ticket
+    // with no AC and no sub-task has nothing to check (B13).
+    const subs = ctx.ticket.subtasks ?? [];
+    if (subs.length && subs.every((t) => t.statusCategory === 'done')) {
+      return { name: 'ac_mapped', status: 'pass', reason: `no AC; the work is ${subs.length} sub-task(s), all done`, parts: [] };
+    }
     return { name: 'ac_mapped', status: 'fail', reason: 'ticket has no acceptance criteria', parts: [] };
   }
   const parts = acs.map((ac) => ({ acId: ac.acId, ...runAcCheck(ctx, ac.check) }));
@@ -77,17 +85,44 @@ export const CLAIM_CHECKS = {
   fixed: (ctx) => [
     c.prLinked(ctx),
     c.ciGreen(ctx),
+    ...[c.acTestsRunNewCode(ctx)].filter(Boolean),
+    ...[c.ciAttempts(ctx)].filter(Boolean),
     acMapped(ctx),
+    ...[c.measurementUnchanged(ctx)].filter(Boolean),
     ...(ctx.ticket.type === 'Bug' ? [c.bugTestExists(ctx)] : []),
     ...(ctx.baseReport ? [c.testsNotRemoved(ctx)] : []),
+    ...c.securityCheck(ctx, 'fixed'),
   ],
   ready: (ctx) => [
     c.prLinked(ctx),
     c.ciGreen(ctx),
+    ...[c.acTestsRunNewCode(ctx)].filter(Boolean),
+    ...[c.ciAttempts(ctx)].filter(Boolean),
+    ...[c.baseCurrent(ctx)].filter(Boolean),
     acMapped(ctx),
+    ...[c.measurementUnchanged(ctx)].filter(Boolean),
     ...(ctx.baseReport ? [c.testsNotRemoved(ctx)] : []),
+    ...c.securityCheck(ctx, 'ready'),
   ],
-  done: (ctx) => [c.subtasksDone(ctx), c.blockedByDone(ctx), acMapped(ctx)],
+  // DESIGN 15a: "done" means on main, reproduced, covered and recorded. A ticket with no code work
+  // (a spike, a parent of sub-tasks) keeps the sub-task, blocker and AC checks and the record.
+  done: (ctx) => {
+    const checks = [c.subtasksDone(ctx), c.blockedByDone(ctx), acMapped(ctx)];
+    // A Task (refactor, tests only, chore) has no defect to reproduce: its AC tests pass on head,
+    // with the full suite, coverage and trust rules (benchmark I01, I02; DESIGN 15j). A ticket
+    // with no AC test (only metric, CI or path ACs) has nothing to reproduce either.
+    const reproduce = c.needsRepro(ctx) ? [c.reproduced(ctx)] : [];
+    if (c.hasCodeWork(ctx)) checks.push(c.onMain(ctx), c.mergedClean(ctx), ...reproduce, c.coverageOk(ctx), ...c.securityCheck(ctx, 'done'));
+    const replaced = c.acTestsRunNewCode(ctx);
+    if (replaced) checks.push(replaced);
+    const attempts = c.ciAttempts(ctx);
+    if (attempts) checks.push(attempts);
+    const measured = c.measurementUnchanged(ctx);
+    if (measured) checks.push(measured);
+    const signoff = c.checkHumanSignoff(ctx);
+    if (signoff) checks.push(signoff);
+    return [...checks, evidenceComplete({ id: ctx.claimId, type: 'done' }, ctx, checks)];
+  },
   deployed: (ctx) => [c.deployed(ctx, ctx.claimArgs?.tag)],
   merged: (ctx) => [c.mergedClean(ctx)],
   acs: (ctx) => [acMapped(ctx)],
@@ -104,9 +139,11 @@ export function verify(claim, ctx) {
       checkerVersion: CHECKER_VERSION,
     };
   }
-  const checks = run({ ...ctx, claimArgs: claim.args });
-  const failed = checks.filter((k) => k.status === 'fail');
-  const unknown = checks.filter((k) => k.status === 'unknown');
+  const checks = run({ ...ctx, claimArgs: claim.args, claimId: claim.id });
+  // An advisory check is shown but does not change the verdict.
+  const counted = checks.filter((k) => !k.advisory);
+  const failed = counted.filter((k) => k.status === 'fail');
+  const unknown = counted.filter((k) => k.status === 'unknown');
   const result = failed.length ? 'contradicted' : unknown.length ? 'cannot_verify' : 'supported';
   const reason = failed.length
     ? failed.map((k) => k.reason).join('; ')

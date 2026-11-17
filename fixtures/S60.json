@@ -1,0 +1,1276 @@
+{
+  "scenario": "S60",
+  "title": "Code scanning result on the PR head (small security check)",
+  "steps": [
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s1",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "title": "No new alerts in code changed by this pull request",
+            "summary": "[View all branch alerts](/ysant77/yms-bank-demo/security/code-scanning?query=pr%3A20+tool%3ACodeQL+is%3Aopen)."
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "supported"
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s2",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "neutral",
+            "title": "1 configuration not found",
+            "summary": "**Warning**: Code scanning cannot determine the alerts introduced by this pull request, because 1 configuration present on `refs/heads/main` was not found:"
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "CodeQL neutral: 1 configuration not found"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s3",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "failure",
+            "title": "1 new alert including 1 high severity security vulnerability",
+            "summary": "(shape from the GitHub docs)"
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "contradicted",
+        "reasonIncludes": [
+          "CodeQL failed: 1 new alert including 1 high severity security vulnerability"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s4",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "in_progress",
+            "conclusion": null,
+            "title": null,
+            "summary": null
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "code scanning is still running on the head"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s5",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "no code-scanning result on the head"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s6",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-actions",
+            "appId": 15368,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "title": "No new alerts in code changed by this pull request",
+            "summary": "[View all branch alerts](/ysant77/yms-bank-demo/security/code-scanning?query=pr%3A20+tool%3ACodeQL+is%3Aopen)."
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "no code-scanning result on the head"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s7",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ffffffffffffffffffffffffffffffffffffffff",
+            "status": "completed",
+            "conclusion": "success",
+            "title": "No new alerts in code changed by this pull request",
+            "summary": "[View all branch alerts](/ysant77/yms-bank-demo/security/code-scanning?query=pr%3A20+tool%3ACodeQL+is%3Aopen)."
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "no code-scanning result on the head"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s8",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "title": "No new alerts in code changed by this pull request",
+            "summary": "[View all branch alerts](/ysant77/yms-bank-demo/security/code-scanning?query=pr%3A20+tool%3ACodeQL+is%3Aopen)."
+          },
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "failure",
+            "title": "1 new alert including 1 high severity security vulnerability",
+            "summary": "(shape from the GitHub docs)"
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "contradicted",
+        "reasonIncludes": [
+          "CodeQL failed"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s9",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "failure",
+            "title": "1 new alert including 1 high severity security vulnerability",
+            "summary": "(shape from the GitHub docs)"
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "observe",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "supported"
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s10",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [],
+        "config": {
+          "securityCheck": {
+            "mode": "observe",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "supported"
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s11",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "failure",
+            "title": "1 new alert including 1 high severity security vulnerability",
+            "summary": "(shape from the GitHub docs)"
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "off",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "supported"
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s12",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "failure",
+            "title": "1 new alert including 1 high severity security vulnerability",
+            "summary": "(shape from the GitHub docs)"
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": false
+          }
+        }
+      },
+      "expect": {
+        "result": "supported"
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s13",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py",
+          ".github/codeql/codeql-config.yml"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "title": "No new alerts in code changed by this pull request",
+            "summary": "[View all branch alerts](/ysant77/yms-bank-demo/security/code-scanning?query=pr%3A20+tool%3ACodeQL+is%3Aopen)."
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          ".github/codeql/codeql-config.yml"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s14",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "title": "No new alerts in code changed by this pull request",
+            "summary": "[View all branch alerts](/ysant77/yms-bank-demo/security/code-scanning?query=pr%3A20+tool%3ACodeQL+is%3Aopen)."
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        },
+        "truncated": {
+          "checks": true
+        }
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "check run list for"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s15",
+        "type": "ready"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          },
+          {
+            "name": "CodeQL",
+            "path": "dynamic/github-code-scanning/codeql",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "in_progress",
+            "conclusion": null,
+            "createdAt": "2026-11-20T10:01:00Z"
+          }
+        ],
+        "securityRuns": [],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "cannot_verify",
+        "reasonIncludes": [
+          "code scanning is still running on the head"
+        ]
+      }
+    },
+    {
+      "kind": "verify",
+      "claim": {
+        "id": "s16",
+        "type": "fixed"
+      },
+      "context": {
+        "ticket": {
+          "key": "BANK-13",
+          "type": "Bug",
+          "acceptanceCriteria": [
+            {
+              "acId": "AC1",
+              "check": {
+                "type": "test_passes",
+                "args": [
+                  "test_BANK13_other_customer_404"
+                ]
+              }
+            }
+          ]
+        },
+        "pr": {
+          "number": 20,
+          "title": "BANK-13 check the account owner",
+          "state": "open",
+          "headSha": "ccccccccccccccccccccccccccccccccccccccc5"
+        },
+        "report": {
+          "schema": "aat-ci-report/1",
+          "head_sha": "ccccccccccccccccccccccccccccccccccccccc5",
+          "tests": [
+            {
+              "id": "tests/test_api.py::test_BANK13_other_customer_404",
+              "outcome": "passed"
+            }
+          ]
+        },
+        "prFiles": [
+          "src/bank/api.py",
+          "tests/test_api.py"
+        ],
+        "workflowRuns": [
+          {
+            "name": "CI",
+            "path": ".github/workflows/ci.yml",
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "success",
+            "createdAt": "2026-11-20T10:00:00Z"
+          }
+        ],
+        "securityRuns": [
+          {
+            "name": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "headSha": "ccccccccccccccccccccccccccccccccccccccc5",
+            "status": "completed",
+            "conclusion": "failure",
+            "title": "1 new alert including 1 high severity security vulnerability",
+            "summary": "(shape from the GitHub docs)"
+          }
+        ],
+        "config": {
+          "securityCheck": {
+            "mode": "enforce",
+            "checkName": "CodeQL",
+            "appSlug": "github-advanced-security",
+            "appId": 57789,
+            "onFixedReady": true
+          }
+        }
+      },
+      "expect": {
+        "result": "contradicted",
+        "reasonIncludes": [
+          "CodeQL failed"
+        ]
+      }
+    }
+  ]
+}

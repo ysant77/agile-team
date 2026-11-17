@@ -47,8 +47,18 @@ test('the fixture without a review is supported', async () => {
   assert.equal(verdict.result, 'supported', verdict.reason);
 });
 
-test('a blocking finding on the same head holds ready, fixed and done', async () => {
-  for (const type of ['ready', 'fixed', 'done']) {
+// Merge with the done gate (PR 8): this fixture's PR is open and unmerged, so code rates "done"
+// as not supported before any review is read. The hold applies to ready and fixed here; for done
+// the gate decides, and a review never turns the result into supported.
+test('a done claim on an open PR is decided by the done gate; a review does not change that', async () => {
+  const plain = (await run('done', deps())).verdict;
+  const held = (await run('done', deps({ reviews: [review()] }))).verdict;
+  assert.notEqual(plain.result, 'supported', plain.reason);
+  assert.equal(held.result, plain.result);
+});
+
+test('a blocking finding on the same head holds ready and fixed', async () => {
+  for (const type of ['ready', 'fixed']) {
     assert.equal((await run(type, deps())).verdict.result, 'supported', type);
     const { verdict, record, comment } = await run(type, deps({ reviews: [review()] }));
     assert.equal(verdict.result, 'cannot_verify', type);

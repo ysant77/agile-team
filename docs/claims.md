@@ -7,7 +7,7 @@ model decides a verdict.
 |---|---|---|---|
 | `fixed` | the fix is done on its branch | open or merged | PR linked, CI green, ACs met, a bug test for a Bug, no test removed |
 | `ready` | the work is ready for review | open or merged | PR linked, CI green, ACs met, no test removed |
-| `done` | the ticket's own work is complete | not used | sub-tasks done, blockers done, ACs met |
+| `done` | the work is complete and on main | merged | sub-tasks done, blockers done, ACs met; for code work also: PR merged, merge result clean, reproduced (fails on base, passes on head), coverage, and a complete evidence record |
 | `merged` | the change is on the default branch | merged | the merge result is clean |
 | `deployed` | a release with the change is live | not used | the deploy run for the tag succeeded |
 | `acs` | the acceptance criteria hold | as reported | ACs met |
@@ -107,3 +107,53 @@ head, or whose hash differs, shows that the chain was cut or changed.
 Any commenter on a work item can make a claim. Code admits a comment once and caps admitted claims
 at 5 per work item, 10 per author and 30 per site each hour. The caps limit load; they do not
 limit who can claim.
+
+## The claim `done` (definition of done)
+
+A ticket has code work when an AC is a test or the ticket is a Bug. For code work, `done` is
+supported only when all of these pass:
+
+- **On main:** the PR is merged, and the main report for the merge commit is clean.
+- **Reproduced:** each AC test, and for a Bug each test named for the key, fails on the base commit
+  by an assertion and passes on the head. The full suite on the head passes and no test is
+  removed. A test that cannot run on base (`ImportError`, `ModuleNotFoundError`,
+  `AttributeError`, `NameError`, a collection error) is `cannot_verify`: a human decides. The
+  repro block must name the report's head commit and record the base run (pytest exit code 0 or
+  1, report written). A PR that changes pytest support or config (`conftest.py`, helpers or data
+  under `tests/`, `pyproject.toml`, `uv.lock`, pytest or coverage config) is `cannot_verify`,
+  because the base run mixed base support files with head tests. A PR that changes
+  `scripts/repro.py` or `scripts/changed_coverage.py` does not vouch for its own report.
+- **Coverage:** at least 80% of the changed executable lines are covered, and the total is not more
+  than 0.5 percentage points below the base. A PR that adds `pragma: no cover` or changes
+  `.coveragerc`, `setup.cfg`, `tox.ini` or `pyproject.toml` is `cannot_verify`.
+- **Evidence record:** code builds one record (each AC with its test, base and head outcome; the
+  full-suite result; coverage; head and merge commit; the CI run; adopted checks and human
+  decisions). It goes into the audit chain as `done_evidence` before the verdict comment, and the
+  comment shows it. A missing part is `cannot_verify`.
+
+Limits: the repro and coverage blocks are written by CI, like every report value. D-repro proves
+that a test separates base from head, not that it is the right test. A test can detect the base
+run and fail there on purpose; an `assert` in production code or a bare `raise AssertionError`
+also records `AssertionError`; each test runs once on base, so a flaky test can fail there by
+chance. The main report
+stands for the merge result only while it is for the merge commit; after a later merge the check
+is `cannot_verify` until a human checks. A ticket with no code work (a spike, a parent of
+sub-tasks) keeps the sub-task, blocker and AC checks and gets a record without code parts.
+
+## Security check (code scanning)
+
+With CodeQL turned on in the repository, GitHub adds a result check to each pull request head.
+The verifier reads the head's check runs (public, no token) and keeps only the one from the app
+`github-advanced-security` (id 57789) with the name `CodeQL`. A workflow job with the same name
+from another app does not count.
+
+| Result | Check |
+|---|---|
+| `success` ("No new alerts in code changed by this pull request") | pass |
+| `failure` (new alerts at or above the repository's threshold) | fail |
+| `neutral` (scanning cannot determine the new alerts), any other result, still running, absent, a cut list, or a PR that changes `.github/codeql/` or a workflow | unknown |
+
+`VERIFY_CONFIG.securityCheck.mode` decides how it counts: `off` (not run), `observe` (shown as
+"advisory, not counted"; the deployed default until a bank PR shows the real check) or `enforce`
+(counted for `done`, and for `fixed` and `ready` when `onFixedReady` is true). Alert details,
+dismissals and dependency alerts need a token and are after the freeze (DESIGN 14g).
