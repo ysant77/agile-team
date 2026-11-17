@@ -54,3 +54,21 @@ test('a Story with only a ci_green AC is done once its PR is merged, with no rep
   assert.equal(v.result, 'supported', v.reason);
   assert.equal(v.checks.some((k) => k.name === 'reproduced'), false);
 });
+
+// Finding 9: zero changed executable lines while a source file gains code is not a pass.
+for (const exec of [0, []]) {
+  test(`coverage is unknown when changed_executable is ${JSON.stringify(exec)} and a source file changed`, () => {
+    const ctx = ctxOf(0);
+    ctx.report.coverage = { ...ctx.report.coverage, changed_executable: exec, changed_covered: 0 };
+    const r = checks.coverageOk(ctx);
+    assert.equal(r.status, 'unknown', r.reason);
+    assert.match(r.reason, /src\/bank\/transfers\.py/);
+  });
+}
+
+test('coverage passes with zero changed executable lines when only tests and comments changed', () => {
+  const ctx = ctxOf(0);
+  ctx.report.coverage = { ...ctx.report.coverage, changed_executable: 0, changed_covered: 0 };
+  ctx.prPatches = { ...ctx.prPatches, 'src/bank/transfers.py': '@@ -1 +1,2 @@\n+# a note\n+' };
+  assert.equal(checks.coverageOk(ctx).status, 'pass');
+});
