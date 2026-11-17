@@ -23,16 +23,19 @@ const CHECK_TYPES = new Set([
 //   currency, a "/" rate or a noun after the code ("500 milliseconds", "200 €", "500/s",
 //   "404 items") makes it a quantity. Bare counts ("9 tabs") need a source too.
 // 6 (17 Nov): an issue key or AC id is stripped only when it is a known id: in a source, or an AC
-//   id of the draft. "TIMEOUT-30 seconds" and "MAX-5 retries" are quantities.
+//   id of the draft. "TIMEOUT-30 seconds" and "MAX-5 retries" are quantities. Text is normalised
+//   (NFKC, whitespace collapsed) and each field is checked alone. A plural after a status code
+//   ("500 errors", "200 responses") is a count. A number in a test name ("test_500ms") is checked.
 export const LINT_VERSION = 6;
 
 const HTTP_CODES = '200|201|202|204|301|302|304|400|401|403|404|405|409|410|422|429|500|502|503|504';
 // Words that may follow a status code. Any other word makes the number a quantity.
 // "and" or "or" may join two status codes, but never a quantity ("200 or more credits").
-const STATUS_NEXT = 'errors?|status|responses?|code|when|if|for|(?:and|or)(?!\\s+(?:more|less|fewer|above|below|over|under|greater|higher|lower|up|at)\\b)';
+// Singular only: "500 errors" and "200 responses" read as counts.
+const STATUS_NEXT = 'error|status|response|code|when|if|for|(?:and|or)(?!\\s+(?:more|less|fewer|above|below|over|under|greater|higher|lower|up|at)\\b)';
 const HTTP_CONTEXT = new RegExp(
   `\\b(HTTP|status(?: code)?|code|returns?|gets?|gives?|responds? with)\\s+((?:an?|the)\\s+)?(?:HTTP\\s+)?(${HTTP_CODES})\\b`
-  + `(?=[ \\t]*(?:[.,;:!?)](?![\\d/])|\\r?\\n|$)|\\s+(?:${STATUS_NEXT})\\b)`, 'gi');
+  + `(?=\\s*(?:[.,;:!?)](?![\\d/])|$)|\\s+(?:${STATUS_NEXT})\\b)`, 'gi');
 
 export function numbersIn(text) {
   return (String(text).match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => n.replace(',', '.'));
@@ -48,13 +51,20 @@ export function idsIn(text) {
 
 // Ids are not quantities: known issue keys and AC ids, {TOKEN} and test names are removed before
 // numbers are compared with the request. A key-shaped token that is not in `known` stays.
+// NFKC turns wide digits into ASCII and "½" into "1⁄2". Line breaks count as spaces, so
+// "500\nms" reads as "500 ms".
+export function normalise(text) {
+  return String(text ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim();
+}
+
 export function quantityText(text, known = new Set()) {
   const drop = (id) => (known.has(id) ? ' ' : id);
-  return String(text ?? '')
+  return normalise(text)
     .replace(KEY, drop)
     .replace(AC_ID, drop)
     .replace(/\{TOKEN\}/g, ' ')
-    .replace(/\btest_\w+/g, ' ')
+    // A test name is an id, but a part of it that starts with a digit ("500ms") is a quantity.
+    .replace(/\btest_\w+/g, (name) => ` ${name.slice(5).split('_').filter((p) => /^\d/.test(p)).join(' ')} `)
     // A story point estimate is the PM's own proposal, written as "2 points" (Fibonacci only).
     .replace(/\b(1|2|3|5|8|13)[ -]points?\b/g, ' ')
     // Standard HTTP status codes used as a status (version 5 rules).
@@ -84,8 +94,10 @@ export function lintRequirement(draft, sources = []) {
   const known = new Set([...sources.flatMap(idsIn), ...acs.map((a) => String(a.acId ?? '').trim())]);
   const allowed = new Set(sources.map((s) => quantityText(s, known)).flatMap(numbersIn));
   const checks = acs.map((a) => (a.check ? (a.check.args ?? []).join(' ') : ''));
-  const all = quantityText([text, ...acs.map((a) => a.statement ?? ''), ...checks].join('\n'), known);
-  for (const n of new Set(numbersIn(all))) {
+  // Each field alone: the end of a field ends a clause.
+  const fields = [draft.summary, draft.description, ...acs.map((a) => a.statement), ...checks];
+  const found = fields.flatMap((f) => numbersIn(quantityText(f, known)));
+  for (const n of new Set(found)) {
     if (!allowed.has(n)) {
       findings.push({ rule: 'ungrounded-number', message: `${n} does not appear in the request or evidence; state an open question instead` });
     }
