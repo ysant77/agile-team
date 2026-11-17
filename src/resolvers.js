@@ -1,7 +1,7 @@
 import api, { route } from '@forge/api';
 import Resolver from '@forge/resolver';
 import { appendAudit, readAudit } from './audit-store.js';
-import { buildMonitor } from './monitor.js';
+import { monitorForViewer } from './monitor.js';
 import { kvs } from '@forge/kvs';
 import { adoptFromReviews } from './review.js';
 
@@ -88,7 +88,9 @@ resolver.define('getMonitor', async () => {
   const count = head ? Math.min(head.seq + 1, MONITOR_MAX) : 0;
   const events = [];
   for (let from = 0; from < count; from += 50) events.push(...(await readAudit(from, Math.min(50, count - from))));
-  const monitor = buildMonitor(events);
+  // As the user: a work item the viewer cannot browse returns 404 and is left out.
+  const canSee = async (key) => (await api.asUser().requestJira(route`/rest/api/3/issue/${key}?fields=id`)).ok;
+  const monitor = await monitorForViewer(events, canSee);
   return { ...monitor, truncated: head ? head.seq + 1 > MONITOR_MAX : false, readAt: new Date().toISOString() };
 });
 
