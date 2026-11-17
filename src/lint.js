@@ -27,7 +27,8 @@ const CHECK_TYPES = new Set([
 //   (NFKC, whitespace collapsed) and each field is checked alone. A plural after a status code
 //   ("500 errors", "200 responses") is a count. A number in a test name ("test_500ms") is checked.
 //   List markers ("1. ", "2) " at line start), status phrases ("200 OK"), joined codes
-//   ("200 and 404") and thousands separators ("1,000" = "1000") are not flagged.
+//   ("200 and 404") and thousands separators ("1,000" = "1000") are not flagged. A number must
+//   keep the unit or noun it has in the source: "5 retries" fails against "5 seconds".
 export const LINT_VERSION = 6;
 
 const HTTP_CODES = '200|201|202|204|301|302|304|400|401|403|404|405|409|410|422|429|500|502|503|504';
@@ -46,7 +47,40 @@ const HTTP_CONTEXT = new RegExp(
   + `(?=\\s*(?:[.,;:!?)](?![\\d/])|$)|\\s+(?:${STATUS_NEXT})\\b)`, 'gi');
 
 export function numbersIn(text) {
-  return (String(text).match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => n.replace(',', '.'));
+  return quantitiesIn(text).map((q) => q.n);
+}
+
+// Words that do not name what a number counts or measures.
+const STOP = new Set(['a', 'an', 'the', 'and', 'or', 'to', 'of', 'in', 'on', 'at', 'for', 'per', 'by', 'with',
+  'from', 'than', 'is', 'are', 'was', 'be', 'after', 'before', 'within', 'under', 'over', 'each', 'every',
+  'then', 'if', 'when', 'as', 'into', 'up', 'more', 'less']);
+const UNIT = {
+  s: 'second', sec: 'second', secs: 'second', second: 'second',
+  ms: 'ms', msec: 'ms', millisecond: 'ms',
+  min: 'minute', mins: 'minute', minute: 'minute',
+  h: 'hour', hr: 'hour', hrs: 'hour', hour: 'hour',
+  d: 'day', day: 'day', '%': 'percent', percent: 'percent', pct: 'percent',
+};
+function unitWord(w) {
+  const lower = w.toLowerCase();
+  const single = lower.length > 3 ? lower.replace(/ies$/, 'y').replace(/([^s])s$/, '$1') : lower;
+  return UNIT[lower] ?? UNIT[single] ?? single;
+}
+
+// Each number with the words right after it (at most two, up to a stop word or punctuation).
+// "5 seconds" gives { n: '5', words: Set { 'second' } }; "metric(x, 5)" gives no words.
+export function quantitiesIn(text) {
+  const out = [];
+  for (const m of String(text).matchAll(/\d+(?:[.,]\d+)?/g)) {
+    const rest = String(text).slice(m.index + m[0].length);
+    const words = new Set();
+    for (const w of (/^ ?([\p{L}%€$£]+)(?: ([\p{L}]+))?/u.exec(rest) ?? []).slice(1)) {
+      if (!w || STOP.has(w.toLowerCase())) break;
+      words.add(unitWord(w));
+    }
+    out.push({ n: m[0].replace(',', '.'), words });
+  }
+  return out;
 }
 
 const KEY = /\b[A-Z][A-Z0-9]*-\d+\b/g;
@@ -105,14 +139,29 @@ export function lintRequirement(draft, sources = []) {
   // a separate field and are not checked here.
   // Known ids: every id in a source, and the AC ids of the draft.
   const known = new Set([...sources.flatMap(idsIn), ...acs.map((a) => String(a.acId ?? '').trim())]);
-  const allowed = new Set(sources.map((s) => quantityText(s, known)).flatMap(numbersIn));
+  // Source number -> the word sets it is used with in the sources.
+  const allowed = new Map();
+  for (const q of sources.flatMap((s) => quantitiesIn(quantityText(s, known)))) {
+    allowed.set(q.n, [...(allowed.get(q.n) ?? []), q.words]);
+  }
   const checks = acs.map((a) => (a.check ? (a.check.args ?? []).join(' ') : ''));
   // Each field alone: the end of a field ends a clause.
   const fields = [draft.summary, draft.description, ...acs.map((a) => a.statement), ...checks];
-  const found = fields.flatMap((f) => numbersIn(quantityText(f, known)));
-  for (const n of new Set(found)) {
-    if (!allowed.has(n)) {
+  const flagged = new Set();
+  for (const { n, words } of fields.flatMap((f) => quantitiesIn(quantityText(f, known)))) {
+    if (flagged.has(n)) continue;
+    const uses = allowed.get(n);
+    if (!uses) {
+      flagged.add(n);
       findings.push({ rule: 'ungrounded-number', message: `${n} does not appear in the request or evidence; state an open question instead` });
+      continue;
+    }
+    // A number with no word, or a source use with no word, matches any use.
+    const same = words.size === 0 || uses.some((u) => u.size === 0 || [...words].some((w) => u.has(w)));
+    if (!same) {
+      flagged.add(n);
+      const was = uses.map((u) => `"${n} ${[...u].join(' ')}"`).join(' or ');
+      findings.push({ rule: 'ungrounded-number', message: `${n} ${[...words].join(' ')} is in the request only as ${was}; state an open question instead` });
     }
   }
   return { pass: findings.length === 0, findings };
