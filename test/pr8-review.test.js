@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import * as checks from '../src/verifier/checks.js';
+import { nextEvent } from '../src/audit.js';
 import { verify } from '../src/verifier/verdict.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../fixtures/S59.json', import.meta.url), 'utf8'));
@@ -71,4 +72,66 @@ test('coverage passes with zero changed executable lines when only tests and com
   ctx.report.coverage = { ...ctx.report.coverage, changed_executable: 0, changed_covered: 0 };
   ctx.prPatches = { ...ctx.prPatches, 'src/bank/transfers.py': '@@ -1 +1,2 @@\n+# a note\n+' };
   assert.equal(checks.coverageOk(ctx).status, 'pass');
+});
+
+// Finding 10: a sign-off counts only when the sign-off button wrote it (an audit event that
+// matches the property) and the signer is not the person who made the claim.
+const MERGE = 'a'.repeat(40);
+const signoffEvent = (over = {}) => nextEvent({ seq: 6, hash: 'f'.repeat(64) }, {
+  actor: 'acc-reviewer', event: 'change.signed_off', data: { key: 'BENCH-27', sha: MERGE, reason: 'checked the rounding' }, at: '2026-11-16T12:00:00Z', ...over,
+});
+const signoffCtx = (over = {}) => ({
+  ticket: { key: 'BENCH-27', domain: 'money_semantics', signoff: { by: 'acc-reviewer', sha: MERGE, reason: 'checked the rounding', at: '2026-11-16T12:00:01Z', auditSeq: 7 } },
+  pr: { merged: true, mergeSha: MERGE, headSha: 'b'.repeat(40) },
+  claimant: 'acc-dev',
+  signoffEvent: signoffEvent(),
+  ...over,
+});
+
+test('a sign-off with a matching audit event by someone other than the claimant passes', () => {
+  const r = checks.checkHumanSignoff(signoffCtx());
+  assert.equal(r.status, 'pass', r.reason);
+});
+
+test('a sign-off written to the issue property without the sign-off button is unknown', () => {
+  for (const over of [{ signoffEvent: null }, { signoffEvent: signoffEvent({ actor: 'acc-other' }) },
+    { signoffEvent: signoffEvent({ data: { key: 'BENCH-27', sha: 'c'.repeat(40) } }) }, { signoffEvent: signoffEvent({ event: 'requirement.approved' }) },
+    { signoffEvent: { ...signoffEvent(), hash: '0'.repeat(64) } }]) {
+    const r = checks.checkHumanSignoff(signoffCtx(over));
+    assert.equal(r.status, 'unknown', JSON.stringify(over));
+    assert.match(r.reason, /audit/);
+  }
+  const ctx = signoffCtx();
+  delete ctx.ticket.signoff.auditSeq;
+  assert.equal(checks.checkHumanSignoff(ctx).status, 'unknown');
+});
+
+test('a sign-off by the claimant, or with no known claimant, is unknown', () => {
+  const self = checks.checkHumanSignoff(signoffCtx({ claimant: 'acc-reviewer' }));
+  assert.equal(self.status, 'unknown');
+  assert.match(self.reason, /claimant/);
+  const none = checks.checkHumanSignoff(signoffCtx({ claimant: null }));
+  assert.equal(none.status, 'unknown');
+  assert.match(none.reason, /claimant/);
+});
+
+test('decide reads the sign-off audit event and passes the claimant to the checks', async () => {
+  const { decide } = await import('../src/verify-claim.js');
+  const seen = [];
+  const d = {
+    collectJira: async () => signoffCtx().ticket,
+    env: () => ({ repo: null }),
+    readAudit: async (from, count) => { seen.push([from, count]); return [signoffEvent()]; },
+  };
+  const log = console.log;
+  console.log = () => {};
+  try {
+    const { verdict } = await decide({ issueKey: 'BENCH-27', claim: { id: 'c1', type: 'done', by: 'acc-reviewer' } }, d);
+    assert.deepEqual(seen, [[7, 1]]);
+    const s = verdict.checks.find((k) => k.name === 'human_signoff');
+    assert.equal(s.status, 'unknown');
+    assert.match(s.reason, /claimant/);
+  } finally {
+    console.log = log;
+  }
 });
