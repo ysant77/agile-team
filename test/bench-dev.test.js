@@ -50,10 +50,19 @@ for (const [id, want] of Object.entries(KEEP)) {
   });
 }
 
-test('every invalid case of set 1 is in the regression net or a named fix or limit', () => {
-  const invalid = ['B01', 'B02', 'B03', 'B05', 'B06', 'B07', 'B08', 'B09', 'B11', 'B12', 'B13', 'B19', 'B20', 'I05', 'I06', 'I07', 'I10'];
-  const fixOrLimit = ['B01', 'B05', 'B19', 'B20', 'I05', 'I10'];
-  for (const id of invalid) assert.ok(id in KEEP || fixOrLimit.includes(id), id);
+// Every invalid case of set 1 runs through the checks: none may be supported, except a named
+// limit. A limit that stops being supported must leave this list (PR 8 review, item 11).
+const INVALID = ['B01', 'B02', 'B03', 'B05', 'B06', 'B07', 'B08', 'B09', 'B11', 'B12', 'B13', 'B19', 'B20', 'I05', 'I06', 'I07', 'I10'];
+const LIMITS = ['B01'];
+for (const id of INVALID) {
+  test(`invalid case ${id} is ${LIMITS.includes(id) ? 'a named limit (still supported)' : 'not supported'}`, async () => {
+    const v = await run(id);
+    if (LIMITS.includes(id)) assert.equal(v.result, 'supported', `${id} is no longer a limit: remove it from LIMITS`);
+    else assert.notEqual(v.result, 'supported', `${id}: ${v.reason}`);
+  });
+}
+
+test('set 1 has all its cases', () => {
   assert.equal(readdirSync(DIR).filter((f) => f.endsWith('.json')).length >= 39, true);
 });
 
