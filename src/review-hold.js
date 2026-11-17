@@ -3,10 +3,11 @@
 
 export const HOLD_CLAIMS = ['ready', 'fixed', 'done'];
 
-// The findings that can hold a claim. Only an accepted review counts.
+// The findings that can hold a claim. Only an accepted review counts. A malformed stored review
+// (findings not an array, a finding that is not an object) gives no finding and never throws.
 export function blockingFindings(record) {
-  if (record?.outcome !== 'review' || !record.review) return [];
-  return record.review.findings.filter((f) => f.severity === 'blocking' && f.ac);
+  if (record?.outcome !== 'review' || !Array.isArray(record.review?.findings)) return [];
+  return record.review.findings.filter((f) => f !== null && typeof f === 'object' && f.severity === 'blocking' && f.ac);
 }
 
 // A supported ready, fixed or done claim becomes cannot_verify when an accepted review for the
