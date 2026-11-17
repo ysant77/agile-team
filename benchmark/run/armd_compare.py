@@ -1,10 +1,11 @@
 import json,sys
 # Compare an arm D run with the d175960 baseline: controls held, unsafe supported, changed cases.
-# Usage: python3 armd_compare.py <benchmark/run> <folder with armd-a3b-s1..s3>
+# Usage: python3 armd_compare.py <benchmark/run> <folder with <prefix>-s1..s3> [prefix, default armd-a3b]
 B,S=sys.argv[1],sys.argv[2]
-sets=[('1',f'{B}/results/dev-reviewer-2/devd-1c.json',f'{S}/armd-a3b-s1/arm-d.json',f'{B}/truth.json'),
-      ('2',f'{B}/results/dev-reviewer-2/devd-2c.json',f'{S}/armd-a3b-s2/arm-d.json',f'{B}/truth-2.json'),
-      ('3',f'{B}/results/set3/arm-d/arm-d.json',f'{S}/armd-a3b-s3/arm-d.json',f'{B}/truth-3.json')]
+P=sys.argv[3] if len(sys.argv)>3 else 'armd-a3b'
+sets=[('1',f'{B}/results/dev-reviewer-2/devd-1c.json',f'{S}/{P}-s1/arm-d.json',f'{B}/truth.json'),
+      ('2',f'{B}/results/dev-reviewer-2/devd-2c.json',f'{S}/{P}-s2/arm-d.json',f'{B}/truth-2.json'),
+      ('3',f'{B}/results/set3/arm-d/arm-d.json',f'{S}/{P}-s3/arm-d.json',f'{B}/truth-3.json')]
 for n,base,new,tr in sets:
     t=json.load(open(tr)); o={r['id']:r for r in json.load(open(base))['results']}; m={r['id']:r for r in json.load(open(new))['results']}
     ctl=[k for k,v in t.items() if isinstance(v,dict) and v.get('kind')=='valid_trusted']

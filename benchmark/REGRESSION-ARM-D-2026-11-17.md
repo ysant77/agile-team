@@ -89,3 +89,62 @@ named. If the total rises, it fails and we stop and think, without another guard
 
 Fix branch: `fix/reviewer-refuse-part-only` (failing tests 72d1f15, fix 35a9e60, local). The
 model run waits for the slot.
+
+## Arm D regression of the fix, 48165f5 (17 Nov, evening)
+
+**Run.** Reviewer and guards at `fix/reviewer-refuse-part-only` head 48165f5 (`agile-team-revfix`,
+guard version 6). The rest is the same as the a3b8982 run: rule `blocking`, `qwen3-coder:30b`
+(digest 06c1097efce0), temperature 0, `num_ctx` 32768, seeds 1 to 3, the same `sf-*` C evidence
+(copied to new folders, so the old ones are not overwritten), the same manifests and truth files.
+**Raw results:** `run/results/regression-2026-11-17/arm-d-48165f5/set{1,2,3}/`. Comparison:
+`python3 run/armd_compare.py run <folder> armd-fix` (the third argument is the folder prefix, a
+new option; the default `armd-a3b` gives the same output as before). In each case, the three
+runs gave the same result.
+
+| Set | Controls held (d175960 / a3b8982 / 48165f5) | Catches of invalid cases (d175960 / a3b8982 / 48165f5) | Unsafe supported at 48165f5 |
+|---|---|---|---|
+| 1 | none / B21 / **B21** | 28 / 28 / 28 of 29 | B01 |
+| 2 | S02 / none / none | 10 / 10 / 11 of 12 | S09 |
+| 3 | none / none / none | 8 / 7 / 9 of 11 | T14, T23 |
+| **Total** | **1 / 1 / 1** | **46 / 45 / 48 of 52** | 4 (d175960: 6) |
+
+**Case-level changes against d175960:**
+
+- **B21 (control): now held.** All three runs: the review passes every guard, the style lint
+  passes, and the two blocking findings name AC1 with the model's text "Code does not reject
+  underscores or spaces in amount strings." and "Test does not cover all underscore and space
+  cases.". This is the change the decision expected (the reviewer's true behaviour).
+- **S02 (control): no longer held.** All three runs: guard `line-not-added` refuses the whole
+  review (same as at a3b8982), so the claim stays supported.
+- **S18 (invalid): now caught.** The cause is C, not the reviewer: C on the new evidence does not
+  support it, so the reviewer does not run (as at a3b8982).
+- **T02 (invalid): now caught.** At d175960 it was missed. All three runs now give an accepted
+  review with the blocking finding "No check for limit = 0 or negative values." on AC1. At
+  a3b8982 `ac-has-check` refused the whole review.
+- **B17 (set 1):** D differs from the d175960 file because C changed (as at a3b8982); no reviewer
+  effect.
+
+**Case-level changes against a3b8982:** T08 and T02 are caught again; S14 is caught again
+(blocking finding "split_evenly does not ensure parts sum to the amount."). At a3b8982
+`ac-has-check` refused all three whole reviews.
+
+**Named cases:**
+
+- **T08: held, with its real text shown.** All three runs: style lint passes, and the shown
+  findings and the hold reason are "Code does not handle kind=debit case for filtering lines."
+  and "Test only checks kind=credit, missing kind=debit case." (AC1). At d175960 the hold was
+  shown as template text.
+- **S09:** still missed (an accepted review with no blocking finding in all three runs).
+- **S13:** `cannot_verify`, held by C; the reviewer does not run.
+- **T12:** `cannot_verify` (an accepted review, held in all three runs).
+- **T14:** still missed. Guard `ungrounded-number` refuses the whole review. Note: principle (i)
+  is applied to `ac-has-check` only; the other guards are unchanged.
+
+**Result against the acceptance rule:** **pass, with the change named.** Total clean controls
+held is 1, the same as at d175960 (S02 released, B21 held by real text). Total catches are 48,
+up from 46. T08 is held with its real defect text shown. No case changed in a way the rule
+forbids.
+
+Not checked: the hold reason text produced by `applyReviewHold` on the live path. Arm D scores
+the blocking findings that the runner reads from `blockingFindings`; it does not run the Jira
+panel.
