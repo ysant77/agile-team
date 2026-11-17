@@ -34,6 +34,8 @@ const runners = {
       const run = (ctx.workflowRuns ?? []).find((r) => r.headSha === ctx.pr?.headSha);
       if (run) ctx.reportComment = { createdAt: run.createdAt, updatedAt: run.createdAt };
     }
+    // The reader always lists the PRs that name the key, with the linked one in it.
+    if (ctx.pr && !('prCandidates' in ctx)) ctx.prCandidates = [ctx.pr.number];
     const verdict = verify(step.claim, ctx);
     assert.equal(verdict.result, step.expect.result, verdict.reason);
     for (const text of step.expect.reasonIncludes ?? []) {
@@ -86,6 +88,8 @@ const runners = {
       if (run) ctx.reportComment = { createdAt: run.createdAt, updatedAt: run.createdAt };
     }
     ctx.ticket = adoptProposal(ctx.ticket, step.proposal);
+    // The reader always lists the PRs that name the key, with the linked one in it.
+    if (ctx.pr && !('prCandidates' in ctx)) ctx.prCandidates = [ctx.pr.number];
     const verdict = verify(step.claim, ctx);
     assert.equal(verdict.result, step.expect.result, verdict.reason);
     for (const text of step.expect.reasonIncludes ?? []) assert.ok(verdict.reason.includes(text), verdict.reason);

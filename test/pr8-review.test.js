@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import * as checks from '../src/verifier/checks.js';
 import { nextEvent } from '../src/audit.js';
 import { verify } from '../src/verifier/verdict.js';
+import { withReader } from './helpers/reader.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../fixtures/S59.json', import.meta.url), 'utf8'));
 const defaults = JSON.parse(readFileSync(new URL('../fixtures/_defaults.json', import.meta.url), 'utf8'));
@@ -15,7 +16,7 @@ const ctxOf = (i) => {
   c.report.workflow_files = defaults.baseWorkflowFiles;
   c.mergeReport.workflow_files = defaults.baseWorkflowFiles;
   c.reportComment = { createdAt: run.createdAt, updatedAt: run.createdAt };
-  return c;
+  return withReader(c);
 };
 
 // An open, unmerged PR: the work is not on main.
@@ -50,7 +51,7 @@ test('a ticket with only sub-task, blocker, link or manual ACs still has no code
 
 test('a Story with only a ci_green AC is done once its PR is merged, with no repro step', () => {
   const ctx = ctxOf(0);
-  ctx.ticket = { key: 'BANK-4', type: 'Story', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'ci_green', args: [] } }] };
+  ctx.ticket = { key: 'BANK-4', type: 'Story', subtasks: [], links: [], acceptanceCriteria: [{ acId: 'AC1', check: { type: 'ci_green', args: [] } }] };
   const v = verify({ id: 'd7m', type: 'done' }, ctx);
   assert.equal(v.result, 'supported', v.reason);
   assert.equal(v.checks.some((k) => k.name === 'reproduced'), false);

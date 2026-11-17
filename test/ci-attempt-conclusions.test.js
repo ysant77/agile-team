@@ -31,7 +31,7 @@ function fakeFetch(attempt, attempts, steps = {}) {
 
 async function read(attempt, attempts, steps) {
   const gh = await collectGithub({ repo: 'ysant77/yms-bank-demo', key: 'BANK-21', fetchFn: fakeFetch(attempt, attempts, steps) });
-  const ctx = { pr: gh.pr, workflowRuns: gh.workflowRuns, prFiles: gh.prFiles, config };
+  const ctx = { pr: gh.pr, workflowRuns: gh.workflowRuns, prFiles: gh.prFiles, truncated: gh.truncated, config };
   return { gh, ctx };
 }
 

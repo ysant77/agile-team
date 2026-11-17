@@ -25,15 +25,19 @@ owner's approval.
 
 ## No check passes by default
 
-Every check in `src/verifier/checks.js` gives `unknown` (the verdict `cannot_verify`) when a key
-input is missing, empty, not a finite number, or of the wrong type. A check never passes because
-an input was absent. A check that gives `fail` on such an input (for example "no pull request")
+Every check in `src/verifier/checks.js` gives `unknown` (the verdict `cannot_verify`) when an
+input it reads is missing, empty, not a finite number, or of the wrong type, also when a list
+holds a `null` element. A check never passes because an input was absent, and never throws on a
+bad input. The readers (`src/github-evidence.js`, `src/jira-evidence.js`, `decide()` in
+`src/verify-claim.js`) always set the fields the checks read, so a missing field means "not
+read". For example, Jira gives `[]` for a ticket without sub-tasks; a missing `subtasks` field
+gives `unknown`. Page flags (`truncated`) must be `false` to show a list is complete. A check that gives `fail` on such an input (for example "no pull request")
 keeps that result. A check that only applies under a condition can return no result.
 
 Exceptions, where an empty list is a valid read result and not missing evidence:
 
 - `subtasks_done`, `blocked_by_done`: Jira gives an empty list when the ticket has no sub-tasks
-  or links, so none is open.
+  or links, so none is open. A missing field is not an empty list.
 - `unique_migrations` (also inside `merged_clean`): a repository with no migrations reports an
   empty list, or no list.
 - metric checks: the report test list is a guard (no failed test), not the evidence; an empty
@@ -42,9 +46,19 @@ Exceptions, where an empty list is a valid read result and not missing evidence:
 - `reproduced`: an empty `changed_support` list means no pytest support file changed; a Bug with
   no acceptance criteria uses the tests named for its key.
 - `coverage`: an empty `unmeasured_files` list means every changed file is in the coverage data.
+- `merged_clean`: an empty list of tests required after merge names no test; the merge result
+  must still keep every base test and have unique migrations.
+- `tests_not_removed`: a report without a repro block, or a repro block without
+  `base_test_ids`, is from before the base record existed. Approved test removals can only turn a
+  fail into a pass, so none stored means none.
+- A run without `run_attempt` is attempt 1 (GitHub leaves it out of old runs).
 
-`test/checks-bad-input.test.js` feeds each exported check the values `null`, `""`, `[]`, `NaN`
-and `Infinity` in its key inputs and asserts that the result is never `pass`.
+The security check mode must be `off`, `observe` or `enforce`. Any other value, or a malformed
+security check config, gives `unknown`, counted in the verdict.
+
+`test/checks-bad-input.test.js` feeds each exported check the values missing, `null`, `""`, `[]`,
+`[null]`, `NaN` and `Infinity` in every input it reads, list elements included, and asserts that
+the result is never `pass` and that no check throws.
 
 ## A success after a run without a result
 

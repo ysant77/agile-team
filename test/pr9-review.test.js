@@ -7,6 +7,7 @@ import { collectGithub, collectPrStats } from '../src/github-evidence.js';
 import * as checks from '../src/verifier/checks.js';
 import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
+import { withReader } from './helpers/reader.js';
 
 const H = 'a'.repeat(40);
 const CI = '.github/workflows/ci.yml';
@@ -17,7 +18,7 @@ const CI = '.github/workflows/ci.yml';
 // step. Otherwise the author may have cancelled a failing run.
 
 const run = (over) => ({ id: 1, path: CI, headSha: H, status: 'completed', attempt: 1, createdAt: '2026-11-17T01:00:00Z', ...over });
-const ciCtx = (runs) => ({ pr: { headSha: H }, prFiles: ['src/a.py'], workflowRuns: runs, config: { requiredWorkflowPaths: [CI] } });
+const ciCtx = (runs) => withReader({ pr: { headSha: H }, prFiles: ['src/a.py'], workflowRuns: runs, config: { requiredWorkflowPaths: [CI] } });
 const success = run({ id: 2, conclusion: 'success', createdAt: '2026-11-17T01:10:00Z' });
 
 test('item 1: a cancelled run whose step results were not read gives unknown, even with a later success', () => {
@@ -71,7 +72,7 @@ test('item 1: the reader records the failed steps of a run without a result', as
   const byId = Object.fromEntries(gh.workflowRuns.map((r) => [r.id, r]));
   assert.deepEqual(byId[7].stepFailures, [{ attempt: 1, job: 'test', step: 'Run pytest' }]);
   assert.equal(byId[8].stepFailures, undefined);
-  assert.equal(checks.ciGreen({ pr: gh.pr, workflowRuns: gh.workflowRuns, prFiles: gh.prFiles, config: { requiredWorkflowPaths: [CI] } }).status, 'unknown');
+  assert.equal(checks.ciGreen({ pr: gh.pr, workflowRuns: gh.workflowRuns, prFiles: gh.prFiles, truncated: gh.truncated, config: { requiredWorkflowPaths: [CI] } }).status, 'unknown');
 });
 
 // ---- Item 2: a Story's new function and the base AttributeError ----
@@ -157,4 +158,27 @@ test('item 2 limit: a call inside a string opened on an unchanged line still cou
   }
   const v = await verdictOf(c);
   assert.equal(v.result, 'supported', v.reason);
+});
+
+// ---- Item 3: the readers set every field the checks read ----
+
+test('item 3: the Jira reader always gives sub-task and link lists, also when Jira leaves the fields out', async () => {
+  const { collectJira } = await import('../src/jira-evidence.js');
+  const requestJira = async () => ({ ok: true, json: async () => ({ key: 'BANK-9', fields: { issuetype: { name: 'Story' } }, properties: {} }) });
+  const t = await collectJira('BANK-9', requestJira);
+  assert.deepEqual([t.subtasks, t.links], [[], []]);
+  assert.equal(checks.subtasksDone({ ticket: t }).status, 'pass');
+  assert.equal(checks.blockedByDone({ ticket: t }).status, 'pass');
+  assert.equal(checks.subtasksDone({ ticket: { key: 'BANK-9' } }).status, 'unknown');
+  assert.equal(checks.blockedByDone({ ticket: { key: 'BANK-9' } }).status, 'unknown');
+});
+
+test('item 3: the GitHub reader always gives page flags and PR candidates', async () => {
+  const fetchFn = async (url) => {
+    const body = /\/pulls\?/.test(url) ? [] : null;
+    return body === null ? { ok: false, status: 404, json: async () => ({}), headers: { get: () => null } } : { ok: true, status: 200, json: async () => body, headers: { get: () => null } };
+  };
+  const gh = await collectGithub({ repo: 'o/r', key: 'BANK-9', fetchFn });
+  assert.deepEqual(gh.truncated, { pulls: false, comments: false, runs: false, files: false, checks: false });
+  assert.deepEqual(gh.prCandidates, []);
 });

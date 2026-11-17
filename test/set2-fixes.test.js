@@ -9,6 +9,7 @@ import { collectGithub, collectPrStats } from '../src/github-evidence.js';
 import { checkHumanSignoff, ciGreen } from '../src/verifier/checks.js';
 import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
+import { withReader } from './helpers/reader.js';
 
 // The recorded reports predate unmeasured_files (review finding 14) and changed_excluded; read
 // them as the current coverage script writes them, with an empty list and a count of 0.
@@ -56,7 +57,7 @@ test('S17: a cancelled run next to a successful run of the same workflow on the 
   // stepFailures: the reader read the steps of the run without a result and none failed (PR 9
   // review, item 1).
   const run = (conclusion, id) => ({ id, path: '.github/workflows/ci.yml', headSha: head, status: 'completed', conclusion, createdAt: `2026-11-16T10:0${id}:00Z`, stepFailures: [] });
-  const ctx = { pr: { headSha: head }, prFiles: ['src/a.py'], workflowRuns: [run('cancelled', 1), run('success', 2)] };
+  const ctx = withReader({ pr: { headSha: head }, prFiles: ['src/a.py'], workflowRuns: [run('cancelled', 1), run('success', 2)] });
   assert.equal(ciGreen(ctx).status, 'pass', ciGreen(ctx).reason);
   assert.equal(ciGreen({ ...ctx, workflowRuns: [run('cancelled', 1)] }).status, 'unknown');
   assert.equal(ciGreen({ ...ctx, workflowRuns: [run('failure', 1), run('success', 2)] }).status, 'fail');
@@ -68,7 +69,7 @@ test('S17: a cancelled run next to a successful run of the same workflow on the 
 test('S17: a cancelled run passes only when a successful run on the head started after it', () => {
   const head = 'a'.repeat(40);
   const run = (conclusion, id, createdAt) => ({ id, path: '.github/workflows/ci.yml', headSha: head, status: 'completed', conclusion, createdAt, stepFailures: [] });
-  const ctx = (runs) => ({ pr: { headSha: head }, prFiles: ['src/a.py'], workflowRuns: runs });
+  const ctx = (runs) => withReader({ pr: { headSha: head }, prFiles: ['src/a.py'], workflowRuns: runs });
   const later = ciGreen(ctx([run('cancelled', 1, '2026-11-16T10:00:00Z'), run('success', 2, '2026-11-16T10:05:00Z')]));
   assert.equal(later.status, 'pass', later.reason);
   const earlier = ciGreen(ctx([run('success', 1, '2026-11-16T10:00:00Z'), run('cancelled', 2, '2026-11-16T10:05:00Z')]));

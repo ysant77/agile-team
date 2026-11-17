@@ -72,7 +72,7 @@ test('case input is validated before any call', async () => {
 test('a metric gate is not trusted when the PR changes how the metric is measured', async () => {
   const { verify } = await import('../src/verifier/verdict.js');
   const sha = 'a'.repeat(40);
-  const ctx = (prFiles) => ({
+  const ctx = (prFiles) => withReader({
     ticket: { key: 'BANK-17', type: 'Story', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'metric_at_least', args: ['pr_auc', 0.25] } }] },
     pr: { number: 3, title: 'BANK-17: ship fraud model v3', state: 'open', headSha: sha },
     report: { schema: 'aat-ci-report/1', head_sha: sha, tests: [], metrics: { pr_auc: 0.9 }, workflow_files: { '.github/workflows/ci.yml': 'h' } },
@@ -93,6 +93,7 @@ test('a metric gate is not trusted when the PR changes how the metric is measure
 });
 
 import { newDependencies, newFailureModes } from '../src/case.js';
+import { withReader } from './helpers/reader.js';
 
 test('new dependencies are the head lock packages the base lock does not have', () => {
   assert.deepEqual(newDependencies({ deps: { a: '1', b: '2' } }, { deps: { a: '1', b: '3', redis: '5' } }), ['redis']);

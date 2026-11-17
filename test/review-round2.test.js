@@ -7,6 +7,7 @@ import { collectGithub } from '../src/github-evidence.js';
 import { verifyClaim, VERIFY_CONFIG } from '../src/verify-claim.js';
 import { namesKey } from '../src/verifier/report.js';
 import { bugTestExists, ciGreen, DEFAULT_TRUST_PATHS, pipelineChange, prLinked, reportTrusted } from '../src/verifier/checks.js';
+import { withReader } from './helpers/reader.js';
 
 const REPO = 'ysant77/yms-bank-demo';
 const CI = '.github/workflows/ci.yml';
@@ -27,7 +28,7 @@ const pull = (number, title, full = REPO) => ({
   head: { ref: `branch-${number}`, sha: HEAD, repo: { full_name: full } },
 });
 const full = (n, make) => Array.from({ length: n }, (_, i) => make(i));
-const ctx = (over = {}) => ({ ticket: { key: 'BANK-1', type: 'Bug' }, config: VERIFY_CONFIG, ...over });
+const ctx = (over = {}) => withReader({ ticket: { key: 'BANK-1', type: 'Bug' }, config: VERIFY_CONFIG, ...over });
 
 test('R1: a full last page of PR files makes the file list unknown, not complete', async () => {
   const { fetchFn } = fakeFetch([

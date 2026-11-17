@@ -13,5 +13,17 @@
   },
   "prFiles": [
     "src/bank/service.py"
-  ]
+  ],
+  "truncated": {
+    "pulls": false,
+    "comments": false,
+    "runs": false,
+    "files": false,
+    "checks": false
+  },
+  "mergeRequiredTests": [],
+  "ticket": {
+    "subtasks": [],
+    "links": []
+  }
 }
