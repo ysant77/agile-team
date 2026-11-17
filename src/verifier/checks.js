@@ -183,8 +183,17 @@ export function metricCompare(ctx, name, bound, direction) {
   const label = `metric_${direction === 'min' ? 'at_least' : 'at_most'}(${name}, ${bound})`;
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
-  const value = ctx.report.metrics?.[name];
+  // A repeated benchmark reports {median, iqr_low, iqr_high, runs}; the gate uses the median.
+  const raw = ctx.report.metrics?.[name];
+  const value = typeof raw === 'number' ? raw : typeof raw?.median === 'number' ? raw.median : undefined;
   if (typeof value !== 'number') return result(label, 'fail', `${name} not reported`);
+  // JSON 1e999 parses to Infinity. A non-finite value or bound cannot be compared; a null or ""
+  // bound must not coerce to 0 (PR 4 review, finding 1).
+  if (!Number.isFinite(value)) return result(label, 'unknown', `${name} = ${value} is not a finite number`);
+  if (typeof bound !== 'number' || !Number.isFinite(bound)) {
+    return result(label, 'unknown', `bound ${JSON.stringify(bound) ?? 'missing'} for ${name} is not a finite number`);
+  }
+  const shown = typeof raw === 'number' ? `${value}` : `median ${value} (IQR ${raw.iqr_low ?? '?'} to ${raw.iqr_high ?? '?'}${raw.runs ? `, ${raw.runs} runs` : ''})`;
   // Metrics are written by the code under test. A PR that changes how they are measured
   // cannot pass a metric gate by itself (DESIGN.md section 12, risk 12).
   const guardedPaths = ctx.config?.guardedPaths ?? [];
@@ -201,11 +210,14 @@ export function metricCompare(ctx, name, bound, direction) {
     return result(label, 'unknown', 'data hashes for training and live data are equal: the drift number compares a dataset with itself');
   }
   const guard = tooGoodLimit(ctx.config?.tooGood, name);
+  if (guard !== undefined && !(typeof guard === 'number' && Number.isFinite(guard))) {
+    return result(label, 'unknown', `too-good limit for ${name} is not a finite number: fix the config`);
+  }
   if (guard !== undefined && value > guard) {
-    return result(label, 'unknown', `${name} = ${value} is above ${guard}: too good, human review`);
+    return result(label, 'unknown', `${name} = ${shown} is above ${guard}: too good, human review`);
   }
   const ok = direction === 'min' ? value >= bound : value <= bound;
-  return result(label, ok ? 'pass' : 'fail', `${name} = ${value}`);
+  return result(label, ok ? 'pass' : 'fail', `${name} = ${shown}`);
 }
 
 function compareVersions(a, b) {

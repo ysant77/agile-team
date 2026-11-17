@@ -26,16 +26,20 @@ better; `metric_at_most`: lower is better). A human decides when:
 - a side that passes the gates has no finite value for the metric. Infinity, NaN, a string or
   a non-finite IQR bound counts as missing.
 
-## Limit in production: two lead rules are not active
+## How the lead-rule inputs are measured (unit 3)
 
-`openCase` reads the diff size from GitHub. It does not measure new failure modes or new
-dependencies, so both stay unknown (`null`). An unknown input sends the case to a human with no
-recommendation. So in the Forge app today, a case that the gates and the metric do not settle
-always goes to a human, and the smaller-diff rule is never reached. The three lead rules run
-only on fixture data (scenarios S32 and S36) and in unit tests.
+On `main` before unit 3, `openCase` did not measure new failure modes or new dependencies, so
+both stayed unknown and every case that the gates and the metric did not settle went to a human
+with no recommendation. Unit 3 measures them from evidence:
 
-To make them active, a later change must measure the two inputs from evidence (for example,
-dependency files changed in the PR) and keep "unknown" when it cannot.
+- **New dependencies:** packages in the head report's lock (`deps`) that the base report's lock
+  does not have. Unknown (`null`) when either report is missing.
+- **New failure modes:** named rules over the PR's file list and the head report's test ids. One
+  rule today: a cache file with no stale-read test. Unknown when the file list is cut (page limit).
+- **Diff size:** additions plus deletions from GitHub; unknown when not read.
+
+Any unknown input still sends the case to a human with no recommendation. A measured input only
+gives a recommendation; it never sets `winner`.
 
 ## Domain
 

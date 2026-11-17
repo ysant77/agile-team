@@ -31,6 +31,8 @@ modules:
         - lint-requirement
         - create-ticket
         - read-github-commit
+      skills:
+        - write-checkable-ticket
     - key: lead-agent
       name: Agile Team Lead
       description: Explains evidence and gives an opinion on disputes that code cannot
@@ -59,6 +61,9 @@ modules:
         - read-github-commit
         - open-case
         - record-opinion
+        - get-verdicts
+      skills:
+        - explain-verdicts
   action:
     - key: lint-requirement
       name: Lint requirement
@@ -200,6 +205,46 @@ modules:
           description: >
             One JSON object with decision, reasons (each with text and evidence
             ids), confidence from 0 to 1, and risks.
+    - key: get-verdicts
+      name: Get verdicts
+      function: getVerdicts
+      actionVerb: GET
+      description: >
+        Read-only. Returns the team lead verifier's latest verdicts on one work
+        item (claim type, result, reason, checker version, commit), the
+        arbitration case if there is one, and the audit chain head. Returns
+        nothing for a work item the caller cannot see.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: The work item, for example BANK-4.
+        limit:
+          title: Limit
+          type: number
+          required: false
+          description: How many of the latest verdicts to return, 1 to 20. Default 5.
+  rovo:mcp:
+    - key: agile-team-mcp
+      name: Agile Team Verifier
+      tools:
+        - lint-requirement
+        - get-verdicts
+        - read-github-commit
+  rovo:skill:
+    - key: write-checkable-ticket
+      source:
+        dir: skills/write-checkable-ticket
+      dependencies:
+        tools:
+          - lint-requirement
+    - key: explain-verdicts
+      source:
+        dir: skills/explain-verdicts
+      dependencies:
+        tools:
+          - get-verdicts
   trigger:
     - key: comment-claim-trigger
       function: onComment
@@ -213,6 +258,13 @@ modules:
       render: native
       title: Agile team verifier
       icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+  jira:globalPage:
+    - key: aat-monitor
+      resource: monitor
+      resolver:
+        function: panelResolver
+      render: native
+      title: Agile team monitor
   consumer:
     - key: verify-consumer
       queue: verify-queue
@@ -235,9 +287,13 @@ modules:
       handler: index.openCase
     - key: recordOpinion
       handler: index.recordOpinion
+    - key: getVerdicts
+      handler: index.getVerdicts
 resources:
   - key: panel
     path: src/frontend/panel.jsx
+  - key: monitor
+    path: src/frontend/monitor.jsx
 permissions:
   scopes:
     - read:jira-work

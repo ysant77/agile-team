@@ -29,7 +29,8 @@ export function arbitrate(ticket, sides) {
 
   // 1. Code gates.
   const alive = sides.filter((s) => s.gatesPassed);
-  if (alive.length === 0) return decision('code-gate', null, 'gates', 'no side passes the gates', sides);
+  // No side passes: nobody wins, and a human decides what happens next (PR 3 check, item b).
+  if (alive.length === 0) return decision('human', null, 'gates', 'no side passes the gates', sides);
   if (alive.length === 1) {
     return decision('code-gate', alive[0].id, 'gates', `only ${alive[0].id} passes the gates`, sides);
   }
@@ -43,7 +44,9 @@ export function arbitrate(ticket, sides) {
   const pre = ticket.preRegistered;
   if (pre?.metric) {
     // A registered metric missing on a side that passes the gates: code cannot compare.
-    const missing = alive.filter((s) => !s.metrics);
+    // Only finite numbers count, here as well as in the case builder (PR 3 check, item a).
+    const finite = (m) => m && Number.isFinite(m.median) && Number.isFinite(m.iqrLow) && Number.isFinite(m.iqrHigh);
+    const missing = alive.filter((s) => !finite(s.metrics));
     if (missing.length) {
       return decision('human', null, 'metric', `${missing.map((s) => s.id).join(', ')} has no ${pre.metric} in its report`, sides);
     }
@@ -53,7 +56,8 @@ export function arbitrate(ticket, sides) {
     const [best, next] = ranked;
     // The margin is relative to the larger absolute value, so it works for negative values and
     // near zero (unit 2 review, item 9).
-    const margin = pre.margin ?? 0.1;
+    // A margin that is not a finite number (null, "", NaN) uses the default; it never coerces to 0.
+    const margin = typeof pre.margin === 'number' && Number.isFinite(pre.margin) ? pre.margin : 0.1;
     const gap = Math.abs(best.metrics.median - next.metrics.median);
     const scale = Math.max(Math.abs(best.metrics.median), Math.abs(next.metrics.median));
     const better = best.metrics.median !== next.metrics.median && gap >= margin * scale;

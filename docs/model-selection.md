@@ -21,3 +21,11 @@ on it; inside Jira the agents run on Rovo, where we cannot choose the model.
    the lower median latency. This was fixed before any score.
 7. **Partial runs.** A model that has not finished every task of a role is shown, not ranked.
 8. **Re-check live.** The choice is checked again on the live scenario runs.
+
+## Note: arbitration inputs in the Forge app
+
+The model bake-off above does not decide arbitration. In the Forge app, the team lead tie-breaks
+(fewer new failure modes, no new dependency, smaller diff) only recommend a side; a human decides
+(`docs/arbitration.md`). Before unit 3 the failure-mode and dependency counts were not measured in
+production, so those two rules were not active; unit 3 measures them from the CI reports and the
+PR file list, and an unknown input still goes to a human.

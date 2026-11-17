@@ -19,6 +19,28 @@ function metricOf(report, name) {
   return { median: value.median, iqrLow, iqrHigh };
 }
 
+// Packages in the head report's lock that the base report's lock does not have. Without both
+// reports nothing is compared (null), and the tie-break treats the side as adding nothing.
+export function newDependencies(baseReport, report) {
+  if (!baseReport?.deps || !report?.deps) return null;
+  return Object.keys(report.deps).filter((name) => !(name in baseReport.deps)).sort();
+}
+
+// Named rules for failure modes a change can add (DESIGN 6c, gap 3). Each rule reads only the
+// PR's file list and the head report's test ids, so it is code, not judgement.
+export const FAILURE_MODE_RULES = [
+  {
+    name: 'cache without a stale-read test',
+    applies: ({ files }) => files.some((f) => /cache/i.test(f)),
+    covered: ({ tests }) => tests.some((t) => /stale/i.test(t)),
+  },
+];
+
+export function newFailureModes({ files = [], report } = {}) {
+  const tests = (report?.tests ?? []).map((t) => String(t.id ?? ''));
+  return FAILURE_MODE_RULES.filter((r) => r.applies({ files, tests }) && !r.covered({ files, tests })).map((r) => r.name);
+}
+
 // The metrics a ticket registered before work started: its metric_at_least (higher is better)
 // and metric_at_most (lower is better) ACs. The case never takes a metric or a direction from the
 // caller (unit 2 review, items 1 and 2).
@@ -65,17 +87,19 @@ export function caseInputErrors(payload, ticket) {
   return errors;
 }
 
-// evidence per side: { prNumber, pr, report, verdict, diffLines, files, newFailureModes,
-// newDependencies }. A value nobody measured stays null (unknown), never "none".
+// evidence per side: { prNumber, pr, report, baseReport, verdict, diffLines, files }. A value
+// nobody measured stays null (unknown), never "none" (unit 2 review, item 3).
 export function buildSide(e, metric) {
   return {
     id: `PR${e.prNumber}`,
     gatesPassed: e.verdict?.result === 'supported',
     gateReason: e.verdict?.reason ?? 'not verified',
     metrics: metric ? metricOf(e.report, metric) : null,
-    newFailureModes: Array.isArray(e.newFailureModes) ? e.newFailureModes : null,
-    newDependencies: Array.isArray(e.newDependencies) ? e.newDependencies : null,
-    diffLines: typeof e.diffLines === 'number' ? e.diffLines : null,
+    // Measured from the evidence (unit 3); null when the file list or a report is missing.
+    newFailureModes: Array.isArray(e.newFailureModes) ? e.newFailureModes
+      : Array.isArray(e.files) ? newFailureModes({ files: e.files, report: e.report }) : null,
+    newDependencies: Array.isArray(e.newDependencies) ? e.newDependencies : newDependencies(e.baseReport, e.report),
+    diffLines: Number.isFinite(e.diffLines) ? e.diffLines : null,
   };
 }
 
@@ -98,6 +122,9 @@ export function buildPacket({ issueKey, ticket, question, evidence }) {
     add('ci', `${s.id}: claim "ready" is ${e.verdict?.result ?? 'not verified'}: ${short(e.verdict?.reason, 200)}`);
     if (metric && s.metrics) add('metric', `${s.id}: ${metric} median ${s.metrics.median}, IQR ${s.metrics.iqrLow} to ${s.metrics.iqrHigh}`);
     add('diff', `${s.id}: ${s.diffLines ?? 'unknown'} changed lines in ${e.files?.length ?? 'unknown'} files${e.files?.length ? `: ${e.files.slice(0, 8).join(', ')}` : ''}`);
+    const deps = s.newDependencies;
+    const modes = s.newFailureModes;
+    add('rule', `${s.id}: new dependencies: ${deps === null ? 'not known (base or head report missing)' : deps.length ? deps.join(', ') : 'none'}; new failure modes: ${modes === null ? 'not known (file list missing)' : modes.length ? modes.join(', ') : 'none'}`);
     // Written by the PR author: shown, but it never grounds a number (unit 2 review, item 5).
     if (e.pr?.body) add('pr_text', `${s.id} description: ${short(e.pr.body)}`);
   }

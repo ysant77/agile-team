@@ -60,7 +60,7 @@ export async function openCase(payload) {
     }
     // The file list from collectGithub: every page, or null when it is cut.
     const verdict = verify({ id: `case:${input.issueKey}:${prNumber}`, type: 'ready', text: '' }, { ticket, ...github, config: VERIFY_CONFIG });
-    evidence.push({ prNumber, pr: github.pr, report: github.report, verdict, ...stats });
+    evidence.push({ prNumber, pr: github.pr, report: github.report, baseReport: github.baseReport, verdict, ...stats });
   }
   const built = buildPacket({ ...input, ticket, evidence });
   // Opening a case again keeps the earlier case and its opinions as history (item 10).

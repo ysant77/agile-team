@@ -62,3 +62,17 @@ test('the too-good guard still sends a leak to a human when no guarded file chan
   assert.equal(v.result, 'cannot_verify');
   assert.match(v.reason, /too good/);
 });
+
+test('a repeated benchmark is gated on its median and shows the spread', () => {
+  const checks = [['metric_at_least', 'transfers_per_s', 400]];
+  const prFiles = ['src/bank/ledger.py'];
+  const good = ready(ctx({ checks, prFiles, metrics: { transfers_per_s: { median: 412.5, iqr_low: 401, iqr_high: 420, runs: 20 } } }));
+  assert.equal(good.result, 'supported');
+  const part = good.checks.find((c) => c.name === 'ac_mapped').parts[0];
+  assert.match(part.reason, /median 412\.5 \(IQR 401 to 420, 20 runs\)/);
+  const slow = ready(ctx({ checks, prFiles, metrics: { transfers_per_s: { median: 380, iqr_low: 360, iqr_high: 405, runs: 20 } } }));
+  assert.equal(slow.result, 'contradicted');
+  const missing = ready(ctx({ checks, prFiles, metrics: { transfers_per_s: { iqr_low: 1 } } }));
+  assert.equal(missing.result, 'contradicted');
+  assert.match(missing.reason, /not reported/);
+});

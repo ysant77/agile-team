@@ -1,6 +1,8 @@
 import api, { route } from '@forge/api';
 import Resolver from '@forge/resolver';
-import { appendAudit } from './audit-store.js';
+import { appendAudit, readAudit } from './audit-store.js';
+import { monitorForViewer } from './monitor.js';
+import { kvs } from '@forge/kvs';
 
 const resolver = new Resolver();
 
@@ -33,6 +35,19 @@ resolver.define('approve', async ({ payload, context }) => {
   if (!response.ok) return { ok: false, error: `Jira refused the approval (HTTP ${response.status}).` };
   const audit = await appendAudit({ actor: context.accountId, event: 'requirement.approved', data: { key, reason } });
   return { ok: true, approval, auditSeq: audit.seq };
+});
+
+// Monitor page: the whole audit chain (small in the demo), checked and replayed.
+const MONITOR_MAX = 2000;
+resolver.define('getMonitor', async () => {
+  const head = await kvs.get('audit-head');
+  const count = head ? Math.min(head.seq + 1, MONITOR_MAX) : 0;
+  const events = [];
+  for (let from = 0; from < count; from += 50) events.push(...(await readAudit(from, Math.min(50, count - from))));
+  // As the user: a work item the viewer cannot browse returns 404 and is left out.
+  const canSee = async (key) => (await api.asUser().requestJira(route`/rest/api/3/issue/${key}?fields=id`)).ok;
+  const monitor = await monitorForViewer(events, canSee);
+  return { ...monitor, truncated: head ? head.seq + 1 > MONITOR_MAX : false, readAt: new Date().toISOString() };
 });
 
 export const handler = resolver.getDefinitions();
