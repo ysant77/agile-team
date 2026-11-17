@@ -37,7 +37,7 @@ test('a ticket may not invent a number, unit or threshold (live case of 13 Nov: 
 
 test('lint v3: bare counts and HTTP codes from a fixed list are allowed; quantities still need a source', async () => {
   const { lintRequirement, LINT_VERSION } = await import('../src/lint.js');
-  assert.equal(LINT_VERSION, 5);
+  assert.equal(LINT_VERSION, 6);
   const request = ['A tester saw another customer\'s statement by changing the number in the URL.'];
   const draft = (description, statement = 'the API refuses the request') => ({ summary: 'Owner check on statements', description,
     acceptanceCriteria: [{ acId: 'AC1', statement, check: { type: 'manual', args: [] } }] });
@@ -106,4 +106,89 @@ test('lint v5: "and" or "or" after a status code does not hide a quantity', () =
     assert.equal(ungrounded(d).length, 1, d);
   }
   assert.deepEqual(ungrounded('The API returns 409 or refuses the body.'), []);
+});
+
+// Final review of PR 5. One helper for the tests below.
+function ungroundedFor(request) {
+  return (description, acs = [{ acId: 'AC1', statement: 'the API refuses the request', check: { type: 'manual', args: [] } }]) =>
+    lintRequirement({ summary: 'Owner check on statements', description, acceptanceCriteria: acs }, [request]).findings
+      .filter((f) => f.rule === 'ungrounded-number').map((f) => f.message.split(' ')[0]);
+}
+
+test('lint v6: only an issue key or AC id from the request or the draft is stripped', async () => {
+  const { LINT_VERSION } = await import('../src/lint.js');
+  assert.equal(LINT_VERSION, 6);
+  const ungrounded = ungroundedFor('A customer saw the wrong balance, see KAN-12.');
+  const invented = {
+    'The job stops after TIMEOUT-30 seconds.': '30',
+    'The export reads LIMIT-1000 rows.': '1000',
+    'The client makes MAX-5 retries.': '5',
+    'The page keeps P-95 latency low.': '95',
+    'The fix waits for KAN-77 first.': '77',
+  };
+  for (const [d, n] of Object.entries(invented)) assert.deepEqual(ungrounded(d), [n], d);
+  assert.deepEqual(ungrounded('The fix links KAN-12.'), []);
+  const acs = [
+    { acId: 'AC1', statement: 'the API refuses the request', check: { type: 'manual', args: [] } },
+    { acId: 'AC2', statement: 'the page shows the error after AC1', check: { type: 'blocked_by_done', args: ['KAN-12'] } },
+  ];
+  assert.deepEqual(ungrounded('The API refuses the request.', acs), []);
+});
+
+test('lint v6: text is normalised, and a plural noun, a unit or a test name hides no number', () => {
+  const ungrounded = ungroundedFor('A customer saw the wrong balance.');
+  const check = (type, args) => [{ acId: 'AC1', statement: 'the API refuses the request', check: { type, args } }];
+  const invented = {
+    'The API returns 500 errors.': ['500'],
+    'The API gets 200 responses per minute.': ['200'],
+    'The API returns 500\nms after a call.': ['500'],
+    'The API returns 500\n\tms after a call.': ['500'],
+    'The page loads in ５ seconds.': ['5'],
+    'The story is 4 points.': ['4'],
+  };
+  for (const [d, n] of Object.entries(invented)) assert.deepEqual(ungrounded(d), n, d);
+  assert.ok(ungrounded('The page loads in ½ second.').length > 0, 'a vulgar fraction is a number');
+  assert.deepEqual(ungrounded('The API refuses the request.', check('test_passes', ['test_500ms'])), ['500']);
+  assert.deepEqual(ungrounded('The API refuses the request.', check('test_passes', ['test_BANK2_owner_check'])), []);
+  for (const d of [
+    'The API returns 500 error.',
+    'The API returns 404 status.',
+    'The API returns 404',
+    'The story is 5 points.',
+  ]) assert.deepEqual(ungrounded(d), [], d);
+});
+
+test('lint v6: list markers, status phrases, joined codes and thousands separators are not flagged', () => {
+  const ungrounded = ungroundedFor('Exports of 1,000 rows time out for the customer.');
+  for (const d of [
+    '1. The API refuses the request.\n2) The page shows the error.',
+    'The API returns 200 OK.',
+    'The API returns 404 Not Found for another account.',
+    'The API returns 200 and 404.',
+    'The API returns 401, 403 or 404.',
+    'The export of 1000 rows finishes.',
+    'The export of 1,000 rows finishes.',
+  ]) assert.deepEqual(ungrounded(d), [], d);
+  // Still flagged.
+  assert.deepEqual(ungrounded('The API returns 200 and 300 credits.'), ['200', '300']);
+  assert.deepEqual(ungrounded('The API returns 200 and 5 items.'), ['200', '5']);
+  assert.deepEqual(ungrounded('The page shows 2. The API refuses it.'), ['2']);
+  assert.deepEqual(ungrounded('The export of 2,000 rows finishes.'), ['2000']);
+});
+
+test('lint v6: a grounded number must keep the unit or noun it has in the request', () => {
+  const ungrounded = ungroundedFor('Calls time out after 5 seconds. Users see 3 tabs on 3G. Retry up to 10.');
+  const metric = [{ acId: 'AC1', statement: 'the call stops in time', check: { type: 'metric_at_most', args: ['call_seconds', 5] } }];
+  for (const d of [
+    'The call stops after 5 seconds.',
+    'The call stops after 5 second.',
+    'The call stops after 5 s.',
+    'The call stops after 5 sec.',
+    'Users see 3 tabs on a 3G network.',
+    'The client retries 10 times.',
+  ]) assert.deepEqual(ungrounded(d), [], d);
+  assert.deepEqual(ungrounded('The call stops in time.', metric), []);
+  assert.deepEqual(ungrounded('The client makes 5 retries.'), ['5']);
+  assert.deepEqual(ungrounded('The page loads in 3 seconds.'), ['3']);
+  assert.deepEqual(ungrounded('The call stops after 5 minutes.'), ['5']);
 });
