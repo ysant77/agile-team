@@ -1,4 +1,18 @@
 // Rule lint for requirement text. No model. Findings drive the PM agent's rewrite.
+//
+// Limits. The number check is a second layer, not the gate: the user confirms the draft. It does
+// not catch these cases:
+// - Number words ("twenty retries", "five") are not numbers to it.
+// - Only ASCII digits after NFKC count. Digits of other scripts are not seen. "½" counts as 1 and 2.
+// - "1,000" is read as one thousand. "1.000" is a decimal and "1 000" is two numbers.
+// - The unit check reads at most two words right after the number, up to a stop word. A word
+//   between number and noun ("5 failed attempts" against "5 attempts") is flagged. A unit before
+//   the number ("$5", "EUR 200") is not compared. Unit synonyms are a short fixed list.
+// - A number with no word after it, in the draft or in the source, matches any use.
+// - An issue key in the draft must be in a source; a check that cites another issue is flagged.
+// - Status codes and the words after them come from fixed lists. "returns 200 and 5 items" flags
+//   200 too.
+// - The sources are trusted. A number added to the request passes.
 
 const VAGUE = /\b(fix|fixed|improve|better|handle|support|optimi[sz]e|enhance|clean ?up|make (it )?work|doesn'?t work|does nothing)\b/i;
 const ACTOR = /\b(users?|customers?|admins?|operators?|systems?|apis?|services?|pages?|jobs?|teams?|managers?|agents?)\b/i;
