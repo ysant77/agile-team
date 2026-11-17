@@ -23,10 +23,12 @@ test('item 1: a decimal number of 7 or more digits is a number, not a commit sha
   assert.equal(guardOf(withReview((v) => { v.risks = ['The head 4c1e9a07 has no test for AC2.']; return v; })).outcome, 'review');
 });
 
-test('item 2: a proposal for an AC that has a code check makes the review invalid', () => {
+// Changed 17 Nov (rule i, REGRESSION-ARM-D-2026-11-17.md): the proposal is dropped, not the review.
+test('item 2: a proposal for an AC that has a code check is dropped; the review stays', () => {
   const r = guardOf(withReview((v) => { v.proposedChecks[0].ac = 'AC1'; return v; }));
-  assert.equal(r.outcome, 'invalid_review');
-  assert.equal(r.guard, 'ac-has-check');
+  assert.equal(r.outcome, 'review');
+  assert.equal(r.review.proposedChecks.some((c) => c.ac === 'AC1'), false);
+  assert.equal(r.droppedChecks[0].guard, 'ac-has-check');
 });
 
 test('item 2: adoption never replaces a code check', () => {
