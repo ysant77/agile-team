@@ -18,9 +18,11 @@ const files = (n, from) => Array.from({ length: n }, (_, i) => ({ filename: `tes
 test('R1: the PR size reader reads every page of changed files', async () => {
   const stats = await collectPrStats({ repo: REPO, prNumber: 3, fetchFn: fetchWith((p) => (p === 1 ? files(100, 0) : p === 2 ? files(5, 100) : [])) });
   assert.equal(stats.files.length, 105);
+  assert.equal(Object.keys(stats.patches).length, 105);
 });
 
 test('R1: a full last page of changed files makes the file list unknown', async () => {
   const stats = await collectPrStats({ repo: REPO, prNumber: 3, fetchFn: fetchWith(() => files(100, 0)) });
   assert.equal(stats.files, null);
+  assert.equal(stats.patches, null);
 });

@@ -10,7 +10,7 @@ import { safeEnv } from '../bakeoff/repo.js';
 
 const side = (prNumber, diffLines, metrics = {}, extra = {}) => ({
   prNumber, verdict: { result: 'supported', reason: 'all checks passed' }, diffLines, files: ['src/fraud/model.py'],
-  pr: { body: `Fix for PR${prNumber}` }, report: { metrics }, newFailureModes: [], newDependencies: [], ...extra,
+  pr: { body: `Fix for PR${prNumber}` }, report: { job_id: 'job-1', metrics }, newFailureModes: [], newDependencies: [], ...extra,
 });
 const ac = (type, name, bound) => ({ acId: 'AC1', check: { type, args: [name, bound] } });
 const ticketWith = (...acs) => ({ key: 'BANK-42', acceptanceCriteria: acs, labels: [] });

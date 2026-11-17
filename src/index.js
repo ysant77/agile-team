@@ -6,6 +6,7 @@ import { admitClaim } from './claim-intake.js';
 import { readLatestCommit } from './github.js';
 import { addComment, createIssue, getComment } from './jira.js';
 import { malformedAcLines, normaliseAcs, parseAcLines } from './ticket-spec.js';
+import { lintRequirement } from './lint.js';
 import { adfToText, checkStoryPoints, parseClaim } from './text.js';
 
 // Rovo action: create a work item and set story points.
@@ -20,6 +21,8 @@ export async function createTicket(payload) {
         `Fix these lines and call again: ${malformed.join(' / ')}`,
     };
   }
+  const grounding = ticketGrounding(payload);
+  if (grounding) return { ok: false, error: grounding };
   const result = await createIssue({
     projectKey: String(payload.projectKey).trim().toUpperCase(),
     summary: String(payload.summary).trim(),
@@ -33,6 +36,26 @@ export async function createTicket(payload) {
   });
   console.log('create-ticket result', JSON.stringify(result));
   return result;
+}
+
+// Every number, unit or threshold in a ticket must come from the user's request; otherwise the
+// ticket states an open question instead (owner rule, 13 Nov). Returns an error text or null.
+// Known limit: the agent supplies "request", and the code cannot read the user's chat. An agent
+// that adds a number to "request" passes this check. The check stops a number that is in the
+// draft only; the user's confirmation of the draft is the control for the request text. The
+// lint-requirement action has the same limit.
+export function ticketGrounding(payload) {
+  const request = String(payload?.request ?? '').trim();
+  if (!request) return 'Pass the user\'s request in their own words as "request", so the numbers can be checked.';
+  const draft = {
+    summary: payload.summary ?? '',
+    description: String(payload.description ?? '').replace(/\\n/g, '\n'),
+    acceptanceCriteria: parseAcLines(payload.acceptanceCriteria),
+  };
+  const bad = lintRequirement(draft, [request]).findings.filter((f) => f.rule === 'ungrounded-number');
+  if (!bad.length) return null;
+  return `These numbers are not in the request: ${bad.map((f) => f.message.split(' ')[0]).join(', ')}. ` +
+    'Do not invent a number, unit or threshold. Remove it, or write "Open question: <what is missing>" in the description and ask the user.';
 }
 
 // Rovo action: read the latest commit of a public repository through egress.

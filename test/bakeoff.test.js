@@ -9,6 +9,8 @@ import { addCandidate } from '../bakeoff/add-model.js';
 import { chatSettings, loadConfig, ROLE_NAMES, roleModel, validateConfig } from '../bakeoff/models.js';
 import { bootstrap, latestRows, summariseRole } from '../bakeoff/report.js';
 import { rowKey } from '../bakeoff/run.js';
+import { LINT_VERSION } from '../src/lint.js';
+import { GUARD_VERSION } from '../src/opinion.js';
 import { runDev, runDs, runQa } from '../bakeoff/tasks/code.js';
 import { DISPUTES, runLead } from '../bakeoff/tasks/lead.js';
 import { REQUESTS, runPm } from '../bakeoff/tasks/pm.js';
@@ -116,7 +118,7 @@ test('one task of difference in five is no clear winner, and the tie-break picks
 });
 
 test('a large difference is a clear winner', () => {
-  const rows = [...rowsFor('good', 'lead', Array(10).fill(1)), ...rowsFor('weak', 'lead', Array(10).fill(0))];
+  const rows = [...rowsFor('good', 'lead', Array(10).fill(1), { guardVersion: GUARD_VERSION }), ...rowsFor('weak', 'lead', Array(10).fill(0), { guardVersion: GUARD_VERSION })];
   const s = summariseRole(rows, 'lead', { good: 18, weak: 3 });
   assert.equal(s.verdict.kind, 'clear');
   assert.equal(s.verdict.pick, 'good');
@@ -124,8 +126,8 @@ test('a large difference is a clear winner', () => {
 
 test('overlapping repeat spreads make a winner unclear', () => {
   const rows = [
-    ...rowsFor('a', 'pm', Array(10).fill(1)), ...rowsFor('b', 'pm', Array(10).fill(0)),
-    ...rowsFor('a', 'pm', [1, 1, 1, 0, 0, 0, 0, 0, 0, 0], { repeat: 1 }), ...rowsFor('b', 'pm', [1, 1, 1, 1, 1, 0, 0, 0, 0, 0], { repeat: 1 }),
+    ...rowsFor('a', 'pm', Array(10).fill(1), { lintVersion: LINT_VERSION }), ...rowsFor('b', 'pm', Array(10).fill(0), { lintVersion: LINT_VERSION }),
+    ...rowsFor('a', 'pm', [1, 1, 1, 0, 0, 0, 0, 0, 0, 0], { repeat: 1, lintVersion: LINT_VERSION }), ...rowsFor('b', 'pm', [1, 1, 1, 1, 1, 0, 0, 0, 0, 0], { repeat: 1, lintVersion: LINT_VERSION }),
   ];
   assert.equal(summariseRole(rows, 'pm').verdict.kind, 'noise');
 });
@@ -148,4 +150,10 @@ test('adding a candidate keeps the config valid and refuses a bad tag', () => {
   assert.equal(next.candidates.at(-1).model, 'newmodel:8b');
   assert.equal(next.candidates.at(-1).status, 'run');
   assert.throws(() => addCandidate(structuredClone(config), 'bad tag; rm', 'mac'));
+});
+
+test('lead rows scored under older guards are left out of the ranking', () => {
+  const rows = [...rowsFor('old', 'lead', Array(10).fill(1)), ...rowsFor('new', 'lead', Array(10).fill(0), { guardVersion: GUARD_VERSION })];
+  const s = summariseRole(rows, 'lead');
+  assert.deepEqual(s.lines.map((l) => l.model), ['new']);
 });

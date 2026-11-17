@@ -37,8 +37,8 @@ test('a tie leaves the case to a human, and an opinion may be recorded', () => {
   assert.match(formatOpinion('BANK-32', record), /^Opinion \(not verified\) on BANK-32: prefers PR7\. A human decides\./);
 });
 
-test('a metric inside the noise sets withinNoise; a clear margin decides by code', () => {
-  const m = (v) => ({ report: { metrics: { p95_ms: v } } });
+test('in one job, a metric inside the noise sets withinNoise; a clear margin decides by code', () => {
+  const m = (v) => ({ report: { job_id: 'job-1', metrics: { p95_ms: v } } });
   // The metric and its direction come from the ticket's registered AC (unit 2 review, item 1).
   const ticket = { acceptanceCriteria: [{ acId: 'AC1', check: { type: 'metric_at_most', args: ['p95_ms', 50] } }] };
   const close = buildPacket({ ...base, ticket,
@@ -81,6 +81,7 @@ test('a metric gate is not trusted when the PR changes how the metric is measure
     baseWorkflowFiles: { '.github/workflows/ci.yml': 'h' },
     workflowRuns: [{ name: 'CI', path: '.github/workflows/ci.yml', headSha: sha, status: 'completed', conclusion: 'success', createdAt: '2026-11-20T00:00:00Z' }],
     prFiles,
+    prPatches: Object.fromEntries((prFiles ?? []).filter((f) => f.endsWith('.py')).map((f) => [f, '@@ -0,0 +1,2 @@\n+def test_new():\n+    assert 1 + 1 == 2'])),
     config: { requiredWorkflowPaths: ['.github/workflows/ci.yml'], guardedPaths: ['src/fraud/evaluate.py', 'src/bank/testing/'] },
   });
   assert.equal(verify({ id: 'c', type: 'ready' }, ctx(['tests/test_bank17_gate.py'])).result, 'supported');
@@ -117,4 +118,25 @@ test('S36 shape: the cache side loses on "fewer new failure modes" before the di
   assert.equal(c.arbitration.recommendation.id, 'PR7');
   assert.equal(c.arbitration.rule, 'fewer new failure modes');
   assert.ok(c.packet.evidence.some((e) => e.kind === 'rule' && /PR5: new dependencies: cachetools; new failure modes: cache without a stale-read test/.test(e.text)));
+});
+
+test('reports from different CI jobs are not compared on performance', () => {
+  const m = (job, median, low, high) => ({ report: { job_id: job, metrics: { transfers_per_s: { median, iqr_low: low, iqr_high: high, runs: 20 } } } });
+  // The real case: main measured about 10 000 and an unchanged branch 23 000, on two runners.
+  const c = buildPacket({ ...base, ticket: { acceptanceCriteria: [{ acId: 'AC1', check: { type: 'metric_at_least', args: ['transfers_per_s', 1000] } }] }, evidence: [
+    side(5, 'supported', 40, m('job-a', 10320.7, 10100, 10500)),
+    side(7, 'supported', 60, m('job-b', 23468.75, 20435.5, 23617.5)),
+  ] });
+  assert.equal(c.packet.crossJob, true);
+  assert.equal(c.packet.withinNoise, true);
+  assert.notEqual(c.arbitration.decidedBy, 'code-metric');
+  assert.equal(c.arbitration.rule, 'smaller diff');
+  assert.ok(c.packet.evidence.some((e) => /cannot compare across jobs/.test(e.text)));
+  assert.match(formatCase("BANK-32", c), /Performance: the pull requests ran in different CI jobs/);
+  // Reports without a job id count as different jobs.
+  const none = buildPacket({ ...base, ticket: { acceptanceCriteria: [{ acId: 'AC1', check: { type: 'metric_at_least', args: ['transfers_per_s', 1000] } }] }, evidence: [
+    side(5, 'supported', 40, { report: { metrics: { transfers_per_s: 10 } } }),
+    side(7, 'supported', 60, { report: { metrics: { transfers_per_s: 99 } } }),
+  ] });
+  assert.equal(none.packet.crossJob, true);
 });

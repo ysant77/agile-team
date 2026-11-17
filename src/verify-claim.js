@@ -3,7 +3,7 @@
 import { fetch } from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { appendAudit } from './audit-store.js';
-import { collectGithub } from './github-evidence.js';
+import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment, findComment } from './jira.js';
 import { addVerdictProperty, collectJira } from './jira-evidence.js';
 import { parseTwin } from './monitor.js';
@@ -18,6 +18,13 @@ export const VERIFY_CONFIG = {
     'src/fraud/evaluate.py', 'src/fraud/model.py', 'src/bank/testing/', 'tests/conftest.py',
     'tests/test_fraud_model.py', 'tests/test_bench.py', 'pyproject.toml',
   ],
+  // Registered benchmarks: a gate on one of these needs the repeated form with exactly this many
+  // runs, from this test, passed, and no change to what can alter how it is measured. The report
+  // plugin refuses a second write of a metric name, so another test cannot replace the value.
+  benchmarks: {
+    transfers_per_s: { test: 'tests/test_bench.py::test_transfer_throughput', runs: 20 },
+  },
+  benchmarkGuardedPaths: ['.github/workflows/', 'pytest.ini', 'setup.cfg', 'tox.ini', 'tests/conftest.py'],
 };
 
 const SYMBOL = { supported: 'SUPPORTED', contradicted: 'CONTRADICTED', cannot_verify: 'CANNOT VERIFY' };
@@ -39,7 +46,7 @@ export function formatVerdict(issueKey, claim, verdict, meta) {
 }
 
 const DEFAULT_DEPS = {
-  collectJira, collectGithub, addVerdictProperty, appendAudit, addComment, findComment, fetchFn: fetch, store: kvs,
+  collectJira, collectGithub, collectPrStats, addVerdictProperty, appendAudit, addComment, findComment, fetchFn: fetch, store: kvs,
   env: () => ({ repo: process.env.GITHUB_REPO, token: process.env.GITHUB_TOKEN }),
 };
 
@@ -122,6 +129,12 @@ export async function decide({ issueKey, claim }, d) {
   if (repo) {
     try {
       github = await d.collectGithub({ repo, key: issueKey, token, fetchFn: d.fetchFn });
+      if (github.pr) {
+        // Patches of Python files for the metric tamper check; the file list comes from
+        // collectGithub, which reads every page.
+        const stats = await d.collectPrStats({ repo, prNumber: github.pr.number, token, fetchFn: d.fetchFn });
+        github.prPatches = stats.patches;
+      }
     } catch (error) {
       githubError = error.message;
     }

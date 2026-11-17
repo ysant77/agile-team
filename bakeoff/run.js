@@ -5,18 +5,24 @@
 // Models default to the candidates with status "run" in config/models.json, and the run name to its
 // currentRun. Repeat 0 is the deploy setting; repeats 1..n use the repeat seeds (DESIGN 9k).
 // With --resume yes, tasks that already have a row in the run's results file are skipped.
+// --format none runs without the JSON schema (structured-output arm); --think on|off|low|high
+// overrides the reasoning setting (reasoning arm). Both are recorded per row (DESIGN 9k arms).
+// --redo model|role|task[,...] runs those rows again (a harness fault, named in the log); the
+// report keeps the last row per task.
 
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nextEvent } from '../src/audit.js';
-import { OPINION_PROMPT_VERSION } from '../src/opinion.js';
+import { GUARD_VERSION, OPINION_PROMPT_VERSION } from '../src/opinion.js';
+import { LINT_VERSION } from '../src/lint.js';
 import { candidates, chatSettings, loadConfig } from './models.js';
 import { chat, digest, loaded, parseJson, unload } from './ollama.js';
 import { DISPUTES, runLead } from './tasks/lead.js';
 import { BUGS, DS_TASKS, runDev, runDs, runQa } from './tasks/code.js';
 import { REQUESTS, runPm } from './tasks/pm.js';
+import { PROBES, runTools } from './tasks/tools.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROLES = {
@@ -25,6 +31,7 @@ const ROLES = {
   dev: { tasks: BUGS, id: (t) => t.id, run: runDev },
   qa: { tasks: BUGS, id: (t) => t.id, run: runQa },
   ds: { tasks: DS_TASKS, id: (t) => t.id, run: runDs },
+  tools: { tasks: PROBES, id: (t) => t.id, run: runTools },
 };
 
 function args(argv) {
@@ -83,6 +90,7 @@ export async function main(argv = process.argv.slice(2)) {
       if (/fetch failed|^timeout$|HTTP 5\d\d/.test(r.failed ?? '')) continue;
       done.add(rowKey(r));
     }
+    for (const key of (a.redo ?? '').split(',').filter(Boolean)) done.delete(key.split('|').length === 3 ? `${key}|0` : key);
     if (existsSync(chainFile)) {
       const lines = readFileSync(chainFile, 'utf8').split('\n').filter(Boolean);
       prev = lines.length ? JSON.parse(lines[lines.length - 1]) : null;
@@ -112,15 +120,18 @@ export async function main(argv = process.argv.slice(2)) {
       log(`skip ${model}: not installed`);
       continue;
     }
-    record('model_start', { model, digest: modelDigest, harness: harnessCommit(), config: config.hash, repeats });
+    record('model_start', { model, digest: modelDigest, harness: harnessCommit(), config: config.hash, repeats, guardVersion: GUARD_VERSION, lintVersion: LINT_VERSION });
     let peakVram = 0;
     for (const repeat of repeats) for (const roleName of roles) {
       const role = ROLES[roleName];
-      const settings = chatSettings(config, model, repeat);
+      const base = chatSettings(config, model, repeat);
+      const thinkArg = a.think === undefined ? undefined : ({ on: true, off: false }[a.think] ?? a.think);
+      const settings = thinkArg === undefined ? base : { ...base, think: thinkArg };
+      const outputMode = a.format === 'none' ? 'free' : 'schema';
       for (const task of todo(roleName, repeat)) {
         const calls = [];
-        const ask = async (messages, format) => {
-          const reply = await chat({ model, messages, format, settings });
+        const ask = async (messages, format, tools) => {
+          const reply = await chat({ model, messages, format: outputMode === 'free' ? undefined : format, tools, settings });
           const parsed = reply.ok ? parseJson(reply.content) : { ok: false };
           calls.push({ ok: reply.ok, error: reply.error, tokens: reply.outputTokens, tps: reply.tokensPerS, wallS: reply.wallS, validJson: parsed.ok, repaired: !!parsed.repaired });
           const ps = (await loaded().catch(() => [])).find((m) => m.name === model);
@@ -135,7 +146,7 @@ export async function main(argv = process.argv.slice(2)) {
           result = { task: role.id(task), failed: String(error.message ?? error), score: 0 };
         }
         const row = {
-          run, model, digest: modelDigest, role: roleName, repeat, seed: settings.seed, temperature: settings.temperature, ...result,
+          run, model, digest: modelDigest, role: roleName, taskSet: task.set ?? 1, outputMode, think: settings.think, guardVersion: roleName === 'lead' ? GUARD_VERSION : undefined, lintVersion: roleName === 'pm' ? LINT_VERSION : undefined, repeat, seed: settings.seed, temperature: settings.temperature, ...result,
           wallS: (Date.now() - started) / 1000,
           calls: calls.length,
           validJsonRate: calls.length ? calls.filter((c) => c.validJson).length / calls.length : 0,

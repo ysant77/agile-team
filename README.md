@@ -35,6 +35,22 @@ npm test
 The tests need no Atlassian site, no account and no network. To deploy the app you need the
 Forge CLI and your own Atlassian developer site (`forge deploy`, then `forge install`).
 
+## Requirement lint limits
+
+`src/lint.js` checks that each number in a ticket draft comes from the user's request or the
+linked evidence, with the same unit or noun. It is a second layer, not the gate: the user confirms
+the draft. It does not catch these cases:
+
+- Number words, for example "twenty retries".
+- Digits of scripts other than ASCII (after Unicode NFKC). "½" counts as the numbers 1 and 2.
+- "1.000" as one thousand (it reads as a decimal) and "1 000" (it reads as two numbers).
+- A unit before the number ("$5", "EUR 200"), or a word between the number and its noun
+  ("5 failed attempts" against "5 attempts" is flagged). Unit synonyms are a short fixed list.
+- A number with no word after it, in the draft or in the source, matches any use of that number.
+- An issue key in the draft must be in the request; a check that cites another issue is flagged.
+- HTTP status codes are allowed only from a fixed list of codes and the words after them.
+- The request text is trusted. A number added to the request passes.
+
 ## Licence
 
 MIT. See [LICENSE](LICENSE).

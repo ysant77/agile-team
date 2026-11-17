@@ -105,6 +105,19 @@ test('F7: numbers from text the PR author wrote do not ground an opinion', () =>
   assert.equal(r.guard, 'ungrounded-number');
 });
 
+test('F7: a commit id without digits is still an id that must be in the evidence', () => {
+  const r = applyGuards(opinion({ risks: ['B reverts commit deadbeef from the base.'] }), packet());
+  assert.equal(r.guard, 'ungrounded-id');
+});
+
+test('F7: the PR description reaches the packet as author-written text', async () => {
+  const { buildPacket } = await import('../src/case.js');
+  const side = (n) => ({ prNumber: n, verdict: { result: 'supported', reason: 'ok' }, diffLines: 10, files: ['a.py'], pr: { body: `PR${n} is 90 percent faster` }, report: { metrics: {} } });
+  const built = buildPacket({ issueKey: 'BANK-32', ticket: { acceptanceCriteria: [] }, domain: null, question: 'design', metric: null, evidence: [side(5), side(7)] });
+  const body = built.packet.evidence.find((e) => e.text.includes('90 percent'));
+  assert.equal(body.kind, 'pr_text');
+});
+
 // Second review of unit 1 (16 Nov), item 6.
 test('R6: ".99" and "1e9" are numbers with their full value', async () => {
   const { quantitiesIn } = await import('../src/opinion.js');

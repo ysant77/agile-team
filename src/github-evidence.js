@@ -170,8 +170,8 @@ export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
     return response.json();
   };
   const pr = await get(`/repos/${repo}/pulls/${prNumber}`);
-  // Every page of changed files. A full last page means the list may go on, so the file list is
-  // null (not known), never a short list (second review of unit 1, item 1).
+  // Every page of changed files. A full last page means the list may go on, so the files and
+  // patches are null (not known), never a short list (second review of unit 1, item 1).
   const files = [];
   let complete = false;
   for (let page = 1; page <= FILE_PAGES; page += 1) {
@@ -184,5 +184,9 @@ export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
   }
   // Missing counts are unknown, not 0: a 0 would win "smaller diff" (unit 2 review, item 3).
   const diffLines = typeof pr?.additions === 'number' && typeof pr?.deletions === 'number' ? pr.additions + pr.deletions : null;
-  return { diffLines, files: complete ? files.map((f) => f.filename) : null };
+  if (!complete) return { diffLines, files: null, patches: null };
+  // Patches of Python files, so a metric gate can see added lines that could tamper with a
+  // measurement. GitHub leaves out the patch of a very large file; that is kept as null.
+  const patches = Object.fromEntries(files.filter((f) => f.filename.endsWith('.py')).map((f) => [f.filename, f.patch ?? null]));
+  return { diffLines, files: files.map((f) => f.filename), patches };
 }

@@ -24,7 +24,7 @@ async function call(path, body, timeoutMs) {
 // 300 s, which failed slow models on long answers. The whole turn still has `timeoutMs`.
 // Settings (temperature, seed, context, reasoning level) come from bakeoff/models.js, so this
 // client holds no per-model rule.
-export async function chat({ model, messages, format, settings, timeoutMs = 900_000 }) {
+export async function chat({ model, messages, format, tools, settings, timeoutMs = 900_000 }) {
   const { temperature = 0, seed = 7, numCtx = 16_384, think = false } = settings ?? {};
   const started = Date.now();
   const controller = new AbortController();
@@ -37,6 +37,7 @@ export async function chat({ model, messages, format, settings, timeoutMs = 900_
         model,
         messages,
         format,
+        ...(tools ? { tools } : {}),
         stream: true,
         think,
         keep_alive: '10m',
@@ -46,6 +47,7 @@ export async function chat({ model, messages, format, settings, timeoutMs = 900_
     });
     if (!res.ok) throw new Error(`/api/chat: HTTP ${res.status} ${await res.text()}`);
     let content = '';
+    const toolCalls = [];
     let last = {};
     let buffer = '';
     const decoder = new TextDecoder();
@@ -59,6 +61,7 @@ export async function chat({ model, messages, format, settings, timeoutMs = 900_
         const part = JSON.parse(line);
         if (part.error) throw new Error(part.error);
         content += part.message?.content ?? '';
+        for (const call of part.message?.tool_calls ?? []) toolCalls.push(call.function ?? call);
         if (part.done) last = part;
       }
     }
@@ -66,6 +69,7 @@ export async function chat({ model, messages, format, settings, timeoutMs = 900_
     return {
       ok: true,
       content,
+      toolCalls,
       outputTokens: last.eval_count ?? 0,
       tokensPerS: evalS > 0 ? (last.eval_count ?? 0) / evalS : null,
       loadS: (last.load_duration ?? 0) / 1e9,
