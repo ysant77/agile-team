@@ -9,6 +9,7 @@ import { addCandidate } from '../bakeoff/add-model.js';
 import { chatSettings, loadConfig, ROLE_NAMES, roleModel, validateConfig } from '../bakeoff/models.js';
 import { bootstrap, latestRows, summariseRole } from '../bakeoff/report.js';
 import { rowKey } from '../bakeoff/run.js';
+import { LINT_VERSION } from '../src/lint.js';
 import { GUARD_VERSION } from '../src/opinion.js';
 import { runDev, runDs, runQa } from '../bakeoff/tasks/code.js';
 import { DISPUTES, runLead } from '../bakeoff/tasks/lead.js';
@@ -125,8 +126,8 @@ test('a large difference is a clear winner', () => {
 
 test('overlapping repeat spreads make a winner unclear', () => {
   const rows = [
-    ...rowsFor('a', 'pm', Array(10).fill(1), { lintVersion: 3 }), ...rowsFor('b', 'pm', Array(10).fill(0), { lintVersion: 3 }),
-    ...rowsFor('a', 'pm', [1, 1, 1, 0, 0, 0, 0, 0, 0, 0], { repeat: 1, lintVersion: 3 }), ...rowsFor('b', 'pm', [1, 1, 1, 1, 1, 0, 0, 0, 0, 0], { repeat: 1, lintVersion: 3 }),
+    ...rowsFor('a', 'pm', Array(10).fill(1), { lintVersion: LINT_VERSION }), ...rowsFor('b', 'pm', Array(10).fill(0), { lintVersion: LINT_VERSION }),
+    ...rowsFor('a', 'pm', [1, 1, 1, 0, 0, 0, 0, 0, 0, 0], { repeat: 1, lintVersion: LINT_VERSION }), ...rowsFor('b', 'pm', [1, 1, 1, 1, 1, 0, 0, 0, 0, 0], { repeat: 1, lintVersion: LINT_VERSION }),
   ];
   assert.equal(summariseRole(rows, 'pm').verdict.kind, 'noise');
 });

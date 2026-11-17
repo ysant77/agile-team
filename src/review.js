@@ -10,7 +10,7 @@ import { lintText, STYLE_CONTRACT, lintMessage } from './style.js';
 import { VERIFY_CONFIG } from './verify-claim.js';
 import { testName, testsByName } from './verifier/report.js';
 
-export const REVIEW_GUARD_VERSION = 1;
+export const REVIEW_GUARD_VERSION = 2;
 export const REVIEW_PROMPT_VERSION = 'code-review/1';
 export const REVIEW_LABEL = 'Review (not verified)';
 export const MAX_FINDINGS = 6;
@@ -22,12 +22,28 @@ export const TRIGGERS = ['cannot_verify', 'manual_ac', 'design', 'readability', 
 // Fields that would make a review look like a decision. The schema refuses them.
 const FORBIDDEN = ['result', 'verdict', 'approve', 'approved', 'status', 'decision'];
 // Words that belong to verdicts and approvals, not to a review.
-const VERDICT_WORDS = /\b(supported|verified|verifies|approved?|approves|approving|lgtm|ship it)\b/i;
+const VERDICT_WORDS = /\b(supported|verify|verified|verifies|approved?|approves|approving|lgtm|ship it|criteria\s+are\s+met|merge\s+now)\b/i;
 const HEADER = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/;
 const HUNK_ID = /\bP\d+:H\d+\b/g;
 const LINE_REF = /\blines? (\d+)(?:\s*(?:-|to)\s*(\d+))?/gi;
 
 const DEFAULT_GUARDED = [...new Set([...VERIFY_CONFIG.guardedPaths, ...VERIFY_CONFIG.benchmarkGuardedPaths])];
+
+// A commit sha has at least one digit and one letter a-f. A plain decimal number is not a sha.
+const SHA = /\b[0-9a-f]{7,40}\b/g;
+const stripShas = (text) => text.replace(SHA, (t) => (/[a-f]/.test(t) && /\d/.test(t) ? ' ' : t));
+
+// New-side line numbers of the '+' lines of a hunk. Context and removed lines do not count.
+function addedLines(h) {
+  const added = new Set();
+  let n = h.newStart;
+  for (const line of h.text.split('\n')) {
+    if (line.startsWith('+')) added.add(n++);
+    else if (line.startsWith('-') || line.startsWith('\\')) continue;
+    else n += 1;
+  }
+  return added;
+}
 
 const isTestFile = (f) => f.startsWith('tests/') || f.split('/').pop().startsWith('test_');
 const matchesPath = (file, paths) => paths.some((g) => (g.endsWith('/') ? file.startsWith(g) : file === g));
@@ -94,6 +110,7 @@ export function packetHash(packet) {
   return sha256(canonical(packet));
 }
 
+const hasCodeCheck = (ac) => Boolean(ac?.check) && ac.check.type !== 'manual';
 const nonEmpty = (s) => typeof s === 'string' && s.trim().length > 0;
 
 export function validateReview(raw) {
@@ -143,6 +160,9 @@ export function validateReview(raw) {
 }
 
 const freeTexts = (r) => [...r.findings.map((f) => f.text), ...r.risks, ...r.proposedChecks.map((c) => c.asserts)];
+// Free texts with the hunk they belong to. Only a finding has a hunk.
+const scopedTexts = (r) => [...r.findings.map((f) => ({ text: f.text, hunk: f.hunk })), ...r.risks.map((text) => ({ text, hunk: null })),
+  ...r.proposedChecks.map((c) => ({ text: c.asserts, hunk: null }))];
 
 function packetText(packet) {
   return [
@@ -153,13 +173,15 @@ function packetText(packet) {
   ].join('\n');
 }
 
-// Numbers in free text: "line N" must fall inside a hunk; every other number must occur in the
-// ticket, the hunks or the verdict reason. Hunk ids, issue keys, AC ids and test names are ids.
-function ungroundedNumbers(text, packet, allowed) {
+// Numbers in free text: "line N" must be an added line of the text's hunk (a finding) or of any
+// hunk (a risk or a check); every other number must occur in the ticket, the hunks or the verdict
+// reason. Hunk ids, issue keys, AC ids, test names and commit shas are ids.
+function ungroundedNumbers(text, hunkId, packet, allowed) {
   const bad = [];
-  const inHunk = (n) => packet.hunks.some((h) => n >= h.newStart && n <= h.newEnd);
-  const rest = text.replace(HUNK_ID, ' ').replace(/\b[0-9a-f]{7,40}\b/g, ' ').replace(LINE_REF, (_, a, b) => {
-    for (const n of [a, b].filter(Boolean)) if (!inHunk(Number(n))) bad.push(`line ${n}`);
+  const scope = hunkId ? packet.hunks.filter((h) => h.id === hunkId) : packet.hunks;
+  const lines = new Set(scope.flatMap((h) => [...addedLines(h)]));
+  const rest = stripShas(text.replace(HUNK_ID, ' ')).replace(LINE_REF, (_, a, b) => {
+    for (const n of [a, b].filter(Boolean)) if (!lines.has(Number(n))) bad.push(`line ${n}`);
     return ' ';
   });
   for (const n of numbersIn(quantityText(rest))) if (!allowed.has(n)) bad.push(n);
@@ -187,30 +209,32 @@ export function applyReviewGuards(raw, packet, meta = {}) {
     const m = t.match(VERDICT_WORDS);
     if (m) return invalid('verdict-word', `"${m[0]}" is a verdict word; a review never decides`);
   }
-  // Guard 1: hunk ids match exactly, the file is the hunk's file, the line is inside the hunk.
+  // Guard 1: hunk ids match exactly, the file is the hunk's file, the line is an added line of the hunk.
   const hunks = new Map(packet.hunks.map((h) => [h.id, h]));
   for (const f of review.findings) {
     const h = hunks.get(f.hunk);
     if (!h) return invalid('unknown-hunk', `${JSON.stringify(f.hunk)} is not a hunk id of this packet`);
     if (f.file !== h.file) return invalid('wrong-file', `${f.hunk} is in ${h.file}, not ${f.file}`);
     if (f.line < h.newStart || f.line > h.newEnd) return invalid('line-outside-hunk', `line ${f.line} is outside ${f.hunk} (${h.newStart} to ${h.newEnd})`);
+    if (!addedLines(h).has(f.line)) return invalid('line-not-added', `line ${f.line} is not an added line of ${f.hunk}`);
   }
   // Guard 2: ids and numbers come from the packet.
   const known = packetText(packet);
   // Commit shas are ids, not numbers.
-  const allowed = new Set(numbersIn(quantityText(known.replace(HUNK_ID, ' ').replace(/\b[0-9a-f]{7,40}\b/g, ' '))));
-  for (const t of freeTexts(review)) {
+  const allowed = new Set(numbersIn(quantityText(stripShas(known.replace(HUNK_ID, ' ')))));
+  for (const { text: t, hunk } of scopedTexts(review)) {
     const ids = idsIn(t).filter((id) => !known.includes(id));
     if (ids.length) return invalid('ungrounded-id', `${ids.join(', ')} not in the packet`);
-    const bad = ungroundedNumbers(t, packet, allowed);
+    const bad = ungroundedNumbers(t, hunk, packet, allowed);
     if (bad.length) return invalid('ungrounded-number', `${bad.join(', ')} not in the packet`);
   }
-  // Guards 3 and 4: each proposed check names a new test for one AC of this ticket.
-  const acIds = new Set(packet.ticket.acs.map((a) => a.acId));
+  // Guards 3 and 4: each proposed check names a new test for one manual AC of this ticket.
+  const acs = new Map(packet.ticket.acs.map((a) => [a.acId, a]));
   const token = packet.ticket.key.replace('-', '');
   const pattern = new RegExp(`^test_${token}_[a-z0-9_]+$`);
   for (const c of review.proposedChecks) {
-    if (!acIds.has(c.ac)) return invalid('unknown-ac', `${c.ac} is not an AC of ${packet.ticket.key}`);
+    if (!acs.has(c.ac)) return invalid('unknown-ac', `${c.ac} is not an AC of ${packet.ticket.key}`);
+    if (hasCodeCheck(acs.get(c.ac))) return invalid('ac-has-check', `${c.ac} already has a code check; a review proposes checks only for a manual AC`);
     if (!pattern.test(c.testName)) return invalid('test-name', `${c.testName} must look like test_${token}_what_it_checks`);
     if (packet.existingTests.includes(c.testName)) return invalid('test-exists', `${c.testName} is already in the CI report`);
     if (!/^tests\/[\w./-]+\.py$/.test(c.file)) return invalid('test-file', `${c.file} must be a Python file under tests/`);
@@ -248,9 +272,12 @@ export function reviewGate(record, retries) {
 }
 
 // A human adopts a proposed check: the AC now names the test. The verifier decides the rest.
+// Only a manual AC or an AC without a check can take a proposal; a code check is never replaced.
 export function adoptProposal(ticket, { ac, testName: name }) {
   const acs = ticket.acceptanceCriteria ?? [];
-  if (!acs.some((a) => a.acId === ac)) throw new Error(`${ac} is not an AC of ${ticket.key}`);
+  const target = acs.find((a) => a.acId === ac);
+  if (!target) throw new Error(`${ac} is not an AC of ${ticket.key}`);
+  if (hasCodeCheck(target)) throw new Error(`${ac} already has a code check; only a manual AC can take a proposed check`);
   if (!/^test_\w+$/.test(name ?? '')) throw new Error('the proposal has no test name');
   return {
     ...ticket,

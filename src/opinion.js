@@ -95,6 +95,13 @@ export function idsIn(text) {
   return [...new Set([...shas, ...named, ...refs.map((r) => r.replace(/^PR ?#?/, 'PR'))])];
 }
 
+// True when `id` is in `text` as a whole token: PR1 does not match PR12, BANK-3 does not match
+// BANK-32 and a short sha does not match a longer one.
+function hasId(text, id) {
+  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<!\\w)${escaped}(?!\\w)`).test(text);
+}
+
 // Evidence kinds whose text the PR author or issue reporter wrote. It is shown to the model as
 // data, but its numbers do not ground an opinion (review F7, 16 Nov).
 export const UNTRUSTED_KINDS = ['pr_text', 'issue_text'];
@@ -161,7 +168,7 @@ export function applyGuards(raw, packet, meta = {}) {
   const packetText = [...packet.evidence.flatMap((e) => [e.id, e.text]), ...packet.sides.map((s) => s.id),
     packet.ticket?.key ?? '', ...(packet.ticket?.acs ?? []).map((a) => a.acId)].join(' ');
   for (const text of [...opinion.reasons.map((r) => r.text), ...(opinion.risks ?? [])]) {
-    const ids = idsIn(text).filter((id) => !packetText.includes(id));
+    const ids = idsIn(text).filter((id) => !hasId(packetText, id));
     if (ids.length) return invalid('ungrounded-id', `${ids.join(', ')} not in the evidence`);
   }
   // Guard 3: every number in the reasons must appear in the evidence.

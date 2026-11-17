@@ -40,6 +40,10 @@ export async function createTicket(payload) {
 
 // Every number, unit or threshold in a ticket must come from the user's request; otherwise the
 // ticket states an open question instead (owner rule, 13 Nov). Returns an error text or null.
+// Known limit: the agent supplies "request", and the code cannot read the user's chat. An agent
+// that adds a number to "request" passes this check. The check stops a number that is in the
+// draft only; the user's confirmation of the draft is the control for the request text. The
+// lint-requirement action has the same limit.
 export function ticketGrounding(payload) {
   const request = String(payload?.request ?? '').trim();
   if (!request) return 'Pass the user\'s request in their own words as "request", so the numbers can be checked.';
