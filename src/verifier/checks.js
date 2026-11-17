@@ -128,7 +128,7 @@ export function ciGreen(ctx) {
     const failed = all.find((r) => r.status === 'completed' && r.conclusion !== 'success' && !NO_RESULT.includes(r.conclusion));
     if (failed) return result('ci_green', 'fail', `${path} concluded ${failed.conclusion} on ${head.slice(0, 7)}`);
     // A cancelled or stale run gave no result (benchmark set 2, S17): it is missing evidence, not
-    // evidence against the claim. Another completed run of the workflow on the head decides.
+    // evidence against the claim. A later completed run of the workflow on the head decides.
     const runs = all.filter((r) => !(r.status === 'completed' && NO_RESULT.includes(r.conclusion)));
     if (runs.length === 0 && all.length > 0) {
       unknown = true;
@@ -138,6 +138,18 @@ export function ciGreen(ctx) {
     if (runs.length === 0 || runs.some((r) => r.status !== 'completed')) {
       unknown = true;
       reasons.push(`${path}: no completed run for ${head.slice(0, 7)}`);
+      continue;
+    }
+    // An author can cancel a failing run and start a new one (review finding 13). The success
+    // counts only when it was created after every run without a result; equal or missing times
+    // give unknown.
+    const noResult = all.filter((r) => !runs.includes(r));
+    const time = (r) => Date.parse(r.createdAt ?? '');
+    const lastNoResult = Math.max(...noResult.map(time));
+    const lastSuccess = Math.max(...runs.map(time));
+    if (noResult.length && !(Number.isFinite(lastNoResult) && Number.isFinite(lastSuccess) && lastSuccess > lastNoResult)) {
+      unknown = true;
+      reasons.push(`${path}: a run on ${head.slice(0, 7)} concluded ${noResult[0].conclusion}, and no successful run is known to come after it`);
     } else {
       reasons.push(`${path}: success`);
     }
