@@ -5,6 +5,7 @@ import { arbitrate } from '../src/arbitration.js';
 import { nextEvent, verifyChain } from '../src/audit.js';
 import { propose, reward, seededRng } from '../src/assignment.js';
 import { lintRequirement } from '../src/lint.js';
+import { adoptProposal, applyReviewGuards, buildReviewPacket } from '../src/review.js';
 import { verify } from '../src/verifier/verdict.js';
 
 const dir = new URL('../fixtures/', import.meta.url);
@@ -69,6 +70,26 @@ const runners = {
     if (step.tamper) events[step.tamper.index].data = step.tamper.data;
     assert.equal(verifyChain(events).ok, step.expect.ok);
   },
+  // DESIGN 14a: code checks the review; the review never reaches a verdict.
+  review(step, fixture) {
+    const input = typeof step.packet === 'string' ? fixture.packets[step.packet] : step.packet;
+    const record = applyReviewGuards(step.review, buildReviewPacket(input));
+    assert.equal(record.outcome, step.expect.outcome, JSON.stringify(record.reasons));
+    if (step.expect.guard) assert.equal(record.guard, step.expect.guard);
+  },
+  // A human adopts a proposed check: the AC now names the test, and the verifier decides.
+  adopt(step) {
+    const ctx = merge(defaults, step.context);
+    ctx.report = withWorkflowFiles(ctx.report);
+    if (!step.context.reportComment) {
+      const run = (ctx.workflowRuns ?? []).find((r) => r.headSha === ctx.pr?.headSha);
+      if (run) ctx.reportComment = { createdAt: run.createdAt, updatedAt: run.createdAt };
+    }
+    ctx.ticket = adoptProposal(ctx.ticket, step.proposal);
+    const verdict = verify(step.claim, ctx);
+    assert.equal(verdict.result, step.expect.result, verdict.reason);
+    for (const text of step.expect.reasonIncludes ?? []) assert.ok(verdict.reason.includes(text), verdict.reason);
+  },
   agent(step) {
     assert.ok(typeof step.expect.refuses === 'boolean', 'agent steps state whether the agent refuses');
   },
@@ -82,7 +103,7 @@ for (const file of files) {
     test(`${fixture.scenario} step ${i + 1} (${step.kind}): ${fixture.title}`, () => {
       const run = runners[step.kind];
       assert.ok(run, `unknown step kind ${step.kind}`);
-      run(step);
+      run(step, fixture);
     });
   });
 }

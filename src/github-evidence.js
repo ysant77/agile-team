@@ -190,3 +190,26 @@ export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
   const patches = Object.fromEntries(files.filter((f) => f.filename.endsWith('.py')).map((f) => [f.filename, f.patch ?? null]));
   return { diffLines, files: files.map((f) => f.filename), patches };
 }
+
+// Changed files of one pull request with their patches, for the code reviewer (DESIGN 14a). Every
+// page of 100 (GitHub serves at most 3,000 files); GitHub leaves out the patch of a very large
+// file, which stays null.
+export async function collectPrFiles({ repo, prNumber, token, fetchFn }) {
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'agile-team-forge-app',
+    'X-GitHub-Api-Version': '2022-11-28',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  // Any error, a 404 included, stops the read: a hidden list is not an empty change. A full last
+  // page means the list may go on, so it is marked as cut (second review of unit 1, items 1, 2).
+  const files = [];
+  for (let page = 1; page <= FILE_PAGES; page += 1) {
+    const response = await fetchFn(`${API}/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`, { headers });
+    if (!response.ok) throw new Error(`GitHub pull request files: HTTP ${response.status}`);
+    const list = await response.json();
+    files.push(...list.map((f) => ({ filename: f.filename, status: f.status, patch: typeof f.patch === 'string' ? f.patch : null })));
+    if (list.length < 100) return { files, truncated: false };
+  }
+  return { files, truncated: true };
+}

@@ -5,6 +5,7 @@ import { applyGuards } from '../src/opinion.js';
 import { formatDecision } from '../src/decision.js';
 import { formatVerdict } from '../src/verify-claim.js';
 import { buildMonitor } from '../src/monitor.js';
+import { applyReviewGuards, buildReviewPacket, formatReview } from '../src/review.js';
 
 const side = (n, result, diff, extra = {}) => ({ prNumber: n, verdict: { result, reason: `${result} by checks` }, diffLines: diff, files: ['src/bank/ledger.py'], pr: { body: `Fix for PR${n}` }, report: { metrics: {} }, ...extra });
 const base = { issueKey: 'BANK-32', ticket: { acceptanceCriteria: [{ acId: 'AC1' }] }, domain: null, question: 'winner', metric: null };
@@ -19,6 +20,8 @@ export function renderedTexts() {
   const opinion = applyGuards({ decision: 'PR7', reasons: [{ text: 'PR7 keeps one write path for balances.', evidence: ['E3'] }], confidence: 0.8, risks: ['PR7 adds 60 changed lines.'] }, tie.packet);
   const decision = { side: 'PR7', reason: 'the lock table is easier to read', codeWinner: 'PR5', agreesWithCode: false, opinionSide: 'PR7', agreesWithOpinion: true, overridesFailedGate: false };
   const monitor = buildMonitor([]);
+  const s56 = JSON.parse(readFileSync('fixtures/S56.json', 'utf8')).steps[1];
+  const review = applyReviewGuards(s56.review, buildReviewPacket(s56.packet));
   return [
     ['verdict comment', formatVerdict('BANK-4', { type: 'fixed' }, verdict, { githubConfigured: true })],
     ['case (tie)', formatCase('BANK-32', tie)],
@@ -26,9 +29,12 @@ export function renderedTexts() {
     ['case (cross job)', formatCase('BANK-32', cross)],
     ['opinion comment', formatOpinion('BANK-32', opinion)],
     ['decision comment', formatDecision('BANK-32', decision)],
+    ['review comment', formatReview('BANK-4', 61, review)],
+    ['review comment (refused)', formatReview('BANK-4', 61, { ...review, outcome: 'invalid_review', guard: 'unknown-hunk', review: null })],
     ...monitor.notes.map((n, i) => [`monitor note ${i + 1}`, n]),
     ['skill: write-checkable-ticket', readFileSync('skills/write-checkable-ticket/SKILL.md', 'utf8').split('---').slice(2).join('---')],
     ['skill: explain-verdicts', readFileSync('skills/explain-verdicts/SKILL.md', 'utf8').split('---').slice(2).join('---')],
+    ['skill: review-pull-request', readFileSync('skills/review-pull-request/SKILL.md', 'utf8').split('---').slice(2).join('---')],
   ];
 }
 

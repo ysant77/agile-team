@@ -115,3 +115,4 @@ async function recordDecision(issueKey, parsed, meta) {
 export { lintRequirementAction } from './lint-action.js';
 export { openCase, recordOpinion } from './case-actions.js';
 export { getVerdicts } from './verdicts-action.js';
+export { getPrDiff, recordReview } from './review-actions.js';
