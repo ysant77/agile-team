@@ -39,7 +39,7 @@ test('item 1: a cancelled run with a failed step gives unknown, even with a late
 });
 
 test('item 1: a cancelled run with an earlier failed attempt gives unknown, even with a later success', () => {
-  const cancelled = run({ conclusion: 'cancelled', attempt: 2, stepFailures: [], earlierUnread: 0,
+  const cancelled = run({ conclusion: 'cancelled', attempt: 2, stepFailures: [], jobConclusions: [], earlierUnread: 0,
     earlierConclusions: [{ attempt: 1, conclusion: 'failure' }], earlierFailures: [{ attempt: 1, job: 'test', step: 'Run uv sync' }] });
   const r = checks.ciGreen(ciCtx([cancelled, success]));
   assert.equal(r.status, 'unknown', r.reason);
@@ -47,9 +47,9 @@ test('item 1: a cancelled run with an earlier failed attempt gives unknown, even
 });
 
 test('item 1: a cancelled run with no failed step and no failed attempt, then a later success, passes', () => {
-  const clean = run({ conclusion: 'cancelled', stepFailures: [] });
+  const clean = run({ conclusion: 'cancelled', stepFailures: [], jobConclusions: [] });
   assert.equal(checks.ciGreen(ciCtx([clean, success])).status, 'pass');
-  const rerun = run({ conclusion: 'cancelled', attempt: 2, stepFailures: [], earlierUnread: 0,
+  const rerun = run({ conclusion: 'cancelled', attempt: 2, stepFailures: [], jobConclusions: [], earlierUnread: 0,
     earlierConclusions: [{ attempt: 1, conclusion: 'success' }], earlierFailures: [] });
   assert.equal(checks.ciGreen(ciCtx([rerun, success])).status, 'pass');
   // The success must still come after the run without a result.

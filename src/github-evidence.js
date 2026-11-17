@@ -151,6 +151,9 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
         run.stepFailures = jobs ? (jobs.jobs ?? []).flatMap((job) => (job.steps ?? [])
           .filter((step) => step.conclusion === 'failure')
           .map((step) => ({ attempt: run.attempt ?? 1, job: job.name, step: step.name }))) : null;
+        // A job can fail with no step marked failure (a cancelled run, a job timeout). Its own
+        // conclusion is read too. null: not known.
+        run.jobConclusions = jobs ? (jobs.jobs ?? []).map((job) => ({ attempt: run.attempt ?? 1, job: job.name, conclusion: job.conclusion ?? null })) : null;
       }
     }
     // Comments come oldest first; the latest bot report can be on any page.

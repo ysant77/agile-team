@@ -54,9 +54,9 @@ test('S17: a cancelled CI run on the head gives cannot_verify, never contradicte
 
 test('S17: a cancelled run next to a successful run of the same workflow on the head is not held against the claim', () => {
   const head = 'a'.repeat(40);
-  // stepFailures: the reader read the steps of the run without a result and none failed (PR 9
-  // review, item 1).
-  const run = (conclusion, id) => ({ id, path: '.github/workflows/ci.yml', headSha: head, status: 'completed', conclusion, createdAt: `2026-11-16T10:0${id}:00Z`, stepFailures: [] });
+  // stepFailures, jobConclusions: the reader read the steps and jobs of the run without a result
+  // and none failed (PR 9 review, item 1; final review, item 3).
+  const run = (conclusion, id) => ({ id, path: '.github/workflows/ci.yml', headSha: head, status: 'completed', conclusion, createdAt: `2026-11-16T10:0${id}:00Z`, stepFailures: [], jobConclusions: [] });
   const ctx = withReader({ pr: { headSha: head }, prFiles: ['src/a.py'], workflowRuns: [run('cancelled', 1), run('success', 2)] });
   assert.equal(ciGreen(ctx).status, 'pass', ciGreen(ctx).reason);
   assert.equal(ciGreen({ ...ctx, workflowRuns: [run('cancelled', 1)] }).status, 'unknown');
@@ -68,7 +68,7 @@ test('S17: a cancelled run next to a successful run of the same workflow on the 
 // only when it is the later run on the head; otherwise the result is unknown.
 test('S17: a cancelled run passes only when a successful run on the head started after it', () => {
   const head = 'a'.repeat(40);
-  const run = (conclusion, id, createdAt) => ({ id, path: '.github/workflows/ci.yml', headSha: head, status: 'completed', conclusion, createdAt, stepFailures: [] });
+  const run = (conclusion, id, createdAt) => ({ id, path: '.github/workflows/ci.yml', headSha: head, status: 'completed', conclusion, createdAt, stepFailures: [], jobConclusions: [] });
   const ctx = (runs) => withReader({ pr: { headSha: head }, prFiles: ['src/a.py'], workflowRuns: runs });
   const later = ciGreen(ctx([run('cancelled', 1, '2026-11-16T10:00:00Z'), run('success', 2, '2026-11-16T10:05:00Z')]));
   assert.equal(later.status, 'pass', later.reason);

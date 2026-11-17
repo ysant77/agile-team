@@ -68,7 +68,13 @@ workflow file on the same head only when all of these hold:
 
 - the success was created after the run without a result;
 - the verifier read the steps of the run without a result, and no step failed;
+- the verifier read the jobs of that run, and no job concluded other than success, cancelled,
+  skipped or neutral (a job can fail with no step marked failure);
 - no earlier attempt of that run failed (`earlierConclusions`, `earlierFailures`).
+
+The reader reads at most 5 earlier attempts of a run. When a run has more, `ci_green` and
+`ci_attempts` both give `unknown`. An earlier attempt that concluded failure with no failed step
+recorded gives `unknown` in `ci_attempts`.
 
 If the evidence cannot show this, the result is `unknown`. A cancelled earlier attempt of the
 successful run's own run id, followed by a re-run, also gives `unknown`: a person checks.

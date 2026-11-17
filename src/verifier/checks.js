@@ -169,7 +169,10 @@ function earlierAttemptsGap(run) {
   // Attempts past the read limit are reported by ci_attempts (earlierUnread). A missing count is 0.
   const unread = run.earlierUnread === undefined ? 0 : run.earlierUnread;
   if (!(Number.isInteger(unread) && unread >= 0)) return `${name} has a malformed count of unread attempts`;
-  const read = Math.max(0, attempt - 1 - unread);
+  // Rule (final review, item 3): an attempt that was not read may have failed, so ci_green gives
+  // unknown by itself, not only through ci_attempts.
+  if (unread > 0) return `${unread} earlier attempt(s) of ${name} were not read (read limit): a person checks`;
+  const read = attempt - 1;
   const known = isList(list) && list.every((a) => isObj(a) && Number.isInteger(a.attempt))
     && Array.from({ length: read }, (_, i) => i + 1).every((n) => list.some((a) => a.attempt === n));
   if (!known) return `the conclusions of the earlier attempts of ${name} could not be read`;
@@ -182,10 +185,16 @@ function earlierAttemptsGap(run) {
 // A run without a result is clean when its steps were read and none failed, and no earlier attempt
 // of it failed. Returns a reason when that is not known, else null.
 const isStepList = (v) => isList(v) && v.every(isObj);
+// Job conclusions that are not a failure.
+const JOB_NO_FAIL = ['success', 'cancelled', 'skipped', 'neutral'];
 function noResultGap(run) {
   const name = `run ${run.id ?? '(no id)'} (${run.conclusion})`;
   if (!isStepList(run.stepFailures)) return `the steps of ${name} were not read, so it may have failed before it ended`;
   if (run.stepFailures.length) return `${name} failed in step "${run.stepFailures[0].step}" before it ended: a person checks`;
+  // A job can fail with no failed step (final review, item 3), so its own conclusion is read too.
+  if (!isStepList(run.jobConclusions)) return `the job results of ${name} were not read, so a job may have failed before it ended`;
+  const badJob = run.jobConclusions.find((j) => !JOB_NO_FAIL.includes(j.conclusion));
+  if (badJob) return `job "${badJob.job}" of ${name} concluded ${badJob.conclusion ?? 'with no result'}: a person checks`;
   if ((run.attempt ?? 1) === 1) return null;
   const failed = (run.earlierConclusions ?? []).find((a) => a?.conclusion === 'failure');
   if (failed) return `attempt ${failed.attempt} of ${name} failed: a person checks`;
@@ -767,6 +776,12 @@ export function ciAttempts(ctx) {
   if (unread) return result('ci_attempts', 'unknown', `${unread.earlierUnread} earlier attempt(s) of the CI run were not read (read limit): a person checks for a flaky test`);
   const gaps = runs.map(earlierAttemptsGap).filter(Boolean);
   if (gaps.length) return result('ci_attempts', 'unknown', gaps.join('; '));
+  // An attempt that concluded failure with no failed step recorded failed in a job, not a step:
+  // the cause is not known, so a person checks (final review, item 3).
+  const silent = runs.flatMap((r) => r.earlierConclusions
+    .filter((a) => a.conclusion === 'failure' && !r.earlierFailures.some((f) => f?.attempt === a.attempt))
+    .map((a) => `attempt ${a.attempt} of run ${r.id ?? '(no id)'} failed with no failed step recorded: a person checks`));
+  if (silent.length) return result('ci_attempts', 'unknown', silent.join('; '));
   const flaky = runs.flatMap((r) => r.earlierFailures ?? []).filter((f) => TEST_STEP.test(f.step));
   return flaky.length
     ? result('ci_attempts', 'unknown', flaky.map((f) => `attempt ${f.attempt} failed in step "${f.step}" and a re-run passed with no code change: a person checks for a flaky test`).join('; '))
