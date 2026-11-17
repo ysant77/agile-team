@@ -5,7 +5,8 @@ import { kvs } from '@forge/kvs';
 import { appendAudit } from './audit-store.js';
 import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment, findComment } from './jira.js';
-import { addVerdictProperty, collectJira } from './jira-evidence.js';
+import { addVerdictProperty, collectJira, collectReviews } from './jira-evidence.js';
+import { applyReviewHold } from './review-hold.js';
 import { parseTwin } from './monitor.js';
 import { verify } from './verifier/verdict.js';
 
@@ -41,12 +42,14 @@ export function formatVerdict(issueKey, claim, verdict, meta) {
   ];
   if (meta?.prUrl) lines.push(`Pull request: ${meta.prUrl}`);
   if (meta && !meta.githubConfigured) lines.push('GitHub evidence off: no repository configured.');
-  lines.push(`Checker: ${verdict.checkerVersion}. Deterministic; no model decided this verdict.`);
+  lines.push(verdict.reviewHold
+    ? `Checker: ${verdict.checkerVersion}. Code checks passed; a reviewer's blocking finding holds the claim for a person.`
+    : `Checker: ${verdict.checkerVersion}. Deterministic; no model decided this verdict.`);
   return lines.join('\n');
 }
 
 const DEFAULT_DEPS = {
-  collectJira, collectGithub, collectPrStats, addVerdictProperty, appendAudit, addComment, findComment, fetchFn: fetch, store: kvs,
+  collectJira, collectGithub, collectPrStats, collectReviews, addVerdictProperty, appendAudit, addComment, findComment, fetchFn: fetch, store: kvs,
   env: () => ({ repo: process.env.GITHUB_REPO, token: process.env.GITHUB_TOKEN }),
 };
 
@@ -144,12 +147,24 @@ export async function decide({ issueKey, claim }, d) {
   if ((githubError || !repo) && verdict.result === 'contradicted' && verdict.checks.some((c) => c.name === 'pr_linked' && c.status === 'fail')) {
     verdict = { ...verdict, result: 'cannot_verify', reason: `code host not reachable${githubError ? `: ${githubError}` : ''}` };
   }
+  // A stored review can hold a supported claim, never pass one. A failed read is no review:
+  // fail-open, so a reviewer or Jira failure cannot block every claim (docs/claims.md).
+  if (verdict.result === 'supported' && github.pr?.headSha) {
+    let reviews = [];
+    try {
+      reviews = await d.collectReviews(issueKey);
+    } catch (error) {
+      console.log('reviews not read', issueKey, error.message);
+    }
+    verdict = applyReviewHold(verdict, claim, reviews, github.pr.headSha);
+  }
   // Twin and origin come from the PR body the scenario generator writes; the skill is the
   // ticket's first label. They feed the monitor's assignment posterior, never the verdict.
   const { twin, origin } = parseTwin(github.pr?.body);
   const record = {
     claimId: claim.id, type: claim.type, result: verdict.result, reason: verdict.reason, checker: verdict.checkerVersion,
     at: new Date().toISOString(), headSha: github.pr?.headSha ?? null, twin, origin, skill: ticket.labels?.[0] ?? null,
+    ...(verdict.reviewHold ? { reviewHold: verdict.reviewHold.acs } : {}),
   };
   const comment = formatVerdict(issueKey, claim, verdict, { prUrl: github.pr?.url, githubConfigured: Boolean(repo) });
   console.log('verdict', issueKey, claim.type, verdict.result, JSON.stringify(github.meta ?? {}));

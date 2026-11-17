@@ -31,6 +31,22 @@ that the change reached the default branch.
 
 Anything else is `cannot_verify`: a human or more evidence is needed.
 
+## When a review holds a claim
+
+A review (the Agile Code Reviewer, stored in the issue property `aat.reviews`) can hold a claim,
+never pass one:
+
+- It applies to `ready`, `fixed` and `done` claims that the code checks rate `supported`.
+- It counts only when the review passed the guards (outcome `review`), was made for the same PR
+  head commit, and has at least one blocking finding that names an AC.
+- The claim is then `cannot_verify`. The reason names the AC and says that a person must check the
+  reviewer's blocking finding.
+- A `contradicted` or `cannot_verify` verdict never changes.
+
+This is fail-open on purpose. No review, a refused review, a review for another head commit, or a
+failed read of the property changes nothing, and the code checks decide. A model or Jira failure
+must not block every claim.
+
 ## Lists GitHub serves in pages
 
 The verifier reads at most 500 pull requests, 1,000 comments, 300 workflow runs and 3,000 changed

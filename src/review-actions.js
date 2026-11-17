@@ -96,7 +96,8 @@ export async function recordReview(payload) {
     await kvs.set(reviewKey(input.issueKey, input.prNumber), { ...stored, retries: (stored.retries ?? 0) + 1 });
     return { ok: false, error: gate.message };
   }
-  const record = { ...gate.record, prNumber: input.prNumber, at: new Date().toISOString() };
+  // The head commit lets the verifier use the review only for the code it read.
+  const record = { ...gate.record, prNumber: input.prNumber, headSha: stored.packet.pr.headSha ?? null, at: new Date().toISOString() };
   await kvs.set(reviewKey(input.issueKey, input.prNumber), { ...stored, retries: 0 });
   await appendReviewProperty(input.issueKey, record);
   const audit = await appendAudit({ actor: 'code-reviewer', event: 'review', data: {

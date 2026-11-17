@@ -272,11 +272,8 @@ function templateReview(review) {
   };
 }
 
-// Arm D rating rule: the findings that can hold a claim. Only an accepted review counts.
-export function blockingFindings(record) {
-  if (record?.outcome !== 'review' || !record.review) return [];
-  return record.review.findings.filter((f) => f.severity === 'blocking' && f.ac);
-}
+// Arm D rating rule: the findings that can hold a claim (see review-hold.js).
+export { blockingFindings } from './review-hold.js';
 
 // Guard 6: a refused review or a style finding gets one retry. After that, a refused review is
 // dropped (the human sees "no valid review"), and style findings are replaced by a template.
