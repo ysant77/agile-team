@@ -157,3 +157,21 @@ test('lint v6: text is normalised, and a plural noun, a unit or a test name hide
     'The story is 5 points.',
   ]) assert.deepEqual(ungrounded(d), [], d);
 });
+
+test('lint v6: list markers, status phrases, joined codes and thousands separators are not flagged', () => {
+  const ungrounded = ungroundedFor('Exports of 1,000 rows time out for the customer.');
+  for (const d of [
+    '1. The API refuses the request.\n2) The page shows the error.',
+    'The API returns 200 OK.',
+    'The API returns 404 Not Found for another account.',
+    'The API returns 200 and 404.',
+    'The API returns 401, 403 or 404.',
+    'The export of 1000 rows finishes.',
+    'The export of 1,000 rows finishes.',
+  ]) assert.deepEqual(ungrounded(d), [], d);
+  // Still flagged.
+  assert.deepEqual(ungrounded('The API returns 200 and 300 credits.'), ['200', '300']);
+  assert.deepEqual(ungrounded('The API returns 200 and 5 items.'), ['200', '5']);
+  assert.deepEqual(ungrounded('The page shows 2. The API refuses it.'), ['2']);
+  assert.deepEqual(ungrounded('The export of 2,000 rows finishes.'), ['2000']);
+});
