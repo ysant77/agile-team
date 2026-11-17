@@ -7,6 +7,7 @@ import { collectGithub } from '../src/github-evidence.js';
 import { verifyClaim, VERIFY_CONFIG } from '../src/verify-claim.js';
 import { namesKey } from '../src/verifier/report.js';
 import { bugTestExists, ciGreen, DEFAULT_TRUST_PATHS, pipelineChange, prLinked, reportTrusted } from '../src/verifier/checks.js';
+import { withReader } from './helpers/reader.js';
 
 const REPO = 'ysant77/yms-bank-demo';
 const CI = '.github/workflows/ci.yml';
@@ -27,7 +28,7 @@ const pull = (number, title, full = REPO) => ({
   head: { ref: `branch-${number}`, sha: HEAD, repo: { full_name: full } },
 });
 const full = (n, make) => Array.from({ length: n }, (_, i) => make(i));
-const ctx = (over = {}) => ({ ticket: { key: 'BANK-1', type: 'Bug' }, config: VERIFY_CONFIG, ...over });
+const ctx = (over = {}) => withReader({ ticket: { key: 'BANK-1', type: 'Bug' }, config: VERIFY_CONFIG, ...over });
 
 test('R1: a full last page of PR files makes the file list unknown, not complete', async () => {
   const { fetchFn } = fakeFetch([
@@ -57,7 +58,7 @@ test('R1: a full last page of comments or runs is unknown', async () => {
   const gh = await collectGithub({ repo: REPO, key: 'BANK-1', fetchFn });
   assert.equal(gh.truncated.comments, true);
   assert.equal(gh.truncated.runs, true);
-  const c = ctx({ ...gh, report: { head_sha: HEAD }, reportAuthor: 'github-actions[bot]', baseWorkflowFiles: {} });
+  const c = ctx({ ...gh, report: { head_sha: HEAD, workflow_files: { [CI]: 'h' } }, reportAuthor: 'github-actions[bot]', baseWorkflowFiles: { [CI]: 'h' } });
   assert.match(reportTrusted(c).reason, /comment list .*not complete/);
   assert.equal(ciGreen(c).status, 'unknown');
   assert.match(ciGreen(c).reason, /run list .*not complete/);
@@ -88,8 +89,8 @@ test('R4: the repository name is compared without case', async () => {
 });
 
 test('R5: a test or a title names the key only at a boundary on both sides', () => {
-  const report = (id) => ({ schema: 'aat-ci-report/1', head_sha: HEAD, workflow_files: {}, tests: [{ id: `t.py::${id}`, outcome: 'passed' }] });
-  const c = (id) => ({ ...ctx(), pr: { headSha: HEAD }, report: report(id), reportAuthor: 'github-actions[bot]', baseWorkflowFiles: {}, prFiles: [],
+  const report = (id) => ({ schema: 'aat-ci-report/1', head_sha: HEAD, workflow_files: { [CI]: 'h' }, tests: [{ id: `t.py::${id}`, outcome: 'passed' }] });
+  const c = (id) => ({ ...ctx(), pr: { headSha: HEAD }, report: report(id), reportAuthor: 'github-actions[bot]', baseWorkflowFiles: { [CI]: 'h' }, prFiles: ['src/bank/service.py'],
     reportComment: { updatedAt: '2026-11-16T01:05:00Z' },
     workflowRuns: [{ path: CI, headSha: HEAD, status: 'completed', conclusion: 'success', createdAt: '2026-11-16T01:00:00Z', updatedAt: '2026-11-16T01:06:00Z' }] });
   assert.equal(bugTestExists(c('test_BANK1_x')).status, 'pass');

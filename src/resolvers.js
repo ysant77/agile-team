@@ -39,6 +39,27 @@ resolver.define('approve', async ({ payload, context }) => {
   return { ok: true, approval, auditSeq: audit.seq };
 });
 
+// A person signs off the merged change of a high-stake ticket (DESIGN 6a, benchmark B27). As the
+// user: only someone who can edit the issue can sign off. The sign-off names the commit.
+resolver.define('signOff', async ({ payload, context }) => {
+  const key = context.extension.issue.key;
+  const sha = String(payload?.sha ?? '').trim();
+  const reason = String(payload?.reason ?? '').trim();
+  if (!/^[0-9a-f]{40}$/.test(sha)) return { ok: false, error: 'The sign-off must name the full merged commit id.' };
+  if (reason.length < 5) return { ok: false, error: 'A reason of at least 5 characters is required.' };
+  // The audit event comes first: the property names its seq, and the verifier counts a sign-off
+  // only when the event matches (PR 8 review, item 10). An event with no property counts for nothing.
+  const audit = await appendAudit({ actor: context.accountId, event: 'change.signed_off', data: { key, sha, reason } });
+  const signoff = { by: context.accountId, sha, reason, at: new Date().toISOString(), auditSeq: audit.seq };
+  const response = await api.asUser().requestJira(route`/rest/api/3/issue/${key}/properties/aat.signoff`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(signoff),
+  });
+  if (!response.ok) return { ok: false, error: `Jira refused the sign-off (HTTP ${response.status}).` };
+  return { ok: true, signoff, auditSeq: audit.seq };
+});
+
 // A human adopts a proposed check from a review (DESIGN 14a). The AC then names the test; CI and
 // the verifier decide the result. As the user: only someone who can edit the issue can adopt.
 resolver.define('adoptCheck', async ({ payload, context }) => {

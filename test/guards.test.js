@@ -6,7 +6,7 @@ import { VERIFY_CONFIG } from '../src/verify-claim.js';
 
 const sha = 'b'.repeat(40);
 const BENCH = [{ id: 'tests/test_bench.py::test_transfer_throughput', outcome: 'passed' }];
-const ctx = ({ prFiles = ['tests/test_bank17_gate.py'], metrics = { pr_auc: 0.39, auc: 0.89 }, checks, config = VERIFY_CONFIG, workflowFiles, tests = BENCH, patches } = {}) => ({
+const ctx = ({ prFiles = ['tests/test_bank17_gate.py'], metrics = { pr_auc: 0.39, auc: 0.89 }, checks, config = VERIFY_CONFIG, workflowFiles, tests = BENCH, patches } = {}) => withReader({
   ticket: { key: 'BANK-17', type: 'Story', acceptanceCriteria: (checks ?? [['metric_at_least', 'pr_auc', 0.25]]).map(([type, ...args], i) => ({ acId: `AC${i + 1}`, check: { type, args } })) },
   pr: { number: 9, title: 'BANK-17: ship fraud model v3', state: 'open', headSha: sha },
   report: { schema: 'aat-ci-report/1', head_sha: sha, tests, metrics, workflow_files: workflowFiles ?? { '.github/workflows/ci.yml': 'base' } },
@@ -43,20 +43,25 @@ test('a guarded directory matches by prefix only, a guarded file only exactly', 
 test('without a file list no CI evidence is trusted, guards or not (review B4, 16 Nov)', () => {
   assert.equal(ready(ctx({ prFiles: null })).result, 'cannot_verify');
   assert.equal(ready(ctx({ prFiles: null, config: { requiredWorkflowPaths: ['.github/workflows/ci.yml'] } })).result, 'cannot_verify');
-  assert.equal(ready(ctx({ prFiles: [], config: { requiredWorkflowPaths: ['.github/workflows/ci.yml'] } })).result, 'supported');
+  // A pull request changes at least one file: an empty list is not read correctly (README, "No
+  // check passes by default").
+  assert.equal(ready(ctx({ prFiles: [], config: { requiredWorkflowPaths: ['.github/workflows/ci.yml'] } })).result, 'cannot_verify');
 });
 
 test('the guard applies to upper and lower bounds and wins over a passing value', () => {
   const both = [['metric_at_least', 'pr_auc', 0.25], ['metric_at_most', 'auc', 0.95]];
   const v = ready(ctx({ prFiles: ['src/fraud/model.py'], checks: both }));
   assert.equal(v.result, 'cannot_verify');
-  assert.equal(v.reason.split(';').length, 2);
+  // Both metric ACs name the guard, and the claim-wide measurement check adds the paths.
+  assert.equal(v.reason.split(';').filter((r) => /model\.py/.test(r)).length, 3);
 });
 
-test('a test check is not affected by the metric guard', () => {
+test('a test check is affected by the measurement guard too (benchmark B19, B20)', () => {
   const c = ctx({ prFiles: ['src/fraud/evaluate.py'], checks: [['test_passes', 'test_BANK17_gate']] });
   c.report.tests = [{ id: 'tests/test_bank17_gate.py::test_BANK17_gate', outcome: 'passed' }];
-  assert.equal(ready(c).result, 'supported');
+  const v = ready(c);
+  assert.equal(v.result, 'cannot_verify');
+  assert.match(v.reason, /evaluate\.py.*measured/);
 });
 
 test('the too-good guard still sends a leak to a human when no guarded file changed', () => {
@@ -125,6 +130,7 @@ test('a report for another commit, or a run that is not green, is not trusted fo
 });
 
 import { applyGuards, idsIn } from '../src/opinion.js';
+import { withReader } from './helpers/reader.js';
 
 test('ids in an opinion must match the evidence exactly', () => {
   assert.deepEqual(idsIn('PR #7 at b941c25 fixes AC1 of BANK-4 (E2)').sort(), ['AC1', 'BANK-4', 'E2', 'PR7', 'b941c25'].sort());

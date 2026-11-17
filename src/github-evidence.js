@@ -13,18 +13,21 @@ const isActionsBot = (u) => u?.id === ACTIONS_BOT_ID && u?.type === 'Bot';
 // file counts under both names. A full last page means the list may go on: the result is null
 // (not known), never a short list that hides a changed file (second review, item 1).
 export const FILE_PAGES = 30;
-export async function listPrFiles(get, repo, prNumber) {
+export async function listPrFiles(get, repo, prNumber, added = []) {
   const names = [];
   for (let page = 1; page <= FILE_PAGES; page += 1) {
     const files = (await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`, { required: true })) ?? [];
-    for (const f of files) names.push(f.filename, ...(f.previous_filename ? [f.previous_filename] : []));
+    for (const f of files) {
+      names.push(f.filename, ...(f.previous_filename ? [f.previous_filename] : []));
+      if (f.status === 'added') added.push(f.filename);
+    }
     if (files.length < 100) return names;
   }
   return null;
 }
 
 // prNumber picks one pull request; without it, the latest one whose title or branch names the key.
-export async function collectGithub({ repo, key, token, fetchFn, prNumber = null }) {
+export async function collectGithub({ repo, key, token, fetchFn, prNumber = null, securityCheck = null }) {
   const headers = {
     Accept: 'application/vnd.github+json',
     'User-Agent': 'agile-team-forge-app',
@@ -55,7 +58,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     }
     return { items, truncated: true };
   };
-  const truncated = { pulls: false, comments: false, runs: false, files: false };
+  const truncated = { pulls: false, comments: false, runs: false, files: false, checks: false };
 
   // The 500 most recently updated pull requests.
   const pullPages = await getPages(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc`, 5, (b) => b, { required: true });
@@ -68,6 +71,12 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
   const linkedTo = (p) => sameRepo(p.head?.repo?.full_name) && (namesKey(p.title, key) || namesKey(p.head?.ref, key));
   const naming = prNumber ? pulls.filter((p) => p.number === prNumber) : pulls.filter(linkedTo);
   const live = naming.filter((p) => !(p.state === 'closed' && !p.merged_at));
+  // PRs from forks that name the key: not linked (their CI report is not posted), but not
+  // "no PR" either (benchmark I08).
+  const forkPrs = prNumber ? [] : pulls
+    .filter((p) => !sameRepo(p.head?.repo?.full_name) && (namesKey(p.title, key) || namesKey(p.head?.ref, key)))
+    .filter((p) => !(p.state === 'closed' && !p.merged_at))
+    .map((p) => p.number);
   const match = live[0] ?? naming[0];
   const prCandidates = prNumber ? [prNumber] : live.map((p) => p.number);
   const pr = match
@@ -77,12 +86,14 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
         branch: match.head?.ref,
         state: match.state,
         merged: Boolean(match.merged_at),
+        mergeSha: match.merged_at ? (match.merge_commit_sha ?? null) : null,
         // Whether the PR names the key and comes from this repository; false for a PR picked by
         // number that does not (unit 2 review, item 7).
         linked: linkedTo(match),
         headSha: match.head?.sha,
         url: match.html_url,
         body: match.body ?? '',
+        baseRef: match.base?.ref ?? null,
       }
     : null;
 
@@ -90,11 +101,15 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
   let reportAuthor = null;
   let reportComment = null;
   let prFiles = null;
+  let prAddedFiles = null;
   let workflowRuns = [];
+  let securityRuns = null;
   if (pr) {
     const runPages = await getPages(`/repos/${repo}/actions/runs?head_sha=${pr.headSha}`, 3, (b) => b?.workflow_runs);
     truncated.runs = runPages.truncated;
     workflowRuns = runPages.items.map((r) => ({
+      id: r.id,
+      attempt: r.run_attempt ?? 1,
       name: r.name,
       path: r.path,
       headSha: r.head_sha,
@@ -105,6 +120,42 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
       runStartedAt: r.run_started_at,
       url: r.html_url,
     }));
+    // GitHub lists only the latest attempt of a run. For a re-run, read the conclusion and the
+    // job steps of each earlier attempt, so a failed or cancelled attempt stays visible
+    // (benchmark B05). At most MAX_ATTEMPTS earlier attempts are read; the rest are counted in
+    // earlierUnread. A list that could not be read is null (not known).
+    const MAX_ATTEMPTS = 5;
+    for (const run of workflowRuns) {
+      run.earlierFailures = [];
+      run.earlierConclusions = [];
+      run.earlierUnread = Math.max(0, (run.attempt ?? 1) - 1 - MAX_ATTEMPTS);
+      for (let n = 1; n < (run.attempt ?? 1) && n <= MAX_ATTEMPTS; n += 1) {
+        const attempt = await get(`/repos/${repo}/actions/runs/${run.id}/attempts/${n}`);
+        if (!attempt) run.earlierConclusions = null;
+        else run.earlierConclusions?.push({ attempt: n, conclusion: attempt.conclusion ?? null });
+        const jobs = await get(`/repos/${repo}/actions/runs/${run.id}/attempts/${n}/jobs`);
+        if (!jobs) {
+          run.earlierFailures = null; // not known
+          break;
+        }
+        for (const job of jobs.jobs ?? []) {
+          for (const step of job.steps ?? []) {
+            if (step.conclusion === 'failure') run.earlierFailures.push({ attempt: n, job: job.name, step: step.name });
+          }
+        }
+      }
+      // A run without a result (cancelled, stale, skipped): read the steps of its own attempt. A
+      // later success counts only when no step of this run failed (ci_green). null: not known.
+      if (run.status === 'completed' && ['cancelled', 'stale', 'skipped'].includes(run.conclusion)) {
+        const jobs = await get(`/repos/${repo}/actions/runs/${run.id}/attempts/${run.attempt ?? 1}/jobs`);
+        run.stepFailures = jobs ? (jobs.jobs ?? []).flatMap((job) => (job.steps ?? [])
+          .filter((step) => step.conclusion === 'failure')
+          .map((step) => ({ attempt: run.attempt ?? 1, job: job.name, step: step.name }))) : null;
+        // A job can fail with no step marked failure (a cancelled run, a job timeout). Its own
+        // conclusion is read too. null: not known.
+        run.jobConclusions = jobs ? (jobs.jobs ?? []).map((job) => ({ attempt: run.attempt ?? 1, job: job.name, conclusion: job.conclusion ?? null })) : null;
+      }
+    }
     // Comments come oldest first; the latest bot report can be on any page.
     const commentPages = await getPages(`/repos/${repo}/issues/${pr.number}/comments`, 10);
     truncated.comments = commentPages.truncated;
@@ -116,8 +167,35 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
       reportComment = { createdAt: latest.created_at, updatedAt: latest.updated_at };
     }
     // Every changed file, so the verifier can see a change to the workflow or the report plugin.
-    prFiles = await listPrFiles(get, repo, pr.number);
+    prAddedFiles = [];
+    prFiles = await listPrFiles(get, repo, pr.number, prAddedFiles);
+    if (prFiles === null) prAddedFiles = null;
     truncated.files = prFiles === null;
+    // The code-scanning result check of the head (small security check, DESIGN 14g). Public
+    // check runs need no token; the app id filter keeps the list short.
+    if (securityCheck && securityCheck.mode !== 'off') {
+      const appFilter = securityCheck.appId ? `?app_id=${securityCheck.appId}` : '';
+      const checkPages = await getPages(`/repos/${repo}/commits/${pr.headSha}/check-runs${appFilter}`, 1, (b) => b?.check_runs);
+      truncated.checks = checkPages.truncated;
+      securityRuns = checkPages.items.map((c) => ({
+        name: c.name,
+        appSlug: c.app?.slug ?? null,
+        appId: c.app?.id ?? null,
+        headSha: c.head_sha,
+        status: c.status,
+        conclusion: c.conclusion,
+        title: c.output?.title ?? null,
+        summary: c.output?.summary ?? null,
+      }));
+    }
+  }
+
+  // The current tip of the PR's base branch: a ready claim needs CI on the current base
+  // (benchmark I09). Unknown (null) when GitHub does not answer.
+  let baseTip = null;
+  if (pr?.baseRef && !pr.merged) {
+    const branch = await get(`/repos/${repo}/branches/${encodeURIComponent(pr.baseRef)}`);
+    baseTip = branch?.commit?.sha ?? null;
   }
 
   // Report for the default branch, written by CI to the `ci-reports` branch as main.json.
@@ -143,14 +221,23 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
   return {
     pr,
     prCandidates,
+    forkPrs,
     truncated,
     report,
     reportAuthor,
     reportComment,
     prFiles,
+    prAddedFiles,
+    baseTip,
+    securityRuns,
     workflowRuns,
     baseReport,
     baseWorkflowFiles: baseReport?.workflow_files ?? null,
+    // A merged PR's result on main is the main report (ci-reports/main.json). It counts only while
+    // it is for the merge commit; after a later merge the check says the report is for another
+    // commit (DESIGN 15a).
+    mergeSha: pr?.mergeSha ?? null,
+    mergeReport: pr?.mergeSha ? baseReport : null,
     deployRuns,
     meta: { calls, rateRemaining, authenticated: Boolean(token) },
   };

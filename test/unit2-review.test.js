@@ -7,6 +7,7 @@ import { buildPacket, caseInputErrors } from '../src/case.js';
 import { applyGuards } from '../src/opinion.js';
 import { editsOutside } from '../bakeoff/tasks/code.js';
 import { safeEnv } from '../bakeoff/repo.js';
+import { withReader } from './helpers/reader.js';
 
 const side = (prNumber, diffLines, metrics = {}, extra = {}) => ({
   prNumber, verdict: { result: 'supported', reason: 'all checks passed' }, diffLines, files: ['src/fraud/model.py'],
@@ -127,7 +128,7 @@ test('U9: the metric margin works for negative values', () => {
 test('U11: the too-good guard covers every AUC name, and guarded paths ignore case and sub-folders', async () => {
   const { metricCompare } = await import('../src/verifier/checks.js');
   const sha = 'a'.repeat(40);
-  const ctx = (metrics, prFiles = []) => ({
+  const ctx = (metrics, prFiles = ['src/bank/service.py']) => withReader({
     ticket: { key: 'BANK-17' }, pr: { headSha: sha }, prFiles,
     report: { schema: 'aat-ci-report/1', head_sha: sha, tests: [], metrics, workflow_files: { '.github/workflows/ci.yml': 'h' } },
     reportAuthor: 'github-actions[bot]', baseWorkflowFiles: { '.github/workflows/ci.yml': 'h' },

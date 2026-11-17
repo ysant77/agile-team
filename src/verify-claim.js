@@ -2,18 +2,26 @@
 
 import { fetch } from '@forge/api';
 import { kvs } from '@forge/kvs';
-import { appendAudit } from './audit-store.js';
+import { appendAudit, readAudit } from './audit-store.js';
 import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment, findComment } from './jira.js';
 import { addVerdictProperty, collectJira, collectReviews } from './jira-evidence.js';
 import { applyReviewHold } from './review-hold.js';
 import { parseTwin } from './monitor.js';
+import { buildDoneEvidence, formatEvidence } from './verifier/evidence.js';
 import { verify } from './verifier/verdict.js';
 
 export const VERIFY_CONFIG = {
   requiredWorkflowPaths: ['.github/workflows/ci.yml'],
-  reportTrustPaths: ['.github/workflows/', '.github/actions/', '**/conftest.py', 'src/bank/testing/'],
+  reportTrustPaths: ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py', 'src/bank/testing/',
+    // The scripts that write the repro and coverage blocks of the report.
+    'scripts/repro.py', 'scripts/changed_coverage.py'],
   tooGood: { auc: 0.95 },
+  // D-cov (DESIGN 15c): fixed per repository before work starts, never per PR.
+  coverage: { changedFloor: 0.8, maxDropPoints: 0.5 },
+  // Small security check (DESIGN 14g): "observe" (shown, not counted) until a bank PR shows the
+  // real check; then "enforce". No token, no new egress host.
+  securityCheck: { mode: 'observe', checkName: 'CodeQL', appSlug: 'github-advanced-security', appId: 57789, onFixedReady: true },
   // Files that decide how a metric is measured or reported (DESIGN.md section 12, risk 12).
   guardedPaths: [
     'src/fraud/evaluate.py', 'src/fraud/model.py', 'src/bank/testing/', 'tests/conftest.py',
@@ -49,7 +57,7 @@ export function formatVerdict(issueKey, claim, verdict, meta) {
 }
 
 const DEFAULT_DEPS = {
-  collectJira, collectGithub, collectPrStats, collectReviews, addVerdictProperty, appendAudit, addComment, findComment, fetchFn: fetch, store: kvs,
+  collectJira, collectGithub, collectPrStats, collectReviews, addVerdictProperty, appendAudit, readAudit, addComment, findComment, fetchFn: fetch, store: kvs,
   env: () => ({ repo: process.env.GITHUB_REPO, token: process.env.GITHUB_TOKEN }),
 };
 
@@ -84,8 +92,8 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
     progress = (await d.store.get(progressKey)) ?? null;
     if (progress?.done) return progress.verdict;
     if (!progress) {
-      const { verdict, record, comment } = await decide({ issueKey, claim }, d);
-      progress = { verdict, record, comment, steps: {} };
+      const { verdict, record, comment, evidence } = await decide({ issueKey, claim }, d);
+      progress = { verdict, record, comment, evidence: evidence ?? null, steps: {} };
       await d.store.set(progressKey, progress);
     }
     const save = () => d.store.set(progressKey, progress);
@@ -97,6 +105,13 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
     if (!progress.steps.audit) {
       const audit = await d.appendAudit({ actor: 'team-lead-verifier', event: 'verdict', data: { issueKey, ...progress.record } });
       progress.steps.audit = { seq: audit.seq, hash: audit.hash };
+      await save();
+    }
+    // The evidence record goes into the audit chain before the comment, so a posted done verdict
+    // always has its record (DESIGN 15d).
+    if (progress.evidence && !progress.steps.evidence) {
+      const audit = await d.appendAudit({ actor: 'team-lead-verifier', event: 'done_evidence', data: { issueKey, ...progress.evidence } });
+      progress.steps.evidence = { seq: audit.seq, hash: audit.hash };
       await save();
     }
     if (!progress.steps.comment) {
@@ -131,7 +146,7 @@ export async function decide({ issueKey, claim }, d) {
   let githubError = null;
   if (repo) {
     try {
-      github = await d.collectGithub({ repo, key: issueKey, token, fetchFn: d.fetchFn });
+      github = await d.collectGithub({ repo, key: issueKey, token, fetchFn: d.fetchFn, securityCheck: VERIFY_CONFIG.securityCheck });
       if (github.pr) {
         // Patches of Python files for the metric tamper check; the file list comes from
         // collectGithub, which reads every page.
@@ -142,9 +157,24 @@ export async function decide({ issueKey, claim }, d) {
       githubError = error.message;
     }
   }
-  const ctx = { ticket, ...github, config: VERIFY_CONFIG };
+  // The sign-off's audit event, so the check can tell a button sign-off from a property written
+  // by REST. A read error leaves it null: the check then says unknown.
+  let signoffEvent = null;
+  const seq = ticket.signoff?.auditSeq;
+  if (Number.isInteger(seq) && seq >= 0 && d.readAudit) {
+    try {
+      [signoffEvent] = await d.readAudit(seq, 1);
+    } catch (error) {
+      console.log('sign-off audit read failed', issueKey, error.message);
+    }
+  }
+  // mergeRequiredTests: tests that must pass by name in the merge result. None are configured;
+  // merged_clean still needs every base test kept and unique migrations. The checks read a
+  // missing list as not known, so it is always set here.
+  const ctx = { ticket, ...github, mergeRequiredTests: [], config: VERIFY_CONFIG, claimant: claim.by ?? null, signoffEvent };
   let verdict = verify(claim, ctx);
-  if ((githubError || !repo) && verdict.result === 'contradicted' && verdict.checks.some((c) => c.name === 'pr_linked' && c.status === 'fail')) {
+  // Without the code host, a PR check that does not pass says why (a fail or an unknown).
+  if ((githubError || !repo) && verdict.result !== 'supported' && verdict.checks.some((c) => ['pr_linked', 'on_main'].includes(c.name) && c.status !== 'pass')) {
     verdict = { ...verdict, result: 'cannot_verify', reason: `code host not reachable${githubError ? `: ${githubError}` : ''}` };
   }
   // A stored review can hold a supported claim, never pass one. A failed read is no review:
@@ -166,7 +196,14 @@ export async function decide({ issueKey, claim }, d) {
     at: new Date().toISOString(), headSha: github.pr?.headSha ?? null, twin, origin, skill: ticket.labels?.[0] ?? null,
     ...(verdict.reviewHold ? { reviewHold: verdict.reviewHold.acs } : {}),
   };
-  const comment = formatVerdict(issueKey, claim, verdict, { prUrl: github.pr?.url, githubConfigured: Boolean(repo) });
+  let comment = formatVerdict(issueKey, claim, verdict, { prUrl: github.pr?.url, githubConfigured: Boolean(repo) });
+  // DESIGN 15d: every done verdict carries the evidence record that code built from what it saw.
+  let evidence = null;
+  if (claim.type === 'done') {
+    evidence = buildDoneEvidence(claim, ctx, verdict.checks, verdict.checkerVersion);
+    record.evidenceHash = evidence.hash;
+    comment = `${comment}\n${formatEvidence(evidence)}`;
+  }
   console.log('verdict', issueKey, claim.type, verdict.result, JSON.stringify(github.meta ?? {}));
-  return { verdict, record, comment };
+  return { verdict, record, comment, evidence };
 }

@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { decide } from '../src/verify-claim.js';
+import { COMPLETE } from './helpers/reader.js';
 
 const HEAD = 'a'.repeat(40);
 const OTHER = 'b'.repeat(40);
@@ -20,6 +21,9 @@ function github({ outcome = 'passed', report = true } = {}) {
     workflowRuns: [{ name: 'CI', path: CI, headSha: HEAD, status: 'completed', conclusion: 'success', createdAt: '2026-11-17T01:00:00Z', runStartedAt: '2026-11-17T01:00:05Z', updatedAt: '2026-11-17T01:09:00Z' }],
     deployRuns: [],
     prFiles: ['src/bank/accounts.py', 'tests/test_accounts.py'],
+    // Reader fields (PR 9): every list is complete and one PR names the issue.
+    truncated: COMPLETE,
+    prCandidates: [61],
   };
 }
 
@@ -32,7 +36,7 @@ const review = (extra = {}, finding = {}) => ({
 function deps({ gh = github(), reviews = [] } = {}) {
   return {
     env: () => ({ repo: 'ysant77/yms-bank-demo', token: null }),
-    collectJira: async () => ({ key: 'BANK-4', type: 'Story', labels: [], acceptanceCriteria: [{ acId: 'AC1', check: { type: 'test_passes', args: [TEST] } }] }),
+    collectJira: async () => ({ key: 'BANK-4', type: 'Story', labels: [], acceptanceCriteria: [{ acId: 'AC1', check: { type: 'test_passes', args: [TEST] } }], subtasks: [], links: [] }),
     collectGithub: async () => gh,
     collectPrStats: async () => ({ patches: {} }),
     collectReviews: async () => reviews,
@@ -47,8 +51,18 @@ test('the fixture without a review is supported', async () => {
   assert.equal(verdict.result, 'supported', verdict.reason);
 });
 
-test('a blocking finding on the same head holds ready, fixed and done', async () => {
-  for (const type of ['ready', 'fixed', 'done']) {
+// Merge with the done gate (PR 8): this fixture's PR is open and unmerged, so code rates "done"
+// as not supported before any review is read. The hold applies to ready and fixed here; for done
+// the gate decides, and a review never turns the result into supported.
+test('a done claim on an open PR is decided by the done gate; a review does not change that', async () => {
+  const plain = (await run('done', deps())).verdict;
+  const held = (await run('done', deps({ reviews: [review()] }))).verdict;
+  assert.notEqual(plain.result, 'supported', plain.reason);
+  assert.equal(held.result, plain.result);
+});
+
+test('a blocking finding on the same head holds ready and fixed', async () => {
+  for (const type of ['ready', 'fixed']) {
     assert.equal((await run(type, deps())).verdict.result, 'supported', type);
     const { verdict, record, comment } = await run(type, deps({ reviews: [review()] }));
     assert.equal(verdict.result, 'cannot_verify', type);

@@ -5,6 +5,12 @@ export const REPORT_SCHEMA = 'aat-ci-report/2';
 // Version 2 differs only in that a metric value may be {median, iqr_low, iqr_high, min, max, runs}.
 export const REPORT_SCHEMAS = ['aat-ci-report/1', 'aat-ci-report/2'];
 
+// The one reader of a number from evidence or config: the number when it is finite, else null.
+// JSON gives Infinity for 1e999, so a type check alone is not enough.
+export function finiteNumber(v) {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
 export function extractReport(commentBody) {
   if (typeof commentBody !== 'string' || !commentBody.trimStart().startsWith(REPORT_MARKER)) {
     return null;
