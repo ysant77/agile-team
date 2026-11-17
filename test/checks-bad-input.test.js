@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as c from '../src/verifier/checks.js';
 import { nextEvent } from '../src/audit.js';
+import { CLAIM_CHECKS, verify } from '../src/verifier/verdict.js';
 
 // missing: the key is deleted. null_element: a list whose only element is null (also a wrong
 // type where the input is not a list).
@@ -428,4 +429,113 @@ test('versionAtLeast: an unparsable version gives unknown, never pass', () => {
   assert.equal(c.versionAtLeast(good(), 'requests', '2.32.0').status, 'pass');
   assert.equal(c.versionAtLeast(good(), 'requests', '2.32.1').status, 'fail');
   assert.equal(c.versionAtLeast(good(), 'requests', '2.4').status, 'pass');
+});
+
+// Final review, item 2: verdict assembly. A malformed ticket, AC list, link list, type, key or
+// claim must not crash verify() and must not give supported. A check that throws gives
+// cannot_verify with "malformed input" and the check's name.
+const VERDICT_BAD = { ...BAD, text: 'x', number: 42, object: {}, empty_object_element: [{}] };
+function verdictGood() {
+  const ctx = good();
+  ctx.workflowRuns[0].url = 'https://example.test/run/1';
+  ctx.ticket.fields = { customfield_1: 'yes' };
+  ctx.ticket.acceptanceCriteria.push(
+    { acId: 'AC2', check: { type: 'link_exists', args: ['is blocked by'] } },
+    { acId: 'AC3', check: { type: 'field_equals', args: ['customfield_1', 'yes'] } },
+  );
+  return ctx;
+}
+const CLAIMS = Object.keys(CLAIM_CHECKS);
+const VERDICT_PATHS = ['ticket', 'ticket.key', 'ticket.type', 'ticket.links', 'ticket.links.0', 'ticket.fields', 'ticket.acceptanceCriteria',
+  'ticket.acceptanceCriteria.0', 'ticket.acceptanceCriteria.0.check', 'ticket.acceptanceCriteria.0.check.args',
+  'ticket.acceptanceCriteria.1', 'ticket.acceptanceCriteria.1.check', 'ticket.acceptanceCriteria.1.check.args',
+  'ticket.acceptanceCriteria.2.check.args'];
+
+test('verify: the good context is supported for every claim type', () => {
+  for (const type of CLAIMS) {
+    const v = verify({ id: 'g', type, args: { tag: 'v1' } }, verdictGood());
+    assert.equal(v.result, 'supported', `${type}: ${v.reason}`);
+  }
+});
+
+test('verify: a malformed ticket, AC list, link list, type or key never throws', () => {
+  const thrown = [];
+  for (const type of CLAIMS) {
+    for (const path of VERDICT_PATHS) {
+      for (const [label, value] of Object.entries(VERDICT_BAD)) {
+        const ctx = verdictGood();
+        setPath(ctx, path, value);
+        try {
+          verify({ id: 'b', type, args: { tag: 'v1' } }, ctx);
+        } catch (error) {
+          thrown.push(`${type} ${path}=${label}: ${error.message}`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(thrown, []);
+});
+
+// The claim types whose verdict reads these inputs. "merged" and "deployed" read no ticket field.
+test('verify: a malformed ticket, AC list, link list or key never gives supported for acs or done', () => {
+  const passed = [];
+  // An AC list is read as a whole, so a missing or empty list is "no AC": that is a fail for acs.
+  // The type is read only to choose the Bug and Task rules; a ticket of another type keeps the
+  // AC checks, so a missing or odd type can be supported.
+  const ALLOW = { 'ticket.type': Object.keys(VERDICT_BAD) };
+  for (const type of ['acs', 'done']) {
+    for (const path of VERDICT_PATHS) {
+      for (const [label, value] of Object.entries(VERDICT_BAD)) {
+        if (ALLOW[path]?.includes(label)) continue;
+        const ctx = verdictGood();
+        setPath(ctx, path, value);
+        let v;
+        try {
+          v = verify({ id: 'b', type, args: { tag: 'v1' } }, ctx);
+        } catch {
+          continue; // reported by the test above
+        }
+        if (v.result === 'supported') passed.push(`${type} ${path}=${label}`);
+      }
+    }
+  }
+  assert.deepEqual(passed, []);
+});
+
+test('verify: a malformed claim never throws and is not supported', () => {
+  for (const claim of [undefined, null, 'x', {}, { type: null }, { type: 42 }, { type: 'toString' }, { type: '__proto__' }, { type: 'constructor' }]) {
+    let v;
+    assert.doesNotThrow(() => { v = verify(claim, verdictGood()); }, JSON.stringify(claim));
+    assert.equal(v.result, 'cannot_verify', JSON.stringify(claim));
+  }
+});
+
+test('verify: a check that throws gives cannot_verify with "malformed input" and the check name', () => {
+  const ctx = verdictGood();
+  Object.defineProperty(ctx, 'mergeReport', { get() { throw new Error('boom'); } });
+  let v;
+  assert.doesNotThrow(() => { v = verify({ id: 't', type: 'merged' }, ctx); });
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /malformed input/);
+  assert.match(v.reason, /merged/);
+  assert.doesNotThrow(() => { v = verify({ id: 't', type: 'done' }, ctx); });
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /malformed input/);
+});
+
+test('checks with a missing ticket or a key that is not text do not throw', () => {
+  for (const ticket of [undefined, null]) {
+    const ctx = good();
+    ctx.ticket = ticket;
+    assert.doesNotThrow(() => c.reproduced(ctx), `ticket ${ticket}`);
+    assert.notEqual(c.reproduced(ctx).status, 'pass');
+  }
+  for (const key of [42, {}, ['X-1'], null]) {
+    const ctx = good();
+    ctx.ticket.key = key;
+    ctx.ticket.acceptanceCriteria[0].check.args = ['test_{TOKEN}_fix'];
+    assert.doesNotThrow(() => c.reproduced(ctx), `key ${JSON.stringify(key)}`);
+    assert.doesNotThrow(() => c.ticketTests(ctx), `key ${JSON.stringify(key)}`);
+    assert.notEqual(c.reproduced(ctx).status, 'pass', `key ${JSON.stringify(key)}`);
+  }
 });
