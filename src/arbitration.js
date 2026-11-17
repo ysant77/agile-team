@@ -56,7 +56,8 @@ export function arbitrate(ticket, sides) {
     const [best, next] = ranked;
     // The margin is relative to the larger absolute value, so it works for negative values and
     // near zero (unit 2 review, item 9).
-    const margin = pre.margin ?? 0.1;
+    // A margin that is not a finite number (null, "", NaN) uses the default; it never coerces to 0.
+    const margin = typeof pre.margin === 'number' && Number.isFinite(pre.margin) ? pre.margin : 0.1;
     const gap = Math.abs(best.metrics.median - next.metrics.median);
     const scale = Math.max(Math.abs(best.metrics.median), Math.abs(next.metrics.median));
     const better = best.metrics.median !== next.metrics.median && gap >= margin * scale;
