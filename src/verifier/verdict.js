@@ -3,7 +3,8 @@
 import * as c from './checks.js';
 import { evidenceComplete } from './evidence.js';
 
-export const CHECKER_VERSION = 'verifier/1';
+// verifier/2: definition of done (on main, reproduced, covered, recorded, signed off).
+export const CHECKER_VERSION = 'verifier/2';
 
 // One acceptance-criterion check, from { type, args }.
 export function runAcCheck(ctx, check) {

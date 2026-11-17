@@ -520,10 +520,12 @@ export function acTestsRunNewCode(ctx) {
 // pinned run was re-run.
 const TEST_STEP = /pytest|\btests?\b/i;
 export function ciAttempts(ctx) {
-  const paths = ctx.config?.requiredWorkflowPaths ?? [];
+  const paths = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
   const runs = (ctx.workflowRuns ?? []).filter((r) => paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha && (r.attempt ?? 1) > 1);
   if (!runs.length) return null;
   if (runs.some((r) => r.earlierFailures === null)) return result('ci_attempts', 'unknown', 'an earlier attempt of the CI run could not be read');
+  const unread = runs.find((r) => r.earlierUnread > 0);
+  if (unread) return result('ci_attempts', 'unknown', `${unread.earlierUnread} earlier attempt(s) of the CI run were not read (read limit): a person checks for a flaky test`);
   const flaky = runs.flatMap((r) => r.earlierFailures ?? []).filter((f) => TEST_STEP.test(f.step));
   return flaky.length
     ? result('ci_attempts', 'unknown', flaky.map((f) => `attempt ${f.attempt} failed in step "${f.step}" and a re-run passed with no code change: a person checks for a flaky test`).join('; '))
