@@ -31,6 +31,19 @@ def git(clone, *args):
     return run(["git", *args], clone, check=True).stdout.strip()
 
 
+def overlay_repro(path):
+    """Make repro.py copy the BENCH_OVERLAY files into each base checkout it makes."""
+    text = path.read_text(encoding="utf-8")
+    hook = (
+        'git("checkout", "--quiet", "--detach", base_sha, cwd=tree)\n'
+        '        for _src, _dst in json.loads(os.environ.get("BENCH_OVERLAY", "[]")):\n'
+        '            (tree / _dst).parent.mkdir(parents=True, exist_ok=True)\n'
+        '            shutil.copy(_src, tree / _dst)'
+    )
+    text = text.replace('git("checkout", "--quiet", "--detach", base_sha, cwd=tree)', hook)
+    path.write_text(text, encoding="utf-8")
+
+
 def changed_files(clone, base, head):
     """GitHub-like file entries: filename, status, previous_filename, patch."""
     out = git(clone, "diff", "--name-status", "-M", f"{base}...{head}")
@@ -65,6 +78,8 @@ def main():
     ap.add_argument("--drop-coverage-file", default="", help="remove this file from coverage.json (simulated CI fault)")
     ap.add_argument("--pr-head-branch", default="", help="branch whose tip is the PR head, when CI ran on an older commit")
     ap.add_argument("--base-tip-branch", default="", help="branch whose tip is the current base")
+    ap.add_argument("--overlay", action="append", default=[],
+                    help="<file>:<path in tree>: put a newer bank CI file into the head tree and the base run (regression re-score)")
     args = ap.parse_args()
     clone = args.clone.resolve()
     py = str(clone / ".venv" / "bin" / "python")
@@ -81,6 +96,14 @@ def main():
         for kv in args.env:
             k, v = kv.split("=", 1)
             env[k] = v
+        # Overlays stand for bank CI files as on main after a bank PR merges: the head tree gets
+        # them, and the base run of repro.py gets them through BENCH_OVERLAY (see overlay_repro).
+        overlays = [o.split(":", 1) for o in args.overlay]
+        for src, dst in overlays:
+            (tree / dst).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(Path(src).resolve(), tree / dst)
+        if overlays:
+            env["BENCH_OVERLAY"] = json.dumps([[str(Path(a).resolve()), b] for a, b in overlays])
         lint = run([py, "-m", "ruff", "check", "."], tree, env)
         report = tree / "ci-report.json"
         cov = tree / "coverage.json"
@@ -99,6 +122,8 @@ def main():
                  "tests_tail": tests.stdout[-600:]}
         if args.repro_script:
             shutil.copy(args.repro_script.resolve(), tree / "scripts" / "repro.py")
+        if overlays:
+            overlay_repro(tree / "scripts" / "repro.py")
         if report.is_file() and args.base != args.branch:
             r = run([py, "scripts/repro.py", "--base", base, "--head", head, "--head-report", str(report)], tree, env)
             steps["repro_rc"] = r.returncode

@@ -25,6 +25,7 @@ def main():
     ap.add_argument("--only", default="")
     ap.add_argument("--repro-script", default="")
     ap.add_argument("--coverage-script", default="")
+    ap.add_argument("--overlay", action="append", default=[])
     args = ap.parse_args()
     only = set(filter(None, args.only.split(",")))
     jobs = []
@@ -54,6 +55,8 @@ def main():
                     cmd += ["--repro-script", args.repro_script]
                 if args.coverage_script:
                     cmd += ["--coverage-script", args.coverage_script]
+                for o in args.overlay:
+                    cmd += ["--overlay", o]
                 if case.get("bench"):
                     cmd.append("--bench")
                 jobs.append(cmd)
