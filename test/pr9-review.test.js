@@ -1,9 +1,12 @@
 // Review of PR 9 (commit 06bfe5a), items 1, 2, 4 and 5. Item 3 is in checks-bad-input.test.js.
 
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { collectGithub } from '../src/github-evidence.js';
+import { collectGithub, collectPrStats } from '../src/github-evidence.js';
 import * as checks from '../src/verifier/checks.js';
+import { decide } from '../src/verify-claim.js';
+import { fetchFrom } from './helpers/recorded-github.js';
 
 const H = 'a'.repeat(40);
 const CI = '.github/workflows/ci.yml';
@@ -69,4 +72,89 @@ test('item 1: the reader records the failed steps of a run without a result', as
   assert.deepEqual(byId[7].stepFailures, [{ attempt: 1, job: 'test', step: 'Run pytest' }]);
   assert.equal(byId[8].stepFailures, undefined);
   assert.equal(checks.ciGreen({ pr: gh.pr, workflowRuns: gh.workflowRuns, prFiles: gh.prFiles, config: { requiredWorkflowPaths: [CI] } }).status, 'unknown');
+});
+
+// ---- Item 2: a Story's new function and the base AttributeError ----
+// The call in the test must be code (not a comment or a string), and the base error must name the
+// module object, as Python writes it: "module 'bank.ledger' has no attribute 'name'".
+
+const loadBench = (id) => {
+  const c = JSON.parse(readFileSync(new URL(`../fixtures/bench/${id}.json`, import.meta.url), 'utf8'));
+  const cov = c.github?.report?.coverage;
+  if (cov && !('unmeasured_files' in cov)) cov.unmeasured_files = [];
+  if (cov && !('changed_excluded' in cov)) cov.changed_excluded = 0;
+  return c;
+};
+async function verdictOf(c) {
+  const d = {
+    collectJira: async () => structuredClone(c.ticket),
+    env: () => ({ repo: 'ysant77/yms-bank-demo', token: 'local' }),
+    collectGithub, collectPrStats, fetchFn: fetchFrom(c.github),
+  };
+  const log = console.log;
+  console.log = () => {};
+  try {
+    return (await decide({ issueKey: c.ticket.key, claim: { id: `pr9-${c.id}`, type: c.claim, text: '' } }, d)).verdict;
+  } finally {
+    console.log = log;
+  }
+}
+const NO_ATTR = "AttributeError: module 'bank.ledger' has no attribute 'strip_reference'";
+// testPatch: the added lines of the test file, without the leading "+".
+function newFunction(c, { message = NO_ATTR, testPatch = ['    assert ledger.strip_reference(" a ") == "a"'] } = {}) {
+  c.ticket.type = 'Story';
+  const acs = new Set(c.ticket.acceptanceCriteria.map((a) => a.check.args[0]));
+  for (const t of c.github.report.repro.tests) {
+    if (acs.has(t.id.split('::')[1])) t.base = { outcome: 'failed', exc_type: 'AttributeError', exc_message: message };
+  }
+  for (const f of c.github.files) {
+    if (f.filename.startsWith('src/') && f.patch) f.patch += '\n+def strip_reference(text):\n+    return text.strip()';
+    if (f.filename.startsWith('tests/') && f.patch) f.patch += `\n${testPatch.map((l) => `+${l}`).join('\n')}`;
+  }
+  return c;
+}
+
+test('item 2: the control case (a real call, a module error) is supported', async () => {
+  const v = await verdictOf(newFunction(loadBench('B23')));
+  assert.equal(v.result, 'supported', v.reason);
+});
+
+test('item 2: a call inside a comment or a string does not count', async () => {
+  const cases = {
+    comment: ['    assert True  # ledger.strip_reference(" a ")'],
+    'comment line': ['    # ledger.strip_reference(" a ")', '    assert True'],
+    'double-quoted string': ['    assert "ledger.strip_reference(x)" != "a"'],
+    'single-quoted string': ["    assert 'ledger.strip_reference(x)' != 'a'"],
+    'triple-quoted string over lines': ['    """', '    ledger.strip_reference(" a ")', '    """', '    assert True'],
+  };
+  for (const [name, testPatch] of Object.entries(cases)) {
+    const v = await verdictOf(newFunction(loadBench('B23'), { testPatch }));
+    assert.equal(v.result, 'cannot_verify', `${name}: ${v.reason}`);
+    assert.match(v.reason, /AttributeError/);
+  }
+});
+
+test('item 2: a base error that names the attribute on another object or module does not count', async () => {
+  for (const message of [
+    "AttributeError: 'Ledger' object has no attribute 'strip_reference'",
+    "AttributeError: module 'bank.other' has no attribute 'strip_reference'",
+    "AttributeError: module 'ledger' has no attribute 'strip_reference'",
+    "AttributeError: type object 'ledger' has no attribute 'strip_reference'",
+  ]) {
+    const v = await verdictOf(newFunction(loadBench('B23'), { message }));
+    assert.equal(v.result, 'cannot_verify', `${message}: ${v.reason}`);
+  }
+});
+
+// LIMIT: only the added lines of the test file are read. A string opened on an unchanged line
+// (for example a docstring that the PR extends) is not seen, so a call written inside it still
+// counts. Closing this needs the whole file, which the patch does not give.
+test('item 2 limit: a call inside a string opened on an unchanged line still counts', async () => {
+  const c = newFunction(loadBench('B23'), { testPatch: ['    ledger.strip_reference(" a ")'] });
+  for (const f of c.github.files) {
+    if (f.filename.startsWith('tests/') && f.patch) f.patch = f.patch.replace(/\n\+ {4}ledger\.strip_reference\(" a "\)$/, '\n     """old docstring\n+    ledger.strip_reference(" a ")\n     """');
+    if (f.filename.startsWith('tests/') && f.patch) assert.match(f.patch, /old docstring/);
+  }
+  const v = await verdictOf(c);
+  assert.equal(v.result, 'supported', v.reason);
 });
