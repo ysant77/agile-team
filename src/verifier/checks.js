@@ -868,15 +868,21 @@ function newModuleStory(ctx, row) {
 // - an added line of the test file calls `<module>.<name>(`, where <module> is that module's
 //   import name (bank.ledger) or its last part (ledger). Comments and string literals are
 //   removed first, so a call written in a comment or a string does not count;
-// - the base exception text (exc_message) names the module object and <name>, as Python writes
-//   it: "module 'bank.ledger' has no attribute '<name>'";
+// - the base exception text (exc_message) is the first line the bank writes (exconly()), whole and
+//   from its start: "AttributeError: module 'bank.ledger' has no attribute '<name>'", optionally
+//   followed by Python 3.12's ". Did you mean: '<other>'?". A longer text that only contains it
+//   ("partially initialized module ...") does not count (final review, item 5);
 // - the test passes on head. A Bug keeps the old rule.
 // LIMIT: only the added lines are read. A string opened on an unchanged line is not seen.
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // The code of added Python lines: triple-quoted strings (also over lines), quoted strings and
-// comments removed.
+// comments removed. A line that ends in an odd number of backslashes continues on the next line
+// (inside a string or not), so the two are joined first (final review, item 5). A comment that
+// ends in a backslash then also hides the next line: a call there is not counted, which gives
+// unknown, never a wrong pass.
 function pythonCode(lines) {
   return lines.map((l) => l.slice(1)).join('\n')
+    .replace(/((?:^|[^\\])(?:\\\\)*)\\\n/g, '$1')
     .replace(/("""|''')[\s\S]*?(?:\1|$)/g, '""')
     .split('\n')
     .map((l) => l.replace(/(["'])(?:\\.|(?!\1)[^\\])*\1/g, '""').replace(/#.*$/, ''));
@@ -893,7 +899,8 @@ function newFunctionStory(ctx, row) {
     const prefixes = [...new Set([module, module.split('.').pop()])].map(escapeRe).join('|');
     return added(f).some((l) => {
       const name = /^\+def\s+([A-Za-z_]\w*)\s*\(/.exec(l)?.[1];
-      if (!name || !new RegExp(`(^|\\s|:)module '${escapeRe(module)}' has no attribute '${name}'`).test(message)) return false;
+      const exact = new RegExp(`^AttributeError: module '${escapeRe(module)}' has no attribute '${name}'(?:\\. Did you mean: '\\w+'\\?)?$`);
+      if (!name || !exact.test(message)) return false;
       const call = new RegExp(`(?<![\\w.])(?:${prefixes})\\.${name}\\s*\\(`);
       return testLines.some((t) => call.test(t));
     });
