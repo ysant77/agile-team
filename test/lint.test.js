@@ -175,3 +175,20 @@ test('lint v6: list markers, status phrases, joined codes and thousands separato
   assert.deepEqual(ungrounded('The page shows 2. The API refuses it.'), ['2']);
   assert.deepEqual(ungrounded('The export of 2,000 rows finishes.'), ['2000']);
 });
+
+test('lint v6: a grounded number must keep the unit or noun it has in the request', () => {
+  const ungrounded = ungroundedFor('Calls time out after 5 seconds. Users see 3 tabs on 3G. Retry up to 10.');
+  const metric = [{ acId: 'AC1', statement: 'the call stops in time', check: { type: 'metric_at_most', args: ['call_seconds', 5] } }];
+  for (const d of [
+    'The call stops after 5 seconds.',
+    'The call stops after 5 second.',
+    'The call stops after 5 s.',
+    'The call stops after 5 sec.',
+    'Users see 3 tabs on a 3G network.',
+    'The client retries 10 times.',
+  ]) assert.deepEqual(ungrounded(d), [], d);
+  assert.deepEqual(ungrounded('The call stops in time.', metric), []);
+  assert.deepEqual(ungrounded('The client makes 5 retries.'), ['5']);
+  assert.deepEqual(ungrounded('The page loads in 3 seconds.'), ['3']);
+  assert.deepEqual(ungrounded('The call stops after 5 minutes.'), ['5']);
+});
