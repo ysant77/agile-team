@@ -10,12 +10,13 @@ import { checkHumanSignoff, ciGreen } from '../src/verifier/checks.js';
 import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
 
-// The recorded reports predate unmeasured_files (review finding 14); read them as the current
-// coverage script writes them, with an empty list.
+// The recorded reports predate unmeasured_files (review finding 14) and changed_excluded; read
+// them as the current coverage script writes them, with an empty list and a count of 0.
 const load = (id) => {
   const c = JSON.parse(readFileSync(new URL(`../fixtures/bench/${id}.json`, import.meta.url), 'utf8'));
   const cov = c.github?.report?.coverage;
   if (cov && !('unmeasured_files' in cov)) cov.unmeasured_files = [];
+  if (cov && !('changed_excluded' in cov)) cov.changed_excluded = 0;
   return c;
 };
 

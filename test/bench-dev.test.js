@@ -14,12 +14,13 @@ const recorded = (id) => JSON.parse(readFileSync(new URL(`${id}.json`, DIR), 'ut
 
 // The recorded reports are from before the coverage script wrote unmeasured_files, and the
 // coverage check gives unknown without that list (review finding 14). The cases below test other
-// rules, so they read each report as the current script writes it: with an empty list.
-// The recorded form is tested on its own below.
+// rules, so they read each report as the current script writes it: with an empty list, and with
+// changed_excluded 0 (also newer than the recordings). The recorded form is tested on its own below.
 const load = (id) => {
   const c = recorded(id);
   const cov = c.github?.report?.coverage;
   if (cov && !('unmeasured_files' in cov)) cov.unmeasured_files = [];
+  if (cov && !('changed_excluded' in cov)) cov.changed_excluded = 0;
   return c;
 };
 

@@ -410,13 +410,43 @@ export function testsNotRemoved(ctx, report = ctx.report) {
   // The base side: the main report, and the base test ids of every test module the PR changes,
   // renames or removes (repro block). After a merge the main report is the merge commit's, so the
   // repro ids are what still show a dropped test (benchmark I10).
-  const baseIds = [...ctx.baseReport.tests.map((t) => t.id), ...(optList(report.repro?.base_test_ids) ?? [])];
+  const repro = isObj(report.repro) ? report.repro : {};
+  const listed = optList(repro.base_test_ids);
+  const ids = listed && listed.every(isText) ? listed : [];
+  const baseIds = [...ctx.baseReport.tests.map((t) => t.id), ...ids];
   const removed = [...new Set(baseIds.map((id) => testName(id)))].filter(
     (n) => !head.has(n) && !approved.has(n),
   );
-  return removed.length
-    ? result('tests_not_removed', 'fail', `removed without approval: ${removed.join(', ')}`)
-    : result('tests_not_removed', 'pass', 'no test removed');
+  // A listed base test that the head lacks is a fail, even when the record is incomplete.
+  if (removed.length) return result('tests_not_removed', 'fail', `removed without approval: ${removed.join(', ')}`);
+  const gap = baseCollectGap(repro, listed);
+  if (gap) return result('tests_not_removed', 'unknown', gap);
+  return result('tests_not_removed', 'pass', 'no test removed');
+}
+
+// The base collection record (bank scripts/repro.py): pytest --collect-only on base over the
+// changed, renamed or removed test modules. rc null and no ids mean there was no such module.
+// A report without base_test_ids is from before the field existed and has no record to check.
+// A report with base_test_ids but no base_collect is from an older bank version: it cannot show
+// that every module gave its ids, so it gives unknown (README, "No check passes by default").
+const COLLECT_OK = [0, 5]; // pytest: 0 tests collected, 5 no tests collected
+function baseCollectGap(repro, listed) {
+  if (repro.base_test_ids === undefined && repro.base_collect === undefined) return null;
+  if (!listed || !listed.every(isText)) return 'the repro block has a malformed base_test_ids list';
+  const bc = repro.base_collect;
+  if (bc === undefined) return 'the repro block lists base test ids but has no base_collect record, so a module whose base ids could not be read may hide a dropped test';
+  if (!isObj(bc) || !isList(bc.modules_without_ids) || !bc.modules_without_ids.every(isText) || !('rc' in bc)) {
+    return 'the base_collect record of the repro block is malformed';
+  }
+  if (bc.modules_without_ids.length) {
+    return `${bc.modules_without_ids.join(', ')}: their base test ids could not be read, so a dropped test may be missed`;
+  }
+  if (bc.rc === null) {
+    return listed.length ? 'base_collect has no exit code, but the repro block lists base test ids' : null;
+  }
+  if (!COLLECT_OK.includes(bc.rc)) return `the base collection of the changed test modules ended with pytest exit code ${JSON.stringify(bc.rc)}`;
+  if (!listed.length) return 'the base collection ran, but the repro block lists no base test ids';
+  return null;
 }
 
 export function migrationAdditive(ctx, number) {
@@ -849,6 +879,12 @@ export function coverageOk(ctx) {
   const unmeasured = cov.unmeasured_files;
   if (!Array.isArray(unmeasured)) return result('coverage', 'unknown', 'the coverage block has no unmeasured_files list, so a changed file may be missing from the coverage data');
   if (unmeasured.length) return result('coverage', 'unknown', `${unmeasured.join(', ')} changed but not in the coverage data`);
+  // Changed lines that the coverage settings exclude (pragma: no cover, omit) are not in the
+  // counts. The coverage script reports them as changed_excluded; reports from before the field
+  // existed give unknown.
+  const excluded = cov.changed_excluded;
+  if (!Number.isInteger(excluded) || excluded < 0) return result('coverage', 'unknown', 'the coverage block has no valid changed_excluded count, so changed lines may be excluded from coverage');
+  if (excluded > 0) return result('coverage', 'unknown', `${excluded} changed lines excluded from coverage; a person checks`);
   if (!isNum(cov.head_total) || !isNum(cov.base_total)) {
     return result('coverage', 'unknown', 'head or base total coverage missing');
   }
