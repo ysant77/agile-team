@@ -2,7 +2,7 @@
 
 import { fetch } from '@forge/api';
 import { kvs } from '@forge/kvs';
-import { appendAudit } from './audit-store.js';
+import { appendAudit, readAudit } from './audit-store.js';
 import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment, findComment } from './jira.js';
 import { addVerdictProperty, collectJira } from './jira-evidence.js';
@@ -54,7 +54,7 @@ export function formatVerdict(issueKey, claim, verdict, meta) {
 }
 
 const DEFAULT_DEPS = {
-  collectJira, collectGithub, collectPrStats, addVerdictProperty, appendAudit, addComment, findComment, fetchFn: fetch, store: kvs,
+  collectJira, collectGithub, collectPrStats, addVerdictProperty, appendAudit, readAudit, addComment, findComment, fetchFn: fetch, store: kvs,
   env: () => ({ repo: process.env.GITHUB_REPO, token: process.env.GITHUB_TOKEN }),
 };
 
@@ -154,7 +154,18 @@ export async function decide({ issueKey, claim }, d) {
       githubError = error.message;
     }
   }
-  const ctx = { ticket, ...github, config: VERIFY_CONFIG };
+  // The sign-off's audit event, so the check can tell a button sign-off from a property written
+  // by REST. A read error leaves it null: the check then says unknown.
+  let signoffEvent = null;
+  const seq = ticket.signoff?.auditSeq;
+  if (Number.isInteger(seq) && seq >= 0 && d.readAudit) {
+    try {
+      [signoffEvent] = await d.readAudit(seq, 1);
+    } catch (error) {
+      console.log('sign-off audit read failed', issueKey, error.message);
+    }
+  }
+  const ctx = { ticket, ...github, config: VERIFY_CONFIG, claimant: claim.by ?? null, signoffEvent };
   let verdict = verify(claim, ctx);
   if ((githubError || !repo) && verdict.result === 'contradicted' && verdict.checks.some((c) => ['pr_linked', 'on_main'].includes(c.name) && c.status === 'fail')) {
     verdict = { ...verdict, result: 'cannot_verify', reason: `code host not reachable${githubError ? `: ${githubError}` : ''}` };

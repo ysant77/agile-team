@@ -88,7 +88,8 @@ export async function onComment(event) {
     return;
   }
   await verifyQueue.push({
-    body: { issueKey, claim: { id: `${issueKey}:${commentId}`, type: claim.type, text: claim.detail } },
+    // The claimant: a sign-off by the same person does not count.
+    body: { issueKey, claim: { id: `${issueKey}:${commentId}`, type: claim.type, text: claim.detail, by: comment?.author?.accountId ?? null } },
     concurrency: { key: 'verify', limit: 1 },
   });
   console.log('claim queued', issueKey, claim.type);

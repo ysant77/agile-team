@@ -67,7 +67,10 @@ test('B27: a money_semantics ticket is not done without a recorded sign-off of t
 
 test('B27: a sign-off of the merged commit by a person lets the evidence decide again', async () => {
   const { checkHumanSignoff } = await import('../src/verifier/checks.js');
-  const ctx = { ticket: { key: 'BENCH-27', domain: 'money_semantics', signoff: { by: 'acc-1', sha: 'abc', at: '2026-11-16T12:00:00Z' } }, pr: { merged: true, mergeSha: 'abc', headSha: 'def' } };
+  const { nextEvent } = await import('../src/audit.js');
+  // The sign-off button writes the audit event; the claimant is another person (PR 8 review, item 10).
+  const signoffEvent = nextEvent(null, { actor: 'acc-1', event: 'change.signed_off', data: { key: 'BENCH-27', sha: 'abc', reason: 'checked' }, at: '2026-11-16T12:00:00Z' });
+  const ctx = { ticket: { key: 'BENCH-27', domain: 'money_semantics', signoff: { by: 'acc-1', sha: 'abc', at: '2026-11-16T12:00:00Z', auditSeq: 0 } }, pr: { merged: true, mergeSha: 'abc', headSha: 'def' }, claimant: 'acc-2', signoffEvent };
   assert.equal(checkHumanSignoff(ctx).status, 'pass');
   assert.equal(checkHumanSignoff({ ...ctx, ticket: { ...ctx.ticket, signoff: { ...ctx.ticket.signoff, sha: 'old' } } }).status, 'unknown');
   assert.equal(checkHumanSignoff({ ...ctx, ticket: { key: 'X', domain: null } }), null);

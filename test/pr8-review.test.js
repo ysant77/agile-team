@@ -120,17 +120,21 @@ test('decide reads the sign-off audit event and passes the claimant to the check
   const seen = [];
   const d = {
     collectJira: async () => signoffCtx().ticket,
-    env: () => ({ repo: null }),
+    env: () => ({ repo: 'ysant77/yms-bank-demo', token: null }),
+    collectGithub: async () => ({ pr: signoffCtx().pr, workflowRuns: [], deployRuns: [] }),
+    collectPrStats: async () => ({ patches: {} }),
     readAudit: async (from, count) => { seen.push([from, count]); return [signoffEvent()]; },
   };
   const log = console.log;
   console.log = () => {};
   try {
-    const { verdict } = await decide({ issueKey: 'BENCH-27', claim: { id: 'c1', type: 'done', by: 'acc-reviewer' } }, d);
+    const signoffOf = async (by) => (await decide({ issueKey: 'BENCH-27', claim: { id: 'c1', type: 'done', by } }, d))
+      .verdict.checks.find((k) => k.name === 'human_signoff');
+    const self = await signoffOf('acc-reviewer');
     assert.deepEqual(seen, [[7, 1]]);
-    const s = verdict.checks.find((k) => k.name === 'human_signoff');
-    assert.equal(s.status, 'unknown');
-    assert.match(s.reason, /claimant/);
+    assert.equal(self.status, 'unknown');
+    assert.match(self.reason, /claimant/);
+    assert.equal((await signoffOf('acc-dev')).status, 'pass');
   } finally {
     console.log = log;
   }

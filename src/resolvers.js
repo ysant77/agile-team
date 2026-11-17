@@ -47,14 +47,16 @@ resolver.define('signOff', async ({ payload, context }) => {
   const reason = String(payload?.reason ?? '').trim();
   if (!/^[0-9a-f]{40}$/.test(sha)) return { ok: false, error: 'The sign-off must name the full merged commit id.' };
   if (reason.length < 5) return { ok: false, error: 'A reason of at least 5 characters is required.' };
-  const signoff = { by: context.accountId, sha, reason, at: new Date().toISOString() };
+  // The audit event comes first: the property names its seq, and the verifier counts a sign-off
+  // only when the event matches (PR 8 review, item 10). An event with no property counts for nothing.
+  const audit = await appendAudit({ actor: context.accountId, event: 'change.signed_off', data: { key, sha, reason } });
+  const signoff = { by: context.accountId, sha, reason, at: new Date().toISOString(), auditSeq: audit.seq };
   const response = await api.asUser().requestJira(route`/rest/api/3/issue/${key}/properties/aat.signoff`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(signoff),
   });
   if (!response.ok) return { ok: false, error: `Jira refused the sign-off (HTTP ${response.status}).` };
-  const audit = await appendAudit({ actor: context.accountId, event: 'change.signed_off', data: { key, sha, reason } });
   return { ok: true, signoff, auditSeq: audit.seq };
 });
 

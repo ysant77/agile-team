@@ -1,6 +1,7 @@
 // Deterministic checks. Each returns { name, status: 'pass' | 'fail' | 'unknown', reason }.
 // No model is involved. Unknown means "cannot verify": a human or more evidence is needed.
 
+import { canonical, sha256 } from '../audit.js';
 import { namesKey, sameFiles, testName, testsByName } from './report.js';
 
 const BOT = 'github-actions[bot]';
@@ -565,7 +566,22 @@ export function checkHumanSignoff(ctx) {
   const sha = ctx.pr?.mergeSha ?? ctx.pr?.headSha ?? null;
   if (!s?.by) return result('human_signoff', 'unknown', `${domain}: a person's sign-off of the merged change is required, and none is recorded`);
   if (!sha || s.sha !== sha) return result('human_signoff', 'unknown', `${domain}: the sign-off is for ${String(s.sha ?? 'no commit').slice(0, 7)}, not the merged commit ${String(sha ?? 'unknown').slice(0, 7)}`);
-  return result('human_signoff', 'pass', `${domain}: signed off by ${s.by} at ${s.at}`);
+  // Any issue editor can write the aat.signoff property by REST. Only the sign-off button also
+  // writes an audit event, so the property must match one (PR 8 review, item 10).
+  if (!signoffAudited(ctx, s)) {
+    return result('human_signoff', 'unknown', `${domain}: the sign-off has no matching audit event from the sign-off button, so it may not come from the app; sign off again in the panel`);
+  }
+  if (!ctx.claimant) return result('human_signoff', 'unknown', `${domain}: the claimant is not known, so the sign-off cannot be shown to come from another person`);
+  if (ctx.claimant === s.by) return result('human_signoff', 'unknown', `${domain}: the claimant signed off their own claim; another person must sign off`);
+  return result('human_signoff', 'pass', `${domain}: signed off by ${s.by} at ${s.at} (audit seq ${s.auditSeq})`);
+}
+
+function signoffAudited(ctx, s) {
+  const e = ctx.signoffEvent;
+  if (!Number.isInteger(s.auditSeq) || !e || typeof e !== 'object') return false;
+  const { hash, ...body } = e;
+  return e.seq === s.auditSeq && e.event === 'change.signed_off' && e.actor === s.by
+    && e.data?.key === ctx.ticket?.key && e.data?.sha === s.sha && sha256(canonical(body)) === hash;
 }
 
 // A Story's AC test that cannot import on base because the PR adds the module (benchmark B22):
