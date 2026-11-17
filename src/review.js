@@ -10,7 +10,7 @@ import { lintText, STYLE_CONTRACT, lintMessage } from './style.js';
 import { VERIFY_CONFIG } from './verify-claim.js';
 import { testName, testsByName } from './verifier/report.js';
 
-export const REVIEW_GUARD_VERSION = 2;
+export const REVIEW_GUARD_VERSION = 3;
 export const REVIEW_PROMPT_VERSION = 'code-review/2';
 export const REVIEW_LABEL = 'Review (not verified)';
 export const MAX_FINDINGS = 6;
@@ -172,6 +172,28 @@ function ungroundedNumbers(text, packet, allowed) {
   return bad;
 }
 
+// Guard 7 (version 3): the share of a finding's text that is hunk content copied verbatim. Hunk
+// ids and AC ids are removed first. Only runs of at least COPY_MIN characters count, so a short
+// name in the reviewer's own sentence is not a copy. Spaces do not count.
+const COPY_MIN = 12;
+function copiedShare(body, code) {
+  const text = body.replace(HUNK_ID, ' ').replace(/\bAC\d+\b/g, ' ').replace(/\s+/g, ' ').trim();
+  const total = text.replace(/ /g, '').length;
+  if (total === 0) return 0;
+  let copied = 0;
+  for (let i = 0; i < text.length;) {
+    let n = 0;
+    while (i + n < text.length && code.includes(text.slice(i, i + n + 1))) n += 1;
+    if (n >= COPY_MIN) {
+      copied += text.slice(i, i + n).replace(/ /g, '').length;
+      i += n;
+    } else {
+      i += 1;
+    }
+  }
+  return copied / total;
+}
+
 // Returns the record that is shown and audited. `outcome` is 'review' (advice only) or
 // 'invalid_review' (refused by a guard). There is no verdict field: code decides the verdict.
 export function applyReviewGuards(raw, packet, meta = {}) {
@@ -210,7 +232,8 @@ export function applyReviewGuards(raw, packet, meta = {}) {
     if (f.severity !== 'blocking') continue;
     if (!f.ac) return invalid('blocking-needs-ac', `a blocking finding at ${f.hunk} must name the AC that the change fails`);
     const body = squash(f.text);
-    if (packet.hunks.some((h) => squash(h.text.split('\n').map((l) => l.replace(/^[+\- ]/, '')).join('\n')).includes(body))) {
+    const code = packet.hunks.map((h) => squash(h.text.split('\n').map((l) => l.replace(/^[+\- ]/, '')).join('\n')));
+    if (code.some((c) => c.includes(body)) || copiedShare(body, code.join(' ')) > 0.5) {
       return invalid('quoted-line', `the blocking finding at ${f.hunk} quotes changed code; state the defect against ${f.ac}`);
     }
   }
