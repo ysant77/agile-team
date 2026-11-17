@@ -60,6 +60,27 @@ test('a blocking finding that is mostly a copied line plus a label is refused', 
   assert.equal(guard(own).outcome, 'review', JSON.stringify(guard(own).reasons));
 });
 
+test('a blocking quote in other letter case or with extra spaces is refused', () => {
+  const quotes = [
+    'IF SELF.BALANCE_CENTS < AMOUNT_CENTS:',
+    'BAD: IF SELF.BALANCE_CENTS < AMOUNT_CENTS:',
+    'acct . withdraw ( 300 )',
+    'assert acct . balance_cents == 700',
+  ];
+  for (const text of quotes) {
+    assert.equal(guard(finding({ severity: 'blocking', ac: 'AC1', text })).guard, 'quoted-line', text);
+  }
+});
+
+// Known limit (docs/claims.md, "When a review holds a claim"): a blocking finding with no
+// defect statement and no copied code, such as "Bad.", passes the guard. It can only hold a
+// supported claim for a person to check; it can never pass a claim.
+test('known limit: a bare "Bad." passes the quoted-line guard as a blocking finding', () => {
+  const r = guard(finding({ severity: 'blocking', ac: 'AC1', text: 'Bad.' }));
+  assert.equal(r.outcome, 'review', JSON.stringify(r.reasons));
+  assert.equal(blockingFindings(r).length, 1);
+});
+
 test('a style fallback keeps the severity and the AC of each finding', () => {
   const r = guard(finding({ severity: 'blocking', ac: 'AC2', text: 'The check probably covers one thread only, so AC2 has no evidence.' }));
   const first = reviewGate(r, 0);
