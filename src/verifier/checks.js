@@ -563,16 +563,30 @@ function newModuleStory(ctx, row) {
 }
 
 // A Story's AC test that fails on base with AttributeError because the PR adds the function to an
-// existing module (benchmark set 2, S03): the source diff adds `def <name>`, the test file's added
-// lines use that name, and the test passes on head. A Bug keeps the old rule.
+// existing module (benchmark set 2, S03). All of these must hold (review finding 12):
+// - a changed source module adds a module-level `def <name>(` (no indent, so not a method);
+// - an added line of the test file calls `<module>.<name>(`, where <module> is that module's
+//   import name (bank.ledger) or its last part (ledger);
+// - the base exception text (exc_message) names <name>;
+// - the test passes on head. A Bug keeps the old rule.
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function newFunctionStory(ctx, row) {
   if (ctx.ticket?.type !== 'Story' || row.head?.outcome !== 'passed' || row.base?.exc_type !== 'AttributeError') return false;
+  const message = row.base.exc_message;
+  if (typeof message !== 'string' || !message) return false;
   const added = (file) => String(ctx.prPatches?.[file] ?? '').split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++'));
   const sources = Object.keys(ctx.prPatches ?? {}).filter((f) => f.endsWith('.py') && !/(^|\/)tests?\//.test(f) && !/(^|\/)test_[^/]*\.py$/.test(f));
-  const names = sources.flatMap((f) => added(f).map((l) => /^\+\s*def\s+([A-Za-z_]\w*)\s*\(/.exec(l)?.[1]).filter(Boolean));
-  if (!names.length) return false;
   const testLines = added(row.id.split('::')[0]);
-  return names.some((n) => testLines.some((l) => new RegExp(`\\b${n}\\b`).test(l)));
+  return sources.some((f) => {
+    const module = f.replace(/^src\//, '').replace(/\.py$/, '').replace(/\/__init__$/, '').replaceAll('/', '.');
+    const prefixes = [...new Set([module, module.split('.').pop()])].map(escapeRe).join('|');
+    return added(f).some((l) => {
+      const name = /^\+def\s+([A-Za-z_]\w*)\s*\(/.exec(l)?.[1];
+      if (!name || !new RegExp(`\\b${name}\\b`).test(message)) return false;
+      const call = new RegExp(`(?<![\\w.])(?:${prefixes})\\.${name}\\s*\\(`);
+      return testLines.some((t) => call.test(t));
+    });
+  });
 }
 
 // D-repro: each ticket test fails on base by an assertion and passes on head; the full head suite
