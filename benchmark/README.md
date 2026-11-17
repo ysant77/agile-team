@@ -24,8 +24,8 @@ Every change to the runner or the scorer is in `run/SCORER-CHANGES.md`.
    count on any set blocks the merge, unless the owner accepts it in writing in the PR.
 4. Sets 1 to 3 are development sets. Their results were seen before the fixes, so they show
    regressions only. They are not evidence that a fix works.
-5. The fix list in `RESULTS-3.md` is scored on a new blind set before the feature freeze on
-   9 Dec 2026. That set follows the set 3 rules: protocol committed before the case file is
+5. The fix list in `RESULTS-3.md` is scored on a new blind set before the soft freeze near
+   16 Dec 2026. That set follows the set 3 rules: protocol committed before the case file is
    opened, predictions and truth before any build, void cases recorded before any run, no change
    to rules, reviewer, prompt or scorer after the file is opened.
 6. Frozen files stay byte-identical. A scorer change is logged in `run/SCORER-CHANGES.md` and
