@@ -3,6 +3,8 @@
 This is the benchmark result. The claim in the write-up comes from this file. Set 1
 (`RESULTS.md`) is development material and stays unchanged.
 
+**Note, 17 Nov 2026 (no scored figure changed).** Status: sets 1, 2 and 3 are all development sets from 17 Nov 2026. The blind evidence is: set 2 for C as frozen at fe77128 (this file), and set 3 for C with the set 2 fixes and for D (`RESULTS-3.md`). Any later rule or reviewer change is scored on a new blind set. All cases ran on a local mock: local branches of the bank, the CI commands run locally, and a simulated GitHub in the scorer. No case ran on GitHub, Jira or Forge. No strict-reason count exists for this set. Its truth file has no reason pattern; the strict count started with set 3 (6545290). A pattern written now would be written after the results were seen, so none is added.
+
 - Cases: `CASES-2-INDEPENDENT.md`, frozen at fe77128 (tag `bench-set2-freeze-2026-11-16`).
   The predictions (`PREDICTIONS-2.md`) were written and frozen before any case was built.
 - Built: 20 of 20, none void. Branch SHAs: `run/results/branch-shas-S.txt`. Manifest:

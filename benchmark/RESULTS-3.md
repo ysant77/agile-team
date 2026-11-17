@@ -123,18 +123,18 @@ Wrong results are in bold.
 | Unearned supported (valid claim, incomplete evidence) | 3 (T05, T10, T22) | 0 | 0 | 1 (T10) | 0 |
 | 9. Ends at a human (human gate, cannot_verify or human pick) | 0 | 13 | 2 | 1 | 6 |
 | Right (correct or acceptable) | 10 | 9 | 8 | 7 | 14 |
-| Right with the named reason (strict) | 9 | 4 | 5 | 6 | 12 |
+| Right with the named reason (strict) | 9 | 4 | 5 | 6 | 12 (11 after correction (a)) |
 
 ## Summary
 
 | | A1 | A2 | C | D |
 |---|---|---|---|---|
-| Unsafe supported (of 8 invalid) | 6 (with T19) | 0 | 5 | 3 |
+| Unsafe supported (of 7: six invalid plus T19) | 6 (with T19) | 0 | 5 | 3 |
 | False block | 1 | 6 | 3 | 3 |
 | False cannot_verify, 8 built controls | 0 | 6 | 1 (T13) | 1 (T13) |
 | Ends at a human | 0 | 13 | 4 | 6 |
 | Right, outcome (of 20) | 10 | 9 | 12 | 14 |
-| Right, strict reason (of 20) | 9 | 4 | 10 | 12 |
+| Right, strict reason (of 20) | 9 | 4 | 10 | 12 (11 after correction (a)) |
 
 ## Pre-set condition for D: **met**
 
@@ -175,12 +175,12 @@ Wrong results are in bold.
 - (d) Sensitivity for the arguable case T19 scored as `supported`: right outcomes A1 11, C 11,
   D 13 (of 20).
 
-Timing of the case file (from the session transcript, UTC): freeze message sent 16:05:08 (after
+Timing of the case file (from the work log, UTC): freeze message sent 16:05:08 (after
 protocol commit 6545290); release message received 16:05:22; first access of the case file was
 the hash check at 16:05:24 (`shasum` and `wc -l` only); copy and commit 16:05:28 (17c4762); first
-read 16:05:29; truth and predictions written in one step at 16:06:41 (15250f0); builder agent
+read 16:05:29; truth and predictions written in one step at 16:06:41 (15250f0); case builder
 started 16:07:09 and read only the committed copy. The file and its folder were not opened before
-the release, by this session or by any agent it started.
+the release, by the person who ran the benchmark or by any helper process.
 
 ## Fix list for a later set (no build now)
 

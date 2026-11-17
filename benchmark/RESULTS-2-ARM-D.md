@@ -1,5 +1,7 @@
 # Arm D on independent set 2 (16 Nov 2026)
 
+**Note, 17 Nov 2026 (no scored figure changed).** All cases ran on a local mock: local branches of the bank, the CI commands run locally, and a simulated GitHub in the scorer. No case ran on GitHub, Jira or Forge. No strict-reason count exists for this set. Its truth file has no reason pattern; the strict count started with set 3 (6545290). A pattern written now would be written after the results were seen, so none is added. The three runs gave the same outcome on every case at temperature 0, so they are one sample, not three. Sets 1 to 3 are development sets from 17 Nov 2026.
+
 Protocol: `ARM-D-PROTOCOL.md`, committed in c27b3a4 before the first run. Nothing was changed
 after the runs. Model `qwen3-coder:30b` (digest 06c1097efce0), temperature 0, seeds 1, 2 and 3,
 reviewer prompt `code-review/1`, reviewer code `feat/code-reviewer-agent` 20f8e30. Raw output and

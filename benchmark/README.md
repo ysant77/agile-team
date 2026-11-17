@@ -22,7 +22,8 @@ Every change to the runner or the scorer is in `run/SCORER-CHANGES.md`.
    `cannot_verify` on controls, right (outcome) and right (strict reason).
 3. The PR body gives the command, the commit of the app, and the table for each set. A worse
    count on any set blocks the merge, unless the owner accepts it in writing in the PR.
-4. Sets 1 to 3 are development sets. Their results were seen before the fixes, so they show
+4. Sets 1 to 3 are development sets. The blind evidence is set 2 for C as frozen (fe77128) and
+   set 3 for C with the set 2 fixes and for D (6545290, 17c4762). Their results were seen before the fixes, so they show
    regressions only. They are not evidence that a fix works.
 5. The fix list in `RESULTS-3.md` is scored on a new blind set before the soft freeze near
    16 Dec 2026. That set follows the set 3 rules: protocol committed before the case file is
