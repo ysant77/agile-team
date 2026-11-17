@@ -548,8 +548,10 @@ export function measurementUnchanged(ctx) {
 const SIGNOFF_DOMAINS = ['money_semantics', 'security_exception', 'data_repair', 'model_risk', 'fairness', 'product_behaviour'];
 export function checkHumanSignoff(ctx) {
   // The domain comes from the stored ticket spec or from a Jira label (benchmark set 2, S16).
-  const domain = SIGNOFF_DOMAINS.includes(ctx.ticket?.domain) ? ctx.ticket.domain
-    : (ctx.ticket?.labels ?? []).find((l) => SIGNOFF_DOMAINS.includes(l));
+  // Labels are free text, so both match in any letter case (review finding 15).
+  const asDomain = (v) => (typeof v === 'string' && SIGNOFF_DOMAINS.includes(v.toLowerCase()) ? v.toLowerCase() : null);
+  const labels = Array.isArray(ctx.ticket?.labels) ? ctx.ticket.labels : [];
+  const domain = asDomain(ctx.ticket?.domain) ?? labels.map(asDomain).find(Boolean);
   if (!domain) return null;
   const s = ctx.ticket.signoff;
   const sha = ctx.pr?.mergeSha ?? ctx.pr?.headSha ?? null;
