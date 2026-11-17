@@ -148,6 +148,40 @@ test('item 2: a base error that names the attribute on another object or module 
   }
 });
 
+// Final review, item 5: the base error must be the whole first line Python writes, from its
+// start. A longer message that only contains the module text does not count.
+test('final review item 5: a base error that only contains the module text does not count', async () => {
+  for (const message of [
+    "AttributeError: partially initialized module 'bank.ledger' has no attribute 'strip_reference' (most likely due to a circular import)",
+    "AttributeError: module 'bank.ledger' has no attribute 'strip_reference' and more",
+    "RuntimeError: AttributeError: module 'bank.ledger' has no attribute 'strip_reference'",
+    "module 'bank.ledger' has no attribute 'strip_reference'",
+    `${NO_ATTR}\nsecond line`,
+  ]) {
+    const v = await verdictOf(newFunction(loadBench('B23'), { message }));
+    assert.equal(v.result, 'cannot_verify', `${message}: ${v.reason}`);
+  }
+  // Python 3.12 can add a suggestion to the same line.
+  const hint = `${NO_ATTR}. Did you mean: 'strip_ref'?`;
+  assert.equal((await verdictOf(newFunction(loadBench('B23'), { message: hint }))).result, 'supported');
+});
+
+// Final review, item 5: a string continued with a backslash at the end of a line is a string on
+// the next line too, so a call written there does not count.
+test('final review item 5: a call inside a backslash-continued string does not count', async () => {
+  const cases = {
+    'double-quoted': ['    assert "a \\', '    ledger.strip_reference(x)" != "a"'],
+    'single-quoted': ["    assert 'a \\", "    ledger.strip_reference(x)' != 'a'"],
+  };
+  for (const [name, testPatch] of Object.entries(cases)) {
+    const v = await verdictOf(newFunction(loadBench('B23'), { testPatch }));
+    assert.equal(v.result, 'cannot_verify', `${name}: ${v.reason}`);
+  }
+  // An escaped backslash at the end of a string does not continue it; the call after it is code.
+  const escaped = ['    path = "a\\\\"', '    assert ledger.strip_reference(" a ") == "a"'];
+  assert.equal((await verdictOf(newFunction(loadBench('B23'), { testPatch: escaped }))).result, 'supported');
+});
+
 // LIMIT: only the added lines of the test file are read. A string opened on an unchanged line
 // (for example a docstring that the PR extends) is not seen, so a call written inside it still
 // counts. Closing this needs the whole file, which the patch does not give.
