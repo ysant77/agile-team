@@ -102,6 +102,19 @@ test('S18: an empty unmeasured_files list changes nothing', async () => {
   assert.equal((await verdictOf(c)).result, 'supported');
 });
 
+// Review finding 14: without the unmeasured_files list the counts can hide a changed file that the
+// coverage data does not have. A missing or malformed list gives cannot_verify, not an empty list.
+test('S18: a coverage block without a valid unmeasured_files list gives cannot_verify', async () => {
+  for (const value of [undefined, null, 'src/bank/ledger.py', {}, 0]) {
+    const c = load('B23');
+    c.github.report.coverage = { ...c.github.report.coverage, unmeasured_files: value };
+    if (value === undefined) delete c.github.report.coverage.unmeasured_files;
+    const v = await verdictOf(c);
+    assert.equal(v.result, 'cannot_verify', `${JSON.stringify(value)}: ${v.reason}`);
+    assert.match(v.reason, /unmeasured_files/);
+  }
+});
+
 // S03: a Story that adds a function to an existing module. The AC test fails on base with
 // AttributeError because the function is missing: that is new behaviour, as for a new module.
 // The base row carries the exception text (exc_message), as pytest's excinfo.exconly() gives it.
