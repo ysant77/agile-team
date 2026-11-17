@@ -275,8 +275,11 @@ export function reviewGate(record, retries) {
 // Only a manual AC or an AC without a check can take a proposal; a code check is never replaced.
 export function adoptProposal(ticket, { ac, testName: name }) {
   const acs = ticket.acceptanceCriteria ?? [];
-  const target = acs.find((a) => a.acId === ac);
-  if (!target) throw new Error(`${ac} is not an AC of ${ticket.key}`);
+  const matches = acs.filter((a) => a.acId === ac);
+  if (matches.length === 0) throw new Error(`${ac} is not an AC of ${ticket.key}`);
+  // Two ACs with the same id make the ticket ambiguous: adoption would change both checks.
+  if (matches.length > 1) throw new Error(`${ac} is not unique in ${ticket.key}; fix the ticket before adopting a check`);
+  const target = matches[0];
   if (hasCodeCheck(target)) throw new Error(`${ac} already has a code check; only a manual AC can take a proposed check`);
   if (!/^test_\w+$/.test(name ?? '')) throw new Error('the proposal has no test name');
   return {
