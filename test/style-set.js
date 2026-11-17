@@ -15,7 +15,7 @@ export function renderedTexts() {
       parts: [{ acId: 'AC1', name: 'test_passes(test_BANK4_concurrent_withdrawals_20_threads)', status: 'fail', reason: 'failed in the CI report' }] }] };
   const tie = buildPacket({ ...base, evidence: [side(5, 'supported', 40), side(7, 'supported', 40)] });
   const smaller = buildPacket({ ...base, evidence: [side(5, 'supported', 12), side(7, 'supported', 140)] });
-  const cross = buildPacket({ ...base, metric: 'transfers_per_s', evidence: [side(5, 'supported', 40, { report: { job_id: 'a', metrics: { transfers_per_s: 10 } } }), side(7, 'supported', 60, { report: { job_id: 'b', metrics: { transfers_per_s: 20 } } })] });
+  const cross = buildPacket({ ...base, ticket: { acceptanceCriteria: [{ acId: 'AC1', check: { type: 'metric_at_least', args: ['transfers_per_s', 1000] } }] }, evidence: [side(5, 'supported', 40, { report: { job_id: 'a', metrics: { transfers_per_s: 10 } } }), side(7, 'supported', 60, { report: { job_id: 'b', metrics: { transfers_per_s: 20 } } })] });
   const opinion = applyGuards({ decision: 'PR7', reasons: [{ text: 'PR7 keeps one write path for balances.', evidence: ['E3'] }], confidence: 0.8, risks: ['PR7 adds 60 changed lines.'] }, tie.packet);
   const decision = { side: 'PR7', reason: 'the lock table is easier to read', codeWinner: 'PR5', agreesWithCode: false, opinionSide: 'PR7', agreesWithOpinion: true, overridesFailedGate: false };
   const monitor = buildMonitor([]);

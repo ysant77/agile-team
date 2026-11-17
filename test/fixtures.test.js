@@ -43,6 +43,8 @@ const runners = {
     const d = arbitrate(step.ticket, step.sides);
     assert.equal(d.decidedBy, step.expect.decidedBy, d.reason);
     assert.equal(d.winner, step.expect.winner ?? null, d.reason);
+    // A lead rule only recommends; the fixture names the side it recommends.
+    assert.equal(d.recommendation?.id ?? null, step.expect.recommended ?? null, d.reason);
   },
   lint(step) {
     const r = lintRequirement(step.draft, step.sources ?? []);
