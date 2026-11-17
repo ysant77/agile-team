@@ -38,7 +38,7 @@ test('report extraction needs the marker and the schema', () => {
 const trustedCi = (head) => ({
   reportAuthor: 'github-actions[bot]',
   baseWorkflowFiles: { '.github/workflows/ci.yml': 'h' },
-  prFiles: [],
+  prFiles: ['src/bank/service.py'],
   reportComment: { createdAt: '2026-11-16T00:00:00Z', updatedAt: '2026-11-16T00:00:00Z' },
   workflowRuns: [{ name: 'CI', path: '.github/workflows/ci.yml', headSha: head, status: 'completed', conclusion: 'success', createdAt: '2026-11-16T00:00:00Z' }],
 });

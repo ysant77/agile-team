@@ -11,5 +11,7 @@
       "auc": 0.95
     }
   },
-  "prFiles": []
+  "prFiles": [
+    "src/bank/service.py"
+  ]
 }

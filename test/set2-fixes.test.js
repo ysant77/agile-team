@@ -53,7 +53,7 @@ test('S17: a cancelled CI run on the head gives cannot_verify, never contradicte
 test('S17: a cancelled run next to a successful run of the same workflow on the head is not held against the claim', () => {
   const head = 'a'.repeat(40);
   const run = (conclusion, id) => ({ id, path: '.github/workflows/ci.yml', headSha: head, status: 'completed', conclusion, createdAt: `2026-11-16T10:0${id}:00Z` });
-  const ctx = { pr: { headSha: head }, prFiles: [], workflowRuns: [run('cancelled', 1), run('success', 2)] };
+  const ctx = { pr: { headSha: head }, prFiles: ['src/a.py'], workflowRuns: [run('cancelled', 1), run('success', 2)] };
   assert.equal(ciGreen(ctx).status, 'pass', ciGreen(ctx).reason);
   assert.equal(ciGreen({ ...ctx, workflowRuns: [run('cancelled', 1)] }).status, 'unknown');
   assert.equal(ciGreen({ ...ctx, workflowRuns: [run('failure', 1), run('success', 2)] }).status, 'fail');

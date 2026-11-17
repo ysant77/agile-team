@@ -109,8 +109,10 @@ const ROWS = [
   ['ciGreen', ['pr.headSha', 'workflowRuns', 'workflowRuns.0.conclusion', 'workflowRuns.0.status', 'prFiles', 'config.requiredWorkflowPaths']],
   ['testPasses', ['arg:0', 'report', 'report.tests']],
   ['bugTestExists', ['report.tests', 'ticket.key']],
-  ['metricIntegrity', ['arg:0', 'report.tests', 'prFiles', 'prPatches']],
-  ['metricCompare', ['arg:0', 'arg:1', 'arg:2', 'report.metrics', 'report.metrics.latency_ms', 'report.tests', 'prFiles']],
+  // For a metric the test list is a guard (no failed test), not the evidence: an empty list has
+  // no failed test.
+  ['metricIntegrity', ['arg:0', 'report.tests', 'prFiles', 'prPatches'], { allow: { 'report.tests': ['empty_array'] } }],
+  ['metricCompare', ['arg:0', 'arg:1', 'arg:2', 'report.metrics', 'report.metrics.latency_ms', 'report.tests', 'prFiles'], { allow: { 'report.tests': ['empty_array'] } }],
   ['versionAtLeast', ['arg:0', 'arg:1', 'report.deps', 'report.deps.requests']],
   ['pathAbsent', ['arg:0', 'headPaths']],
   // Jira returns an empty list when a ticket has no sub-tasks or links: none is open.
@@ -121,7 +123,7 @@ const ROWS = [
   ['migrationAdditive', ['arg:0', 'report.migrations', 'report.migrations.0.operations']],
   // A repository with no migrations reports an empty list: no two numbers can clash.
   ['uniqueMigrations', ['arg:0', 'arg:0.migrations'], { allow: { 'arg:0.migrations': ['empty_array'] } }],
-  ['mergedClean', ['mergeReport', 'mergeSha', 'mergeReport.migrations', 'mergeReport.tests', 'baseReport']],
+  ['mergedClean', ['mergeReport', 'mergeSha', 'mergeReport.migrations', 'mergeReport.tests', 'baseReport'], { allow: { 'mergeReport.migrations': ['empty_array'] } }],
   ['repairBalanced', ['report.repair', 'report.repair.debits_minor', 'report.repair.credits_minor', 'report.repair.rows_deleted', 'report.repair.rows_updated']],
   ['reconProof', ['report.recon', 'report.recon.accounts', 'report.recon.accounts_matching', 'report.recon.diff_minor']],
   ['evidenceLinked', ['timeline', 'timeline.0.link']],

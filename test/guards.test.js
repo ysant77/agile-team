@@ -43,7 +43,9 @@ test('a guarded directory matches by prefix only, a guarded file only exactly', 
 test('without a file list no CI evidence is trusted, guards or not (review B4, 16 Nov)', () => {
   assert.equal(ready(ctx({ prFiles: null })).result, 'cannot_verify');
   assert.equal(ready(ctx({ prFiles: null, config: { requiredWorkflowPaths: ['.github/workflows/ci.yml'] } })).result, 'cannot_verify');
-  assert.equal(ready(ctx({ prFiles: [], config: { requiredWorkflowPaths: ['.github/workflows/ci.yml'] } })).result, 'supported');
+  // A pull request changes at least one file: an empty list is not read correctly (README, "No
+  // check passes by default").
+  assert.equal(ready(ctx({ prFiles: [], config: { requiredWorkflowPaths: ['.github/workflows/ci.yml'] } })).result, 'cannot_verify');
 });
 
 test('the guard applies to upper and lower bounds and wins over a passing value', () => {

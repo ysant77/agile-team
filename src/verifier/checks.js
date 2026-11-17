@@ -6,6 +6,18 @@ import { namesKey, sameFiles, testName, testsByName } from './report.js';
 const BOT = 'github-actions[bot]';
 const result = (name, status, reason) => ({ name, status, reason });
 
+// Input guards (README, "No check passes by default"): a missing, empty, non-finite or malformed
+// input gives unknown, never pass.
+const isList = Array.isArray;
+const isText = (v) => typeof v === 'string' && v.length > 0;
+const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
+const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const timeOf = (v) => (typeof v === 'string' ? Date.parse(v) : Number.NaN);
+// An optional list: undefined means none; any other value that is not an array is malformed (null).
+const optList = (v) => (v === undefined ? [] : isList(v) ? v : null);
+// reportTrusted with this head does not compare the report head (testPasses on another report).
+const ANY_HEAD = Symbol('any head');
+
 function issueToken(key) {
   return String(key).replace('-', ''); // BANK-4 -> BANK4, used in test names
 }
@@ -26,6 +38,8 @@ const matchesPath = (file, paths) => paths.some((g) => {
 
 export function pipelineChange(ctx) {
   if (!Array.isArray(ctx.prFiles)) return 'pull request file list not available';
+  // A pull request changes at least one file; an empty list was not read correctly.
+  if (!ctx.prFiles.length || !ctx.prFiles.every(isText)) return 'pull request file list is empty or malformed';
   const paths = ctx.config?.reportTrustPaths ?? DEFAULT_TRUST_PATHS;
   const touched = ctx.prFiles.filter((f) => matchesPath(f, paths));
   return touched.length ? `PR changes ${touched.join(', ')}, which can change how CI runs or reports` : null;
@@ -41,8 +55,9 @@ const HEURISTIC = 'report comment time-window heuristic';
 function commentEditedLater(ctx) {
   const c = ctx.reportComment;
   if (!c?.updatedAt) return `${HEURISTIC}: comment times not available`;
+  if (!isList(ctx.workflowRuns)) return `${HEURISTIC}: workflow runs not read`;
   const paths = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
-  const runs = (ctx.workflowRuns ?? []).filter((r) => paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha);
+  const runs = ctx.workflowRuns.filter((r) => isList(paths) && paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha);
   if (runs.length === 0) return `${HEURISTIC}: no pinned CI run on the head, so the comment has no source`;
   const edited = Date.parse(c.updatedAt);
   const inside = runs.some((r) => {
@@ -55,17 +70,19 @@ function commentEditedLater(ctx) {
 
 // Guard: a report counts only if the bot wrote it, for the PR head, with unchanged workflows.
 export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSha) {
-  if (!report) return result('report_trusted', 'unknown', 'no CI report');
+  if (!isObj(report)) return result('report_trusted', 'unknown', 'no CI report');
   // The author comes from the comment that carried the report; a field in the report body is
   // written by the code under test and proves nothing.
   if (ctx.reportAuthor !== BOT) {
     return result('report_trusted', 'unknown', `report not posted by ${BOT}`);
   }
-  if (headSha && report.head_sha !== headSha) {
-    return result('report_trusted', 'unknown', 'report is for an older commit, not the head');
+  if (headSha !== ANY_HEAD) {
+    if (!isText(headSha)) return result('report_trusted', 'unknown', 'no head commit to match the report with');
+    if (report.head_sha !== headSha) return result('report_trusted', 'unknown', 'report is for an older commit, not the head');
   }
   // Without the base fingerprint (ci-reports/main.json) a changed workflow cannot be seen.
-  if (!ctx.baseWorkflowFiles) return result('report_trusted', 'unknown', 'no base workflow fingerprint (ci-reports/main.json)');
+  if (!isObj(ctx.baseWorkflowFiles) || !Object.keys(ctx.baseWorkflowFiles).length) return result('report_trusted', 'unknown', 'no base workflow fingerprint (ci-reports/main.json)');
+  if (!isObj(report.workflow_files)) return result('report_trusted', 'unknown', 'the report has no workflow fingerprint');
   if (!sameFiles(ctx.baseWorkflowFiles, report.workflow_files)) {
     return result('report_trusted', 'unknown', 'workflow changed in this PR');
   }
@@ -82,6 +99,16 @@ export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSh
   return result('report_trusted', 'pass', 'bot report for the head commit');
 }
 
+// The open or merged PRs that name the key. The collector always gives the list, with the chosen
+// PR in it. A context without the field (undefined) has only the chosen PR; any other value that
+// is not a non-empty list is malformed.
+function candidatesGap(ctx) {
+  const list = ctx.prCandidates;
+  if (list === undefined) return null;
+  if (!isList(list) || !list.length) return `the list of pull requests that name ${ctx.ticket.key} is malformed or empty`;
+  return null;
+}
+
 const forkReason = (ctx) => `PR ${ctx.forkPrs.map((n) => `#${n}`).join(', ')} names ${ctx.ticket.key} but comes from a fork: CI does not post its report for forks, so a person checks, or the work moves to a branch of this repository`;
 
 export function prLinked(ctx) {
@@ -91,12 +118,19 @@ export function prLinked(ctx) {
   }
   if (!pr && ctx.forkPrs?.length) return result('pr_linked', 'unknown', forkReason(ctx));
   if (!pr) return result('pr_linked', 'fail', `no pull request names ${ctx.ticket.key}`);
+  if (!isText(ctx.ticket?.key)) return result('pr_linked', 'unknown', 'the ticket has no key');
+  const gap = candidatesGap(ctx);
+  if (gap) return result('pr_linked', 'unknown', gap);
   // Two open or merged PRs that name the key: code cannot tell which one the claim means.
   if ((ctx.prCandidates ?? []).length > 1) {
     return result('pr_linked', 'unknown', `PRs ${ctx.prCandidates.map((n) => `#${n}`).join(', ')} all name ${ctx.ticket.key}; link one PR`);
   }
   const named = namesKey(pr.title, ctx.ticket.key) || namesKey(pr.branch, ctx.ticket.key);
   if (!named) return result('pr_linked', 'fail', `PR #${pr.number} does not name ${ctx.ticket.key}`);
+  // The merge flag decides only for a closed PR.
+  if ((pr.state !== 'open' && pr.state !== 'closed') || (pr.state === 'closed' && typeof pr.merged !== 'boolean')) {
+    return result('pr_linked', 'unknown', `PR #${pr.number} has no valid state or merge flag`);
+  }
   if (pr.state === 'closed' && !pr.merged) {
     return result('pr_linked', 'fail', `PR #${pr.number} is closed without merge`);
   }
@@ -112,9 +146,11 @@ export function prLinked(ctx) {
 const NO_RESULT = ['cancelled', 'stale', 'skipped'];
 
 export function ciGreen(ctx) {
-  const required = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
+  const required = ctx.config?.requiredWorkflowPaths === undefined ? DEFAULT_WORKFLOW_PATHS : ctx.config.requiredWorkflowPaths;
   const head = ctx.pr?.headSha;
-  if (!head) return result('ci_green', 'unknown', 'no head commit');
+  if (!isText(head)) return result('ci_green', 'unknown', 'no head commit');
+  if (!isList(required) || !required.length || !required.every(isText)) return result('ci_green', 'unknown', 'no valid list of required workflow files in the config');
+  if (!isList(ctx.workflowRuns)) return result('ci_green', 'unknown', 'workflow runs not read');
   const change = pipelineChange(ctx);
   if (change) return result('ci_green', 'unknown', change);
   // A failed run can be on a page that was not read.
@@ -124,7 +160,7 @@ export function ciGreen(ctx) {
   for (const path of required) {
     // Every run of the pinned workflow on the head must succeed; a later success does not
     // hide an earlier failure.
-    const all = (ctx.workflowRuns ?? []).filter((r) => runPath(r) === path && r.headSha === head);
+    const all = ctx.workflowRuns.filter((r) => runPath(r) === path && r.headSha === head);
     const failed = all.find((r) => r.status === 'completed' && r.conclusion !== 'success' && !NO_RESULT.includes(r.conclusion));
     if (failed) return result('ci_green', 'fail', `${path} concluded ${failed.conclusion} on ${head.slice(0, 7)}`);
     // A cancelled or stale run gave no result (benchmark set 2, S17): it is missing evidence, not
@@ -158,9 +194,12 @@ export function ciGreen(ctx) {
 }
 
 export function testPasses(ctx, name, report = ctx.report) {
-  const trust = reportTrusted(ctx, report, report === ctx.report ? ctx.pr?.headSha : undefined);
+  // Another report (the merge result) is matched to its commit by the caller (mergedClean).
+  const trust = reportTrusted(ctx, report, report === ctx.report ? ctx.pr?.headSha : ANY_HEAD);
   const label = `test_passes(${name})`;
+  if (!isText(name)) return result(label, 'unknown', 'no test name');
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
+  if (!isList(report.tests)) return result(label, 'unknown', 'the report has no test list');
   const tests = testsByName(report, name);
   if (tests.length === 0) return result(label, 'fail', `${name} is missing from the report`);
   const bad = tests.filter((t) => t.outcome !== 'passed');
@@ -172,8 +211,10 @@ export function bugTestExists(ctx) {
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result('bug_test_exists', 'unknown', trust.reason);
   // The key token at a boundary: test_BANK1_x names BANK-1, test_ABANK1_x does not.
+  if (!isText(ctx.ticket?.key)) return result('bug_test_exists', 'unknown', 'the ticket has no key');
+  if (!isList(ctx.report.tests)) return result('bug_test_exists', 'unknown', 'the report has no test list');
   const token = new RegExp(`(^|[^A-Za-z0-9])${issueToken(ctx.ticket.key)}_`);
-  const tests = (ctx.report.tests ?? []).filter((t) => token.test(testName(t.id)));
+  const tests = ctx.report.tests.filter((t) => token.test(testName(t.id)));
   if (tests.length === 0) {
     return result('bug_test_exists', 'fail', `no test named for ${ctx.ticket.key}: the change may be right, but nothing proves it`);
   }
@@ -186,12 +227,17 @@ export function bugTestExists(ctx) {
 const TAMPER = /perf_counter|monotonic|time\.time|\bstash\b|pytest_sessionfinish|pytest_runtest|record_metric|record_samples|ci_report|COLLECTOR|\.metrics\b|xfail|deselect/;
 
 export function metricIntegrity(ctx, name) {
-  const failed = (ctx.report.tests ?? []).filter((t) => t.outcome === 'failed' || t.outcome === 'error');
+  if (!isText(name)) return 'no metric name';
+  // The test list is a guard here (no failed test); the metric is the evidence.
+  const tests = optList(ctx.report?.tests);
+  if (!tests) return 'the report test list is malformed';
+  const failed = tests.filter((t) => t.outcome === 'failed' || t.outcome === 'error');
   if (failed.length) return `${failed.length} test(s) failed in the report run, so its metrics are not trusted`;
   if (Array.isArray(ctx.workflowRuns) && ctx.workflowRuns.length && ciGreen(ctx).status !== 'pass') {
     return 'the CI run for the head is not green';
   }
-  const files = ctx.prFiles ?? [];
+  if (!isList(ctx.prFiles) || !ctx.prFiles.length) return 'pull request file list not available or empty';
+  const files = ctx.prFiles;
   const conftest = files.filter((f) => f.split('/').pop() === 'conftest.py');
   if (conftest.length) return `PR changes ${conftest.join(', ')}, which can change any test or metric`;
   const benchFile = (ctx.config?.benchmarks?.[name]?.test ?? '').split('::')[0];
@@ -208,6 +254,9 @@ export function metricIntegrity(ctx, name) {
 
 export function metricCompare(ctx, name, bound, direction) {
   const label = `metric_${direction === 'min' ? 'at_least' : 'at_most'}(${name}, ${bound})`;
+  if (!isText(name) || !isNum(bound) || (direction !== 'min' && direction !== 'max')) {
+    return result(label, 'unknown', 'the check needs a metric name, a finite bound and a direction (min or max)');
+  }
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
   // A metric is written by the code under test, so the plugin's write-once rule is no trust
@@ -272,23 +321,28 @@ function compareVersions(a, b) {
 
 export function versionAtLeast(ctx, pkg, version) {
   const label = `version_at_least(${pkg}, ${version})`;
+  if (!isText(pkg) || !(isText(version) || isNum(version))) return result(label, 'unknown', 'the check needs a package name and a version');
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
-  const found = ctx.report.deps?.[pkg];
+  if (!isObj(ctx.report.deps)) return result(label, 'unknown', 'the report has no dependency list');
+  const found = ctx.report.deps[pkg];
+  if (found !== undefined && !isText(found)) return result(label, 'unknown', `${pkg} has no valid version in the report`);
   if (!found) return result(label, 'fail', `${pkg} not in the lock file`);
   return result(label, compareVersions(found, version) >= 0 ? 'pass' : 'fail', `${pkg} ${found}`);
 }
 
 export function pathAbsent(ctx, path) {
   const label = `path_absent(${path})`;
-  if (!Array.isArray(ctx.headPaths)) return result(label, 'unknown', 'head tree not read');
+  if (!isText(path)) return result(label, 'unknown', 'no path given');
+  if (!Array.isArray(ctx.headPaths) || !ctx.headPaths.length) return result(label, 'unknown', 'head tree not read');
   return ctx.headPaths.includes(path)
     ? result(label, 'fail', `${path} is still on the head commit`)
     : result(label, 'pass', `${path} is not on the head commit`);
 }
 
 export function subtasksDone(ctx) {
-  const subtasks = ctx.ticket.subtasks ?? [];
+  const subtasks = optList(ctx.ticket.subtasks);
+  if (!subtasks || !subtasks.every(isObj)) return result('subtasks_done', 'unknown', 'the sub-task list is malformed');
   if (subtasks.length === 0) return result('subtasks_done', 'pass', 'no sub-tasks');
   const open = subtasks.filter((s) => s.statusCategory !== 'done');
   return open.length
@@ -297,7 +351,9 @@ export function subtasksDone(ctx) {
 }
 
 export function blockedByDone(ctx) {
-  const blockers = (ctx.ticket.links ?? []).filter((l) => l.type === 'is blocked by');
+  const links = optList(ctx.ticket.links);
+  if (!links || !links.every((l) => isObj(l) && isText(l.type))) return result('blocked_by_done', 'unknown', 'the link list is malformed');
+  const blockers = links.filter((l) => l.type === 'is blocked by');
   const open = blockers.filter((l) => l.statusCategory !== 'done');
   return open.length
     ? result('blocked_by_done', 'fail', `blocked by open ${open.map((l) => l.key).join(', ')}`)
@@ -306,10 +362,12 @@ export function blockedByDone(ctx) {
 
 export function deployed(ctx, tag) {
   const label = `deployed(${tag ?? 'any'})`;
-  const runs = (ctx.deployRuns ?? [])
-    .filter((r) => !tag || r.tag === tag)
+  if (!isList(ctx.deployRuns)) return result(label, 'unknown', 'no deploy run yet');
+  const tagged = ctx.deployRuns.filter((r) => !tag || r.tag === tag);
+  if (!tagged.every((r) => Number.isFinite(timeOf(r.createdAt)))) return result(label, 'unknown', 'a deploy run has no valid time');
+  const runs = tagged
     .filter((r) => !ctx.fixAt || String(r.createdAt) >= String(ctx.fixAt))
-    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    .sort((a, b) => timeOf(b.createdAt) - timeOf(a.createdAt));
   const latest = runs[0];
   if (!latest) return result(label, 'unknown', 'no deploy run yet');
   if (latest.conclusion !== 'success') {
@@ -319,13 +377,16 @@ export function deployed(ctx, tag) {
 }
 
 export function testsNotRemoved(ctx, report = ctx.report) {
-  if (!ctx.baseReport || !report) return result('tests_not_removed', 'unknown', 'base or head report missing');
-  const head = new Set((report.tests ?? []).map((t) => testName(t.id)));
+  if (!isObj(ctx.baseReport) || !isObj(report)) return result('tests_not_removed', 'unknown', 'base or head report missing');
+  if (!isList(report.tests) || !isList(ctx.baseReport.tests) || !ctx.baseReport.tests.length) {
+    return result('tests_not_removed', 'unknown', 'base or head report has no test list');
+  }
+  const head = new Set(report.tests.map((t) => testName(t.id)));
   const approved = new Set(ctx.ticket.approvedTestRemovals ?? []);
   // The base side: the main report, and the base test ids of every test module the PR changes,
   // renames or removes (repro block). After a merge the main report is the merge commit's, so the
   // repro ids are what still show a dropped test (benchmark I10).
-  const baseIds = [...(ctx.baseReport.tests ?? []).map((t) => t.id), ...(report.repro?.base_test_ids ?? [])];
+  const baseIds = [...ctx.baseReport.tests.map((t) => t.id), ...(optList(report.repro?.base_test_ids) ?? [])];
   const removed = [...new Set(baseIds.map((id) => testName(id)))].filter(
     (n) => !head.has(n) && !approved.has(n),
   );
@@ -338,16 +399,20 @@ export function migrationAdditive(ctx, number) {
   const label = `migration_additive(${number})`;
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
-  const migration = (ctx.report.migrations ?? []).find((m) => m.number === number);
+  if (!isList(ctx.report.migrations)) return result(label, 'unknown', 'the report has no migration list');
+  const migration = ctx.report.migrations.find((m) => m.number === number);
   if (!migration) return result(label, 'fail', `migration ${number} not found`);
-  const bad = (migration.operations ?? []).filter((op) => /^(DROP|RENAME)/i.test(op));
+  if (!isList(migration.operations) || !migration.operations.length) return result(label, 'unknown', `migration ${number} has no operation list`);
+  const bad = migration.operations.filter((op) => /^(DROP|RENAME)/i.test(op));
   return bad.length
     ? result(label, 'fail', `${number} contains ${bad.join(', ')}`)
     : result(label, 'pass', `${number} only adds (${migration.operations.join(', ')})`);
 }
 
 export function uniqueMigrations(report) {
-  const numbers = (report?.migrations ?? []).map((m) => m.number);
+  const migrations = isObj(report) ? optList(report.migrations) : null;
+  if (!migrations) return result('unique_migrations', 'unknown', 'the report has no valid migration list');
+  const numbers = migrations.map((m) => m.number);
   const dupes = numbers.filter((n, i) => numbers.indexOf(n) !== i);
   return dupes.length
     ? result('unique_migrations', 'fail', `duplicate migration numbers: ${[...new Set(dupes)].join(', ')}`)
@@ -358,8 +423,10 @@ export function mergedClean(ctx) {
   const report = ctx.mergeReport;
   const trust = reportTrusted(ctx, report, ctx.mergeSha);
   if (trust.status !== 'pass') return result('merged_clean', 'unknown', `merge result: ${trust.reason}`);
+  const required = optList(ctx.mergeRequiredTests);
+  if (!required) return result('merged_clean', 'unknown', 'the list of tests required after merge is malformed');
   const parts = [
-    ...(ctx.mergeRequiredTests ?? []).map((n) => testPasses(ctx, n, report)),
+    ...required.map((n) => testPasses(ctx, n, report)),
     testsNotRemoved(ctx, report),
     uniqueMigrations(report),
   ];
@@ -375,6 +442,9 @@ export function repairBalanced(ctx) {
   if (trust.status !== 'pass') return result('repair_balanced', 'unknown', trust.reason);
   const r = ctx.report.repair;
   if (!r) return result('repair_balanced', 'fail', 'no repair block in the report');
+  if (!isObj(r) || ![r.debits_minor, r.credits_minor, r.rows_deleted, r.rows_updated].every(isNum)) {
+    return result('repair_balanced', 'unknown', 'the repair block does not have four finite numbers (debits, credits, rows deleted, rows updated)');
+  }
   if (r.debits_minor !== r.credits_minor) {
     return result('repair_balanced', 'fail', `debits ${r.debits_minor} != credits ${r.credits_minor}`);
   }
@@ -389,6 +459,9 @@ export function reconProof(ctx) {
   if (trust.status !== 'pass') return result('recon_proof', 'unknown', trust.reason);
   const r = ctx.report.recon;
   if (!r) return result('recon_proof', 'fail', 'no recon block in the report');
+  if (!isObj(r) || ![r.accounts, r.accounts_matching, r.diff_minor].every(isNum)) {
+    return result('recon_proof', 'unknown', 'the recon block does not have three finite numbers (accounts, matching, diff)');
+  }
   if (r.accounts_matching !== r.accounts || r.diff_minor !== 0) {
     return result('recon_proof', 'fail', `${r.accounts_matching}/${r.accounts} accounts match; diff ${r.diff_minor}`);
   }
@@ -396,9 +469,10 @@ export function reconProof(ctx) {
 }
 
 export function evidenceLinked(ctx) {
-  const timeline = ctx.timeline ?? [];
+  const timeline = optList(ctx.timeline);
+  if (!timeline) return result('evidence_linked', 'unknown', 'the timeline is malformed');
   if (timeline.length === 0) return result('evidence_linked', 'fail', 'empty timeline');
-  const missing = timeline.filter((e) => !e.link);
+  const missing = timeline.filter((e) => !isText(e?.link));
   return missing.length
     ? result('evidence_linked', 'fail', `${missing.length} timeline entr(ies) without evidence`)
     : result('evidence_linked', 'pass', `${timeline.length} entries linked`);
@@ -420,22 +494,25 @@ const resolveName = (ctx, name) => {
   return String(name).replaceAll('{TOKEN}', key.replace('-', '')).replaceAll('{KEY}', key);
 };
 
+// The AC list: none stored gives an empty list; a value that is not a list is malformed (null).
+const acsOf = (ctx) => (ctx.ticket?.acceptanceCriteria == null ? [] : isList(ctx.ticket.acceptanceCriteria) ? ctx.ticket.acceptanceCriteria : null);
+
 // A ticket has code work when an AC is a test, or it is a Bug. A spike or a parent ticket with
 // only sub-task or link checks has no code gate.
 export function hasCodeWork(ctx) {
-  const acs = ctx.ticket?.acceptanceCriteria ?? [];
+  const acs = acsOf(ctx) ?? [];
   return ctx.ticket?.type === 'Bug' || acs.some((a) => a.check?.type === 'test_passes');
 }
 
 // The tests that must reproduce the problem: every AC test, and for a Bug every test named for
 // the key.
 export function ticketTests(ctx) {
-  const names = (ctx.ticket?.acceptanceCriteria ?? [])
+  const names = (acsOf(ctx) ?? [])
     .filter((a) => a.check?.type === 'test_passes')
     .map((a) => resolveName(ctx, a.check.args?.[0]));
   if (ctx.ticket?.type === 'Bug') {
     const token = new RegExp(`(^|[^A-Za-z0-9])${issueToken(ctx.ticket.key)}_`);
-    for (const t of ctx.report?.tests ?? []) if (token.test(testName(t.id))) names.push(testName(t.id));
+    for (const t of optList(ctx.report?.tests) ?? []) if (token.test(testName(t.id))) names.push(testName(t.id));
   }
   return [...new Set(names)];
 }
@@ -445,10 +522,13 @@ export function onMain(ctx) {
   const pr = ctx.pr;
   if (!pr && ctx.forkPrs?.length) return result('on_main', 'unknown', forkReason(ctx));
   if (!pr) return result('on_main', 'fail', `no pull request for ${ctx.ticket.key}, so nothing is on main`);
+  const gap = candidatesGap(ctx);
+  if (gap) return result('on_main', 'unknown', gap);
   // Two open or merged PRs name the key: the same rule as pr_linked (benchmark B26).
   if ((ctx.prCandidates ?? []).length > 1) {
     return result('on_main', 'unknown', `PRs ${ctx.prCandidates.map((n) => `#${n}`).join(', ')} all name ${ctx.ticket.key}; link one PR`);
   }
+  if (typeof pr.merged !== 'boolean') return result('on_main', 'unknown', `PR #${pr.number} has no valid merge flag`);
   if (!pr.merged) return result('on_main', 'fail', `PR #${pr.number} is not merged, so the work is not on main`);
   return result('on_main', 'pass', `PR #${pr.number} merged${ctx.mergeSha ? ` as ${String(ctx.mergeSha).slice(0, 7)}` : ''}`);
 }
@@ -507,10 +587,16 @@ export function acTestsRunNewCode(ctx) {
 // pinned run was re-run.
 const TEST_STEP = /pytest|\btests?\b/i;
 export function ciAttempts(ctx) {
-  const paths = ctx.config?.requiredWorkflowPaths ?? [];
-  const runs = (ctx.workflowRuns ?? []).filter((r) => paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha && (r.attempt ?? 1) > 1);
+  const paths = optList(ctx.config?.requiredWorkflowPaths) ?? [];
+  const all = optList(ctx.workflowRuns);
+  if (!all) return result('ci_attempts', 'unknown', 'the workflow run list is malformed');
+  const pinned = all.filter((r) => paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha);
+  if (pinned.some((r) => r.attempt !== undefined && !(Number.isInteger(r.attempt) && r.attempt >= 1))) {
+    return result('ci_attempts', 'unknown', 'a CI run has no valid attempt number');
+  }
+  const runs = pinned.filter((r) => (r.attempt ?? 1) > 1);
   if (!runs.length) return null;
-  if (runs.some((r) => r.earlierFailures === null)) return result('ci_attempts', 'unknown', 'an earlier attempt of the CI run could not be read');
+  if (runs.some((r) => !isList(r.earlierFailures))) return result('ci_attempts', 'unknown', 'an earlier attempt of the CI run could not be read');
   const flaky = runs.flatMap((r) => r.earlierFailures ?? []).filter((f) => TEST_STEP.test(f.step));
   return flaky.length
     ? result('ci_attempts', 'unknown', flaky.map((f) => `attempt ${f.attempt} failed in step "${f.step}" and a re-run passed with no code change: a person checks for a flaky test`).join('; '))
@@ -555,7 +641,7 @@ export function checkHumanSignoff(ctx) {
   if (!domain) return null;
   const s = ctx.ticket.signoff;
   const sha = ctx.pr?.mergeSha ?? ctx.pr?.headSha ?? null;
-  if (!s?.by) return result('human_signoff', 'unknown', `${domain}: a person's sign-off of the merged change is required, and none is recorded`);
+  if (!isText(s?.by)) return result('human_signoff', 'unknown', `${domain}: a person's sign-off of the merged change is required, and none is recorded`);
   if (!sha || s.sha !== sha) return result('human_signoff', 'unknown', `${domain}: the sign-off is for ${String(s.sha ?? 'no commit').slice(0, 7)}, not the merged commit ${String(sha ?? 'unknown').slice(0, 7)}`);
   return result('human_signoff', 'pass', `${domain}: signed off by ${s.by} at ${s.at}`);
 }
@@ -608,6 +694,7 @@ function newFunctionStory(ctx, row) {
 export function reproduced(ctx) {
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result('reproduced', 'unknown', trust.reason);
+  if (!acsOf(ctx)) return result('reproduced', 'unknown', 'the acceptance criteria are not a list');
   const repro = ctx.report.repro;
   if (!repro || !Array.isArray(repro.tests)) return result('reproduced', 'unknown', 'no repro block in the CI report (base run missing)');
   const gap = reproBlockGap(repro, ctx.report.head_sha);
@@ -624,7 +711,7 @@ export function reproduced(ctx) {
   // behaviour that must not change: they must pass on head and may pass on base (benchmark B21,
   // B25, B26, B29). With no AC test, at least one key-named test must reproduce.
   const all = ticketTests(ctx);
-  const acNames = new Set((ctx.ticket?.acceptanceCriteria ?? []).filter((a) => a.check?.type === 'test_passes').map((a) => resolveName(ctx, a.check.args?.[0])));
+  const acNames = new Set(acsOf(ctx).filter((a) => a.check?.type === 'test_passes').map((a) => resolveName(ctx, a.check.args?.[0])));
   const guards = all.filter((n) => !acNames.has(n));
   const rowOf = (name) => repro.tests.find((t) => testName(t.id) === name);
   const reproduces = (name) => rowOf(name)?.base?.outcome === 'failed' && rowOf(name)?.base?.exc_type === 'AssertionError' && rowOf(name)?.head?.outcome === 'passed';
@@ -664,11 +751,11 @@ export function coverageOk(ctx) {
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result('coverage', 'unknown', trust.reason);
   const cov = ctx.report.coverage;
-  if (!cov) return result('coverage', 'unknown', 'no coverage block in the CI report');
+  if (!isObj(cov)) return result('coverage', 'unknown', 'no coverage block in the CI report');
   if (!Array.isArray(ctx.prFiles)) return result('coverage', 'unknown', 'pull request file list not available');
   const settings = ctx.prFiles.filter((f) => COVERAGE_FILES.includes(f.split('/').pop()));
   if (settings.length) return result('coverage', 'unknown', `PR changes coverage settings (${settings.join(', ')})`);
-  if (!ctx.prPatches) return result('coverage', 'unknown', 'pull request patches not read');
+  if (!isObj(ctx.prPatches)) return result('coverage', 'unknown', 'pull request patches not read');
   for (const [file, patch] of Object.entries(ctx.prPatches)) {
     if (typeof patch !== 'string') continue;
     if (patch.split('\n').some((l) => l.startsWith('+') && !l.startsWith('+++') && /pragma:\s*no\s*cover/i.test(l))) {
@@ -676,9 +763,9 @@ export function coverageOk(ctx) {
     }
   }
   const conf = { ...DEFAULT_COVERAGE, ...(ctx.config?.coverage ?? {}) };
-  const exec = Number(cov.changed_executable ?? NaN);
-  const covered = Number(cov.changed_covered ?? NaN);
-  if (!Number.isFinite(exec) || !Number.isFinite(covered)) return result('coverage', 'unknown', 'changed-line counts missing');
+  const exec = cov.changed_executable;
+  const covered = cov.changed_covered;
+  if (!isNum(exec) || !isNum(covered)) return result('coverage', 'unknown', 'changed-line counts missing');
   const floorPct = Math.round(conf.changedFloor * 100);
   if (exec > 0 && covered / exec < conf.changedFloor) {
     return result('coverage', 'fail', `${covered} of ${exec} changed lines covered (${Math.round((covered / exec) * 100)}%), floor ${floorPct}%`);
@@ -692,7 +779,7 @@ export function coverageOk(ctx) {
   const unmeasured = cov.unmeasured_files;
   if (!Array.isArray(unmeasured)) return result('coverage', 'unknown', 'the coverage block has no unmeasured_files list, so a changed file may be missing from the coverage data');
   if (unmeasured.length) return result('coverage', 'unknown', `${unmeasured.join(', ')} changed but not in the coverage data`);
-  if (typeof cov.head_total !== 'number' || typeof cov.base_total !== 'number') {
+  if (!isNum(cov.head_total) || !isNum(cov.base_total)) {
     return result('coverage', 'unknown', 'head or base total coverage missing');
   }
   if (cov.head_total < cov.base_total - conf.maxDropPoints) {

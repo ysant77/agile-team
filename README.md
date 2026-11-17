@@ -34,7 +34,10 @@ Exceptions, where an empty list is a valid read result and not missing evidence:
 
 - `subtasks_done`, `blocked_by_done`: Jira gives an empty list when the ticket has no sub-tasks
   or links, so none is open.
-- `unique_migrations`: a repository with no migrations reports an empty list.
+- `unique_migrations` (also inside `merged_clean`): a repository with no migrations reports an
+  empty list, or no list.
+- metric checks: the report test list is a guard (no failed test), not the evidence; an empty
+  list has no failed test. The metric value itself must be a finite number.
 - `ci_attempts`: an empty list of earlier failures means no earlier attempt failed.
 - `reproduced`: an empty `changed_support` list means no pytest support file changed; a Bug with
   no acceptance criteria uses the tests named for its key.
