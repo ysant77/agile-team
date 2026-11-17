@@ -954,7 +954,11 @@ export function coverageOk(ctx) {
   const conf = { ...DEFAULT_COVERAGE, ...(ctx.config?.coverage ?? {}) };
   const exec = cov.changed_executable;
   const covered = cov.changed_covered;
-  if (!isNum(exec) || !isNum(covered)) return result('coverage', 'unknown', 'changed-line counts missing');
+  // Counts of lines: whole numbers, at least 0, and no more covered lines than executable ones.
+  const isCount = (v) => Number.isInteger(v) && v >= 0;
+  if (!isCount(exec) || !isCount(covered) || covered > exec) {
+    return result('coverage', 'unknown', 'changed-line counts missing or malformed (whole numbers from 0, covered not above executable)');
+  }
   // Zero changed executable lines while a source file gains or loses code means the coverage
   // tool did not see the change (PR 8 review, item 9).
   if (exec === 0) {
@@ -980,8 +984,10 @@ export function coverageOk(ctx) {
   const excluded = cov.changed_excluded;
   if (!Number.isInteger(excluded) || excluded < 0) return result('coverage', 'unknown', 'the coverage block has no valid changed_excluded count, so changed lines may be excluded from coverage');
   if (excluded > 0) return result('coverage', 'unknown', `${excluded} changed lines excluded from coverage; a person checks`);
-  if (!isNum(cov.head_total) || !isNum(cov.base_total)) {
-    return result('coverage', 'unknown', 'head or base total coverage missing');
+  // Totals are percentages: finite numbers in [0, 100].
+  const isPct = (v) => isNum(v) && v >= 0 && v <= 100;
+  if (!isPct(cov.head_total) || !isPct(cov.base_total)) {
+    return result('coverage', 'unknown', 'head or base total coverage missing, or not a percentage from 0 to 100');
   }
   if (cov.head_total < cov.base_total - conf.maxDropPoints) {
     return result('coverage', 'fail', `total coverage ${cov.head_total}% is below base ${cov.base_total}% minus ${conf.maxDropPoints}`);
