@@ -62,7 +62,7 @@ for (const exec of [0, []]) {
     ctx.report.coverage = { ...ctx.report.coverage, changed_executable: exec, changed_covered: 0 };
     const r = checks.coverageOk(ctx);
     assert.equal(r.status, 'unknown', r.reason);
-    assert.match(r.reason, /src\/bank\/transfers\.py/);
+    assert.match(r.reason, exec === 0 ? /src\/bank\/transfers\.py changed code/ : /changed-line counts missing/);
   });
 }
 

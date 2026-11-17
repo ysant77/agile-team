@@ -638,6 +638,16 @@ export function reproduced(ctx) {
   return result('reproduced', 'pass', `${names.length} test(s) fail on base by an assertion and pass on head; full suite passed`);
 }
 
+// Non-test Python files whose patch adds or removes a line that is not blank and not a comment.
+const isTestFile = (f) => /(^|\/)tests?\//.test(f) || /(^|\/)test_[^/]*\.py$/.test(f) || /(^|\/)conftest\.py$/.test(f);
+function changedSourceFiles(ctx) {
+  return (ctx.prFiles ?? []).filter((f) => f.endsWith('.py') && !isTestFile(f)).filter((f) => {
+    const patch = ctx.prPatches?.[f];
+    if (typeof patch !== 'string') return true; // patch not read: assume code changed
+    return patch.split('\n').some((l) => /^[+-]/.test(l) && !/^(\+\+\+|---)/.test(l) && !/^[+-]\s*(#.*)?$/.test(l));
+  });
+}
+
 // D-cov: changed executable lines covered at or above the floor, and total coverage not below
 // base minus the allowed drop. A PR that changes the coverage settings or adds an exclusion
 // gives unknown.
@@ -657,9 +667,19 @@ export function coverageOk(ctx) {
     }
   }
   const conf = { ...DEFAULT_COVERAGE, ...(ctx.config?.coverage ?? {}) };
-  const exec = Number(cov.changed_executable ?? NaN);
-  const covered = Number(cov.changed_covered ?? NaN);
+  // Counts must be numbers: Number([]) is 0 and would read as "no changed lines".
+  if (typeof cov.changed_executable !== 'number' || typeof cov.changed_covered !== 'number') {
+    return result('coverage', 'unknown', 'changed-line counts missing');
+  }
+  const exec = cov.changed_executable;
+  const covered = cov.changed_covered;
   if (!Number.isFinite(exec) || !Number.isFinite(covered)) return result('coverage', 'unknown', 'changed-line counts missing');
+  // Zero changed executable lines while a source file gains or loses code means the coverage
+  // tool did not see the change (PR 8 review, item 9).
+  if (exec === 0) {
+    const code = changedSourceFiles(ctx);
+    if (code.length) return result('coverage', 'unknown', `no changed executable lines reported, but ${code.join(', ')} changed code`);
+  }
   const floorPct = Math.round(conf.changedFloor * 100);
   if (exec > 0 && covered / exec < conf.changedFloor) {
     return result('coverage', 'fail', `${covered} of ${exec} changed lines covered (${Math.round((covered / exec) * 100)}%), floor ${floorPct}%`);
