@@ -87,3 +87,20 @@ test('a review never turns contradicted or cannot_verify into supported', async 
   const clean = await run('ready', deps({ gh: github({ outcome: 'failed' }), reviews: [review({}, { severity: 'note', ac: undefined })] }));
   assert.equal(clean.verdict.result, 'contradicted');
 });
+
+test('a malformed stored review does not hold and does not throw', async () => {
+  const malformed = [
+    review({ review: { findings: null, risks: [], proposedChecks: [] } }),
+    review({ review: { findings: 'blocking', risks: [], proposedChecks: [] } }),
+    review({ review: { findings: { severity: 'blocking', ac: 'AC1' }, risks: [], proposedChecks: [] } }),
+    review({ review: { findings: [null, 'blocking', 7], risks: [], proposedChecks: [] } }),
+    review({ review: 'not an object' }),
+  ];
+  for (const r of malformed) {
+    const { verdict } = await run('ready', deps({ reviews: [r] }));
+    assert.equal(verdict.result, 'supported', JSON.stringify(r.review));
+  }
+  // A malformed review next to a valid one: the valid one still holds.
+  const { verdict } = await run('ready', deps({ reviews: [malformed[0], review()] }));
+  assert.equal(verdict.result, 'cannot_verify');
+});
