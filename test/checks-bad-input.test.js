@@ -63,7 +63,7 @@ function good() {
     reportComment: { updatedAt: '2026-11-16T10:03:00Z' },
     baseWorkflowFiles: { [CI]: 'h1' },
     workflowRuns: [{
-      id: 1, path: CI, headSha: HEAD, status: 'completed', conclusion: 'success', attempt: 2, earlierFailures: [],
+      id: 1, path: CI, headSha: HEAD, status: 'completed', conclusion: 'success', attempt: 2, earlierFailures: [], earlierConclusions: [{ attempt: 1, conclusion: 'success' }],
       createdAt: '2026-11-16T10:00:00Z', runStartedAt: '2026-11-16T10:00:00Z', updatedAt: '2026-11-16T10:02:30Z',
     }],
     prFiles: ['src/x.py', 'tests/test_x.py'],
@@ -113,7 +113,8 @@ const ROWS = [
   ['reportTrusted', ['report', 'report.head_sha', 'report.workflow_files', 'reportAuthor', 'pr.headSha', 'baseWorkflowFiles', 'reportComment', 'reportComment.updatedAt', 'prFiles', 'workflowRuns']],
   // The title alone is not key: the branch name also names the key.
   ['prLinked', ['pr', 'pr.state', 'pr.merged', 'prCandidates', 'ticket.key']],
-  ['ciGreen', ['pr.headSha', 'workflowRuns', 'workflowRuns.0.conclusion', 'workflowRuns.0.status', 'prFiles', 'config.requiredWorkflowPaths']],
+  ['ciGreen', ['pr.headSha', 'workflowRuns', 'workflowRuns.0.conclusion', 'workflowRuns.0.status', 'workflowRuns.0.earlierConclusions',
+    'workflowRuns.0.earlierConclusions.0.conclusion', 'prFiles', 'config.requiredWorkflowPaths']],
   ['testPasses', ['arg:0', 'report', 'report.tests']],
   ['bugTestExists', ['report.tests', 'ticket.key']],
   // For a metric the test list is a guard (no failed test), not the evidence: an empty list has
@@ -140,7 +141,8 @@ const ROWS = [
   ['onMain', ['pr', 'pr.merged', 'prCandidates']],
   ['acTestsRunNewCode', ['prPatches', 'report.tests'], { expect: null }],
   // An empty earlierFailures list is the read result "no step failed in an earlier attempt".
-  ['ciAttempts', ['workflowRuns', 'workflowRuns.0.earlierFailures', 'workflowRuns.0.attempt'], { allow: { 'workflowRuns.0.earlierFailures': ['empty_array'] } }],
+  ['ciAttempts', ['workflowRuns', 'workflowRuns.0.earlierFailures', 'workflowRuns.0.attempt', 'workflowRuns.0.earlierConclusions',
+    'workflowRuns.0.earlierConclusions.0.conclusion'], { allow: { 'workflowRuns.0.earlierFailures': ['empty_array'] } }],
   ['baseCurrent', ['baseTip', 'report.base_sha'], { tweak: (ctx) => { ctx.pr.merged = false; } }],
   ['measurementUnchanged', ['prFiles', 'config.guardedPaths'], { expect: null }],
   ['checkHumanSignoff', ['ticket.signoff', 'ticket.signoff.by', 'ticket.signoff.sha', 'pr.mergeSha']],
