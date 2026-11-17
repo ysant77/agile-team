@@ -87,15 +87,17 @@ test('S18: an empty unmeasured_files list changes nothing', async () => {
 
 // S03: a Story that adds a function to an existing module. The AC test fails on base with
 // AttributeError because the function is missing: that is new behaviour, as for a new module.
-function withNewFunction(c, { type = 'Story', addDef = true } = {}) {
+// The base row carries the exception text (exc_message), as pytest's excinfo.exconly() gives it.
+const NO_ATTR = "AttributeError: module 'bank.ledger' has no attribute 'strip_reference'";
+function withNewFunction(c, { type = 'Story', addDef = true, def = 'def strip_reference(text):', use = 'ledger.strip_reference(" a ")', message = NO_ATTR } = {}) {
   c.ticket.type = type;
   const acs = new Set(c.ticket.acceptanceCriteria.map((a) => a.check.args[0]));
   for (const t of c.github.report.repro.tests) {
-    if (acs.has(t.id.split('::')[1])) t.base = { outcome: 'failed', exc_type: 'AttributeError' };
+    if (acs.has(t.id.split('::')[1])) t.base = { outcome: 'failed', exc_type: 'AttributeError', ...(message ? { exc_message: message } : {}) };
   }
   for (const f of c.github.files) {
-    if (addDef && f.filename.startsWith('src/') && f.patch) f.patch += '\n+def strip_reference(text):\n+    return text.strip()';
-    if (f.filename.startsWith('tests/') && f.patch) f.patch += '\n+    assert ledger.strip_reference(" a ") == "a"';
+    if (addDef && f.filename.startsWith('src/') && f.patch) f.patch += `\n+${def}\n+    return text.strip()`;
+    if (f.filename.startsWith('tests/') && f.patch) f.patch += `\n+    assert ${use} == "a"`;
   }
   return c;
 }
@@ -111,4 +113,25 @@ test('S03: the same AttributeError is still cannot_verify for a Bug, or when the
     assert.equal(v.result, 'cannot_verify', `${JSON.stringify(opts)}: ${v.reason}`);
     assert.match(v.reason, /AttributeError/);
   }
+});
+
+// Review finding 12: the new function must be the one the test calls on the changed module, and
+// the base error must name it. Any added def name in any added test line is not enough.
+test('S03: an unrelated new function, a call on another object, or an error that names another attribute does not count', async () => {
+  const cases = {
+    'other object': { def: 'def get(text):', use: 'cfg.get(" a ")', message: "AttributeError: 'Config' object has no attribute 'get'" },
+    'no exception text': { message: null },
+    'other attribute': { message: "AttributeError: module 'bank.ledger' has no attribute 'post_entry'" },
+    'method, not module function': { def: '    def strip_reference(self, text):' },
+  };
+  for (const [name, opts] of Object.entries(cases)) {
+    const v = await verdictOf(withNewFunction(load('B23'), opts));
+    assert.equal(v.result, 'cannot_verify', `${name}: ${v.reason}`);
+    assert.match(v.reason, /AttributeError/);
+  }
+});
+
+test('S03: a call through the full module path also counts', async () => {
+  const v = await verdictOf(withNewFunction(load('B23'), { use: 'bank.ledger.strip_reference(" a ")' }));
+  assert.equal(v.result, 'supported', v.reason);
 });
