@@ -14,7 +14,7 @@ import { testName, testsByName } from './verifier/report.js';
 
 // Guard version 4: the severity guards (3) plus the line, number, verdict-word and adoption
 // guards from the unit 6 review.
-export const REVIEW_GUARD_VERSION = 4;
+export const REVIEW_GUARD_VERSION = 5;
 export const REVIEW_PROMPT_VERSION = 'code-review/2';
 export const REVIEW_LABEL = 'Review (not verified)';
 export const MAX_FINDINGS = 6;
@@ -198,26 +198,29 @@ function ungroundedNumbers(text, hunkId, packet, allowed) {
   return bad;
 }
 
+// Guard 7 (version 5): text is compared lower-cased with all whitespace removed, so a quote in
+// other letter case or with extra spaces is still a quote.
+const fold = (t) => t.toLowerCase().replace(/\s+/g, '');
+
 // Guard 7 (version 3): the share of a finding's text that is hunk content copied verbatim. Hunk
 // ids and AC ids are removed first. Only runs of at least COPY_MIN characters count, so a short
-// name in the reviewer's own sentence is not a copy. Spaces do not count.
+// name in the reviewer's own sentence is not a copy. `code` is already folded.
 const COPY_MIN = 12;
 function copiedShare(body, code) {
-  const text = body.replace(HUNK_ID, ' ').replace(/\bAC\d+\b/g, ' ').replace(/\s+/g, ' ').trim();
-  const total = text.replace(/ /g, '').length;
-  if (total === 0) return 0;
+  const text = fold(body.replace(HUNK_ID, ' ').replace(/\bAC\d+\b/g, ' '));
+  if (text.length === 0) return 0;
   let copied = 0;
   for (let i = 0; i < text.length;) {
     let n = 0;
     while (i + n < text.length && code.includes(text.slice(i, i + n + 1))) n += 1;
     if (n >= COPY_MIN) {
-      copied += text.slice(i, i + n).replace(/ /g, '').length;
+      copied += n;
       i += n;
     } else {
       i += 1;
     }
   }
-  return copied / total;
+  return copied / text.length;
 }
 
 // Returns the record that is shown and audited. `outcome` is 'review' (advice only) or
@@ -252,15 +255,17 @@ export function applyReviewGuards(raw, packet, meta = {}) {
   }
   // Guard 7 (code-review/2): a blocking finding names an AC of the ticket and states a defect in
   // the reviewer's own words. A quoted changed line is not a defect statement.
+  // Known limit (docs/claims.md): the guard refuses copied code only. A short text with no defect
+  // statement and no copied code, such as "Bad.", passes. Such a finding can only hold a
+  // supported claim for a person to check; it can never pass a claim.
   const acSet = new Set(packet.ticket.acs.map((a) => a.acId));
-  const squash = (t) => t.replace(/\s+/g, ' ').trim();
   for (const f of review.findings) {
     if (f.ac !== undefined && !acSet.has(f.ac)) return invalid('unknown-ac', `${f.ac} is not an AC of ${packet.ticket.key}`);
     if (f.severity !== 'blocking') continue;
     if (!f.ac) return invalid('blocking-needs-ac', `a blocking finding at ${f.hunk} must name the AC that the change fails`);
-    const body = squash(f.text);
-    const code = packet.hunks.map((h) => squash(h.text.split('\n').map((l) => l.replace(/^[+\- ]/, '')).join('\n')));
-    if (code.some((c) => c.includes(body)) || copiedShare(body, code.join(' ')) > 0.5) {
+    const body = fold(f.text);
+    const code = packet.hunks.map((h) => fold(h.text.split('\n').map((l) => l.replace(/^[+\- ]/, '')).join('\n')));
+    if (code.some((c) => c.includes(body)) || copiedShare(f.text, code.join('\n')) > 0.5) {
       return invalid('quoted-line', `the blocking finding at ${f.hunk} quotes changed code; state the defect against ${f.ac}`);
     }
   }
