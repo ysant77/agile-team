@@ -482,11 +482,19 @@ test('verify: a malformed ticket, AC list, link list or key never gives supporte
   // An AC list is read as a whole, so a missing or empty list is "no AC": that is a fail for acs.
   // The type is read only to choose the Bug and Task rules; a ticket of another type keeps the
   // AC checks, so a missing or odd type can be supported.
-  const ALLOW = { 'ticket.type': Object.keys(VERDICT_BAD) };
+  // The key is read only to fill {TOKEN} or {KEY} in a test name and for the Bug's own tests;
+  // the acs claim here names no such test. No AC with every sub-task done means the work is the
+  // sub-tasks (benchmark B24). link_exists with no link type means any link.
+  const ALLOW = {
+    'ticket.type': Object.keys(VERDICT_BAD),
+    'ticket.key': Object.keys(VERDICT_BAD),
+    'ticket.acceptanceCriteria': ['missing', 'null', 'empty_array'],
+    'ticket.acceptanceCriteria.1.check.args': ['missing', 'empty_array'],
+  };
   for (const type of ['acs', 'done']) {
     for (const path of VERDICT_PATHS) {
       for (const [label, value] of Object.entries(VERDICT_BAD)) {
-        if (ALLOW[path]?.includes(label)) continue;
+        if (ALLOW[path]?.includes(label) && !(type === 'done' && path === 'ticket.key')) continue;
         const ctx = verdictGood();
         setPath(ctx, path, value);
         let v;

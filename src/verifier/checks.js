@@ -636,8 +636,9 @@ export const CANNOT_RUN_ON_BASE = ['ImportError', 'ModuleNotFoundError', 'Attrib
 export const DEFAULT_COVERAGE = { changedFloor: 0.8, maxDropPoints: 0.5 };
 const COVERAGE_FILES = ['.coveragerc', 'setup.cfg', 'pyproject.toml', 'tox.ini'];
 
+// A key that is not text resolves to nothing, so a named test is not found.
 const resolveName = (ctx, name) => {
-  const key = ctx.ticket?.key ?? '';
+  const key = isText(ctx.ticket?.key) ? ctx.ticket.key : '';
   return String(name).replaceAll('{TOKEN}', key.replace('-', '')).replaceAll('{KEY}', key);
 };
 
@@ -674,7 +675,7 @@ export function ticketTests(ctx) {
   const names = (acsOf(ctx) ?? [])
     .filter((a) => a.check?.type === 'test_passes')
     .map((a) => resolveName(ctx, a.check.args?.[0]));
-  if (ctx.ticket?.type === 'Bug') {
+  if (ctx.ticket?.type === 'Bug' && isText(ctx.ticket.key)) {
     const token = new RegExp(`(^|[^A-Za-z0-9])${issueToken(ctx.ticket.key)}_`);
     for (const t of optList(ctx.report?.tests) ?? []) if (isObj(t) && token.test(testName(t.id))) names.push(testName(t.id));
   }
@@ -890,6 +891,7 @@ export function reproduced(ctx) {
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result('reproduced', 'unknown', trust.reason);
   if (!acsOf(ctx)) return result('reproduced', 'unknown', 'the acceptance criteria are not a list');
+  if (!isText(ctx.ticket?.key)) return result('reproduced', 'unknown', 'the ticket has no key');
   const repro = ctx.report.repro;
   if (!isObj(repro) || !isObjList(repro.tests)) return result('reproduced', 'unknown', 'no repro block in the CI report (base run missing), or it is malformed');
   const gap = reproBlockGap(repro, ctx.report.head_sha);
@@ -918,7 +920,7 @@ export function reproduced(ctx) {
       if (row && row.head?.outcome !== 'passed') fails.push(`${g} fails on head (${row.head?.outcome ?? 'no result'})`);
     }
   }
-  if (names.length === 0) fails.push(`no test for ${ctx.ticket.key}: nothing reproduces the problem`);
+  if (names.length === 0) fails.push(`no test for ${ctx.ticket?.key}: nothing reproduces the problem`);
   for (const name of names) {
     const row = rowOf(name);
     if (!row) {
