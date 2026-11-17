@@ -217,7 +217,8 @@ export function ciGreen(ctx) {
   let unknown = false;
   for (const path of required) {
     // Every run of the pinned workflow on the head must succeed; a later success does not
-    // hide an earlier failure.
+    // hide an earlier failure. LIMIT (README, "Verifier limits"): only runs on the claimed head
+    // count. A failure on an earlier head followed by a new commit whose CI passes is green.
     const all = ctx.workflowRuns.filter((r) => runPath(r) === path && r.headSha === head);
     const failed = all.find((r) => r.status === 'completed' && r.conclusion !== 'success' && !NO_RESULT.includes(r.conclusion));
     if (failed) return result('ci_green', 'fail', `${path} concluded ${failed.conclusion} on ${head.slice(0, 7)}`);
@@ -525,12 +526,16 @@ export function testsNotRemoved(ctx, report = ctx.report) {
 
 // The base collection record (bank scripts/repro.py): pytest --collect-only on base over the
 // changed, renamed or removed test modules. rc null and no ids mean there was no such module.
-// A report without base_test_ids is from before the field existed and has no record to check.
-// A report with base_test_ids but no base_collect is from an older bank version: it cannot show
-// that every module gave its ids, so it gives unknown (README, "No check passes by default").
+// A report with neither base_test_ids nor base_collect is from before the fields existed and has no
+// record to check. LIMIT (README, "Verifier limits"): it keeps that old reading, and the evidence
+// record marks it "pre-field report" so a reader sees it. A report with base_test_ids but no
+// base_collect is from an older bank version: it cannot show that every module gave its ids, so
+// it gives unknown (README, "No check passes by default"). A report with base_collect but no
+// base_test_ids is malformed: the bank writes both together (final review, item 6).
 const COLLECT_OK = [0, 5]; // pytest: 0 tests collected, 5 no tests collected
 function baseCollectGap(repro, listed) {
   if (repro.base_test_ids === undefined && repro.base_collect === undefined) return null;
+  if (repro.base_test_ids === undefined) return 'the repro block has a base_collect record but no base_test_ids list';
   if (!listed || !listed.every(isText)) return 'the repro block has a malformed base_test_ids list';
   const bc = repro.base_collect;
   if (bc === undefined) return 'the repro block lists base test ids but has no base_collect record, so a module whose base ids could not be read may hide a dropped test';

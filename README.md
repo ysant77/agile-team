@@ -48,8 +48,9 @@ Exceptions, where an empty list is a valid read result and not missing evidence:
 - `coverage`: an empty `unmeasured_files` list means every changed file is in the coverage data.
 - `merged_clean`: an empty list of tests required after merge names no test; the merge result
   must still keep every base test and have unique migrations.
-- `tests_not_removed`: a report without a repro block, or a repro block without
-  `base_test_ids`, is from before the base record existed. Approved test removals can only turn a
+- `tests_not_removed`: a report without a repro block, or a repro block with neither
+  `base_test_ids` nor `base_collect`, is from before the base record existed (see "Verifier
+  limits"). Approved test removals can only turn a
   fail into a pass, so none stored means none.
 - A run without `run_attempt` is attempt 1 (GitHub leaves it out of old runs).
 
@@ -89,6 +90,20 @@ request (for example a parent of sub-tasks, or a ticket with only `field_equals`
 or `evidence_linked` ACs) has no pull request gate. "No linked pull request" needs the pull
 request list read to the end: when it was cut at the page limit, or has no page flag, the claim
 gives `cannot_verify`.
+
+## Verifier limits
+
+These cases are known and accepted. Each has a test that pins the behaviour.
+
+- **Only the claimed head counts.** `ci_green` reads the CI runs on the head commit of the pull
+  request. If CI failed on an earlier head and a new commit then passes, the result is green. The
+  claim is about the head commit, and the failure on the earlier commit is not evidence about it.
+- **Pre-field reports.** A CI report whose repro block has neither `base_test_ids` nor
+  `base_collect` is from before those fields existed. `tests_not_removed` keeps the old reading
+  (the main report's tests only), and the evidence record marks it `pre-field report`. A repro
+  block with `base_collect` must also have `base_test_ids`; one without gives `unknown`.
+- **Added lines only.** The rule for a Story's new function reads only the added lines of the test
+  file. A string opened on an unchanged line is not seen.
 
 ## Run the tests
 
