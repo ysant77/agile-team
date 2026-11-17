@@ -107,3 +107,30 @@ test('lint v5: "and" or "or" after a status code does not hide a quantity', () =
   }
   assert.deepEqual(ungrounded('The API returns 409 or refuses the body.'), []);
 });
+
+// Final review of PR 5. One helper for the tests below.
+function ungroundedFor(request) {
+  return (description, acs = [{ acId: 'AC1', statement: 'the API refuses the request', check: { type: 'manual', args: [] } }]) =>
+    lintRequirement({ summary: 'Owner check on statements', description, acceptanceCriteria: acs }, [request]).findings
+      .filter((f) => f.rule === 'ungrounded-number').map((f) => f.message.split(' ')[0]);
+}
+
+test('lint v6: only an issue key or AC id from the request or the draft is stripped', async () => {
+  const { LINT_VERSION } = await import('../src/lint.js');
+  assert.equal(LINT_VERSION, 6);
+  const ungrounded = ungroundedFor('A customer saw the wrong balance, see KAN-12.');
+  const invented = {
+    'The job stops after TIMEOUT-30 seconds.': '30',
+    'The export reads LIMIT-1000 rows.': '1000',
+    'The client makes MAX-5 retries.': '5',
+    'The page keeps P-95 latency low.': '95',
+    'The fix waits for KAN-77 first.': '77',
+  };
+  for (const [d, n] of Object.entries(invented)) assert.deepEqual(ungrounded(d), [n], d);
+  assert.deepEqual(ungrounded('The fix links KAN-12.'), []);
+  const acs = [
+    { acId: 'AC1', statement: 'the API refuses the request', check: { type: 'manual', args: [] } },
+    { acId: 'AC2', statement: 'the page shows the error after AC1', check: { type: 'blocked_by_done', args: ['KAN-12'] } },
+  ];
+  assert.deepEqual(ungrounded('The API refuses the request.', acs), []);
+});
