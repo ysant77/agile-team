@@ -1,7 +1,9 @@
 // Agile Code Reviewer (DESIGN.md section 14a). The reviewer reads the pull request's patch hunks
 // and gives a review marked "not verified": findings tied to hunk ids, risks, and proposed checks.
-// Code checks every id, line, number and proposed test. A review never changes a verdict and never
-// approves; a proposed check counts only when CI runs the test and the verifier maps it to an AC.
+// Code checks every id, line, number and proposed test. A review never passes a claim and never
+// approves. Only a blocking finding with an AC id, for the same head commit, can hold a supported
+// claim at cannot_verify for a person to check (src/review-hold.js). A proposed check counts only
+// when CI runs the test and the verifier maps it to an AC.
 
 import { canonical, sha256 } from './audit.js';
 import { numbersIn, quantityText } from './lint.js';
@@ -356,7 +358,7 @@ export function formatReview(issueKey, prNumber, record) {
   }
   const r = record.review;
   return [
-    `${REVIEW_LABEL} on ${issueKey} PR #${prNumber}. It does not change the verdict.`,
+    `${REVIEW_LABEL} on ${issueKey} PR #${prNumber}. It never passes a claim; a blocking finding holds a supported claim for a person to check.`,
     ...r.findings.map((f) => `- ${f.severity === 'blocking' ? `Blocking (${f.ac}) ` : ''}${f.hunk} ${f.file}:${f.line}: ${f.text}`),
     ...r.risks.map((x) => `- Risk: ${x}`),
     ...r.proposedChecks.map((c) => `- Proposed check for ${c.ac}: ${c.testName} in ${c.file}. It must assert: ${c.asserts}${c.failsBeforeFix ? ' It must fail before the fix.' : ''}`),

@@ -10,8 +10,9 @@ metadata:
 # Review a pull request
 
 The verifier is code, and it decides every verdict. A review adds findings, risks and proposed
-checks. The issue panel labels it "Review (not verified)". It never changes a verdict and never
-approves.
+checks. The issue panel labels it "Review (not verified)". It never passes a claim and never
+approves. A blocking finding with an AC id can hold a supported claim on the same head commit, so
+a person checks it.
 
 ## Steps
 
