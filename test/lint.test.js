@@ -37,12 +37,13 @@ test('a ticket may not invent a number, unit or threshold (live case of 13 Nov: 
 
 test('lint v3: bare counts and HTTP codes from a fixed list are allowed; quantities still need a source', async () => {
   const { lintRequirement, LINT_VERSION } = await import('../src/lint.js');
-  assert.equal(LINT_VERSION, 4);
+  assert.equal(LINT_VERSION, 5);
   const request = ['A tester saw another customer\'s statement by changing the number in the URL.'];
   const draft = (description, statement = 'the API refuses the request') => ({ summary: 'Owner check on statements', description,
     acceptanceCriteria: [{ acId: 'AC1', statement, check: { type: 'manual', args: [] } }] });
   const ungrounded = (d) => lintRequirement(d, request).findings.filter((f) => f.rule === 'ungrounded-number').map((f) => f.message.split(' ')[0]);
-  assert.deepEqual(ungrounded(draft('The API returns 404 for another customer\'s account and logs 2 fields.')), []);
+  // Version 5: a bare count is a number like any other and needs a source.
+  assert.deepEqual(ungrounded(draft('The API returns 404 for another customer\'s account and logs 2 fields.')), ['2']);
   assert.deepEqual(ungrounded(draft('The API returns 418 for another customer\'s account.')), ['418']);
   assert.deepEqual(ungrounded(draft('The page loads within 3 seconds on a 3G network.')), ['3']);
   assert.deepEqual(ungrounded(draft('The service handles 5 requests per second.')), ['5']);
@@ -62,6 +63,36 @@ test('lint: a status code before a unit and a count of an open noun need a sourc
   assert.deepEqual(ungrounded('The account locks after 5 failures.'), ['5']);
   assert.deepEqual(ungrounded('The code has 6 digits.'), ['6']);
   assert.deepEqual(ungrounded('At most 9 users see the page.'), ['9']);
-  // Still allowed: a status code with no unit and a count of a fixed safe noun.
-  assert.deepEqual(ungrounded('The API returns 404 and logs 2 fields.'), []);
+  // Still allowed: a status code with no unit. Version 5: an ungrounded count is flagged.
+  assert.deepEqual(ungrounded('The API returns 404 and logs 2 fields.'), ['2']);
+});
+
+test('lint v5: only a status code used as a status is allowed without a source', () => {
+  const request = ['A tester saw another customer\'s statement by changing the number in the URL. Show 3 tabs.'];
+  const draft = (description) => ({ summary: 'Owner check on statements', description,
+    acceptanceCriteria: [{ acId: 'AC1', statement: 'the API refuses the request', check: { type: 'manual', args: [] } }] });
+  const ungrounded = (d) => lintRequirement(draft(d), request).findings
+    .filter((f) => f.rule === 'ungrounded-number').map((f) => f.message.split(' ')[0]);
+  // Invented thresholds from the re-check of PR 5: each one must be flagged.
+  const invented = {
+    'The API returns 500 milliseconds after a call.': '500',
+    'The customer gets 200 dollars back.': '200',
+    'The customer gets 200 € back.': '200',
+    'The customer gets 400 INR back.': '400',
+    'The API returns 404 items.': '404',
+    'The API returns 500/s.': '500',
+    'The API returns 429 calls.': '429',
+    'Users keep 9 tabs open at most.': '9',
+  };
+  for (const [d, n] of Object.entries(invented)) assert.deepEqual(ungrounded(d), [n], d);
+  // Allowed: a status code with nothing after it, or an error/status word or a clause word.
+  for (const d of [
+    'The API returns 404.',
+    'The API gives a 500 error.',
+    'The API responds with 201 when the user saves.',
+    'The API returns 403 for another customer\'s account.',
+    'The API returns 409, and the page shows the error.',
+    'The API returns HTTP 401 if the token is old.',
+    'Users see 3 tabs.',
+  ]) assert.deepEqual(ungrounded(d), [], d);
 });
