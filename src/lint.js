@@ -22,7 +22,9 @@ const CHECK_TYPES = new Set([
 //   followed only by the end of the clause, punctuation or a word from STATUS_NEXT. A unit, a
 //   currency, a "/" rate or a noun after the code ("500 milliseconds", "200 €", "500/s",
 //   "404 items") makes it a quantity. Bare counts ("9 tabs") need a source too.
-export const LINT_VERSION = 5;
+// 6 (17 Nov): an issue key or AC id is stripped only when it is a known id: in a source, or an AC
+//   id of the draft. "TIMEOUT-30 seconds" and "MAX-5 retries" are quantities.
+export const LINT_VERSION = 6;
 
 const HTTP_CODES = '200|201|202|204|301|302|304|400|401|403|404|405|409|410|422|429|500|502|503|504';
 // Words that may follow a status code. Any other word makes the number a quantity.
@@ -36,12 +38,21 @@ export function numbersIn(text) {
   return (String(text).match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => n.replace(',', '.'));
 }
 
-// Ids are not quantities: issue keys, AC ids, {TOKEN} and test names are removed before numbers
-// are compared with the request.
-export function quantityText(text) {
+const KEY = /\b[A-Z][A-Z0-9]*-\d+\b/g;
+const AC_ID = /\bAC\d+\b/g;
+
+// Ids in the texts: issue keys and AC ids.
+export function idsIn(text) {
+  return [...String(text ?? '').matchAll(KEY), ...String(text ?? '').matchAll(AC_ID)].map((m) => m[0]);
+}
+
+// Ids are not quantities: known issue keys and AC ids, {TOKEN} and test names are removed before
+// numbers are compared with the request. A key-shaped token that is not in `known` stays.
+export function quantityText(text, known = new Set()) {
+  const drop = (id) => (known.has(id) ? ' ' : id);
   return String(text ?? '')
-    .replace(/\b[A-Z][A-Z0-9]*-\d+\b/g, ' ')
-    .replace(/\bAC\d+\b/g, ' ')
+    .replace(KEY, drop)
+    .replace(AC_ID, drop)
     .replace(/\{TOKEN\}/g, ' ')
     .replace(/\btest_\w+/g, ' ')
     // A story point estimate is the PM's own proposal, written as "2 points" (Fibonacci only).
@@ -69,9 +80,11 @@ export function lintRequirement(draft, sources = []) {
   }
   // Every number, unit or threshold must come from the request or the evidence; story points are
   // a separate field and are not checked here.
-  const allowed = new Set(sources.map(quantityText).flatMap(numbersIn));
+  // Known ids: every id in a source, and the AC ids of the draft.
+  const known = new Set([...sources.flatMap(idsIn), ...acs.map((a) => String(a.acId ?? '').trim())]);
+  const allowed = new Set(sources.map((s) => quantityText(s, known)).flatMap(numbersIn));
   const checks = acs.map((a) => (a.check ? (a.check.args ?? []).join(' ') : ''));
-  const all = quantityText([text, ...acs.map((a) => a.statement ?? ''), ...checks].join('\n'));
+  const all = quantityText([text, ...acs.map((a) => a.statement ?? ''), ...checks].join('\n'), known);
   for (const n of new Set(numbersIn(all))) {
     if (!allowed.has(n)) {
       findings.push({ rule: 'ungrounded-number', message: `${n} does not appear in the request or evidence; state an open question instead` });
