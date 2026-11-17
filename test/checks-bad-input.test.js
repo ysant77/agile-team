@@ -34,11 +34,14 @@ function good() {
       base_sha: BASE,
       changed_support: [],
       removed_test_files: [],
+      // Base test ids of the changed test modules, and the base collection run that read them.
+      base_test_ids: ['tests/test_x.py::test_X1_fix', 'tests/test_x.py::test_other'],
+      base_collect: { rc: 0, modules_without_ids: [] },
       base_run: { report: true, rc: 1 },
       tests: [{ id: 'tests/test_x.py::test_X1_fix', base: { outcome: 'failed', exc_type: 'AssertionError' }, head: { outcome: 'passed' } }],
       full_suite: { outcome: 'passed' },
     },
-    coverage: { changed_executable: 10, changed_covered: 9, head_total: 90, base_total: 90, unmeasured_files: [] },
+    coverage: { changed_executable: 10, changed_covered: 9, changed_excluded: 0, head_total: 90, base_total: 90, unmeasured_files: [] },
   };
   return {
     ticket: {
@@ -123,7 +126,9 @@ const ROWS = [
   ['subtasksDone', ['ticket.subtasks', 'ticket.subtasks.0.statusCategory'], { allow: { 'ticket.subtasks': ['empty_array'] } }],
   ['blockedByDone', ['ticket.links', 'ticket.links.0.statusCategory', 'ticket.links.0.type'], { allow: { 'ticket.links': ['empty_array'] } }],
   ['deployed', ['deployRuns', 'deployRuns.0.conclusion', 'deployRuns.0.createdAt']],
-  ['testsNotRemoved', ['report', 'report.tests', 'baseReport', 'baseReport.tests']],
+  // An empty modules_without_ids list means every changed test module gave its base test ids.
+  ['testsNotRemoved', ['report', 'report.tests', 'baseReport', 'baseReport.tests', 'report.repro.base_test_ids', 'report.repro.base_collect',
+    'report.repro.base_collect.rc', 'report.repro.base_collect.modules_without_ids'], { allow: { 'report.repro.base_collect.modules_without_ids': ['empty_array'] } }],
   ['migrationAdditive', ['arg:0', 'report.migrations', 'report.migrations.0.operations']],
   // A repository with no migrations reports an empty list: no two numbers can clash.
   ['uniqueMigrations', ['arg:0', 'arg:0.migrations'], { allow: { 'arg:0.migrations': ['empty_array'] } }],
@@ -141,10 +146,10 @@ const ROWS = [
   ['checkHumanSignoff', ['ticket.signoff', 'ticket.signoff.by', 'ticket.signoff.sha', 'pr.mergeSha']],
   // An empty changed_support list means no pytest support file changed. A Bug with no AC (none
   // stored, or an empty list) uses the tests named for its key.
-  ['reproduced', ['report.repro', 'report.repro.tests', 'report.repro.full_suite', 'report.repro.base_run', 'report.repro.changed_support', 'baseReport', 'ticket.acceptanceCriteria'],
+  ['reproduced', ['report.repro', 'report.repro.tests', 'report.repro.full_suite', 'report.repro.base_run', 'report.repro.changed_support', 'report.repro.base_collect', 'baseReport', 'ticket.acceptanceCriteria'],
     { allow: { 'report.repro.changed_support': ['empty_array'], 'ticket.acceptanceCriteria': ['null', 'empty_array'] } }],
   // An empty unmeasured_files list means every changed file is in the coverage data.
-  ['coverageOk', ['report.coverage', 'report.coverage.changed_executable', 'report.coverage.changed_covered', 'report.coverage.head_total', 'report.coverage.base_total', 'report.coverage.unmeasured_files', 'prFiles', 'prPatches'],
+  ['coverageOk', ['report.coverage', 'report.coverage.changed_executable', 'report.coverage.changed_covered', 'report.coverage.head_total', 'report.coverage.base_total', 'report.coverage.unmeasured_files', 'report.coverage.changed_excluded', 'prFiles', 'prPatches'],
     { allow: { 'report.coverage.unmeasured_files': ['empty_array'] } }],
   ['codeScanning', ['pr.headSha', 'securityRuns', 'securityRuns.0.conclusion', 'config.securityCheck.checkName']],
   ['securityCheck', ['securityRuns', 'pr.headSha']],
@@ -207,3 +212,102 @@ for (const [name, keys, opts = {}] of ROWS) {
     assert.deepEqual(passed, []);
   });
 }
+
+// The base collection record (bank scripts/repro.py, base_collect). A report that lists base
+// test ids must also say how they were read; ids that could not be read are missing evidence.
+test('testsNotRemoved: base test ids without a base_collect record give unknown', () => {
+  const ctx = good();
+  delete ctx.report.repro.base_collect;
+  const r = c.testsNotRemoved(ctx);
+  assert.equal(r.status, 'unknown', r.reason);
+  assert.match(r.reason, /base_collect/);
+});
+
+test('testsNotRemoved: a test module whose base test ids could not be read is named', () => {
+  const ctx = good();
+  ctx.report.repro.base_collect = { rc: 2, modules_without_ids: ['tests/test_y.py', 'tests/test_z.py'] };
+  const r = c.testsNotRemoved(ctx);
+  assert.equal(r.status, 'unknown', r.reason);
+  assert.match(r.reason, /tests\/test_y\.py, tests\/test_z\.py.*base test ids could not be read/);
+});
+
+test('testsNotRemoved: a base collection exit code other than 0, 5 or null gives unknown', () => {
+  for (const rc of [1, 2, 3, 4, -1, '0', 0.5, true]) {
+    const ctx = good();
+    ctx.report.repro.base_collect.rc = rc;
+    const r = c.testsNotRemoved(ctx);
+    assert.equal(r.status, 'unknown', `rc ${JSON.stringify(rc)}: ${r.reason}`);
+  }
+  for (const rc of [0, 5]) {
+    const ctx = good();
+    ctx.report.repro.base_collect.rc = rc;
+    assert.equal(c.testsNotRemoved(ctx).status, 'pass', `rc ${rc}`);
+  }
+});
+
+test('testsNotRemoved: rc null with no base test ids means no changed test module', () => {
+  const ctx = good();
+  ctx.report.repro.base_test_ids = [];
+  ctx.report.repro.base_collect = { rc: null, modules_without_ids: [] };
+  assert.equal(c.testsNotRemoved(ctx).status, 'pass');
+});
+
+test('testsNotRemoved: malformed base test ids or module lists give unknown', () => {
+  const bad = [
+    ['base_test_ids', 'tests/test_x.py::test_other'], ['base_test_ids', [1]], ['base_test_ids', ['']], ['base_test_ids', undefined],
+    ['base_collect', { rc: 0 }], ['base_collect', { modules_without_ids: [] }], ['base_collect', 'ok'],
+    ['base_collect', { rc: 0, modules_without_ids: 'tests/test_y.py' }], ['base_collect', { rc: 0, modules_without_ids: [null] }],
+  ];
+  for (const [field, value] of bad) {
+    const ctx = good();
+    if (value === undefined) delete ctx.report.repro[field];
+    else ctx.report.repro[field] = value;
+    const r = c.testsNotRemoved(ctx);
+    assert.equal(r.status, 'unknown', `${field}=${JSON.stringify(value)}: ${r.reason}`);
+  }
+});
+
+test('testsNotRemoved: a dropped base test is a fail even when the collection record is incomplete', () => {
+  const ctx = good();
+  ctx.report.repro.base_test_ids.push('tests/test_x.py::test_dropped');
+  delete ctx.report.repro.base_collect;
+  const r = c.testsNotRemoved(ctx);
+  assert.equal(r.status, 'fail', r.reason);
+  assert.match(r.reason, /test_dropped/);
+});
+
+test('reproduced and mergedClean carry the base_collect gap', () => {
+  const ctx = good();
+  ctx.report.repro.base_collect.modules_without_ids = ['tests/test_y.py'];
+  assert.equal(c.reproduced(ctx).status, 'unknown');
+  ctx.mergeReport.repro.base_collect.modules_without_ids = ['tests/test_y.py'];
+  assert.equal(c.mergedClean(ctx).status, 'unknown');
+});
+
+// changed_excluded (bank scripts/changed_coverage.py): changed lines that the coverage settings
+// exclude are not in the counts, so the counts can look covered.
+test('coverageOk: changed lines excluded from coverage give unknown, with the count', () => {
+  const ctx = good();
+  ctx.report.coverage.changed_excluded = 3;
+  const r = c.coverageOk(ctx);
+  assert.equal(r.status, 'unknown', r.reason);
+  assert.match(r.reason, /3 changed lines excluded from coverage; a person checks/);
+});
+
+test('coverageOk: a missing or non-integer changed_excluded gives unknown', () => {
+  for (const value of [undefined, 1.5, -1, '0', true]) {
+    const ctx = good();
+    if (value === undefined) delete ctx.report.coverage.changed_excluded;
+    else ctx.report.coverage.changed_excluded = value;
+    const r = c.coverageOk(ctx);
+    assert.equal(r.status, 'unknown', `${JSON.stringify(value)}: ${r.reason}`);
+    assert.match(r.reason, /changed_excluded/);
+  }
+});
+
+test('coverageOk: a changed-line floor fail stays a fail when lines are excluded', () => {
+  const ctx = good();
+  ctx.report.coverage.changed_covered = 2;
+  ctx.report.coverage.changed_excluded = 4;
+  assert.equal(c.coverageOk(ctx).status, 'fail');
+});
