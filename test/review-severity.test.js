@@ -46,6 +46,20 @@ test('a blocking finding that only quotes a changed line is refused', () => {
   assert.equal(guard({ ...quote, severity: 'note' }).outcome, 'review');
 });
 
+test('a blocking finding that is mostly a copied line plus a label is refused', () => {
+  const copied = [
+    'Bad: if self.balance_cents < amount_cents:',
+    'P61:H1 AC1: self.balance_cents -= amount_cents',
+    'Wrong: with self._lock: if self.balance_cents < amount_cents: raise InsufficientFunds(self.id)',
+  ];
+  for (const text of copied) {
+    assert.equal(guard(finding({ severity: 'blocking', ac: 'AC1', text })).guard, 'quoted-line', text);
+  }
+  // A short identifier inside the reviewer's own sentence is not a copied line.
+  const own = finding({ severity: 'blocking', ac: 'AC2', text: 'The lock guards self.balance_cents, but no test runs 20 threads, so AC2 has no evidence.' });
+  assert.equal(guard(own).outcome, 'review', JSON.stringify(guard(own).reasons));
+});
+
 test('a style fallback keeps the severity and the AC of each finding', () => {
   const r = guard(finding({ severity: 'blocking', ac: 'AC2', text: 'The check probably covers one thread only, so AC2 has no evidence.' }));
   const first = reviewGate(r, 0);
