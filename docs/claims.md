@@ -47,6 +47,14 @@ This is fail-open on purpose. No review, a refused review, a review for another 
 failed read of the property changes nothing, and the code checks decide. A model or Jira failure
 must not block every claim.
 
+A malformed stored review (findings missing or not a list, or a finding that is not an object)
+also counts as no review: it never holds a claim and never stops the verdict.
+
+Known limit: the guard refuses a blocking finding that quotes changed code, also in other letter
+case or with extra spaces. It does not check that the text states a real defect, so a bare "Bad."
+passes as a blocking finding. Such a finding can only hold a supported claim for a person to
+check; it can never pass a claim.
+
 ## Lists GitHub serves in pages
 
 The verifier reads at most 500 pull requests, 1,000 comments, 300 workflow runs and 3,000 changed
