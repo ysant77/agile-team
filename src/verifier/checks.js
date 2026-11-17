@@ -808,23 +808,34 @@ function newModuleStory(ctx, row) {
 // existing module (benchmark set 2, S03). All of these must hold (review finding 12):
 // - a changed source module adds a module-level `def <name>(` (no indent, so not a method);
 // - an added line of the test file calls `<module>.<name>(`, where <module> is that module's
-//   import name (bank.ledger) or its last part (ledger);
-// - the base exception text (exc_message) names <name>;
+//   import name (bank.ledger) or its last part (ledger). Comments and string literals are
+//   removed first, so a call written in a comment or a string does not count;
+// - the base exception text (exc_message) names the module object and <name>, as Python writes
+//   it: "module 'bank.ledger' has no attribute '<name>'";
 // - the test passes on head. A Bug keeps the old rule.
+// LIMIT: only the added lines are read. A string opened on an unchanged line is not seen.
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// The code of added Python lines: triple-quoted strings (also over lines), quoted strings and
+// comments removed.
+function pythonCode(lines) {
+  return lines.map((l) => l.slice(1)).join('\n')
+    .replace(/("""|''')[\s\S]*?(?:\1|$)/g, '""')
+    .split('\n')
+    .map((l) => l.replace(/(["'])(?:\\.|(?!\1)[^\\])*\1/g, '""').replace(/#.*$/, ''));
+}
 function newFunctionStory(ctx, row) {
   if (ctx.ticket?.type !== 'Story' || row.head?.outcome !== 'passed' || row.base?.exc_type !== 'AttributeError') return false;
   const message = row.base.exc_message;
   if (typeof message !== 'string' || !message) return false;
   const added = (file) => String(ctx.prPatches?.[file] ?? '').split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++'));
   const sources = Object.keys(ctx.prPatches ?? {}).filter((f) => f.endsWith('.py') && !/(^|\/)tests?\//.test(f) && !/(^|\/)test_[^/]*\.py$/.test(f));
-  const testLines = added(row.id.split('::')[0]);
+  const testLines = pythonCode(added(row.id.split('::')[0]));
   return sources.some((f) => {
     const module = f.replace(/^src\//, '').replace(/\.py$/, '').replace(/\/__init__$/, '').replaceAll('/', '.');
     const prefixes = [...new Set([module, module.split('.').pop()])].map(escapeRe).join('|');
     return added(f).some((l) => {
       const name = /^\+def\s+([A-Za-z_]\w*)\s*\(/.exec(l)?.[1];
-      if (!name || !new RegExp(`\\b${name}\\b`).test(message)) return false;
+      if (!name || !new RegExp(`(^|\\s|:)module '${escapeRe(module)}' has no attribute '${name}'`).test(message)) return false;
       const call = new RegExp(`(?<![\\w.])(?:${prefixes})\\.${name}\\s*\\(`);
       return testLines.some((t) => call.test(t));
     });
