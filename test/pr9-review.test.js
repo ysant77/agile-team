@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { collectGithub, collectPrStats } from '../src/github-evidence.js';
 import * as checks from '../src/verifier/checks.js';
+import { verify } from '../src/verifier/verdict.js';
 import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
 import { withReader } from './helpers/reader.js';
@@ -181,4 +182,60 @@ test('item 3: the GitHub reader always gives page flags and PR candidates', asyn
   const gh = await collectGithub({ repo: 'o/r', key: 'BANK-9', fetchFn });
   assert.deepEqual(gh.truncated, { pulls: false, comments: false, runs: false, files: false, checks: false });
   assert.deepEqual(gh.prCandidates, []);
+});
+
+// ---- Item 5: a done claim with a linked PR needs that PR merged ----
+// Rule: "done" means on main. A done claim whose ticket has a linked PR needs that PR merged,
+// whatever its AC types. deployed is code work (a deploy ships merged code); field_equals,
+// evidence_linked and link_exists read Jira or the incident timeline, not code, so a ticket with
+// only those and no linked PR has no code gate.
+
+const S59 = JSON.parse(readFileSync(new URL('../fixtures/S59.json', import.meta.url), 'utf8'));
+const DEFAULTS = JSON.parse(readFileSync(new URL('../fixtures/_defaults.json', import.meta.url), 'utf8'));
+function doneCtx(type, args, { open = false } = {}) {
+  const ctx = { ...DEFAULTS, ...structuredClone(S59.steps[0].context) };
+  ctx.report.workflow_files = DEFAULTS.baseWorkflowFiles;
+  ctx.mergeReport.workflow_files = DEFAULTS.baseWorkflowFiles;
+  ctx.reportComment = { createdAt: ctx.workflowRuns[0].createdAt, updatedAt: ctx.workflowRuns[0].createdAt };
+  ctx.ticket = { key: 'BANK-4', type: 'Story', subtasks: [], links: [{ type: 'relates to', key: 'BANK-5', statusCategory: 'done' }],
+    fields: { customfield_1: 'yes' }, acceptanceCriteria: [{ acId: 'AC1', check: { type, args } }] };
+  ctx.timeline = [{ link: 'https://example.test/1' }];
+  ctx.deployRuns = [{ tag: 'v1', conclusion: 'success', createdAt: '2026-11-16T11:00:00Z' }];
+  if (open) {
+    ctx.pr = { ...ctx.pr, state: 'open', merged: false, mergeSha: null };
+    ctx.mergeSha = null;
+  }
+  return withReader(ctx);
+}
+const NON_CODE = [['field_equals', ['customfield_1', 'yes']], ['evidence_linked', []], ['link_exists', ['relates to']]];
+
+test('item 5: deployed is code work', () => {
+  assert.equal(checks.hasCodeWork(doneCtx('deployed', ['v1'])), true);
+  for (const [type, args] of NON_CODE) assert.equal(checks.hasCodeWork({ ticket: { type: 'Story', acceptanceCriteria: [{ acId: 'AC1', check: { type, args } }] } }), false, type);
+});
+
+test('item 5: a done claim with only a deployed, field_equals, evidence_linked or link_exists AC and an open PR is not supported', () => {
+  for (const [type, args] of [['deployed', ['v1']], ...NON_CODE]) {
+    const v = verify({ id: 'd', type: 'done' }, doneCtx(type, args, { open: true }));
+    assert.notEqual(v.result, 'supported', `${type}: ${v.reason}`);
+    assert.equal(v.checks.find((k) => k.name === 'on_main')?.status, 'fail', type);
+  }
+});
+
+test('item 5: the same done claims are supported once the PR is merged', () => {
+  for (const [type, args] of NON_CODE) {
+    const v = verify({ id: 'd', type: 'done' }, doneCtx(type, args));
+    assert.equal(v.result, 'supported', `${type}: ${v.reason}`);
+    assert.equal(v.checks.find((k) => k.name === 'on_main')?.status, 'pass', type);
+  }
+});
+
+test('item 5: a ticket with only non-code ACs and no linked PR has no PR gate', () => {
+  for (const [type, args] of NON_CODE) {
+    const ctx = doneCtx(type, args);
+    ctx.pr = null;
+    ctx.prCandidates = [];
+    const v = verify({ id: 'd', type: 'done' }, ctx);
+    assert.equal(v.checks.some((k) => k.name === 'on_main'), false, type);
+  }
 });
