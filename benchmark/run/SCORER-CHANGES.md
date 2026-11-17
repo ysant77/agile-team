@@ -40,3 +40,4 @@ first branch only, change 1). No case was re-run.
 | 12 | `summarize.py`: strict count (outcome right and the truth `reason` pattern matches the reason). | No | Reporting. For sets 1 and 2 the strict row equals the outcome row (no reason patterns). |
 | 13 | `run_ci.py --coverage-script` and `run_all.py --coverage-script`: copy the bank's fixed coverage script into the case tree. | No | Runner support for the frozen bank fix ba90b0f. |
 | 14 | `arm_d.mjs --rule blocking` and several `--manifest` options. The default rule stays `any-finding` (the set 2 protocol). | No | D harness for code-review/2. |
+| 15 | Regression reading 2 (17 Nov 2026): copies of the recorded evidence get `"unmeasured_files": []` in each coverage block that has no such field. The recorded evidence and every result file stay unchanged. | Yes (development sets only) | The evidence was built before the bank wrote the field; reading 1 shows the rule as it acts on that old evidence. |
