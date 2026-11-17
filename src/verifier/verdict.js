@@ -113,6 +113,9 @@ export const CLAIM_CHECKS = {
     // with no AC test (only metric, CI or path ACs) has nothing to reproduce either.
     const reproduce = c.needsRepro(ctx) ? [c.reproduced(ctx)] : [];
     if (c.hasCodeWork(ctx)) checks.push(c.onMain(ctx), c.mergedClean(ctx), ...reproduce, c.coverageOk(ctx), ...c.securityCheck(ctx, 'done'));
+    // Rule (PR 9 review, item 5): a done claim with a linked PR needs that PR merged, whatever
+    // the AC types. Only a ticket with no code AC and no linked PR has no PR gate.
+    else if (ctx.pr || ctx.forkPrs?.length) checks.push(c.onMain(ctx));
     const replaced = c.acTestsRunNewCode(ctx);
     if (replaced) checks.push(replaced);
     const attempts = c.ciAttempts(ctx);

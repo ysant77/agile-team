@@ -73,6 +73,15 @@ workflow file on the same head only when all of these hold:
 If the evidence cannot show this, the result is `unknown`. A cancelled earlier attempt of the
 successful run's own run id, followed by a re-run, also gives `unknown`: a person checks.
 
+## Done means on main
+
+A `done` claim with a linked pull request needs that pull request merged (`on_main`), whatever
+its acceptance criteria. A ticket with code work (a Bug, or an AC of a code type: test, metric,
+version, migration, repair, recon, CI, path or `deployed`) also needs the merge result, the
+reproduction, coverage and the security check. Only a ticket with no code AC and no linked pull
+request (for example a parent of sub-tasks, or a ticket with only `field_equals`, `link_exists`
+or `evidence_linked` ACs) has no pull request gate.
+
 ## Run the tests
 
 You need Node.js 24 (the Forge runtime is `nodejs24.x`).

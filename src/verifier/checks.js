@@ -628,10 +628,12 @@ const resolveName = (ctx, name) => {
 // malformed (null).
 const acsOf = (ctx) => (ctx.ticket?.acceptanceCriteria == null ? [] : isObjList(ctx.ticket.acceptanceCriteria) ? ctx.ticket.acceptanceCriteria : null);
 
-// AC types whose evidence comes from CI or the PR head. An AC of one of these types is code
-// work: "done" needs the PR merged (PR 8 review, item 7).
+// AC types whose evidence comes from CI, the PR head or a deploy. An AC of one of these types is
+// code work: "done" needs the PR merged and the code gates (PR 8 review, item 7). A deploy ships
+// merged code, so deployed is code work (PR 9 review, item 5). field_equals, link_exists and
+// evidence_linked read Jira or the incident timeline, not code.
 export const CODE_AC_TYPES = ['test_passes', 'metric_at_least', 'metric_at_most', 'version_at_least', 'migration_additive',
-  'repair_balanced', 'recon_proof', 'ci_green', 'path_absent'];
+  'repair_balanced', 'recon_proof', 'ci_green', 'path_absent', 'deployed'];
 
 // A ticket has code work when an AC needs CI evidence, or it is a Bug. A spike or a parent ticket
 // with only sub-task, link or manual checks has no code gate.
