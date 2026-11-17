@@ -130,8 +130,8 @@ runs gave the same result.
 
 **Named cases:**
 
-- **T08: held, with its real text shown.** All three runs: style lint passes, and the shown
-  findings and the hold reason are "Code does not handle kind=debit case for filtering lines."
+- **T08: held, with its real text shown.** All three runs: style lint passes, and both the shown
+  findings and the blocking findings that decide the hold are "Code does not handle kind=debit case for filtering lines."
   and "Test only checks kind=credit, missing kind=debit case." (AC1). At d175960 the hold was
   shown as template text.
 - **S09:** still missed (an accepted review with no blocking finding in all three runs).
