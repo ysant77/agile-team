@@ -86,7 +86,9 @@ its acceptance criteria. A ticket with code work (a Bug, or an AC of a code type
 version, migration, repair, recon, CI, path or `deployed`) also needs the merge result, the
 reproduction, coverage and the security check. Only a ticket with no code AC and no linked pull
 request (for example a parent of sub-tasks, or a ticket with only `field_equals`, `link_exists`
-or `evidence_linked` ACs) has no pull request gate.
+or `evidence_linked` ACs) has no pull request gate. "No linked pull request" needs the pull
+request list read to the end: when it was cut at the page limit, or has no page flag, the claim
+gives `cannot_verify`.
 
 ## Run the tests
 

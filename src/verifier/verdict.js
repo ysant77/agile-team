@@ -149,6 +149,11 @@ export const CLAIM_CHECKS = {
     // Rule (PR 9 review, item 5): a done claim with a linked PR needs that PR merged, whatever
     // the AC types. Only a ticket with no code AC and no linked PR has no PR gate.
     else if (ctx.pr || ctx.forkPrs?.length) checks.push(safe('on_main', c.onMain, ctx));
+    // No PR found is "no PR gate" only when the pull request list was read to the end (final
+    // review, item 4). A PR that names the key can be on a page that was not read.
+    else if (!(isObj(ctx.truncated) && ctx.truncated.pulls === false)) {
+      checks.push(unknown('on_main', `no pull request in the latest ones names ${ctx.ticket?.key}; the pull request list is not complete (page limit, or no page flag), so a linked PR may be missed`));
+    }
     const replaced = safe('ac_tests_run_new_code', c.acTestsRunNewCode, ctx);
     if (replaced) checks.push(replaced);
     const attempts = safe('ci_attempts', c.ciAttempts, ctx);
