@@ -120,14 +120,19 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
       runStartedAt: r.run_started_at,
       url: r.html_url,
     }));
-    // GitHub lists only the latest attempt of a run. For a re-run, read the job steps of each
-    // earlier attempt, so a failed attempt stays visible (benchmark B05).
-    // At most MAX_ATTEMPTS earlier attempts are read; the rest are counted in earlierUnread.
+    // GitHub lists only the latest attempt of a run. For a re-run, read the conclusion and the
+    // job steps of each earlier attempt, so a failed or cancelled attempt stays visible
+    // (benchmark B05). At most MAX_ATTEMPTS earlier attempts are read; the rest are counted in
+    // earlierUnread. A list that could not be read is null (not known).
     const MAX_ATTEMPTS = 5;
     for (const run of workflowRuns) {
       run.earlierFailures = [];
+      run.earlierConclusions = [];
       run.earlierUnread = Math.max(0, (run.attempt ?? 1) - 1 - MAX_ATTEMPTS);
       for (let n = 1; n < (run.attempt ?? 1) && n <= MAX_ATTEMPTS; n += 1) {
+        const attempt = await get(`/repos/${repo}/actions/runs/${run.id}/attempts/${n}`);
+        if (!attempt) run.earlierConclusions = null;
+        else run.earlierConclusions?.push({ attempt: n, conclusion: attempt.conclusion ?? null });
         const jobs = await get(`/repos/${repo}/actions/runs/${run.id}/attempts/${n}/jobs`);
         if (!jobs) {
           run.earlierFailures = null; // not known

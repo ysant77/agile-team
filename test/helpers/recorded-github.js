@@ -9,6 +9,8 @@ export function fetchFrom(d) {
   const routes = [
     [/\/pulls\?/, (u) => (page(u) === 1 ? d.pulls : [])],
     [/\/actions\/runs\/\d+\/attempts\/(\d+)\/jobs/, (u) => d.attempts?.[/attempts\/(\d+)/.exec(u)[1]] ?? 404],
+    // The run record of an earlier attempt (its conclusion); fixtures/bench "attemptRuns".
+    [/\/actions\/runs\/\d+\/attempts\/(\d+)(\?|$)/, (u) => d.attemptRuns?.[/attempts\/(\d+)/.exec(u)[1]] ?? 404],
     [/\/actions\/runs\?head_sha=/, (u) => (d.runs404 ? 404 : { workflow_runs: page(u) === 1 ? d.runs : [] })],
     [/\/issues\/\d+\/comments/, (u) => (page(u) === 1 && d.comment ? [{ user: BOT, ...d.comment,
       body: `<!-- aat-ci-report -->\n\`\`\`json\n${JSON.stringify(d.report)}\n\`\`\`` }] : [])],

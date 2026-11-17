@@ -146,6 +146,29 @@ export function prLinked(ctx) {
 // Conclusions that mean the run gave no result. Every other conclusion except success is a fail.
 const NO_RESULT = ['cancelled', 'stale', 'skipped'];
 
+// The earlier attempts of a re-run (github-evidence.js, earlierConclusions). Failure is left to
+// ci_attempts, which reads the failed step. Any other result except success means the attempt
+// gave no result, for example a cancelled attempt that was then re-run. Returns a reason when the
+// earlier attempts are not known to be clean, else null.
+const ATTEMPT_OK = ['success', 'failure'];
+function earlierAttemptsGap(run) {
+  const attempt = run.attempt ?? 1;
+  if (!(Number.isInteger(attempt) && attempt >= 1)) return 'a CI run has no valid attempt number';
+  if (attempt === 1) return null;
+  const name = `run ${run.id ?? '(no id)'}`;
+  const list = run.earlierConclusions;
+  // Attempts past the read limit are reported by ci_attempts (earlierUnread).
+  const unread = Number.isInteger(run.earlierUnread) && run.earlierUnread > 0 ? run.earlierUnread : 0;
+  const read = Math.max(0, attempt - 1 - unread);
+  const known = isList(list) && list.every((a) => isObj(a) && Number.isInteger(a.attempt))
+    && Array.from({ length: read }, (_, i) => i + 1).every((n) => list.some((a) => a.attempt === n));
+  if (!known) return `the conclusions of the earlier attempts of ${name} could not be read`;
+  const bad = list.filter((a) => !ATTEMPT_OK.includes(a.conclusion));
+  return bad.length
+    ? bad.map((a) => `attempt ${a.attempt} of ${name} concluded ${a.conclusion ?? 'with no result'} and a re-run followed: a person checks`).join('; ')
+    : null;
+}
+
 export function ciGreen(ctx) {
   const required = ctx.config?.requiredWorkflowPaths === undefined ? DEFAULT_WORKFLOW_PATHS : ctx.config.requiredWorkflowPaths;
   const head = ctx.pr?.headSha;
@@ -164,6 +187,13 @@ export function ciGreen(ctx) {
     const all = ctx.workflowRuns.filter((r) => runPath(r) === path && r.headSha === head);
     const failed = all.find((r) => r.status === 'completed' && r.conclusion !== 'success' && !NO_RESULT.includes(r.conclusion));
     if (failed) return result('ci_green', 'fail', `${path} concluded ${failed.conclusion} on ${head.slice(0, 7)}`);
+    // GitHub lists only the latest attempt of each run id: an earlier attempt can be cancelled.
+    const attemptGaps = all.map(earlierAttemptsGap).filter(Boolean);
+    if (attemptGaps.length) {
+      unknown = true;
+      reasons.push(`${path}: ${attemptGaps.join('; ')}`);
+      continue;
+    }
     // A cancelled or stale run gave no result (benchmark set 2, S17): it is missing evidence, not
     // evidence against the claim. A later completed run of the workflow on the head decides.
     const runs = all.filter((r) => !(r.status === 'completed' && NO_RESULT.includes(r.conclusion)));
@@ -666,6 +696,8 @@ export function ciAttempts(ctx) {
   if (runs.some((r) => !isList(r.earlierFailures))) return result('ci_attempts', 'unknown', 'an earlier attempt of the CI run could not be read');
   const unread = runs.find((r) => r.earlierUnread > 0);
   if (unread) return result('ci_attempts', 'unknown', `${unread.earlierUnread} earlier attempt(s) of the CI run were not read (read limit): a person checks for a flaky test`);
+  const gaps = runs.map(earlierAttemptsGap).filter(Boolean);
+  if (gaps.length) return result('ci_attempts', 'unknown', gaps.join('; '));
   const flaky = runs.flatMap((r) => r.earlierFailures ?? []).filter((f) => TEST_STEP.test(f.step));
   return flaky.length
     ? result('ci_attempts', 'unknown', flaky.map((f) => `attempt ${f.attempt} failed in step "${f.step}" and a re-run passed with no code change: a person checks for a flaky test`).join('; '))
