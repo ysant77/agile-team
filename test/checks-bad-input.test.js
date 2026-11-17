@@ -365,3 +365,33 @@ test('coverageOk: a changed-line floor fail stays a fail when lines are excluded
   ctx.report.coverage.changed_excluded = 4;
   assert.equal(c.coverageOk(ctx).status, 'fail');
 });
+
+// PR 9 review, item 4: the changed-line counts are whole numbers of lines, at least 0, and no
+// more lines are covered than exist.
+test('coverageOk: a negative, fractional or impossible changed-line count gives unknown', () => {
+  const bad = [
+    { changed_executable: -1 }, { changed_executable: -1, changed_covered: -1 }, { changed_executable: 10.5 },
+    { changed_covered: -1 }, { changed_covered: 8.5 }, { changed_covered: 11 },
+  ];
+  for (const counts of bad) {
+    const ctx = good();
+    Object.assign(ctx.report.coverage, counts);
+    const r = c.coverageOk(ctx);
+    assert.equal(r.status, 'unknown', `${JSON.stringify(counts)}: ${r.reason}`);
+  }
+});
+
+// PR 9 review, item 5: coverage totals are percentages, finite and in [0, 100].
+test('coverageOk: a total coverage outside 0 to 100 gives unknown', () => {
+  for (const [field, value] of [['head_total', 1e999], ['head_total', 101], ['head_total', -1], ['base_total', 150], ['base_total', -0.5], ['head_total', '90']]) {
+    const ctx = good();
+    ctx.report.coverage[field] = value;
+    const r = c.coverageOk(ctx);
+    assert.equal(r.status, 'unknown', `${field}=${value}: ${r.reason}`);
+  }
+  for (const [head, base] of [[0, 0], [100, 100]]) {
+    const ctx = good();
+    Object.assign(ctx.report.coverage, { head_total: head, base_total: base });
+    assert.equal(c.coverageOk(ctx).status, 'pass', `${head}/${base}`);
+  }
+});
