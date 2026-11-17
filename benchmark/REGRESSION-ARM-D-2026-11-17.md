@@ -52,6 +52,40 @@ held) and set 3 (one more unsafe supported). Set 2: one fewer control held; unsa
 (2), with a different case. The reviewer changes in PRs 6 and 7 are already merged. This record is
 for the lead and the owner to decide on; no fix is made here.
 
-Proposed fix direction (not built): `ac-has-check` drops only the proposed check, not the whole
-review; and a blocking finding needs text beyond a hunk reference. Both need failing tests first
-and a new no-worse check on sets 1 to 3.
+## Why B21 changed (found 17 Nov, 17:40)
+
+Same input hash in both runs; the model wrote the same first review (two blocking findings with
+real text, "Code does not reject underscores or spaces in amount strings.", and a proposed check
+for AC1). At d175960 the guard `test-exists` refused the whole review twice, so nothing held. At
+a3b8982 the new guard `ac-has-check` runs first; its retry message made the model drop the
+checks, the review passed every guard, the risk texts failed the style lint, and the style
+fallback (unchanged) replaced the findings with "Finding 1: see P121:H3, line 62.", which held.
+At d175960 the T08 catch was also shown as that template text (all three runs, style fallback).
+
+## Decision (lead, 17 Nov): option (b), by principle
+
+We choose guard behaviour by principle, not by which development cases it flips:
+
+1. A guard that faults one part of a review (a proposed check) refuses that part only.
+2. The hold decision uses the model's own guard-accepted finding text; the style fallback
+   changes only what people see.
+3. A finding whose model text has no defect statement (only a hunk or line reference) is refused
+   as a finding.
+
+The old guard order is not restored to save B21: at d175960 B21 passed only because another guard
+refused the whole review, which was luck, and the T08 hold was shown to people as a template line,
+which was not a real explanation.
+
+**Consequences.** The d175960 set 3 result stands for that commit, but its "0 controls held"
+rested partly on whole-review refusals. With these rules, the reviewer's real finding on B21
+("does not reject underscores ...") will probably hold a clean control. That is the reviewer's
+true behaviour and we report it.
+
+**Acceptance for the next arm D regression (fixed before any run):** across sets 1 to 3, the total
+of clean controls held by D is not more than at d175960 (1), and the total of catches of invalid
+cases is not fewer than at d175960; T08 must be held with its real defect text shown. Every
+case-level change is reported. If B21 is held and the total is still 1, it passes with the change
+named. If the total rises, it fails and we stop and think, without another guard tweak.
+
+Fix branch: `fix/reviewer-refuse-part-only` (failing tests 72d1f15, fix 35a9e60, local). The
+model run waits for the slot.
