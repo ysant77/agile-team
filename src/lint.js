@@ -17,18 +17,20 @@ const CHECK_TYPES = new Set([
 //   returns, gets or responds with. "3 s on 3G" still fails.
 // 4 (17 Nov): a status code before a unit ("returns 500 ms", "gets 200 EUR") is a quantity, and a
 //   bare count is allowed only before a noun from SAFE_NOUNS ("5 failures" and "9 users" fail).
-export const LINT_VERSION = 4;
+// 5 (17 Nov): allowlist, not blocklist. A number needs a source unless it is a standard HTTP status
+//   code used as a status: after HTTP, status, code, returns, gets, gives or responds with, and
+//   followed only by the end of the clause, punctuation or a word from STATUS_NEXT. A unit, a
+//   currency, a "/" rate or a noun after the code ("500 milliseconds", "200 €", "500/s",
+//   "404 items") makes it a quantity. Bare counts ("9 tabs") need a source too.
+export const LINT_VERSION = 5;
 
 const HTTP_CODES = '200|201|202|204|301|302|304|400|401|403|404|405|409|410|422|429|500|502|503|504';
-// Units, limits and money: a number before one of these is a quantity, never a status code.
-const UNIT_WORDS = 'ms|s|sec|secs|seconds?|minutes?|mins?|hours?|hrs?|h|days?|weeks?|months?|years?|kb|mb|gb|tb|bytes?|percent|pct|eur|usd|sgd|jpy|gbp|cents?|requests?|rps|tps|times|x|g';
-// A code followed by a unit, "%" or a decimal part is not a status code.
+// Words that may follow a status code. Any other word makes the number a quantity.
+// "and" or "or" may join two status codes, but never a quantity ("200 or more credits").
+const STATUS_NEXT = 'errors?|status|responses?|code|when|if|for|(?:and|or)(?!\\s+(?:more|less|fewer|above|below|over|under|greater|higher|lower|up|at)\\b)';
 const HTTP_CONTEXT = new RegExp(
-  `\\b(HTTP|status(?: code)?|code|returns?|gets?|responds? with)\\s+(${HTTP_CODES})\\b(?![.,]\\d|\\s*(?:%|(?:${UNIT_WORDS})\\b))`, 'gi');
-// Nouns whose count only enumerates parts of the draft. Limits and thresholds ("5 failures",
-// "6 digits", "9 users") are not on the list, so they need a source.
-const SAFE_NOUNS = 'fields|columns|buttons|tabs|sections|options|links|labels|icons';
-const BARE_COUNT = new RegExp(`\\b([1-9])\\s+(${SAFE_NOUNS})\\b`, 'gi');
+  `\\b(HTTP|status(?: code)?|code|returns?|gets?|gives?|responds? with)\\s+((?:an?|the)\\s+)?(?:HTTP\\s+)?(${HTTP_CODES})\\b`
+  + `(?=[ \\t]*(?:[.,;:!?)](?![\\d/])|\\r?\\n|$)|\\s+(?:${STATUS_NEXT})\\b)`, 'gi');
 
 export function numbersIn(text) {
   return (String(text).match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => n.replace(',', '.'));
@@ -44,9 +46,8 @@ export function quantityText(text) {
     .replace(/\btest_\w+/g, ' ')
     // A story point estimate is the PM's own proposal, written as "2 points" (Fibonacci only).
     .replace(/\b(1|2|3|5|8|13)[ -]points?\b/g, ' ')
-    // Version 3: standard HTTP status codes in context, and bare enumerating counts.
-    .replace(HTTP_CONTEXT, '$1 ')
-    .replace(BARE_COUNT, ' $2');
+    // Standard HTTP status codes used as a status (version 5 rules).
+    .replace(HTTP_CONTEXT, '$1 $2');
 }
 
 // draft: { summary, description, acceptanceCriteria: [{ acId, statement, check }] }
