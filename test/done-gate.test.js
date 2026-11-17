@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import { buildDoneEvidence, formatEvidence } from '../src/verifier/evidence.js';
 import { verify } from '../src/verifier/verdict.js';
 import { verifyClaim } from '../src/verify-claim.js';
+import { withReader } from './helpers/reader.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../fixtures/S59.json', import.meta.url), 'utf8'));
 const defaults = JSON.parse(readFileSync(new URL('../fixtures/_defaults.json', import.meta.url), 'utf8'));
@@ -16,7 +17,7 @@ const ctxOf = (i) => {
   c.report.workflow_files = defaults.baseWorkflowFiles;
   c.mergeReport.workflow_files = defaults.baseWorkflowFiles;
   c.reportComment = { createdAt: run.createdAt, updatedAt: run.createdAt };
-  return c;
+  return withReader(c);
 };
 
 test('the evidence record holds every part that DESIGN 15d lists, and no model text', () => {
@@ -43,7 +44,7 @@ test('the evidence record holds every part that DESIGN 15d lists, and no model t
 });
 
 test('a ticket with no code AC gets a record without code parts', () => {
-  const ctx = { ticket: { key: 'BANK-65', type: 'Story', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'subtasks_done', args: [] } }], subtasks: [] } };
+  const ctx = withReader({ ticket: { key: 'BANK-65', type: 'Story', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'subtasks_done', args: [] } }], subtasks: [] } });
   const verdict = verify({ id: 'p', type: 'done' }, ctx);
   assert.equal(verdict.result, 'supported', verdict.reason);
   const e = buildDoneEvidence({ id: 'p', type: 'done' }, ctx, verdict.checks);

@@ -7,9 +7,11 @@ import { metricCompare } from '../src/verifier/checks.js';
 import { verify } from '../src/verifier/verdict.js';
 import { buildSide } from '../src/case.js';
 import { arbitrate } from '../src/arbitration.js';
+import { withReader } from './helpers/reader.js';
 
 const sha = 'c'.repeat(40);
-const ctx = (metrics, config = {}) => ({
+// The reader fields that PR 9 requires (page flags, sub-task and link lists).
+const ctx = (metrics, config = {}) => withReader({
   ticket: { key: 'BANK-17', type: 'Story', acceptanceCriteria: [] },
   pr: { number: 9, title: 'BANK-17: x', state: 'open', headSha: sha },
   report: { schema: 'aat-ci-report/1', head_sha: sha, tests: [], metrics, workflow_files: { '.github/workflows/ci.yml': 'base' } },

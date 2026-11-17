@@ -2,10 +2,30 @@
 // No model is involved. Unknown means "cannot verify": a human or more evidence is needed.
 
 import { canonical, sha256 } from '../audit.js';
-import { namesKey, sameFiles, testName, testsByName } from './report.js';
+import { finiteNumber, namesKey, sameFiles, testName, testsByName } from './report.js';
 
 const BOT = 'github-actions[bot]';
 const result = (name, status, reason) => ({ name, status, reason });
+
+// Input guards (README, "No check passes by default"): a missing, empty, non-finite or malformed
+// input gives unknown, never pass.
+const isList = Array.isArray;
+const isText = (v) => typeof v === 'string' && v.length > 0;
+// Every numeric read of evidence goes through finiteNumber (report.js).
+const isNum = (v) => finiteNumber(v) !== null;
+const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+// A time in ms, or null when it is missing or does not parse.
+const timeOf = (v) => (typeof v === 'string' ? finiteNumber(Date.parse(v)) : null);
+// An optional list: undefined means none; any other value that is not an array is malformed (null).
+const optList = (v) => (v === undefined ? [] : isList(v) ? v : null);
+// Lists whose elements must all be objects, or all non-empty strings (a null element is malformed).
+const isObjList = (v) => isList(v) && v.every(isObj);
+const isTextList = (v) => isList(v) && v.every(isText);
+// A page flag from the reader (truncated.<list>). Only false means the list is complete; a missing
+// or malformed flag is not known.
+const complete = (ctx, list) => isObj(ctx.truncated) && ctx.truncated[list] === false;
+// reportTrusted with this head does not compare the report head (testPasses on another report).
+const ANY_HEAD = Symbol('any head');
 
 function issueToken(key) {
   return String(key).replace('-', ''); // BANK-4 -> BANK4, used in test names
@@ -27,6 +47,8 @@ const matchesPath = (file, paths) => paths.some((g) => {
 
 export function pipelineChange(ctx) {
   if (!Array.isArray(ctx.prFiles)) return 'pull request file list not available';
+  // A pull request changes at least one file; an empty list was not read correctly.
+  if (!ctx.prFiles.length || !ctx.prFiles.every(isText)) return 'pull request file list is empty or malformed';
   const paths = ctx.config?.reportTrustPaths ?? DEFAULT_TRUST_PATHS;
   const touched = ctx.prFiles.filter((f) => matchesPath(f, paths));
   return touched.length ? `PR changes ${touched.join(', ')}, which can change how CI runs or reports` : null;
@@ -42,37 +64,40 @@ const HEURISTIC = 'report comment time-window heuristic';
 function commentEditedLater(ctx) {
   const c = ctx.reportComment;
   if (!c?.updatedAt) return `${HEURISTIC}: comment times not available`;
+  if (!isObjList(ctx.workflowRuns)) return `${HEURISTIC}: workflow runs not read, or the list is malformed`;
   const paths = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
-  const runs = (ctx.workflowRuns ?? []).filter((r) => paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha);
+  const runs = ctx.workflowRuns.filter((r) => isList(paths) && paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha);
   if (runs.length === 0) return `${HEURISTIC}: no pinned CI run on the head, so the comment has no source`;
-  const edited = Date.parse(c.updatedAt);
-  const inside = runs.some((r) => {
-    const start = Date.parse(r.runStartedAt ?? r.createdAt);
-    const end = Date.parse(r.updatedAt ?? r.createdAt) + EDIT_SLACK_MS;
-    return edited >= start && edited <= end;
+  const edited = timeOf(c.updatedAt);
+  const inside = edited !== null && runs.some((r) => {
+    const start = timeOf(r.runStartedAt ?? r.createdAt);
+    const end = timeOf(r.updatedAt ?? r.createdAt);
+    return start !== null && end !== null && edited >= start && edited <= end + EDIT_SLACK_MS;
   });
   return inside ? null : `${HEURISTIC}: the comment was last edited outside the pinned CI run`;
 }
 
 // Guard: a report counts only if the bot wrote it, for the PR head, with unchanged workflows.
 export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSha) {
-  if (!report) return result('report_trusted', 'unknown', 'no CI report');
+  if (!isObj(report)) return result('report_trusted', 'unknown', 'no CI report');
   // The author comes from the comment that carried the report; a field in the report body is
   // written by the code under test and proves nothing.
   if (ctx.reportAuthor !== BOT) {
     return result('report_trusted', 'unknown', `report not posted by ${BOT}`);
   }
-  if (headSha && report.head_sha !== headSha) {
-    return result('report_trusted', 'unknown', 'report is for an older commit, not the head');
+  if (headSha !== ANY_HEAD) {
+    if (!isText(headSha)) return result('report_trusted', 'unknown', 'no head commit to match the report with');
+    if (report.head_sha !== headSha) return result('report_trusted', 'unknown', 'report is for an older commit, not the head');
   }
   // Without the base fingerprint (ci-reports/main.json) a changed workflow cannot be seen.
-  if (!ctx.baseWorkflowFiles) return result('report_trusted', 'unknown', 'no base workflow fingerprint (ci-reports/main.json)');
+  if (!isObj(ctx.baseWorkflowFiles) || !Object.keys(ctx.baseWorkflowFiles).length) return result('report_trusted', 'unknown', 'no base workflow fingerprint (ci-reports/main.json)');
+  if (!isObj(report.workflow_files)) return result('report_trusted', 'unknown', 'the report has no workflow fingerprint');
   if (!sameFiles(ctx.baseWorkflowFiles, report.workflow_files)) {
     return result('report_trusted', 'unknown', 'workflow changed in this PR');
   }
   if (report === ctx.report) {
     // The latest bot report can be on a comment page that was not read.
-    if (ctx.truncated?.comments) return result('report_trusted', 'unknown', 'PR comment list is not complete (page limit), so the latest report is not known');
+    if (!complete(ctx, 'comments')) return result('report_trusted', 'unknown', 'PR comment list is not complete (page limit) or has no page flag, so the latest report is not known');
     // The fingerprint is written by the workflow under test, so the verifier also reads the PR's
     // own file list.
     const change = pipelineChange(ctx);
@@ -83,21 +108,38 @@ export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSh
   return result('report_trusted', 'pass', 'bot report for the head commit');
 }
 
-const forkReason = (ctx) => `PR ${ctx.forkPrs.map((n) => `#${n}`).join(', ')} names ${ctx.ticket.key} but comes from a fork: CI does not post its report for forks, so a person checks, or the work moves to a branch of this repository`;
+// The open or merged PRs that name the key. The collector always gives the list of PR numbers,
+// with the chosen PR in it. A missing, empty or malformed list is not known (PR 9 review, item 3).
+function candidatesGap(ctx) {
+  const list = ctx.prCandidates;
+  if (!isList(list) || !list.length || !list.every((n) => Number.isInteger(n) && n > 0)) {
+    return `the list of pull requests that name ${ctx.ticket?.key ?? 'the ticket'} is missing, empty or malformed`;
+  }
+  return null;
+}
+
+const forkReason = (ctx) => `PR ${ctx.forkPrs.map((n) => `#${n}`).join(', ')} names ${ctx.ticket?.key} but comes from a fork: CI does not post its report for forks, so a person checks, or the work moves to a branch of this repository`;
 
 export function prLinked(ctx) {
   const pr = ctx.pr;
-  if (!pr && ctx.truncated?.pulls) {
-    return result('pr_linked', 'unknown', `no pull request in the latest ones names ${ctx.ticket.key}; older ones were not read (page limit)`);
+  if (!pr && !complete(ctx, 'pulls')) {
+    return result('pr_linked', 'unknown', `no pull request in the latest ones names ${ctx.ticket?.key}; older ones were not read (page limit, or no page flag)`);
   }
   if (!pr && ctx.forkPrs?.length) return result('pr_linked', 'unknown', forkReason(ctx));
-  if (!pr) return result('pr_linked', 'fail', `no pull request names ${ctx.ticket.key}`);
+  if (!pr) return result('pr_linked', 'fail', `no pull request names ${ctx.ticket?.key}`);
+  if (!isText(ctx.ticket?.key)) return result('pr_linked', 'unknown', 'the ticket has no key');
+  const gap = candidatesGap(ctx);
+  if (gap) return result('pr_linked', 'unknown', gap);
   // Two open or merged PRs that name the key: code cannot tell which one the claim means.
   if ((ctx.prCandidates ?? []).length > 1) {
     return result('pr_linked', 'unknown', `PRs ${ctx.prCandidates.map((n) => `#${n}`).join(', ')} all name ${ctx.ticket.key}; link one PR`);
   }
   const named = namesKey(pr.title, ctx.ticket.key) || namesKey(pr.branch, ctx.ticket.key);
   if (!named) return result('pr_linked', 'fail', `PR #${pr.number} does not name ${ctx.ticket.key}`);
+  // The merge flag decides only for a closed PR.
+  if ((pr.state !== 'open' && pr.state !== 'closed') || (pr.state === 'closed' && typeof pr.merged !== 'boolean')) {
+    return result('pr_linked', 'unknown', `PR #${pr.number} has no valid state or merge flag`);
+  }
   if (pr.state === 'closed' && !pr.merged) {
     return result('pr_linked', 'fail', `PR #${pr.number} is closed without merge`);
   }
@@ -109,25 +151,119 @@ export function prLinked(ctx) {
 // The pinned workflow files whose runs decide ci_green. A run is matched by its workflow file,
 // never by its display name: a PR can add another workflow that is also named "CI".
 
+// Conclusions that mean the run gave no result. Every other conclusion except success is a fail.
+const NO_RESULT = ['cancelled', 'stale', 'skipped'];
+
+// The earlier attempts of a re-run (github-evidence.js, earlierConclusions). Failure is left to
+// ci_attempts, which reads the failed step. Any other result except success means the attempt
+// gave no result, for example a cancelled attempt that was then re-run. Returns a reason when the
+// earlier attempts are not known to be clean, else null.
+const ATTEMPT_OK = ['success', 'failure'];
+function earlierAttemptsGap(run) {
+  // GitHub leaves run_attempt out of old runs: a missing attempt is attempt 1.
+  const attempt = run.attempt === undefined ? 1 : run.attempt;
+  if (!(Number.isInteger(attempt) && attempt >= 1)) return 'a CI run has no valid attempt number';
+  if (attempt === 1) return null;
+  const name = `run ${run.id ?? '(no id)'}`;
+  const list = run.earlierConclusions;
+  // Attempts past the read limit are reported by ci_attempts (earlierUnread). A missing count is 0.
+  const unread = run.earlierUnread === undefined ? 0 : run.earlierUnread;
+  if (!(Number.isInteger(unread) && unread >= 0)) return `${name} has a malformed count of unread attempts`;
+  // Rule (final review, item 3): an attempt that was not read may have failed, so ci_green gives
+  // unknown by itself, not only through ci_attempts.
+  if (unread > 0) return `${unread} earlier attempt(s) of ${name} were not read (read limit): a person checks`;
+  const read = attempt - 1;
+  const known = isList(list) && list.every((a) => isObj(a) && Number.isInteger(a.attempt))
+    && Array.from({ length: read }, (_, i) => i + 1).every((n) => list.some((a) => a.attempt === n));
+  if (!known) return `the conclusions of the earlier attempts of ${name} could not be read`;
+  const bad = list.filter((a) => !ATTEMPT_OK.includes(a.conclusion));
+  return bad.length
+    ? bad.map((a) => `attempt ${a.attempt} of ${name} concluded ${a.conclusion ?? 'with no result'} and a re-run followed: a person checks`).join('; ')
+    : null;
+}
+
+// A run without a result is clean when its steps were read and none failed, and no earlier attempt
+// of it failed. Returns a reason when that is not known, else null.
+const isStepList = (v) => isList(v) && v.every(isObj);
+// Job conclusions that are not a failure.
+const JOB_NO_FAIL = ['success', 'cancelled', 'skipped', 'neutral'];
+function noResultGap(run) {
+  const name = `run ${run.id ?? '(no id)'} (${run.conclusion})`;
+  if (!isStepList(run.stepFailures)) return `the steps of ${name} were not read, so it may have failed before it ended`;
+  if (run.stepFailures.length) return `${name} failed in step "${run.stepFailures[0].step}" before it ended: a person checks`;
+  // A job can fail with no failed step (final review, item 3), so its own conclusion is read too.
+  if (!isStepList(run.jobConclusions)) return `the job results of ${name} were not read, so a job may have failed before it ended`;
+  const badJob = run.jobConclusions.find((j) => !JOB_NO_FAIL.includes(j.conclusion));
+  if (badJob) return `job "${badJob.job}" of ${name} concluded ${badJob.conclusion ?? 'with no result'}: a person checks`;
+  if ((run.attempt ?? 1) === 1) return null;
+  const failed = (run.earlierConclusions ?? []).find((a) => a?.conclusion === 'failure');
+  if (failed) return `attempt ${failed.attempt} of ${name} failed: a person checks`;
+  if (!isStepList(run.earlierFailures)) return `the earlier attempts of ${name} were not read`;
+  if (run.earlierFailures.length) return `attempt ${run.earlierFailures[0].attempt} of ${name} failed in step "${run.earlierFailures[0].step}": a person checks`;
+  return null;
+}
+
 export function ciGreen(ctx) {
-  const required = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
+  const required = ctx.config?.requiredWorkflowPaths === undefined ? DEFAULT_WORKFLOW_PATHS : ctx.config.requiredWorkflowPaths;
   const head = ctx.pr?.headSha;
-  if (!head) return result('ci_green', 'unknown', 'no head commit');
+  if (!isText(head)) return result('ci_green', 'unknown', 'no head commit');
+  if (!isList(required) || !required.length || !required.every(isText)) return result('ci_green', 'unknown', 'no valid list of required workflow files in the config');
+  if (!isObjList(ctx.workflowRuns)) return result('ci_green', 'unknown', 'workflow runs not read, or the list is malformed');
   const change = pipelineChange(ctx);
   if (change) return result('ci_green', 'unknown', change);
   // A failed run can be on a page that was not read.
-  if (ctx.truncated?.runs) return result('ci_green', 'unknown', `workflow run list for ${head.slice(0, 7)} is not complete (page limit)`);
+  if (!complete(ctx, 'runs')) return result('ci_green', 'unknown', `workflow run list for ${head.slice(0, 7)} is not complete (page limit) or has no page flag`);
   const reasons = [];
   let unknown = false;
   for (const path of required) {
     // Every run of the pinned workflow on the head must succeed; a later success does not
-    // hide an earlier failure.
-    const runs = (ctx.workflowRuns ?? []).filter((r) => runPath(r) === path && r.headSha === head);
-    const failed = runs.find((r) => r.status === 'completed' && r.conclusion !== 'success');
+    // hide an earlier failure. LIMIT (README, "Verifier limits"): only runs on the claimed head
+    // count. A failure on an earlier head followed by a new commit whose CI passes is green.
+    const all = ctx.workflowRuns.filter((r) => runPath(r) === path && r.headSha === head);
+    const failed = all.find((r) => r.status === 'completed' && r.conclusion !== 'success' && !NO_RESULT.includes(r.conclusion));
     if (failed) return result('ci_green', 'fail', `${path} concluded ${failed.conclusion} on ${head.slice(0, 7)}`);
+    // GitHub lists only the latest attempt of each run id: an earlier attempt can be cancelled.
+    const attemptGaps = all.map(earlierAttemptsGap).filter(Boolean);
+    if (attemptGaps.length) {
+      unknown = true;
+      reasons.push(`${path}: ${attemptGaps.join('; ')}`);
+      continue;
+    }
+    // A cancelled or stale run gave no result (benchmark set 2, S17): it is missing evidence, not
+    // evidence against the claim. A later completed run of the workflow on the head decides.
+    const runs = all.filter((r) => !(r.status === 'completed' && NO_RESULT.includes(r.conclusion)));
+    // Rule (README, "A success after a run without a result"): an author can cancel a failing
+    // run. A later success counts only when every run without a result is known to have no
+    // failed step (stepFailures) and no failed earlier attempt (earlierConclusions,
+    // earlierFailures). A cancelled earlier attempt of the success's own run id gives unknown
+    // (earlierAttemptsGap).
+    const unclean = all.filter((r) => !runs.includes(r)).map(noResultGap).filter(Boolean);
+    if (runs.length && unclean.length) {
+      unknown = true;
+      reasons.push(`${path}: ${unclean.join('; ')}`);
+      continue;
+    }
+    if (runs.length === 0 && all.length > 0) {
+      unknown = true;
+      reasons.push(`${path}: the run on ${head.slice(0, 7)} concluded ${all[0].conclusion}, so no result exists for the head`);
+      continue;
+    }
     if (runs.length === 0 || runs.some((r) => r.status !== 'completed')) {
       unknown = true;
       reasons.push(`${path}: no completed run for ${head.slice(0, 7)}`);
+      continue;
+    }
+    // An author can cancel a failing run and start a new one (review finding 13). The success
+    // counts only when it was created after every run without a result; equal or missing times
+    // give unknown.
+    const noResult = all.filter((r) => !runs.includes(r));
+    const times = (list) => list.map((r) => timeOf(r.createdAt));
+    const known = (t) => t.every((v) => v !== null);
+    const lastNoResult = Math.max(...times(noResult));
+    const lastSuccess = Math.max(...times(runs));
+    if (noResult.length && !(known(times(noResult)) && known(times(runs)) && lastSuccess > lastNoResult)) {
+      unknown = true;
+      reasons.push(`${path}: a run on ${head.slice(0, 7)} concluded ${noResult[0].conclusion}, and no successful run is known to come after it`);
     } else {
       reasons.push(`${path}: success`);
     }
@@ -136,9 +272,12 @@ export function ciGreen(ctx) {
 }
 
 export function testPasses(ctx, name, report = ctx.report) {
-  const trust = reportTrusted(ctx, report, report === ctx.report ? ctx.pr?.headSha : undefined);
+  // Another report (the merge result) is matched to its commit by the caller (mergedClean).
+  const trust = reportTrusted(ctx, report, report === ctx.report ? ctx.pr?.headSha : ANY_HEAD);
   const label = `test_passes(${name})`;
+  if (!isText(name)) return result(label, 'unknown', 'no test name');
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
+  if (!isObjList(report.tests)) return result(label, 'unknown', 'the report has no valid test list');
   const tests = testsByName(report, name);
   if (tests.length === 0) return result(label, 'fail', `${name} is missing from the report`);
   const bad = tests.filter((t) => t.outcome !== 'passed');
@@ -150,8 +289,10 @@ export function bugTestExists(ctx) {
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result('bug_test_exists', 'unknown', trust.reason);
   // The key token at a boundary: test_BANK1_x names BANK-1, test_ABANK1_x does not.
+  if (!isText(ctx.ticket?.key)) return result('bug_test_exists', 'unknown', 'the ticket has no key');
+  if (!isObjList(ctx.report.tests)) return result('bug_test_exists', 'unknown', 'the report has no valid test list');
   const token = new RegExp(`(^|[^A-Za-z0-9])${issueToken(ctx.ticket.key)}_`);
-  const tests = (ctx.report.tests ?? []).filter((t) => token.test(testName(t.id)));
+  const tests = ctx.report.tests.filter((t) => token.test(testName(t.id)));
   if (tests.length === 0) {
     return result('bug_test_exists', 'fail', `no test named for ${ctx.ticket.key}: the change may be right, but nothing proves it`);
   }
@@ -164,19 +305,25 @@ export function bugTestExists(ctx) {
 const TAMPER = /perf_counter|monotonic|time\.time|\bstash\b|pytest_sessionfinish|pytest_runtest|record_metric|record_samples|ci_report|COLLECTOR|\.metrics\b|xfail|deselect/;
 
 export function metricIntegrity(ctx, name) {
-  const failed = (ctx.report.tests ?? []).filter((t) => t.outcome === 'failed' || t.outcome === 'error');
+  if (!isText(name)) return 'no metric name';
+  // The test list is a guard here (no failed test); the metric is the evidence.
+  const tests = optList(ctx.report?.tests);
+  if (!tests || !tests.every(isObj)) return 'the report test list is malformed';
+  const failed = tests.filter((t) => t.outcome === 'failed' || t.outcome === 'error');
   if (failed.length) return `${failed.length} test(s) failed in the report run, so its metrics are not trusted`;
-  if (Array.isArray(ctx.workflowRuns) && ctx.workflowRuns.length && ciGreen(ctx).status !== 'pass') {
+  if (!isList(ctx.workflowRuns)) return 'workflow runs not read';
+  if (ctx.workflowRuns.length && ciGreen(ctx).status !== 'pass') {
     return 'the CI run for the head is not green';
   }
-  const files = ctx.prFiles ?? [];
+  if (!isTextList(ctx.prFiles) || !ctx.prFiles.length) return 'pull request file list not available, empty or malformed';
+  const files = ctx.prFiles;
   const conftest = files.filter((f) => f.split('/').pop() === 'conftest.py');
   if (conftest.length) return `PR changes ${conftest.join(', ')}, which can change any test or metric`;
   const benchFile = (ctx.config?.benchmarks?.[name]?.test ?? '').split('::')[0];
   const quoted = new RegExp(`["']${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`);
   for (const file of files.filter((f) => f.startsWith('tests/') && f.endsWith('.py') && f !== benchFile)) {
     const patch = ctx.prPatches?.[file];
-    if (patch === undefined || patch === null) return `the diff of ${file} is not available`;
+    if (!isText(patch)) return `the diff of ${file} is not available`;
     const added = patch.split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++'));
     const hit = added.find((l) => quoted.test(l) || TAMPER.test(l));
     if (hit) return `${file} adds a line that names ${name} or touches how metrics are measured: ${hit.slice(1).trim().slice(0, 80)}`;
@@ -209,6 +356,9 @@ function tooGoodLimit(limits, name) {
 
 export function metricCompare(ctx, name, bound, direction) {
   const label = `metric_${direction === 'min' ? 'at_least' : 'at_most'}(${name}, ${bound})`;
+  if (!isText(name) || !isNum(bound) || (direction !== 'min' && direction !== 'max')) {
+    return result(label, 'unknown', 'the check needs a metric name, a finite bound and a direction (min or max)');
+  }
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
   // A metric is written by the code under test, so the plugin's write-once rule is no trust
@@ -219,14 +369,11 @@ export function metricCompare(ctx, name, bound, direction) {
   if (integrity) return result(label, 'unknown', `${integrity}: human review`);
   // A repeated benchmark reports {median, iqr_low, iqr_high, runs}; the gate uses the median.
   const raw = ctx.report.metrics?.[name];
-  const value = typeof raw === 'number' ? raw : typeof raw?.median === 'number' ? raw.median : undefined;
-  if (typeof value !== 'number') return result(label, 'fail', `${name} not reported`);
-  // JSON 1e999 parses to Infinity. A non-finite value or bound cannot be compared; a null or ""
-  // bound must not coerce to 0 (PR 4 review, finding 1).
-  if (!Number.isFinite(value)) return result(label, 'unknown', `${name} = ${value} is not a finite number`);
-  if (typeof bound !== 'number' || !Number.isFinite(bound)) {
-    return result(label, 'unknown', `bound ${JSON.stringify(bound) ?? 'missing'} for ${name} is not a finite number`);
-  }
+  const read = isObj(raw) ? raw.median : raw;
+  if (read === undefined || read === null) return result(label, 'fail', `${name} not reported`);
+  // 1e999 in JSON is Infinity, and -Infinity passes any upper bound: not a measurement.
+  const value = finiteNumber(read);
+  if (value === null) return result(label, 'unknown', `${name} is not a finite number in the report`);
   const shown = typeof raw === 'number' ? `${value}` : `median ${value} (IQR ${raw.iqr_low ?? '?'} to ${raw.iqr_high ?? '?'}${raw.runs ? `, ${raw.runs} runs` : ''})`;
   // Metrics are written by the code under test. A PR that changes how they are measured
   // cannot pass a metric gate by itself (DESIGN.md section 12, risk 12).
@@ -243,7 +390,7 @@ export function metricCompare(ctx, name, bound, direction) {
     if (typeof raw !== 'object' || raw === null) {
       return result(label, 'unknown', `${name} is a registered benchmark but was reported as one number, not as repeated runs: human review`);
     }
-    if (raw.runs !== bench.runs) {
+    if (finiteNumber(raw.runs) === null || raw.runs !== bench.runs) {
       return result(label, 'unknown', `${name} has ${raw.runs ?? 'no'} runs; ${bench.runs} are registered: human review`);
     }
     const touched = (ctx.prFiles ?? []).filter((f) => (ctx.config.benchmarkGuardedPaths ?? []).some((g) => (g.endsWith('/') ? f.startsWith(g) : f === g)));
@@ -261,9 +408,7 @@ export function metricCompare(ctx, name, bound, direction) {
     return result(label, 'unknown', 'data hashes for training and live data are equal: the drift number compares a dataset with itself');
   }
   const guard = tooGoodLimit(ctx.config?.tooGood, name);
-  if (guard !== undefined && !(typeof guard === 'number' && Number.isFinite(guard))) {
-    return result(label, 'unknown', `too-good limit for ${name} is not a finite number: fix the config`);
-  }
+  if (guard !== undefined && finiteNumber(guard) === null) return result(label, 'unknown', `the too-good limit for ${name} is not a finite number`);
   if (guard !== undefined && value > guard) {
     return result(label, 'unknown', `${name} = ${shown} is above ${guard}: too good, human review`);
   }
@@ -271,9 +416,16 @@ export function metricCompare(ctx, name, bound, direction) {
   return result(label, ok ? 'pass' : 'fail', `${name} = ${shown}`);
 }
 
-function compareVersions(a, b) {
-  const pa = String(a).split(/[.+-]/).map((x) => Number.parseInt(x, 10) || 0);
-  const pb = String(b).split(/[.+-]/).map((x) => Number.parseInt(x, 10) || 0);
+// The release numbers at the start of a version ("2.32.0rc1" gives [2, 32, 0]), or null when the
+// version does not start with one. A suffix (rc1, +local, -1) is not compared.
+function releaseOf(v) {
+  const m = /^(\d+(?:\.\d+)*)/.exec(String(v));
+  if (!m) return null;
+  const parts = m[1].split('.').map((x) => finiteNumber(Number(x)));
+  return parts.every((x) => x !== null) ? parts : null;
+}
+
+function compareVersions(pa, pb) {
   for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
     if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) - (pb[i] ?? 0);
   }
@@ -282,23 +434,33 @@ function compareVersions(a, b) {
 
 export function versionAtLeast(ctx, pkg, version) {
   const label = `version_at_least(${pkg}, ${version})`;
+  if (!isText(pkg) || !(isText(version) || isNum(version))) return result(label, 'unknown', 'the check needs a package name and a version');
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
-  const found = ctx.report.deps?.[pkg];
+  if (!isObj(ctx.report.deps)) return result(label, 'unknown', 'the report has no dependency list');
+  const found = ctx.report.deps[pkg];
+  if (found !== undefined && !isText(found)) return result(label, 'unknown', `${pkg} has no valid version in the report`);
   if (!found) return result(label, 'fail', `${pkg} not in the lock file`);
-  return result(label, compareVersions(found, version) >= 0 ? 'pass' : 'fail', `${pkg} ${found}`);
+  const have = releaseOf(found);
+  const want = releaseOf(version);
+  if (!have || !want) return result(label, 'unknown', `${pkg} ${found} or the wanted version ${version} has no release number to compare`);
+  return result(label, compareVersions(have, want) >= 0 ? 'pass' : 'fail', `${pkg} ${found}`);
 }
 
 export function pathAbsent(ctx, path) {
   const label = `path_absent(${path})`;
-  if (!Array.isArray(ctx.headPaths)) return result(label, 'unknown', 'head tree not read');
+  if (!isText(path)) return result(label, 'unknown', 'no path given');
+  if (!isTextList(ctx.headPaths) || !ctx.headPaths.length) return result(label, 'unknown', 'head tree not read, or the path list is malformed');
   return ctx.headPaths.includes(path)
     ? result(label, 'fail', `${path} is still on the head commit`)
     : result(label, 'pass', `${path} is not on the head commit`);
 }
 
+// Jira gives an empty list for a ticket without sub-tasks or links, and the reader always sets
+// both fields. A missing field was not read, so it gives unknown (PR 9 review, item 3).
 export function subtasksDone(ctx) {
-  const subtasks = ctx.ticket.subtasks ?? [];
+  const subtasks = ctx.ticket?.subtasks;
+  if (!isObjList(subtasks)) return result('subtasks_done', 'unknown', 'the sub-task list was not read, or it is malformed');
   if (subtasks.length === 0) return result('subtasks_done', 'pass', 'no sub-tasks');
   const open = subtasks.filter((s) => s.statusCategory !== 'done');
   return open.length
@@ -307,7 +469,9 @@ export function subtasksDone(ctx) {
 }
 
 export function blockedByDone(ctx) {
-  const blockers = (ctx.ticket.links ?? []).filter((l) => l.type === 'is blocked by');
+  const links = ctx.ticket?.links;
+  if (!isObjList(links) || !links.every((l) => isText(l.type))) return result('blocked_by_done', 'unknown', 'the link list was not read, or it is malformed');
+  const blockers = links.filter((l) => l.type === 'is blocked by');
   const open = blockers.filter((l) => l.statusCategory !== 'done');
   return open.length
     ? result('blocked_by_done', 'fail', `blocked by open ${open.map((l) => l.key).join(', ')}`)
@@ -316,10 +480,12 @@ export function blockedByDone(ctx) {
 
 export function deployed(ctx, tag) {
   const label = `deployed(${tag ?? 'any'})`;
-  const runs = (ctx.deployRuns ?? [])
-    .filter((r) => !tag || r.tag === tag)
+  if (!isObjList(ctx.deployRuns)) return result(label, 'unknown', 'no deploy run yet, or the run list is malformed');
+  const tagged = ctx.deployRuns.filter((r) => !tag || r.tag === tag);
+  if (!tagged.every((r) => timeOf(r.createdAt) !== null)) return result(label, 'unknown', 'a deploy run has no valid time');
+  const runs = tagged
     .filter((r) => !ctx.fixAt || String(r.createdAt) >= String(ctx.fixAt))
-    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    .sort((a, b) => timeOf(b.createdAt) - timeOf(a.createdAt));
   const latest = runs[0];
   if (!latest) return result(label, 'unknown', 'no deploy run yet');
   if (latest.conclusion !== 'success') {
@@ -329,35 +495,84 @@ export function deployed(ctx, tag) {
 }
 
 export function testsNotRemoved(ctx, report = ctx.report) {
-  if (!ctx.baseReport || !report) return result('tests_not_removed', 'unknown', 'base or head report missing');
-  const head = new Set((report.tests ?? []).map((t) => testName(t.id)));
-  const approved = new Set(ctx.ticket.approvedTestRemovals ?? []);
+  if (!isObj(ctx.baseReport) || !isObj(report)) return result('tests_not_removed', 'unknown', 'base or head report missing');
+  if (!isObjList(report.tests) || !isObjList(ctx.baseReport.tests) || !ctx.baseReport.tests.length) {
+    return result('tests_not_removed', 'unknown', 'base or head report has no valid test list');
+  }
+  // Approvals can only turn a fail into a pass: none stored means none; a malformed list is unknown.
+  const approvals = optList(ctx.ticket?.approvedTestRemovals);
+  if (!isObj(ctx.ticket) || !approvals || !approvals.every(isText)) return result('tests_not_removed', 'unknown', 'the approved test removals of the ticket are not readable');
+  // A report without a repro block is from before the base record existed; any other value
+  // that is not an object is malformed.
+  if (report.repro !== undefined && !isObj(report.repro)) return result('tests_not_removed', 'unknown', 'the repro block of the report is malformed');
+  const head = new Set(report.tests.map((t) => testName(t.id)));
+  const approved = new Set(approvals);
   // The base side: the main report, and the base test ids of every test module the PR changes,
   // renames or removes (repro block). After a merge the main report is the merge commit's, so the
   // repro ids are what still show a dropped test (benchmark I10).
-  const baseIds = [...(ctx.baseReport.tests ?? []).map((t) => t.id), ...(report.repro?.base_test_ids ?? [])];
+  const repro = isObj(report.repro) ? report.repro : {};
+  const listed = optList(repro.base_test_ids);
+  const ids = listed && listed.every(isText) ? listed : [];
+  const baseIds = [...ctx.baseReport.tests.map((t) => t.id), ...ids];
   const removed = [...new Set(baseIds.map((id) => testName(id)))].filter(
     (n) => !head.has(n) && !approved.has(n),
   );
-  return removed.length
-    ? result('tests_not_removed', 'fail', `removed without approval: ${removed.join(', ')}`)
-    : result('tests_not_removed', 'pass', 'no test removed');
+  // A listed base test that the head lacks is a fail, even when the record is incomplete.
+  if (removed.length) return result('tests_not_removed', 'fail', `removed without approval: ${removed.join(', ')}`);
+  const gap = baseCollectGap(repro, listed);
+  if (gap) return result('tests_not_removed', 'unknown', gap);
+  return result('tests_not_removed', 'pass', 'no test removed');
+}
+
+// The base collection record (bank scripts/repro.py): pytest --collect-only on base over the
+// changed, renamed or removed test modules. rc null and no ids mean there was no such module.
+// A report with neither base_test_ids nor base_collect is from before the fields existed and has no
+// record to check. LIMIT (README, "Verifier limits"): it keeps that old reading, and the evidence
+// record marks it "pre-field report" so a reader sees it. A report with base_test_ids but no
+// base_collect is from an older bank version: it cannot show that every module gave its ids, so
+// it gives unknown (README, "No check passes by default"). A report with base_collect but no
+// base_test_ids is malformed: the bank writes both together (final review, item 6).
+const COLLECT_OK = [0, 5]; // pytest: 0 tests collected, 5 no tests collected
+function baseCollectGap(repro, listed) {
+  if (repro.base_test_ids === undefined && repro.base_collect === undefined) return null;
+  if (repro.base_test_ids === undefined) return 'the repro block has a base_collect record but no base_test_ids list';
+  if (!listed || !listed.every(isText)) return 'the repro block has a malformed base_test_ids list';
+  const bc = repro.base_collect;
+  if (bc === undefined) return 'the repro block lists base test ids but has no base_collect record, so a module whose base ids could not be read may hide a dropped test';
+  if (!isObj(bc) || !isList(bc.modules_without_ids) || !bc.modules_without_ids.every(isText) || !('rc' in bc)) {
+    return 'the base_collect record of the repro block is malformed';
+  }
+  if (bc.modules_without_ids.length) {
+    return `${bc.modules_without_ids.join(', ')}: their base test ids could not be read, so a dropped test may be missed`;
+  }
+  if (bc.rc === null) {
+    return listed.length ? 'base_collect has no exit code, but the repro block lists base test ids' : null;
+  }
+  if (!COLLECT_OK.includes(bc.rc)) return `the base collection of the changed test modules ended with pytest exit code ${JSON.stringify(bc.rc)}`;
+  if (!listed.length) return 'the base collection ran, but the repro block lists no base test ids';
+  return null;
 }
 
 export function migrationAdditive(ctx, number) {
   const label = `migration_additive(${number})`;
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
-  const migration = (ctx.report.migrations ?? []).find((m) => m.number === number);
+  if (!isObjList(ctx.report.migrations)) return result(label, 'unknown', 'the report has no valid migration list');
+  const migration = ctx.report.migrations.find((m) => m.number === number);
   if (!migration) return result(label, 'fail', `migration ${number} not found`);
-  const bad = (migration.operations ?? []).filter((op) => /^(DROP|RENAME)/i.test(op));
+  if (!isTextList(migration.operations) || !migration.operations.length) return result(label, 'unknown', `migration ${number} has no valid operation list`);
+  const bad = migration.operations.filter((op) => /^(DROP|RENAME)/i.test(op));
   return bad.length
     ? result(label, 'fail', `${number} contains ${bad.join(', ')}`)
     : result(label, 'pass', `${number} only adds (${migration.operations.join(', ')})`);
 }
 
 export function uniqueMigrations(report) {
-  const numbers = (report?.migrations ?? []).map((m) => m.number);
+  const migrations = isObj(report) ? optList(report.migrations) : null;
+  if (!migrations || !migrations.every((m) => isObj(m) && (isText(m.number) || Number.isInteger(m.number)))) {
+    return result('unique_migrations', 'unknown', 'the report has no valid migration list');
+  }
+  const numbers = migrations.map((m) => m.number);
   const dupes = numbers.filter((n, i) => numbers.indexOf(n) !== i);
   return dupes.length
     ? result('unique_migrations', 'fail', `duplicate migration numbers: ${[...new Set(dupes)].join(', ')}`)
@@ -368,8 +583,11 @@ export function mergedClean(ctx) {
   const report = ctx.mergeReport;
   const trust = reportTrusted(ctx, report, ctx.mergeSha);
   if (trust.status !== 'pass') return result('merged_clean', 'unknown', `merge result: ${trust.reason}`);
+  // The reader always sets the list (verify-claim.js); an empty list names no test.
+  const required = ctx.mergeRequiredTests;
+  if (!isTextList(required)) return result('merged_clean', 'unknown', 'the list of tests required after merge is missing or malformed');
   const parts = [
-    ...(ctx.mergeRequiredTests ?? []).map((n) => testPasses(ctx, n, report)),
+    ...required.map((n) => testPasses(ctx, n, report)),
     testsNotRemoved(ctx, report),
     uniqueMigrations(report),
   ];
@@ -385,6 +603,9 @@ export function repairBalanced(ctx) {
   if (trust.status !== 'pass') return result('repair_balanced', 'unknown', trust.reason);
   const r = ctx.report.repair;
   if (!r) return result('repair_balanced', 'fail', 'no repair block in the report');
+  if (!isObj(r) || ![r.debits_minor, r.credits_minor, r.rows_deleted, r.rows_updated].every(isNum)) {
+    return result('repair_balanced', 'unknown', 'the repair block does not have four finite numbers (debits, credits, rows deleted, rows updated)');
+  }
   if (r.debits_minor !== r.credits_minor) {
     return result('repair_balanced', 'fail', `debits ${r.debits_minor} != credits ${r.credits_minor}`);
   }
@@ -399,6 +620,9 @@ export function reconProof(ctx) {
   if (trust.status !== 'pass') return result('recon_proof', 'unknown', trust.reason);
   const r = ctx.report.recon;
   if (!r) return result('recon_proof', 'fail', 'no recon block in the report');
+  if (!isObj(r) || ![r.accounts, r.accounts_matching, r.diff_minor].every(isNum)) {
+    return result('recon_proof', 'unknown', 'the recon block does not have three finite numbers (accounts, matching, diff)');
+  }
   if (r.accounts_matching !== r.accounts || r.diff_minor !== 0) {
     return result('recon_proof', 'fail', `${r.accounts_matching}/${r.accounts} accounts match; diff ${r.diff_minor}`);
   }
@@ -406,9 +630,10 @@ export function reconProof(ctx) {
 }
 
 export function evidenceLinked(ctx) {
-  const timeline = ctx.timeline ?? [];
+  const timeline = optList(ctx.timeline);
+  if (!timeline) return result('evidence_linked', 'unknown', 'the timeline is malformed');
   if (timeline.length === 0) return result('evidence_linked', 'fail', 'empty timeline');
-  const missing = timeline.filter((e) => !e.link);
+  const missing = timeline.filter((e) => !isText(e?.link));
   return missing.length
     ? result('evidence_linked', 'fail', `${missing.length} timeline entr(ies) without evidence`)
     : result('evidence_linked', 'pass', `${timeline.length} entries linked`);
@@ -425,20 +650,29 @@ export const CANNOT_RUN_ON_BASE = ['ImportError', 'ModuleNotFoundError', 'Attrib
 export const DEFAULT_COVERAGE = { changedFloor: 0.8, maxDropPoints: 0.5 };
 const COVERAGE_FILES = ['.coveragerc', 'setup.cfg', 'pyproject.toml', 'tox.ini'];
 
+// A key that is not text resolves to nothing, so a named test is not found.
 const resolveName = (ctx, name) => {
-  const key = ctx.ticket?.key ?? '';
+  const key = isText(ctx.ticket?.key) ? ctx.ticket.key : '';
   return String(name).replaceAll('{TOKEN}', key.replace('-', '')).replaceAll('{KEY}', key);
 };
 
-// AC types whose evidence comes from CI or the PR head. An AC of one of these types is code
-// work: "done" needs the PR merged (PR 8 review, item 7).
+// The AC list: none stored gives an empty list; a value that is not a list of objects is
+// malformed (null).
+const acsOf = (ctx) => (ctx.ticket?.acceptanceCriteria == null ? [] : isObjList(ctx.ticket.acceptanceCriteria) ? ctx.ticket.acceptanceCriteria : null);
+
+// AC types whose evidence comes from CI, the PR head or a deploy. An AC of one of these types is
+// code work: "done" needs the PR merged and the code gates (PR 8 review, item 7). A deploy ships
+// merged code, so deployed is code work (PR 9 review, item 5). field_equals, link_exists and
+// evidence_linked read Jira or the incident timeline, not code.
 export const CODE_AC_TYPES = ['test_passes', 'metric_at_least', 'metric_at_most', 'version_at_least', 'migration_additive',
-  'repair_balanced', 'recon_proof', 'ci_green', 'path_absent'];
+  'repair_balanced', 'recon_proof', 'ci_green', 'path_absent', 'deployed'];
 
 // A ticket has code work when an AC needs CI evidence, or it is a Bug. A spike or a parent ticket
 // with only sub-task, link or manual checks has no code gate.
 export function hasCodeWork(ctx) {
-  const acs = ctx.ticket?.acceptanceCriteria ?? [];
+  const acs = acsOf(ctx);
+  // A malformed AC list cannot show that the ticket has no code work.
+  if (!acs) return true;
   return ctx.ticket?.type === 'Bug' || acs.some((a) => CODE_AC_TYPES.includes(a.check?.type));
 }
 
@@ -446,18 +680,18 @@ export function hasCodeWork(ctx) {
 // and a ticket gated only by metrics, CI or paths has no test to run on base.
 export function needsRepro(ctx) {
   if (ctx.ticket?.type === 'Task') return false;
-  return ctx.ticket?.type === 'Bug' || (ctx.ticket?.acceptanceCriteria ?? []).some((a) => a.check?.type === 'test_passes');
+  return ctx.ticket?.type === 'Bug' || (acsOf(ctx) ?? []).some((a) => a.check?.type === 'test_passes');
 }
 
 // The tests that must reproduce the problem: every AC test, and for a Bug every test named for
 // the key.
 export function ticketTests(ctx) {
-  const names = (ctx.ticket?.acceptanceCriteria ?? [])
+  const names = (acsOf(ctx) ?? [])
     .filter((a) => a.check?.type === 'test_passes')
     .map((a) => resolveName(ctx, a.check.args?.[0]));
-  if (ctx.ticket?.type === 'Bug') {
+  if (ctx.ticket?.type === 'Bug' && isText(ctx.ticket.key)) {
     const token = new RegExp(`(^|[^A-Za-z0-9])${issueToken(ctx.ticket.key)}_`);
-    for (const t of ctx.report?.tests ?? []) if (token.test(testName(t.id))) names.push(testName(t.id));
+    for (const t of optList(ctx.report?.tests) ?? []) if (isObj(t) && token.test(testName(t.id))) names.push(testName(t.id));
   }
   return [...new Set(names)];
 }
@@ -466,11 +700,14 @@ export function ticketTests(ctx) {
 export function onMain(ctx) {
   const pr = ctx.pr;
   if (!pr && ctx.forkPrs?.length) return result('on_main', 'unknown', forkReason(ctx));
-  if (!pr) return result('on_main', 'fail', `no pull request for ${ctx.ticket.key}, so nothing is on main`);
+  if (!pr) return result('on_main', 'fail', `no pull request for ${ctx.ticket?.key}, so nothing is on main`);
+  const gap = candidatesGap(ctx);
+  if (gap) return result('on_main', 'unknown', gap);
   // Two open or merged PRs name the key: the same rule as pr_linked (benchmark B26).
   if ((ctx.prCandidates ?? []).length > 1) {
     return result('on_main', 'unknown', `PRs ${ctx.prCandidates.map((n) => `#${n}`).join(', ')} all name ${ctx.ticket.key}; link one PR`);
   }
+  if (typeof pr.merged !== 'boolean') return result('on_main', 'unknown', `PR #${pr.number} has no valid merge flag`);
   if (!pr.merged) return result('on_main', 'fail', `PR #${pr.number} is not merged, so the work is not on main`);
   return result('on_main', 'pass', `PR #${pr.number} merged${ctx.mergeSha ? ` as ${String(ctx.mergeSha).slice(0, 7)}` : ''}`);
 }
@@ -481,7 +718,7 @@ export function onMain(ctx) {
 function reproBlockGap(repro, headSha) {
   if (!repro.head_sha) return 'the repro block names no head commit';
   if (repro.head_sha !== headSha) return `the repro block is for ${String(repro.head_sha).slice(0, 7)}, not the report head`;
-  if (!Array.isArray(repro.changed_support)) return 'the repro block has no list of changed support files';
+  if (!isList(repro.changed_support) || !repro.changed_support.every(isText)) return 'the repro block has no list of changed support files, or the list is malformed';
   if (repro.changed_support.length) return `pytest support or config changed: ${repro.changed_support.join(', ')}; the base run cannot show the problem`;
   const run = repro.base_run;
   if (repro.tests.length || run) {
@@ -508,7 +745,7 @@ export function acTestsRunNewCode(ctx) {
   if (!defined.size) return null;
   const files = new Set();
   for (const name of ticketTests(ctx)) {
-    const row = (ctx.report?.tests ?? []).find((t) => testName(t.id) === name);
+    const row = (optList(ctx.report?.tests) ?? []).find((t) => isObj(t) && testName(t.id) === name);
     if (row) files.add(row.id.split('::')[0]);
   }
   const replaced = [];
@@ -529,12 +766,27 @@ export function acTestsRunNewCode(ctx) {
 // pinned run was re-run.
 const TEST_STEP = /pytest|\btests?\b/i;
 export function ciAttempts(ctx) {
-  const paths = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
-  const runs = (ctx.workflowRuns ?? []).filter((r) => paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha && (r.attempt ?? 1) > 1);
+  // No configured path means the default pinned workflow (PR 8 review, item 11).
+  const paths = ctx.config?.requiredWorkflowPaths === undefined ? DEFAULT_WORKFLOW_PATHS : optList(ctx.config.requiredWorkflowPaths) ?? [];
+  const all = optList(ctx.workflowRuns);
+  if (!all || !all.every(isObj)) return result('ci_attempts', 'unknown', 'the workflow run list is malformed');
+  const pinned = all.filter((r) => paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha);
+  if (pinned.some((r) => r.attempt !== undefined && !(Number.isInteger(r.attempt) && r.attempt >= 1))) {
+    return result('ci_attempts', 'unknown', 'a CI run has no valid attempt number');
+  }
+  const runs = pinned.filter((r) => (r.attempt ?? 1) > 1);
   if (!runs.length) return null;
-  if (runs.some((r) => r.earlierFailures === null)) return result('ci_attempts', 'unknown', 'an earlier attempt of the CI run could not be read');
-  const unread = runs.find((r) => r.earlierUnread > 0);
+  if (runs.some((r) => !isObjList(r.earlierFailures))) return result('ci_attempts', 'unknown', 'an earlier attempt of the CI run could not be read');
+  const unread = runs.find((r) => Number.isInteger(r.earlierUnread) && r.earlierUnread > 0);
   if (unread) return result('ci_attempts', 'unknown', `${unread.earlierUnread} earlier attempt(s) of the CI run were not read (read limit): a person checks for a flaky test`);
+  const gaps = runs.map(earlierAttemptsGap).filter(Boolean);
+  if (gaps.length) return result('ci_attempts', 'unknown', gaps.join('; '));
+  // An attempt that concluded failure with no failed step recorded failed in a job, not a step:
+  // the cause is not known, so a person checks (final review, item 3).
+  const silent = runs.flatMap((r) => r.earlierConclusions
+    .filter((a) => a.conclusion === 'failure' && !r.earlierFailures.some((f) => f?.attempt === a.attempt))
+    .map((a) => `attempt ${a.attempt} of run ${r.id ?? '(no id)'} failed with no failed step recorded: a person checks`));
+  if (silent.length) return result('ci_attempts', 'unknown', silent.join('; '));
   const flaky = runs.flatMap((r) => r.earlierFailures ?? []).filter((f) => TEST_STEP.test(f.step));
   return flaky.length
     ? result('ci_attempts', 'unknown', flaky.map((f) => `attempt ${f.attempt} failed in step "${f.step}" and a re-run passed with no code change: a person checks for a flaky test`).join('; '))
@@ -571,18 +823,22 @@ export function measurementUnchanged(ctx) {
 // never supports it (benchmark B27). Returns null when the ticket has no such domain.
 const SIGNOFF_DOMAINS = ['money_semantics', 'security_exception', 'data_repair', 'model_risk', 'fairness', 'product_behaviour'];
 export function checkHumanSignoff(ctx) {
-  const domain = ctx.ticket?.domain;
-  if (!domain || !SIGNOFF_DOMAINS.includes(domain)) return null;
+  // The domain comes from the stored ticket spec or from a Jira label (benchmark set 2, S16).
+  // Labels are free text, so both match in any letter case (review finding 15).
+  const asDomain = (v) => (typeof v === 'string' && SIGNOFF_DOMAINS.includes(v.toLowerCase()) ? v.toLowerCase() : null);
+  const labels = Array.isArray(ctx.ticket?.labels) ? ctx.ticket.labels : [];
+  const domain = asDomain(ctx.ticket?.domain) ?? labels.map(asDomain).find(Boolean);
+  if (!domain) return null;
   const s = ctx.ticket.signoff;
   const sha = ctx.pr?.mergeSha ?? ctx.pr?.headSha ?? null;
-  if (!s?.by) return result('human_signoff', 'unknown', `${domain}: a person's sign-off of the merged change is required, and none is recorded`);
+  if (!isText(s?.by)) return result('human_signoff', 'unknown', `${domain}: a person's sign-off of the merged change is required, and none is recorded`);
   if (!sha || s.sha !== sha) return result('human_signoff', 'unknown', `${domain}: the sign-off is for ${String(s.sha ?? 'no commit').slice(0, 7)}, not the merged commit ${String(sha ?? 'unknown').slice(0, 7)}`);
   // Any issue editor can write the aat.signoff property by REST. Only the sign-off button also
   // writes an audit event, so the property must match one (PR 8 review, item 10).
   if (!signoffAudited(ctx, s)) {
     return result('human_signoff', 'unknown', `${domain}: the sign-off has no matching audit event from the sign-off button, so it may not come from the app; sign off again in the panel`);
   }
-  if (!ctx.claimant) return result('human_signoff', 'unknown', `${domain}: the claimant is not known, so the sign-off cannot be shown to come from another person`);
+  if (!isText(ctx.claimant)) return result('human_signoff', 'unknown', `${domain}: the claimant is not known, so the sign-off cannot be shown to come from another person`);
   if (ctx.claimant === s.by) return result('human_signoff', 'unknown', `${domain}: the claimant signed off their own claim; another person must sign off`);
   return result('human_signoff', 'pass', `${domain}: signed off by ${s.by} at ${s.at} (audit seq ${s.auditSeq})`);
 }
@@ -611,13 +867,60 @@ function newModuleStory(ctx, row) {
   return modules.some((m) => lines.some((l) => new RegExp(`^\\+\\s*(from\\s+${m.replaceAll('.', '\\.')}\\s+import|import\\s+${m.replaceAll('.', '\\.')}\\b)`).test(l)));
 }
 
+// A Story's AC test that fails on base with AttributeError because the PR adds the function to an
+// existing module (benchmark set 2, S03). All of these must hold (review finding 12):
+// - a changed source module adds a module-level `def <name>(` (no indent, so not a method);
+// - an added line of the test file calls `<module>.<name>(`, where <module> is that module's
+//   import name (bank.ledger) or its last part (ledger). Comments and string literals are
+//   removed first, so a call written in a comment or a string does not count;
+// - the base exception text (exc_message) is the first line the bank writes (exconly()), whole and
+//   from its start: "AttributeError: module 'bank.ledger' has no attribute '<name>'", optionally
+//   followed by Python 3.12's ". Did you mean: '<other>'?". A longer text that only contains it
+//   ("partially initialized module ...") does not count (final review, item 5);
+// - the test passes on head. A Bug keeps the old rule.
+// LIMIT: only the added lines are read. A string opened on an unchanged line is not seen.
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// The code of added Python lines: triple-quoted strings (also over lines), quoted strings and
+// comments removed. A line that ends in an odd number of backslashes continues on the next line
+// (inside a string or not), so the two are joined first (final review, item 5). A comment that
+// ends in a backslash then also hides the next line: a call there is not counted, which gives
+// unknown, never a wrong pass.
+function pythonCode(lines) {
+  return lines.map((l) => l.slice(1)).join('\n')
+    .replace(/((?:^|[^\\])(?:\\\\)*)\\\n/g, '$1')
+    .replace(/("""|''')[\s\S]*?(?:\1|$)/g, '""')
+    .split('\n')
+    .map((l) => l.replace(/(["'])(?:\\.|(?!\1)[^\\])*\1/g, '""').replace(/#.*$/, ''));
+}
+function newFunctionStory(ctx, row) {
+  if (ctx.ticket?.type !== 'Story' || row.head?.outcome !== 'passed' || row.base?.exc_type !== 'AttributeError') return false;
+  const message = row.base.exc_message;
+  if (typeof message !== 'string' || !message) return false;
+  const added = (file) => String(ctx.prPatches?.[file] ?? '').split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++'));
+  const sources = Object.keys(ctx.prPatches ?? {}).filter((f) => f.endsWith('.py') && !/(^|\/)tests?\//.test(f) && !/(^|\/)test_[^/]*\.py$/.test(f));
+  const testLines = pythonCode(added(row.id.split('::')[0]));
+  return sources.some((f) => {
+    const module = f.replace(/^src\//, '').replace(/\.py$/, '').replace(/\/__init__$/, '').replaceAll('/', '.');
+    const prefixes = [...new Set([module, module.split('.').pop()])].map(escapeRe).join('|');
+    return added(f).some((l) => {
+      const name = /^\+def\s+([A-Za-z_]\w*)\s*\(/.exec(l)?.[1];
+      const exact = new RegExp(`^AttributeError: module '${escapeRe(module)}' has no attribute '${name}'(?:\\. Did you mean: '\\w+'\\?)?$`);
+      if (!name || !exact.test(message)) return false;
+      const call = new RegExp(`(?<![\\w.])(?:${prefixes})\\.${name}\\s*\\(`);
+      return testLines.some((t) => call.test(t));
+    });
+  });
+}
+
 // D-repro: each ticket test fails on base by an assertion and passes on head; the full head suite
 // passes; no test is removed.
 export function reproduced(ctx) {
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result('reproduced', 'unknown', trust.reason);
+  if (!acsOf(ctx)) return result('reproduced', 'unknown', 'the acceptance criteria are not a list');
+  if (!isText(ctx.ticket?.key)) return result('reproduced', 'unknown', 'the ticket has no key');
   const repro = ctx.report.repro;
-  if (!repro || !Array.isArray(repro.tests)) return result('reproduced', 'unknown', 'no repro block in the CI report (base run missing)');
+  if (!isObj(repro) || !isObjList(repro.tests)) return result('reproduced', 'unknown', 'no repro block in the CI report (base run missing), or it is malformed');
   const gap = reproBlockGap(repro, ctx.report.head_sha);
   if (gap) return result('reproduced', 'unknown', gap);
   const fails = [];
@@ -632,7 +935,7 @@ export function reproduced(ctx) {
   // behaviour that must not change: they must pass on head and may pass on base (benchmark B21,
   // B25, B26, B29). With no AC test, at least one key-named test must reproduce.
   const all = ticketTests(ctx);
-  const acNames = new Set((ctx.ticket?.acceptanceCriteria ?? []).filter((a) => a.check?.type === 'test_passes').map((a) => resolveName(ctx, a.check.args?.[0])));
+  const acNames = new Set(acsOf(ctx).filter((a) => a.check?.type === 'test_passes').map((a) => resolveName(ctx, a.check.args?.[0])));
   const guards = all.filter((n) => !acNames.has(n));
   const rowOf = (name) => repro.tests.find((t) => testName(t.id) === name);
   const reproduces = (name) => rowOf(name)?.base?.outcome === 'failed' && rowOf(name)?.base?.exc_type === 'AssertionError' && rowOf(name)?.head?.outcome === 'passed';
@@ -644,7 +947,7 @@ export function reproduced(ctx) {
       if (row && row.head?.outcome !== 'passed') fails.push(`${g} fails on head (${row.head?.outcome ?? 'no result'})`);
     }
   }
-  if (names.length === 0) fails.push(`no test for ${ctx.ticket.key}: nothing reproduces the problem`);
+  if (names.length === 0) fails.push(`no test for ${ctx.ticket?.key}: nothing reproduces the problem`);
   for (const name of names) {
     const row = rowOf(name);
     if (!row) {
@@ -654,7 +957,7 @@ export function reproduced(ctx) {
     const base = row.base ?? {};
     if (row.head?.outcome !== 'passed') fails.push(`${name} fails on head (${row.head?.outcome ?? 'no result'})`);
     if (base.outcome === 'passed') fails.push(`${name} passes on base, so it does not reproduce the problem`);
-    else if (newModuleStory(ctx, row)) continue;
+    else if (newModuleStory(ctx, row) || newFunctionStory(ctx, row)) continue;
     else if (base.outcome === 'error' || CANNOT_RUN_ON_BASE.includes(base.exc_type)) {
       unknowns.push(`${name} cannot run on base (${base.exc_type ?? base.outcome}); a human decides`);
     } else if (base.outcome !== 'failed') unknowns.push(`${name} has no base result`);
@@ -682,25 +985,31 @@ export function coverageOk(ctx) {
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result('coverage', 'unknown', trust.reason);
   const cov = ctx.report.coverage;
-  if (!cov) return result('coverage', 'unknown', 'no coverage block in the CI report');
+  if (!isObj(cov)) return result('coverage', 'unknown', 'no coverage block in the CI report');
   if (!Array.isArray(ctx.prFiles)) return result('coverage', 'unknown', 'pull request file list not available');
   const settings = ctx.prFiles.filter((f) => COVERAGE_FILES.includes(f.split('/').pop()));
   if (settings.length) return result('coverage', 'unknown', `PR changes coverage settings (${settings.join(', ')})`);
-  if (!ctx.prPatches) return result('coverage', 'unknown', 'pull request patches not read');
-  for (const [file, patch] of Object.entries(ctx.prPatches)) {
-    if (typeof patch !== 'string') continue;
+  if (!isObj(ctx.prPatches)) return result('coverage', 'unknown', 'pull request patches not read');
+  // Every changed Python source file needs its patch. GitHub leaves out the patch of a very large
+  // file: an added pragma there cannot be seen. Test files are not measured.
+  for (const file of ctx.prFiles.filter((f) => String(f).endsWith('.py') && !isTestFile(String(f)))) {
+    const patch = ctx.prPatches[file];
+    if (!isText(patch)) return result('coverage', 'unknown', `the diff of ${file} is not available, so an added coverage exclusion cannot be seen`);
     if (patch.split('\n').some((l) => l.startsWith('+') && !l.startsWith('+++') && /pragma:\s*no\s*cover/i.test(l))) {
       return result('coverage', 'unknown', `${file} adds pragma: no cover`);
     }
   }
   const conf = { ...DEFAULT_COVERAGE, ...(ctx.config?.coverage ?? {}) };
-  // Counts must be numbers: Number([]) is 0 and would read as "no changed lines".
-  if (typeof cov.changed_executable !== 'number' || typeof cov.changed_covered !== 'number') {
-    return result('coverage', 'unknown', 'changed-line counts missing');
+  if (finiteNumber(conf.changedFloor) === null || finiteNumber(conf.maxDropPoints) === null) {
+    return result('coverage', 'unknown', 'the coverage floor or the allowed drop in the config is not a finite number');
   }
   const exec = cov.changed_executable;
   const covered = cov.changed_covered;
-  if (!Number.isFinite(exec) || !Number.isFinite(covered)) return result('coverage', 'unknown', 'changed-line counts missing');
+  // Counts of lines: whole numbers, at least 0, and no more covered lines than executable ones.
+  const isCount = (v) => Number.isInteger(v) && v >= 0;
+  if (!isCount(exec) || !isCount(covered) || covered > exec) {
+    return result('coverage', 'unknown', 'changed-line counts missing or malformed (whole numbers from 0, covered not above executable)');
+  }
   // Zero changed executable lines while a source file gains or loses code means the coverage
   // tool did not see the change (PR 8 review, item 9).
   if (exec === 0) {
@@ -711,8 +1020,25 @@ export function coverageOk(ctx) {
   if (exec > 0 && covered / exec < conf.changedFloor) {
     return result('coverage', 'fail', `${covered} of ${exec} changed lines covered (${Math.round((covered / exec) * 100)}%), floor ${floorPct}%`);
   }
-  if (typeof cov.head_total !== 'number' || typeof cov.base_total !== 'number') {
-    return result('coverage', 'unknown', 'head or base total coverage missing');
+  // Checked after the changed-line floor: a file missing from the data only lowers the share of
+  // covered changed lines, so a fail there stays a fail.
+  // A changed source file that the coverage data does not have looks fully covered in the counts
+  // (benchmark set 2, S18). The coverage script names such files. A report without the list, or
+  // with a list that is not an array, cannot show that every changed file was measured (review
+  // finding 14). Reports from before the field existed therefore give unknown here.
+  const unmeasured = cov.unmeasured_files;
+  if (!isTextList(unmeasured)) return result('coverage', 'unknown', 'the coverage block has no unmeasured_files list, so a changed file may be missing from the coverage data');
+  if (unmeasured.length) return result('coverage', 'unknown', `${unmeasured.join(', ')} changed but not in the coverage data`);
+  // Changed lines that the coverage settings exclude (pragma: no cover, omit) are not in the
+  // counts. The coverage script reports them as changed_excluded; reports from before the field
+  // existed give unknown.
+  const excluded = cov.changed_excluded;
+  if (!Number.isInteger(excluded) || excluded < 0) return result('coverage', 'unknown', 'the coverage block has no valid changed_excluded count, so changed lines may be excluded from coverage');
+  if (excluded > 0) return result('coverage', 'unknown', `${excluded} changed lines excluded from coverage; a person checks`);
+  // Totals are percentages: finite numbers in [0, 100].
+  const isPct = (v) => isNum(v) && v >= 0 && v <= 100;
+  if (!isPct(cov.head_total) || !isPct(cov.base_total)) {
+    return result('coverage', 'unknown', 'head or base total coverage missing, or not a percentage from 0 to 100');
   }
   if (cov.head_total < cov.base_total - conf.maxDropPoints) {
     return result('coverage', 'fail', `total coverage ${cov.head_total}% is below base ${cov.base_total}% minus ${conf.maxDropPoints}`);
@@ -735,11 +1061,11 @@ export function codeScanning(ctx) {
   if (!head) return result(label, 'unknown', 'no head commit');
   const change = pipelineChange(ctx);
   if (change) return result(label, 'unknown', change);
-  if (!Array.isArray(ctx.securityRuns)) return result(label, 'unknown', 'check runs of the head not read');
-  if (ctx.truncated?.checks) return result(label, 'unknown', `check run list for ${head.slice(0, 7)} is not complete (page limit)`);
+  if (!isObjList(ctx.securityRuns)) return result(label, 'unknown', 'check runs of the head not read, or the list is malformed');
+  if (!complete(ctx, 'checks')) return result(label, 'unknown', `check run list for ${head.slice(0, 7)} is not complete (page limit) or has no page flag`);
   const runs = ctx.securityRuns.filter((r) => r.headSha === head && r.name === conf.checkName
     && r.appSlug === conf.appSlug && (conf.appId === undefined || r.appId === conf.appId));
-  const scanning = (ctx.workflowRuns ?? []).some((r) => runPath(r) === SCAN_WORKFLOW && r.headSha === head && r.status !== 'completed');
+  const scanning = (isList(ctx.workflowRuns) ? ctx.workflowRuns : []).some((r) => isObj(r) && runPath(r) === SCAN_WORKFLOW && r.headSha === head && r.status !== 'completed');
   if (runs.length === 0) {
     return result(label, 'unknown', scanning ? 'code scanning is still running on the head'
       : 'no code-scanning result on the head (scanning off, or not run for this commit)');
@@ -754,10 +1080,17 @@ export function codeScanning(ctx) {
 
 // The check as the claim types run it. mode "off": not run. mode "observe": run and shown, but
 // advisory (not counted), until the repository is confirmed to produce the check. mode "enforce":
-// counted for done, and for fixed and ready when onFixedReady is true.
+// counted for done, and for fixed and ready when onFixedReady is true. No securityCheck config
+// means no check. A config or mode that is not one of these gives unknown, counted: a typo must
+// not turn the check into advice (PR 9 review, item 3).
+const SECURITY_MODES = ['off', 'observe', 'enforce'];
 export function securityCheck(ctx, claimType) {
   const conf = ctx.config?.securityCheck;
-  if (!conf || !conf.mode || conf.mode === 'off') return [];
+  if (conf === undefined) return [];
+  if (!isObj(conf) || !SECURITY_MODES.includes(conf.mode)) {
+    return [result('code_scanning', 'unknown', `the security check mode ${JSON.stringify(conf?.mode)} is not off, observe or enforce`)];
+  }
+  if (conf.mode === 'off') return [];
   if (claimType !== 'done' && conf.onFixedReady === false) return [];
   const r = codeScanning(ctx);
   return conf.mode === 'enforce' ? [r] : [{ ...r, advisory: true, reason: `advisory, not counted: ${r.reason}` }];

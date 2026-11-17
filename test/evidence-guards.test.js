@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import { collectGithub } from '../src/github-evidence.js';
 import { ciGreen, prLinked, reportTrusted } from '../src/verifier/checks.js';
 import { verify } from '../src/verifier/verdict.js';
+import { withReader } from './helpers/reader.js';
 
 const REPO = 'ysant77/yms-bank-demo';
 const BOT = 'github-actions[bot]';
@@ -32,7 +33,7 @@ const pull = (number, title, extra = {}) => ({
 });
 const page = (url) => Number(new URL(url).searchParams.get('page') ?? 1);
 
-const goodCtx = (over = {}) => ({
+const goodCtx = (over = {}) => withReader({
   ticket: { key: 'BANK-1', type: 'Story', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'test_passes', args: ['test_BANK1_x'] } }] },
   pr: { number: 3, title: 'BANK-1 fix', state: 'open', headSha: HEAD },
   report: { schema: 'aat-ci-report/1', head_sha: HEAD, workflow_files: { [CI]: 'h1' }, tests: [{ id: 't.py::test_BANK1_x', outcome: 'passed' }] },

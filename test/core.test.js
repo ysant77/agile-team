@@ -4,6 +4,7 @@ import { betaSample, reward, seededRng, updatePosterior } from '../src/assignmen
 import { nextEvent, verifyChain } from '../src/audit.js';
 import { extractReport, testName } from '../src/verifier/report.js';
 import { verify } from '../src/verifier/verdict.js';
+import { withReader } from './helpers/reader.js';
 
 test('audit chain verifies and detects a broken link', () => {
   let prev = null;
@@ -35,10 +36,10 @@ test('report extraction needs the marker and the schema', () => {
 
 // A CI context the verifier trusts: the pinned workflow ran on the head, the PR changes no
 // workflow, and the report comment was written during that run.
-const trustedCi = (head) => ({
+const trustedCi = (head) => withReader({
   reportAuthor: 'github-actions[bot]',
   baseWorkflowFiles: { '.github/workflows/ci.yml': 'h' },
-  prFiles: [],
+  prFiles: ['src/bank/service.py'],
   reportComment: { createdAt: '2026-11-16T00:00:00Z', updatedAt: '2026-11-16T00:00:00Z' },
   workflowRuns: [{ name: 'CI', path: '.github/workflows/ci.yml', headSha: head, status: 'completed', conclusion: 'success', createdAt: '2026-11-16T00:00:00Z' }],
 });

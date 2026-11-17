@@ -120,14 +120,19 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
       runStartedAt: r.run_started_at,
       url: r.html_url,
     }));
-    // GitHub lists only the latest attempt of a run. For a re-run, read the job steps of each
-    // earlier attempt, so a failed attempt stays visible (benchmark B05).
-    // At most MAX_ATTEMPTS earlier attempts are read; the rest are counted in earlierUnread.
+    // GitHub lists only the latest attempt of a run. For a re-run, read the conclusion and the
+    // job steps of each earlier attempt, so a failed or cancelled attempt stays visible
+    // (benchmark B05). At most MAX_ATTEMPTS earlier attempts are read; the rest are counted in
+    // earlierUnread. A list that could not be read is null (not known).
     const MAX_ATTEMPTS = 5;
     for (const run of workflowRuns) {
       run.earlierFailures = [];
+      run.earlierConclusions = [];
       run.earlierUnread = Math.max(0, (run.attempt ?? 1) - 1 - MAX_ATTEMPTS);
       for (let n = 1; n < (run.attempt ?? 1) && n <= MAX_ATTEMPTS; n += 1) {
+        const attempt = await get(`/repos/${repo}/actions/runs/${run.id}/attempts/${n}`);
+        if (!attempt) run.earlierConclusions = null;
+        else run.earlierConclusions?.push({ attempt: n, conclusion: attempt.conclusion ?? null });
         const jobs = await get(`/repos/${repo}/actions/runs/${run.id}/attempts/${n}/jobs`);
         if (!jobs) {
           run.earlierFailures = null; // not known
@@ -138,6 +143,17 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
             if (step.conclusion === 'failure') run.earlierFailures.push({ attempt: n, job: job.name, step: step.name });
           }
         }
+      }
+      // A run without a result (cancelled, stale, skipped): read the steps of its own attempt. A
+      // later success counts only when no step of this run failed (ci_green). null: not known.
+      if (run.status === 'completed' && ['cancelled', 'stale', 'skipped'].includes(run.conclusion)) {
+        const jobs = await get(`/repos/${repo}/actions/runs/${run.id}/attempts/${run.attempt ?? 1}/jobs`);
+        run.stepFailures = jobs ? (jobs.jobs ?? []).flatMap((job) => (job.steps ?? [])
+          .filter((step) => step.conclusion === 'failure')
+          .map((step) => ({ attempt: run.attempt ?? 1, job: job.name, step: step.name }))) : null;
+        // A job can fail with no step marked failure (a cancelled run, a job timeout). Its own
+        // conclusion is read too. null: not known.
+        run.jobConclusions = jobs ? (jobs.jobs ?? []).map((job) => ({ attempt: run.attempt ?? 1, job: job.name, conclusion: job.conclusion ?? null })) : null;
       }
     }
     // Comments come oldest first; the latest bot report can be on any page.

@@ -100,6 +100,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 18,
             "head_total": 91.0,
@@ -256,6 +258,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 18,
             "head_total": 91.0,
@@ -415,6 +419,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 18,
             "head_total": 91.0,
@@ -536,6 +542,8 @@
             }
           ],
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 18,
             "head_total": 91.0,
@@ -685,6 +693,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 18,
             "head_total": 91.0,
@@ -844,6 +854,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 18,
             "head_total": 91.0,
@@ -1003,6 +1015,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 18,
             "head_total": 91.0,
@@ -1162,6 +1176,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 14,
             "head_total": 91.0,
@@ -1321,6 +1337,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 18,
             "head_total": 89.9,
@@ -1480,6 +1498,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 18,
             "head_total": 91.0,
@@ -1639,6 +1659,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 18,
             "head_total": 91.0,
@@ -1950,6 +1972,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 18,
             "head_total": 91.0,
@@ -2091,6 +2115,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 20,
             "changed_covered": 18,
             "head_total": 91.0,
@@ -2249,6 +2275,8 @@
             "removed_test_files": []
           },
           "coverage": {
+            "unmeasured_files": [],
+            "changed_excluded": 0,
             "changed_executable": 0,
             "changed_covered": 0,
             "head_total": 91.0,

@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { decide } from '../src/verify-claim.js';
+import { COMPLETE } from './helpers/reader.js';
 
 const HEAD = 'a'.repeat(40);
 const OTHER = 'b'.repeat(40);
@@ -20,6 +21,9 @@ function github({ outcome = 'passed', report = true } = {}) {
     workflowRuns: [{ name: 'CI', path: CI, headSha: HEAD, status: 'completed', conclusion: 'success', createdAt: '2026-11-17T01:00:00Z', runStartedAt: '2026-11-17T01:00:05Z', updatedAt: '2026-11-17T01:09:00Z' }],
     deployRuns: [],
     prFiles: ['src/bank/accounts.py', 'tests/test_accounts.py'],
+    // Reader fields (PR 9): every list is complete and one PR names the issue.
+    truncated: COMPLETE,
+    prCandidates: [61],
   };
 }
 
@@ -32,7 +36,7 @@ const review = (extra = {}, finding = {}) => ({
 function deps({ gh = github(), reviews = [] } = {}) {
   return {
     env: () => ({ repo: 'ysant77/yms-bank-demo', token: null }),
-    collectJira: async () => ({ key: 'BANK-4', type: 'Story', labels: [], acceptanceCriteria: [{ acId: 'AC1', check: { type: 'test_passes', args: [TEST] } }] }),
+    collectJira: async () => ({ key: 'BANK-4', type: 'Story', labels: [], acceptanceCriteria: [{ acId: 'AC1', check: { type: 'test_passes', args: [TEST] } }], subtasks: [], links: [] }),
     collectGithub: async () => gh,
     collectPrStats: async () => ({ patches: {} }),
     collectReviews: async () => reviews,

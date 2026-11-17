@@ -10,7 +10,19 @@ import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
 
 const DIR = new URL('../fixtures/bench/', import.meta.url);
-const load = (id) => JSON.parse(readFileSync(new URL(`${id}.json`, DIR), 'utf8'));
+const recorded = (id) => JSON.parse(readFileSync(new URL(`${id}.json`, DIR), 'utf8'));
+
+// The recorded reports are from before the coverage script wrote unmeasured_files, and the
+// coverage check gives unknown without that list (review finding 14). The cases below test other
+// rules, so they read each report as the current script writes it: with an empty list, and with
+// changed_excluded 0 (also newer than the recordings). The recorded form is tested on its own below.
+const load = (id) => {
+  const c = recorded(id);
+  const cov = c.github?.report?.coverage;
+  if (cov && !('unmeasured_files' in cov)) cov.unmeasured_files = [];
+  if (cov && !('changed_excluded' in cov)) cov.changed_excluded = 0;
+  return c;
+};
 
 export async function run(id) {
   return runCase(load(id));
@@ -49,6 +61,24 @@ for (const [id, want] of Object.entries(KEEP)) {
     assert.equal(v.result, want, v.reason);
   });
 }
+
+test('a recorded report from before unmeasured_files gives cannot_verify for done, not supported', async () => {
+  for (const id of ['B23', 'I03', 'I04']) {
+    const v = await runCase(recorded(id));
+    assert.equal(v.result, 'cannot_verify', `${id}: ${v.reason}`);
+    assert.match(v.reason, /unmeasured_files/);
+  }
+});
+
+test('a recorded report from before changed_excluded gives cannot_verify for done, not supported', async () => {
+  for (const id of ['B23', 'I03', 'I04']) {
+    const c = recorded(id);
+    c.github.report.coverage.unmeasured_files = [];
+    const v = await runCase(c);
+    assert.equal(v.result, 'cannot_verify', `${id}: ${v.reason}`);
+    assert.match(v.reason, /changed_excluded/);
+  }
+});
 
 // Every invalid case of set 1 runs through the checks: none may be supported, except a named
 // limit. A limit that stops being supported must leave this list (PR 8 review, item 11).
@@ -209,6 +239,20 @@ test('an approved removal does not count as a dropped test', async () => {
   c.ticket.approvedTestRemovals = ['test_keys_expire_after_24_hours'];
   const v = await runCase(c);
   assert.doesNotMatch(v.reason, /test_keys_expire_after_24_hours/);
+});
+
+// The recorded I10 report is from before the repro script wrote base_collect. Its listed base ids
+// still show the dropped test (a fail), but without the collection record a clean result is
+// unknown: a module whose base ids could not be read may hide a dropped test.
+test('I10 with an approved removal: the dropped-test check needs the base_collect record to pass', async () => {
+  const check = async (c) => (await runCase(c)).checks.find((x) => x.name === 'reproduced');
+  const c = load('I10');
+  c.ticket.approvedTestRemovals = ['test_keys_expire_after_24_hours'];
+  const old = await check(c);
+  assert.equal(old.status, 'unknown', old.reason);
+  assert.match(old.reason, /base_collect/);
+  c.github.report.repro.base_collect = { rc: 0, modules_without_ids: [] };
+  assert.equal((await check(c)).status, 'pass');
 });
 
 // (b4) A Story that adds a module: its AC test cannot import on base. That is new behaviour,

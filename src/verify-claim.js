@@ -168,9 +168,13 @@ export async function decide({ issueKey, claim }, d) {
       console.log('sign-off audit read failed', issueKey, error.message);
     }
   }
-  const ctx = { ticket, ...github, config: VERIFY_CONFIG, claimant: claim.by ?? null, signoffEvent };
+  // mergeRequiredTests: tests that must pass by name in the merge result. None are configured;
+  // merged_clean still needs every base test kept and unique migrations. The checks read a
+  // missing list as not known, so it is always set here.
+  const ctx = { ticket, ...github, mergeRequiredTests: [], config: VERIFY_CONFIG, claimant: claim.by ?? null, signoffEvent };
   let verdict = verify(claim, ctx);
-  if ((githubError || !repo) && verdict.result === 'contradicted' && verdict.checks.some((c) => ['pr_linked', 'on_main'].includes(c.name) && c.status === 'fail')) {
+  // Without the code host, a PR check that does not pass says why (a fail or an unknown).
+  if ((githubError || !repo) && verdict.result !== 'supported' && verdict.checks.some((c) => ['pr_linked', 'on_main'].includes(c.name) && c.status !== 'pass')) {
     verdict = { ...verdict, result: 'cannot_verify', reason: `code host not reachable${githubError ? `: ${githubError}` : ''}` };
   }
   // A stored review can hold a supported claim, never pass one. A failed read is no review:
