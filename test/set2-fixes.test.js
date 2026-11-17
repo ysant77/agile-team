@@ -93,6 +93,15 @@ test('S16: a label that is not a high-stake domain does not start the sign-off r
   assert.equal(checkHumanSignoff({ ...ctx, ticket: { key: 'X-1', labels: ['fairness'] } }).status, 'unknown');
 });
 
+// Review finding 15: Jira labels are free text, so a domain label matches in any letter case.
+test('S16: a high-stake domain label matches in any letter case', () => {
+  for (const label of ['Money_Semantics', 'FAIRNESS', 'Data_Repair']) {
+    const r = checkHumanSignoff({ ticket: { key: 'X-1', labels: [label] }, pr: { headSha: 'abc' } });
+    assert.equal(r?.status, 'unknown', label);
+    assert.match(r.reason, new RegExp(`^${label.toLowerCase()}:`));
+  }
+});
+
 // S18: a changed source file that the coverage data does not have is not covered; the coverage
 // block names it (bank scripts/changed_coverage.py, field unmeasured_files).
 test('S18: a changed file missing from the coverage data gives cannot_verify with the file named', async () => {
