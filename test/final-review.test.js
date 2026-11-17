@@ -1,9 +1,11 @@
 // Final review of PR 9 (head 61adc2d), items 3 to 6. Items 1 and 2 are in checks-bad-input.test.js.
 
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { collectGithub } from '../src/github-evidence.js';
 import * as checks from '../src/verifier/checks.js';
+import { verify } from '../src/verifier/verdict.js';
 import { withReader } from './helpers/reader.js';
 
 const H = 'a'.repeat(40);
@@ -68,4 +70,42 @@ test('item 3: ci_green alone gives unknown when earlier attempts past the read l
   const r = checks.ciGreen(ciCtx([rerun]));
   assert.equal(r.status, 'unknown', r.reason);
   assert.match(r.reason, /not read/);
+});
+
+// ---- Item 4: no PR found in a pull request list that was not read to the end ----
+// A done claim whose ACs read only Jira or the timeline has no PR gate when no PR names the key.
+// When the list of pull requests was cut at the page limit (or has no page flag), a PR that
+// names the key may be on a page that was not read, so the claim cannot be verified.
+
+const S59 = JSON.parse(readFileSync(new URL('../fixtures/S59.json', import.meta.url), 'utf8'));
+const DEFAULTS = JSON.parse(readFileSync(new URL('../fixtures/_defaults.json', import.meta.url), 'utf8'));
+function noPrDoneCtx(type, args, truncated) {
+  const ctx = { ...DEFAULTS, ...structuredClone(S59.steps[0].context) };
+  ctx.ticket = { key: 'BANK-4', type: 'Story', subtasks: [], links: [{ type: 'relates to', key: 'BANK-5', statusCategory: 'done' }],
+    fields: { customfield_1: 'yes' }, acceptanceCriteria: [{ acId: 'AC1', check: { type, args } }] };
+  ctx.timeline = [{ link: 'https://example.test/1' }];
+  ctx.pr = null;
+  ctx.prCandidates = [];
+  const out = withReader(ctx);
+  out.truncated = truncated;
+  return out;
+}
+const NON_CODE = [['field_equals', ['customfield_1', 'yes']], ['evidence_linked', []], ['link_exists', ['relates to']]];
+const COMPLETE = { pulls: false, comments: false, runs: false, files: false, checks: false };
+
+test('item 4: no PR found and a truncated pull request list gives cannot_verify for non-code ACs', () => {
+  for (const [type, args] of NON_CODE) {
+    for (const truncated of [{ ...COMPLETE, pulls: true }, { ...COMPLETE, pulls: undefined }, undefined]) {
+      const v = verify({ id: 'd', type: 'done' }, noPrDoneCtx(type, args, truncated));
+      assert.equal(v.result, 'cannot_verify', `${type} ${JSON.stringify(truncated)}: ${v.reason}`);
+      assert.match(v.reason, /not complete|page/);
+    }
+  }
+});
+
+test('item 4: no PR found in a complete pull request list keeps no PR gate for non-code ACs', () => {
+  for (const [type, args] of NON_CODE) {
+    const v = verify({ id: 'd', type: 'done' }, noPrDoneCtx(type, args, COMPLETE));
+    assert.equal(v.result, 'supported', `${type}: ${v.reason}`);
+  }
 });
