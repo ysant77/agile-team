@@ -36,3 +36,35 @@ the exception type. Bank PR 15 now records the first line of the exception text 
 S03 and T16 recover needs the evidence rebuilt with that bank commit: not done.
 
 Set 2 is better in reading 2 (unsafe supported 3 to 1; right 16 to 17).
+
+## Update, 17 Nov 2026, 15:40 SGT: evidence rebuilt with the bank PR heads
+
+The evidence of sets 1 to 3 was rebuilt with the bank CI files as on main after the bank PRs
+merge (`repro.py` and `ci_report.py` de6436e, `changed_coverage.py` 2be2de7; SCORER-CHANGES item
+16): 83 branches, every test exit code the same as in the first build. App: PR 9 at 88c468d (all
+review corrections of the three rounds). Raw results: `run/results/regression-2026-11-17/*-rebuilt-88c468d.json`.
+
+First, S03 and T16 alone, scored with PR 9 at 2820746: both `supported`. The base exception text
+("module 'bank.ledger' has no attribute 'customer_totals'") now reaches the new-function rule;
+finding 12 is not relaxed.
+
+Then all three sets with 88c468d:
+
+| Set | Unsafe supported | False block | False cannot_verify on controls | Right / strict |
+|---|---|---|---|---|
+| 1 (39) | 0 | 1 (B04) | 10 of 10 | 28 / 28 |
+| 2 (20) | 0 | 0 | 8 of 8 | 12 / 12 |
+| 3 (20) | 0 | 3 (T05, T09, T22) | 8 of 9 | 10 / 6 |
+
+**Cause of the control holds (classified; work stopped here as ordered):** a gap in the scorer's
+simulated Jira, not a verifier rule. The scorer builds the ticket from the case manifest, which has
+no `subtasks` and no `links` fields. The live collector (`collectJira`) always sets both (a test on
+PR 9 checks this). Under the "no check passes by default" rule a missing list now gives
+`cannot_verify`, so every control is held with the reason "the sub-task list was not read ... the
+link list was not read". B29 also lacks the simulated conclusions of its earlier CI attempt (the
+live reader now reads them). B28 and T13 keep their own earlier reasons.
+
+Not done: the scorer is not changed. A fix would give the simulated ticket `subtasks: []` and
+`links: []` (as the collector does) and give the simulated GitHub the earlier-attempt and job
+conclusions. That is a harness change after results were seen; it needs a SCORER-CHANGES entry
+and the lead's approval before a re-score.
