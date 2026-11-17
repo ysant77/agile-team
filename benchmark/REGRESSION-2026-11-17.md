@@ -98,3 +98,7 @@ this shows no regression, not that the fixes work. The fix list is scored on the
 While making item 17, a first version keyed the cancelled run by `id >= 9500`, which also matched
 the main run of B29 (PR numbers here start at 1000) and held B29. It was found from B29's reason
 and corrected before this table (the cancelled run is now matched by its exact id).
+
+After the table: PR 9 got main (PR 4) merged in (9d3acd7; one conflict in metricCompare, the PR 9
+side kept). Sets 1 to 3 were scored again on 9d3acd7 with the same evidence and scorer: no case
+outcome differs from 88c468d.
