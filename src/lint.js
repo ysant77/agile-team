@@ -15,13 +15,20 @@ const CHECK_TYPES = new Set([
 //   Two kinds of number are allowed without it, each from a fixed list: a bare count of 1 to 9
 //   that only enumerates ("2 fields"), and a standard HTTP status code after HTTP, status, code,
 //   returns, gets or responds with. "3 s on 3G" still fails.
-export const LINT_VERSION = 3;
+// 4 (17 Nov): a status code before a unit ("returns 500 ms", "gets 200 EUR") is a quantity, and a
+//   bare count is allowed only before a noun from SAFE_NOUNS ("5 failures" and "9 users" fail).
+export const LINT_VERSION = 4;
 
 const HTTP_CODES = '200|201|202|204|301|302|304|400|401|403|404|405|409|410|422|429|500|502|503|504';
-const HTTP_CONTEXT = new RegExp(`\\b(HTTP|status(?: code)?|code|returns?|gets?|responds? with)\\s+(${HTTP_CODES})\\b`, 'gi');
-// Units, limits and money: a number before one of these is a quantity, never a bare count.
+// Units, limits and money: a number before one of these is a quantity, never a status code.
 const UNIT_WORDS = 'ms|s|sec|secs|seconds?|minutes?|mins?|hours?|hrs?|h|days?|weeks?|months?|years?|kb|mb|gb|tb|bytes?|percent|pct|eur|usd|sgd|jpy|gbp|cents?|requests?|rps|tps|times|x|g';
-const BARE_COUNT = new RegExp(`\\b([1-9])\\s+(?!(?:${UNIT_WORDS})\\b)([a-z]+s)\\b`, 'gi');
+// A code followed by a unit, "%" or a decimal part is not a status code.
+const HTTP_CONTEXT = new RegExp(
+  `\\b(HTTP|status(?: code)?|code|returns?|gets?|responds? with)\\s+(${HTTP_CODES})\\b(?![.,]\\d|\\s*(?:%|(?:${UNIT_WORDS})\\b))`, 'gi');
+// Nouns whose count only enumerates parts of the draft. Limits and thresholds ("5 failures",
+// "6 digits", "9 users") are not on the list, so they need a source.
+const SAFE_NOUNS = 'fields|columns|buttons|tabs|sections|options|links|labels|icons';
+const BARE_COUNT = new RegExp(`\\b([1-9])\\s+(${SAFE_NOUNS})\\b`, 'gi');
 
 export function numbersIn(text) {
   return (String(text).match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => n.replace(',', '.'));
