@@ -102,3 +102,18 @@ and corrected before this table (the cancelled run is now matched by its exact i
 After the table: PR 9 got main (PR 4) merged in (9d3acd7; one conflict in metricCompare, the PR 9
 side kept). Sets 1 to 3 were scored again on 9d3acd7 with the same evidence and scorer: no case
 outcome differs from 88c468d.
+
+## Update, 17 Nov 2026: PR 9 after PR 7 and PR 8 merges (6173950)
+
+Main (PRs 4 to 7) was merged into PR 8 (babb2da), and PR 8 into PR 9 (6173950). Sets 1 to 3 were
+scored again for C on 6173950 with the same rebuilt evidence (new copies) and the scorer with item
+17. Raw results: `*-rebuilt-6173950-scorer17.json`.
+
+| Set | Unsafe supported | False block | False cannot_verify on controls | Right / strict |
+|---|---|---|---|---|
+| 1 (39) | 1 (B01) | 1 (B04) | 1 (B28) | 36 / 36 |
+| 2 (20) | 2 (S09, S14) | 0 | 0 | 18 / 18 |
+| 3 (20) | 5 | 3 (T05, T09, T22) | 1 (T13) | 12 / 10 |
+
+No case outcome and no reason text differs from the 9d3acd7 run. **No worse on any count of any
+set.** These are development sets: this shows no regression, not that the fixes work.

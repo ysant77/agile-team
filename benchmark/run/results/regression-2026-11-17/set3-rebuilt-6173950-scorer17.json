@@ -1,0 +1,540 @@
+[
+ {
+  "id": "T01",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_api.py"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "C": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "checks": []
+  }
+ },
+ {
+  "id": "T02",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_api.py"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "C": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "checks": []
+  }
+ },
+ {
+  "id": "T03",
+  "void": "2026-11-17: a fee posting on every ledger.withdraw breaks existing tests on base content (test_deposit_and_withdraw_keep_books_balanced expects 6975, test_withdraw_whole_balance_is_allowed overdraws once a fee is added, test_statement_running_balance lists the lines), so the full suite cannot pass on head without the PR changing old assertions, which the row does not state; also journal_entries.kind has a CHECK for deposit/withdrawal/transfer only, so a 'fee' kind needs a table-rebuild migration the row does not name."
+ },
+ {
+  "id": "T04",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_business_days.py::test_saturday_moves_to_monday on base is error (ModuleNotFoundError); repro job: tests/test_business_days.py::test_sunday_moves_to_monday on base is error (ModuleNotFoundError); repro job: tests/test_business_days.py::test_friday_is_a_business_day on base is error (ModuleNotFoundError); repro job: tests/test_business_days.py::test_add_business_days_skips_the_weekend on base is error (ModuleNotFoundError); repro job: tests/test_business_days.py::test_negative_business_days_are_refused on base is error (ModuleNotFoundError)"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_business_days.py::test_saturday_moves_to_monday on base is error (ModuleNotFoundError); repro job: tests/test_business_days.py::test_sunday_moves_to_monday on base is error (ModuleNotFoundError); repro job: tests/test_business_days.py::test_friday_is_a_business_day on base is error (ModuleNotFoundError); repro job: tests/test_business_days.py::test_add_business_days_skips_the_weekend on base is error (ModuleNotFoundError); repro job: tests/test_business_days.py::test_negative_business_days_are_refused on base is error (ModuleNotFoundError)"
+  },
+  "A2s": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_business_days.py::test_saturday_moves_to_monday on base is error (ModuleNotFoundError); repro job: tests/test_business_days.py::test_sunday_moves_to_monday on base is error (ModuleNotFoundError); repro job: tests/test_business_days.py::test_friday_is_a_business_day on base is error (ModuleNotFoundError); repro job: tests/test_business_days.py::test_add_business_days_skips_the_weekend on base is error (ModuleNotFoundError); repro job: tests/test_business_days.py::test_negative_business_days_are_refused on base is error (ModuleNotFoundError)"
+  },
+  "C": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "checks": []
+  }
+ },
+ {
+  "id": "T05",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_statement_of_three_postings on base is passed"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_statement_of_three_postings on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_statement_of_three_postings on base is passed"
+  },
+  "C": {
+   "outcome": "contradicted",
+   "reason": "test_statement_of_three_postings passes on base, so it does not reproduce the problem",
+   "checks": [
+    "reproduced: test_statement_of_three_postings passes on base, so it does not reproduce the problem",
+    "coverage: no changed executable lines reported, but src/bank/api.py changed code"
+   ]
+  }
+ },
+ {
+  "id": "T06",
+  "void": "2026-11-17: bench-base already returns opening_balance_minor and closing_balance_minor from read_statement (via ledger.statement) with the stated meaning, so the test cannot fail on base by an assertion; a seed would have to remove a shipped feature used by the web page and an existing test."
+ },
+ {
+  "id": "T07",
+  "simulated": true,
+  "A1": {
+   "outcome": "blocked",
+   "reason": "required checks pending on the new head"
+  },
+  "A2": {
+   "outcome": "blocked",
+   "reason": "required checks pending on the new head"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "required checks pending on the new head; repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "blocked",
+   "reason": "required checks pending on the new head"
+  },
+  "C": {
+   "outcome": "cannot_verify",
+   "reason": "AC1: report is for an older commit, not the head; report is for an older commit, not the head; report is for an older commit, not the head; evidence record incomplete: CI run URL",
+   "checks": [
+    "ac_mapped: AC1: report is for an older commit, not the head",
+    "reproduced: report is for an older commit, not the head",
+    "coverage: report is for an older commit, not the head",
+    "evidence_record: evidence record incomplete: CI run URL"
+   ]
+  }
+ },
+ {
+  "id": "T08",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_api.py"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "C": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "checks": []
+  }
+ },
+ {
+  "id": "T09",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_account_list_by_currency[no_filter] on base is passed"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_account_list_by_currency[no_filter] on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_account_list_by_currency[no_filter] on base is passed"
+  },
+  "C": {
+   "outcome": "contradicted",
+   "reason": "test_account_list_by_currency passes on base, so it does not reproduce the problem",
+   "checks": [
+    "reproduced: test_account_list_by_currency passes on base, so it does not reproduce the problem"
+   ]
+  }
+ },
+ {
+  "id": "T10",
+  "simulated": true,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_api.py"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "C": {
+   "outcome": "cannot_verify",
+   "reason": "src/bank/masking.py changed but not in the coverage data",
+   "checks": [
+    "coverage: src/bank/masking.py changed but not in the coverage data"
+   ]
+  }
+ },
+ {
+  "id": "T11",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_api.py"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "C": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "checks": []
+  }
+ },
+ {
+  "id": "T12",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_api.py"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "C": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "checks": []
+  }
+ },
+ {
+  "id": "T13",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/data/statement_golden.csv, tests/test_api.py"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/data/statement_golden.csv"
+  },
+  "C": {
+   "outcome": "cannot_verify",
+   "reason": "pytest support or config changed: tests/data/statement_golden.csv; the base run cannot show the problem",
+   "checks": [
+    "reproduced: pytest support or config changed: tests/data/statement_golden.csv; the base run cannot show the problem"
+   ]
+  }
+ },
+ {
+  "id": "T14",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_api.py"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "C": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "checks": []
+  }
+ },
+ {
+  "id": "T15",
+  "simulated": false,
+  "A1": {
+   "outcome": "blocked",
+   "reason": "tests exit 1"
+  },
+  "A2": {
+   "outcome": "blocked",
+   "reason": "tests exit 1"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "tests exit 1; repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "blocked",
+   "reason": "tests exit 1"
+  },
+  "C": {
+   "outcome": "contradicted",
+   "reason": "full suite on head failed (2 failed)",
+   "checks": [
+    "reproduced: full suite on head failed (2 failed)"
+   ]
+  }
+ },
+ {
+  "id": "T16",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_money.py::test_minor_units_per_major_exact_values on base is failed (AttributeError); repro job: tests/test_money.py::test_minor_units_per_major_for_every_currency on base is failed (AttributeError); repro job: tests/test_money.py::test_minor_units_per_major_refuses_an_unknown_currency on base is failed (AttributeError)"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_money.py::test_eur_has_two_decimals on base is passed; repro job: tests/test_money.py::test_jpy_has_no_minor_unit on base is passed; repro job: tests/test_money.py::test_bhd_has_three_decimals on base is passed; repro job: tests/test_money.py::test_half_even_rounding on base is passed; repro job: tests/test_money.py::test_float_is_rejected on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[BHD] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[EUR] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[GBP] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[JPY] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[KRW] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[KWD] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[SGD] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[USD] on base is passed; repro job: tests/test_money.py::test_money_add_and_mismatch on base is passed; repro job: tests/test_money.py::test_str_shows_major_units on base is passed; repro job: tests/test_money.py::test_money_of_rejects_extra_decimals on base is passed; repro job: tests/test_money.py::test_money_of_rejects_non_numbers[NaN] on base is passed; repro job: tests/test_money.py::test_money_of_rejects_non_numbers[Infinity] on base is passed; repro job: tests/test_money.py::test_money_of_rejects_non_numbers[-Infinity] on base is passed; repro job: tests/test_money.py::test_money_of_rejects_non_numbers[abc] on base is passed; repro job: tests/test_money.py::test_minor_units_per_major_exact_values on base is failed (AttributeError); repro job: tests/test_money.py::test_minor_units_per_major_for_every_currency on base is failed (AttributeError); repro job: tests/test_money.py::test_minor_units_per_major_refuses_an_unknown_currency on base is failed (AttributeError)"
+  },
+  "A2s": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_money.py::test_minor_units_per_major_exact_values on base is failed (AttributeError); repro job: tests/test_money.py::test_minor_units_per_major_for_every_currency on base is failed (AttributeError); repro job: tests/test_money.py::test_minor_units_per_major_refuses_an_unknown_currency on base is failed (AttributeError)"
+  },
+  "C": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "checks": []
+  }
+ },
+ {
+  "id": "T17",
+  "void": "2026-11-17: bench-base already has the package src/bank/testing/ (the CI report plugin), so a new module src/bank/testing.py cannot be imported (the package wins) and `from bank.testing import two_funded_accounts` on base gives ImportError for a missing name, not ModuleNotFoundError."
+ },
+ {
+  "id": "T18",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_currencies.py"
+  },
+  "A2file": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_currencies.py"
+  },
+  "A2s": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "C": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "checks": []
+  }
+ },
+ {
+  "id": "T19",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_ledger.py, tests/test_money.py"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_ledger.py::test_account_numbers_are_obviously_fake on base is passed; repro job: tests/test_ledger.py::test_deposit_and_withdraw_keep_books_balanced on base is passed; repro job: tests/test_ledger.py::test_transfer_moves_money on base is passed; repro job: tests/test_ledger.py::test_overdraw_is_refused_and_nothing_is_written on base is passed; repro job: tests/test_ledger.py::test_withdraw_whole_balance_is_allowed on base is passed; repro job: tests/test_ledger.py::test_currency_mismatch_and_bad_amounts on base is passed; repro job: tests/test_ledger.py::test_clearing_account_cannot_be_used_directly on base is passed; repro job: tests/test_ledger.py::test_database_refuses_negative_customer_balance on base is passed; repro job: tests/test_ledger.py::test_invariant_check_finds_tampering on base is passed; repro job: tests/test_ledger.py::test_statement_running_balance on base is passed; repro job: tests/test_ledger.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_ledger.py::test_statement_rejects_reversed_range on base is passed; repro job: tests/test_ledger.py::test_run_once_runs_a_job_once on base is passed; repro job: tests/test_ledger.py::test_a_failed_job_leaves_nothing_and_runs_again on base is passed; repro job: tests/test_ledger.py::test_a_nested_write_failure_undoes_only_its_block on base is passed; repro job: tests/test_ledger.py::test_two_threads_run_a_job_once on base is passed; repro job: tests/test_ledger.py::test_a_stray_transaction_is_not_joined_silently on base is passed; repro job: tests/test_ledger.py::test_a_failed_undo_raises_chained_to_the_original_error on base is passed; repro job: tests/test_ledger.py::test_a_failed_rollback_to_stops_the_job_and_commits_nothing on base is passed; repro job: tests/test_money.py::test_eur_has_two_decimals on base is passed; repro job: tests/test_money.py::test_jpy_has_no_minor_unit on base is passed; repro job: tests/test_money.py::test_bhd_has_three_decimals on base is passed; repro job: tests/test_money.py::test_half_even_rounding on base is passed; repro job: tests/test_money.py::test_float_is_rejected on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[BHD] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[EUR] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[GBP] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[JPY] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[KRW] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[KWD] on base is error; repro job: tests/test_money.py::test_round_trip_all_currencies[SGD] on base is passed; repro job: tests/test_money.py::test_round_trip_all_currencies[USD] on base is passed; repro job: tests/test_money.py::test_money_add_and_mismatch on base is passed; repro job: tests/test_money.py::test_str_shows_major_units on base is passed; repro job: tests/test_money.py::test_money_of_rejects_extra_decimals on base is passed; repro job: tests/test_money.py::test_money_of_rejects_non_numbers[NaN] on base is passed; repro job: tests/test_money.py::test_money_of_rejects_non_numbers[Infinity] on base is passed; repro job: tests/test_money.py::test_money_of_rejects_non_numbers[-Infinity] on base is passed; repro job: tests/test_money.py::test_money_of_rejects_non_numbers[abc] on base is passed"
+  },
+  "A2s": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "C": {
+   "outcome": "cannot_verify",
+   "reason": "no changed executable lines reported, but src/bank/money.py changed code; money_semantics: a person's sign-off of the merged change is required, and none is recorded",
+   "checks": [
+    "coverage: no changed executable lines reported, but src/bank/money.py changed code",
+    "human_signoff: money_semantics: a person's sign-off of the merged change is required, and none is recorded"
+   ]
+  }
+ },
+ {
+  "id": "T20",
+  "void": "2026-11-17: the existing test_every_account_route_checks_the_owner walks every method of every /api/accounts/{account_id} route and requires 404 for a foreign account and for id 9999; a close route that does not look for the account (no 404 for an unknown id, as the row states) makes that old test fail, so the full suite cannot pass on head."
+ },
+ {
+  "id": "T21",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_health.py"
+  },
+  "A2file": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_health.py"
+  },
+  "A2s": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "C": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "checks": []
+  }
+ },
+ {
+  "id": "T22",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_statement_default_order_is_oldest_first on base is passed; coverage job: changed lines 67%"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_statement_default_order_is_oldest_first on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed; coverage job: changed lines 67%"
+  },
+  "A2s": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_statement_default_order_is_oldest_first on base is passed; coverage job: changed lines 67%"
+  },
+  "C": {
+   "outcome": "contradicted",
+   "reason": "test_statement_default_order_is_oldest_first passes on base, so it does not reproduce the problem; 4 of 6 changed lines covered (67%), floor 80%",
+   "checks": [
+    "reproduced: test_statement_default_order_is_oldest_first passes on base, so it does not reproduce the problem",
+    "coverage: 4 of 6 changed lines covered (67%), floor 80%"
+   ]
+  }
+ },
+ {
+  "id": "T23",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_api.py"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "C": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "checks": []
+  }
+ },
+ {
+  "id": "T24",
+  "simulated": false,
+  "A1": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "A2": {
+   "outcome": "human gate",
+   "reason": "code owners: tests/test_api.py"
+  },
+  "A2file": {
+   "outcome": "blocked",
+   "reason": "repro job: tests/test_api.py::test_session_cookie_and_unknown_customer on base is passed; repro job: tests/test_api.py::test_customer_list_for_demo_chooser on base is passed; repro job: tests/test_api.py::test_list_accounts_shows_only_own on base is passed; repro job: tests/test_api.py::test_every_account_route_checks_the_owner on base is passed; repro job: tests/test_api.py::test_statement_end_date_is_inclusive on base is passed; repro job: tests/test_api.py::test_statement_rejects_bad_dates on base is passed; repro job: tests/test_api.py::test_transfer_success on base is passed; repro job: tests/test_api.py::test_transfer_from_foreign_account_is_404 on base is passed; repro job: tests/test_api.py::test_transfer_errors[100.01-YMS-0000-0003-409] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.001-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[0-YMS-0000-0003-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-9999-9999-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-CLR-EUR-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0002-404] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1.00-YMS-0000-0001-400] on base is passed; repro job: tests/test_api.py::test_transfer_errors[-5-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_errors[1e3-YMS-0000-0003-422] on base is passed; repro job: tests/test_api.py::test_transfer_requires_an_idempotency_key on base is passed; repro job: tests/test_api.py::test_retry_with_the_same_key_moves_money_once on base is passed; repro job: tests/test_api.py::test_same_key_with_a_different_body_is_rejected on base is passed; repro job: tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-12-31] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?to=9999-01-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=1899-12-31&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_statement_dates_out_of_range_are_400[?from=0001-01-01&to=2026-05-01] on base is passed; repro job: tests/test_api.py::test_the_same_key_is_scoped_to_each_customer on base is passed; repro job: tests/test_api.py::test_amount_spelling_does_not_change_the_request on base is passed; repro job: tests/test_api.py::test_a_replay_returns_the_original_result on base is passed"
+  },
+  "A2s": {
+   "outcome": "merge",
+   "reason": "required checks pass"
+  },
+  "C": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "checks": []
+  }
+ }
+]
