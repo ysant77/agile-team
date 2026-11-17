@@ -139,3 +139,43 @@ test('decide reads the sign-off audit event and passes the claimant to the check
     console.log = log;
   }
 });
+
+// Finding 11.
+test('ci_attempts uses the default workflow path when the config names none', () => {
+  const run = { path: '.github/workflows/ci.yml', headSha: 'h', attempt: 2, earlierFailures: [{ attempt: 1, job: 'test', step: 'Run pytest' }] };
+  const r = checks.ciAttempts({ pr: { headSha: 'h' }, workflowRuns: [run], config: {} });
+  assert.equal(r?.status, 'unknown');
+});
+
+test('a run with more earlier attempts than are read is unknown, not clean', async () => {
+  const { collectGithub } = await import('../src/github-evidence.js');
+  const H = 'c'.repeat(40);
+  const fetchFn = async (url) => {
+    const page = Number(new URL(url).searchParams.get('page') ?? 1);
+    const body = /\/pulls\?/.test(url) ? (page === 1 ? [{ number: 20, title: 'BANK-13 fix', state: 'open', head: { ref: 'b', sha: H, repo: { full_name: 'ysant77/yms-bank-demo' } } }] : [])
+      : /\/actions\/runs\?/.test(url) ? (page === 1 ? { workflow_runs: [{ id: 9, run_attempt: 8, name: 'CI', path: '.github/workflows/ci.yml', head_sha: H, status: 'completed', conclusion: 'success' }] } : { workflow_runs: [] })
+      : /\/attempts\/\d+\/jobs/.test(url) ? { jobs: [{ name: 'test', steps: [{ name: 'Run pytest', conclusion: 'success' }] }] }
+      : /\/pulls\/20\/files/.test(url) ? []
+      : null;
+    return body === null ? { ok: false, status: 404, json: async () => ({}), headers: { get: () => null } } : { ok: true, status: 200, json: async () => body, headers: { get: () => null } };
+  };
+  const gh = await collectGithub({ repo: 'ysant77/yms-bank-demo', key: 'BANK-13', fetchFn });
+  const r = checks.ciAttempts({ pr: gh.pr, workflowRuns: gh.workflowRuns, config: { requiredWorkflowPaths: ['.github/workflows/ci.yml'] } });
+  assert.equal(r.status, 'unknown', r.reason);
+  assert.match(r.reason, /not read/);
+});
+
+test('the evidence record lists the audited sign-off as the human decision', async () => {
+  const { buildDoneEvidence } = await import('../src/verifier/evidence.js');
+  const ctx = signoffCtx();
+  ctx.ticket.decisions = [{ by: 'forged', seq: 1, text: 'not from the app' }];
+  const e = buildDoneEvidence({ id: 'd', type: 'done' }, ctx, [checks.checkHumanSignoff(ctx)]);
+  assert.deepEqual(e.humanDecisions, [{ by: 'acc-reviewer', seq: 7, text: `signed off ${MERGE}: checked the rounding` }]);
+  const unaudited = signoffCtx({ signoffEvent: null });
+  assert.deepEqual(buildDoneEvidence({ id: 'd', type: 'done' }, unaudited, [checks.checkHumanSignoff(unaudited)]).humanDecisions, []);
+});
+
+test('the checker version names the definition-of-done rules', async () => {
+  const { CHECKER_VERSION } = await import('../src/verifier/verdict.js');
+  assert.equal(CHECKER_VERSION, 'verifier/2');
+});
