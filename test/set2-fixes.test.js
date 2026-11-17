@@ -10,7 +10,14 @@ import { checkHumanSignoff, ciGreen } from '../src/verifier/checks.js';
 import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
 
-const load = (id) => JSON.parse(readFileSync(new URL(`../fixtures/bench/${id}.json`, import.meta.url), 'utf8'));
+// The recorded reports predate unmeasured_files (review finding 14); read them as the current
+// coverage script writes them, with an empty list.
+const load = (id) => {
+  const c = JSON.parse(readFileSync(new URL(`../fixtures/bench/${id}.json`, import.meta.url), 'utf8'));
+  const cov = c.github?.report?.coverage;
+  if (cov && !('unmeasured_files' in cov)) cov.unmeasured_files = [];
+  return c;
+};
 
 async function verdictOf(c) {
   const d = {
@@ -27,7 +34,7 @@ async function verdictOf(c) {
   }
 }
 
-test('B23 is supported as recorded (the base of the changed fixtures below)', async () => {
+test('B23 is supported with an empty unmeasured_files list (the base of the changed fixtures below)', async () => {
   const v = await verdictOf(load('B23'));
   assert.equal(v.result, 'supported', v.reason);
 });

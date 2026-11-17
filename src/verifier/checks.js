@@ -673,10 +673,6 @@ export function coverageOk(ctx) {
       return result('coverage', 'unknown', `${file} adds pragma: no cover`);
     }
   }
-  // A changed source file that the coverage data does not have looks fully covered in the counts
-  // (benchmark set 2, S18). The coverage script names such files.
-  const unmeasured = Array.isArray(cov.unmeasured_files) ? cov.unmeasured_files : [];
-  if (unmeasured.length) return result('coverage', 'unknown', `${unmeasured.join(', ')} changed but not in the coverage data`);
   const conf = { ...DEFAULT_COVERAGE, ...(ctx.config?.coverage ?? {}) };
   const exec = Number(cov.changed_executable ?? NaN);
   const covered = Number(cov.changed_covered ?? NaN);
@@ -685,6 +681,15 @@ export function coverageOk(ctx) {
   if (exec > 0 && covered / exec < conf.changedFloor) {
     return result('coverage', 'fail', `${covered} of ${exec} changed lines covered (${Math.round((covered / exec) * 100)}%), floor ${floorPct}%`);
   }
+  // Checked after the changed-line floor: a file missing from the data only lowers the share of
+  // covered changed lines, so a fail there stays a fail.
+  // A changed source file that the coverage data does not have looks fully covered in the counts
+  // (benchmark set 2, S18). The coverage script names such files. A report without the list, or
+  // with a list that is not an array, cannot show that every changed file was measured (review
+  // finding 14). Reports from before the field existed therefore give unknown here.
+  const unmeasured = cov.unmeasured_files;
+  if (!Array.isArray(unmeasured)) return result('coverage', 'unknown', 'the coverage block has no unmeasured_files list, so a changed file may be missing from the coverage data');
+  if (unmeasured.length) return result('coverage', 'unknown', `${unmeasured.join(', ')} changed but not in the coverage data`);
   if (typeof cov.head_total !== 'number' || typeof cov.base_total !== 'number') {
     return result('coverage', 'unknown', 'head or base total coverage missing');
   }

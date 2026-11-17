@@ -10,7 +10,18 @@ import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
 
 const DIR = new URL('../fixtures/bench/', import.meta.url);
-const load = (id) => JSON.parse(readFileSync(new URL(`${id}.json`, DIR), 'utf8'));
+const recorded = (id) => JSON.parse(readFileSync(new URL(`${id}.json`, DIR), 'utf8'));
+
+// The recorded reports are from before the coverage script wrote unmeasured_files, and the
+// coverage check gives unknown without that list (review finding 14). The cases below test other
+// rules, so they read each report as the current script writes it: with an empty list.
+// The recorded form is tested on its own below.
+const load = (id) => {
+  const c = recorded(id);
+  const cov = c.github?.report?.coverage;
+  if (cov && !('unmeasured_files' in cov)) cov.unmeasured_files = [];
+  return c;
+};
 
 export async function run(id) {
   return runCase(load(id));
@@ -49,6 +60,14 @@ for (const [id, want] of Object.entries(KEEP)) {
     assert.equal(v.result, want, v.reason);
   });
 }
+
+test('a recorded report from before unmeasured_files gives cannot_verify for done, not supported', async () => {
+  for (const id of ['B23', 'I03', 'I04']) {
+    const v = await runCase(recorded(id));
+    assert.equal(v.result, 'cannot_verify', `${id}: ${v.reason}`);
+    assert.match(v.reason, /unmeasured_files/);
+  }
+});
 
 test('every invalid case of set 1 is in the regression net or a named fix or limit', () => {
   const invalid = ['B01', 'B02', 'B03', 'B05', 'B06', 'B07', 'B08', 'B09', 'B11', 'B12', 'B13', 'B19', 'B20', 'I05', 'I06', 'I07', 'I10'];
