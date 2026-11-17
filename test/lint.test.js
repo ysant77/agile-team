@@ -134,3 +134,26 @@ test('lint v6: only an issue key or AC id from the request or the draft is strip
   ];
   assert.deepEqual(ungrounded('The API refuses the request.', acs), []);
 });
+
+test('lint v6: text is normalised, and a plural noun, a unit or a test name hides no number', () => {
+  const ungrounded = ungroundedFor('A customer saw the wrong balance.');
+  const check = (type, args) => [{ acId: 'AC1', statement: 'the API refuses the request', check: { type, args } }];
+  const invented = {
+    'The API returns 500 errors.': ['500'],
+    'The API gets 200 responses per minute.': ['200'],
+    'The API returns 500\nms after a call.': ['500'],
+    'The API returns 500\n\tms after a call.': ['500'],
+    'The page loads in ５ seconds.': ['5'],
+    'The story is 4 points.': ['4'],
+  };
+  for (const [d, n] of Object.entries(invented)) assert.deepEqual(ungrounded(d), n, d);
+  assert.ok(ungrounded('The page loads in ½ second.').length > 0, 'a vulgar fraction is a number');
+  assert.deepEqual(ungrounded('The API refuses the request.', check('test_passes', ['test_500ms'])), ['500']);
+  assert.deepEqual(ungrounded('The API refuses the request.', check('test_passes', ['test_BANK2_owner_check'])), []);
+  for (const d of [
+    'The API returns 500 error.',
+    'The API returns 404 status.',
+    'The API returns 404',
+    'The story is 5 points.',
+  ]) assert.deepEqual(ungrounded(d), [], d);
+});
