@@ -1,7 +1,9 @@
 // Agile Code Reviewer (DESIGN.md section 14a). The reviewer reads the pull request's patch hunks
 // and gives a review marked "not verified": findings tied to hunk ids, risks, and proposed checks.
-// Code checks every id, line, number and proposed test. A review never changes a verdict and never
-// approves; a proposed check counts only when CI runs the test and the verifier maps it to an AC.
+// Code checks every id, line, number and proposed test. A review never passes a claim and never
+// approves. Only a blocking finding with an AC id, for the same head commit, can hold a supported
+// claim at cannot_verify for a person to check (src/review-hold.js). A proposed check counts only
+// when CI runs the test and the verifier maps it to an AC.
 
 import { canonical, sha256 } from './audit.js';
 import { numbersIn, quantityText } from './lint.js';
@@ -10,13 +12,16 @@ import { lintText, STYLE_CONTRACT, lintMessage } from './style.js';
 import { VERIFY_CONFIG } from './verify-claim.js';
 import { testName, testsByName } from './verifier/report.js';
 
-export const REVIEW_GUARD_VERSION = 2;
-export const REVIEW_PROMPT_VERSION = 'code-review/1';
+// Guard version 4: the severity guards (3) plus the line, number, verdict-word and adoption
+// guards from the unit 6 review.
+export const REVIEW_GUARD_VERSION = 5;
+export const REVIEW_PROMPT_VERSION = 'code-review/2';
 export const REVIEW_LABEL = 'Review (not verified)';
 export const MAX_FINDINGS = 6;
 export const MAX_CHECKS = 3;
 export const MAX_HUNKS = 40;
 export const MAX_PATCH_LINES = 600;
+export const SEVERITIES = ['blocking', 'note'];
 export const TRIGGERS = ['cannot_verify', 'manual_ac', 'design', 'readability', 'request'];
 
 // Fields that would make a review look like a decision. The schema refuses them.
@@ -135,6 +140,8 @@ export function validateReview(raw) {
       if (!f || typeof f.hunk !== 'string' || typeof f.file !== 'string') errors.push(`finding ${i + 1}: hunk and file are required`);
       if (!Number.isInteger(f?.line) || f.line < 1) errors.push(`finding ${i + 1}: line must be a whole number`);
       if (!nonEmpty(f?.text)) errors.push(`finding ${i + 1}: no text`);
+      if (f?.severity !== undefined && !SEVERITIES.includes(f.severity)) errors.push(`finding ${i + 1}: severity must be blocking or note`);
+      if (f?.ac !== undefined && typeof f.ac !== 'string') errors.push(`finding ${i + 1}: ac must be an AC id`);
     });
   }
   if (!Array.isArray(risks) || risks.some((r) => typeof r !== 'string')) errors.push('risks must be a list of strings');
@@ -152,7 +159,10 @@ export function validateReview(raw) {
     ok: true,
     errors: [],
     review: {
-      findings: findings.map((f) => ({ hunk: f.hunk, file: f.file, line: f.line, text: f.text.trim() })),
+      findings: findings.map((f) => ({
+        hunk: f.hunk, file: f.file, line: f.line, text: f.text.trim(), severity: f.severity ?? 'note',
+        ...(typeof f.ac === 'string' && f.ac.trim() ? { ac: f.ac.trim() } : {}),
+      })),
       risks: risks.map((r) => r.trim()).filter(Boolean),
       proposedChecks: checks.map((c) => ({ testName: c.testName.trim(), file: c.file.trim(), ac: c.ac.trim(), asserts: c.asserts.trim(), failsBeforeFix: c.failsBeforeFix })),
     },
@@ -188,6 +198,31 @@ function ungroundedNumbers(text, hunkId, packet, allowed) {
   return bad;
 }
 
+// Guard 7 (version 5): text is compared lower-cased with all whitespace removed, so a quote in
+// other letter case or with extra spaces is still a quote.
+const fold = (t) => t.toLowerCase().replace(/\s+/g, '');
+
+// Guard 7 (version 3): the share of a finding's text that is hunk content copied verbatim. Hunk
+// ids and AC ids are removed first. Only runs of at least COPY_MIN characters count, so a short
+// name in the reviewer's own sentence is not a copy. `code` is already folded.
+const COPY_MIN = 12;
+function copiedShare(body, code) {
+  const text = fold(body.replace(HUNK_ID, ' ').replace(/\bAC\d+\b/g, ' '));
+  if (text.length === 0) return 0;
+  let copied = 0;
+  for (let i = 0; i < text.length;) {
+    let n = 0;
+    while (i + n < text.length && code.includes(text.slice(i, i + n + 1))) n += 1;
+    if (n >= COPY_MIN) {
+      copied += n;
+      i += n;
+    } else {
+      i += 1;
+    }
+  }
+  return copied / text.length;
+}
+
 // Returns the record that is shown and audited. `outcome` is 'review' (advice only) or
 // 'invalid_review' (refused by a guard). There is no verdict field: code decides the verdict.
 export function applyReviewGuards(raw, packet, meta = {}) {
@@ -217,6 +252,22 @@ export function applyReviewGuards(raw, packet, meta = {}) {
     if (f.file !== h.file) return invalid('wrong-file', `${f.hunk} is in ${h.file}, not ${f.file}`);
     if (f.line < h.newStart || f.line > h.newEnd) return invalid('line-outside-hunk', `line ${f.line} is outside ${f.hunk} (${h.newStart} to ${h.newEnd})`);
     if (!addedLines(h).has(f.line)) return invalid('line-not-added', `line ${f.line} is not an added line of ${f.hunk}`);
+  }
+  // Guard 7 (code-review/2): a blocking finding names an AC of the ticket and states a defect in
+  // the reviewer's own words. A quoted changed line is not a defect statement.
+  // Known limit (docs/claims.md): the guard refuses copied code only. A short text with no defect
+  // statement and no copied code, such as "Bad.", passes. Such a finding can only hold a
+  // supported claim for a person to check; it can never pass a claim.
+  const acSet = new Set(packet.ticket.acs.map((a) => a.acId));
+  for (const f of review.findings) {
+    if (f.ac !== undefined && !acSet.has(f.ac)) return invalid('unknown-ac', `${f.ac} is not an AC of ${packet.ticket.key}`);
+    if (f.severity !== 'blocking') continue;
+    if (!f.ac) return invalid('blocking-needs-ac', `a blocking finding at ${f.hunk} must name the AC that the change fails`);
+    const body = fold(f.text);
+    const code = packet.hunks.map((h) => fold(h.text.split('\n').map((l) => l.replace(/^[+\- ]/, '')).join('\n')));
+    if (code.some((c) => c.includes(body)) || copiedShare(f.text, code.join('\n')) > 0.5) {
+      return invalid('quoted-line', `the blocking finding at ${f.hunk} quotes changed code; state the defect against ${f.ac}`);
+    }
   }
   // Guard 2: ids and numbers come from the packet.
   const known = packetText(packet);
@@ -253,6 +304,9 @@ function templateReview(review) {
     proposedChecks: review.proposedChecks.map((c) => ({ ...c, asserts: `${c.testName} must pass for ${c.ac}.` })),
   };
 }
+
+// Arm D rating rule: the findings that can hold a claim (see review-hold.js).
+export { blockingFindings } from './review-hold.js';
 
 // Guard 6: a refused review or a style finding gets one retry. After that, a refused review is
 // dropped (the human sees "no valid review"), and style findings are replaced by a template.
@@ -312,8 +366,8 @@ export function formatReview(issueKey, prNumber, record) {
   }
   const r = record.review;
   return [
-    `${REVIEW_LABEL} on ${issueKey} PR #${prNumber}. It does not change the verdict.`,
-    ...r.findings.map((f) => `- ${f.hunk} ${f.file}:${f.line}: ${f.text}`),
+    `${REVIEW_LABEL} on ${issueKey} PR #${prNumber}. It never passes a claim; a blocking finding holds a supported claim for a person to check.`,
+    ...r.findings.map((f) => `- ${f.severity === 'blocking' ? `Blocking (${f.ac}) ` : ''}${f.hunk} ${f.file}:${f.line}: ${f.text}`),
     ...r.risks.map((x) => `- Risk: ${x}`),
     ...r.proposedChecks.map((c) => `- Proposed check for ${c.ac}: ${c.testName} in ${c.file}. It must assert: ${c.asserts}${c.failsBeforeFix ? ' It must fail before the fix.' : ''}`),
   ].join('\n');
