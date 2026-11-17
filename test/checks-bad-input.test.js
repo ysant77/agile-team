@@ -12,7 +12,8 @@ import { nextEvent } from '../src/audit.js';
 
 // missing: the key is deleted. null_element: a list whose only element is null (also a wrong
 // type where the input is not a list).
-const BAD = { missing: undefined, null: null, empty_string: '', empty_array: [], null_element: [null], NaN: Number.NaN, Infinity: Number.POSITIVE_INFINITY };
+const BAD = { missing: undefined, null: null, empty_string: '', empty_array: [], null_element: [null], NaN: Number.NaN, Infinity: Number.POSITIVE_INFINITY,
+  minus_Infinity: Number.NEGATIVE_INFINITY };
 const HEAD = 'a'.repeat(40);
 const BASE = 'b'.repeat(40);
 const MERGE = 'c'.repeat(40);
@@ -123,7 +124,7 @@ const TRUST = ['report', 'report.head_sha', 'report.workflow_files', 'reportAuth
 // A run's start and end times fall back to its creation time (GitHub leaves run_started_at out
 // of old runs). The fallback keeps the edit inside the window here.
 const TRUST_ALLOW = { 'workflowRuns.0.runStartedAt': ['missing', 'null'], 'workflowRuns.0.updatedAt': ['missing', 'null'],
-  'workflowRuns.0.createdAt': ['missing', 'null', 'empty_string', 'empty_array', 'null_element', 'NaN', 'Infinity'] };
+  'workflowRuns.0.createdAt': Object.keys(BAD) };
 const RUN = ['workflowRuns', 'workflowRuns.0', 'workflowRuns.0.path', 'workflowRuns.0.headSha', 'workflowRuns.0.status', 'workflowRuns.0.conclusion',
   'workflowRuns.0.attempt', 'workflowRuns.0.earlierConclusions', 'workflowRuns.0.earlierConclusions.0', 'workflowRuns.0.earlierConclusions.0.attempt',
   'workflowRuns.0.earlierConclusions.0.conclusion', 'workflowRuns.0.earlierUnread', 'workflowRuns.0.createdAt'];
@@ -131,7 +132,7 @@ const RUN = ['workflowRuns', 'workflowRuns.0', 'workflowRuns.0.path', 'workflowR
 // missing attempt is attempt 1. A missing earlierUnread count is 0. A run's time is read only
 // when a run without a result is on the head.
 const RUN_ALLOW = { 'workflowRuns.0.attempt': ['missing'], 'workflowRuns.0.earlierUnread': ['missing'],
-  'workflowRuns.0.createdAt': ['missing', 'null', 'empty_string', 'empty_array', 'null_element', 'NaN', 'Infinity'] };
+  'workflowRuns.0.createdAt': Object.keys(BAD) };
 const merge = (...a) => Object.assign({}, ...a);
 const ROWS = [
   ['pipelineChange', ['prFiles', 'prFiles.0']],
@@ -139,7 +140,7 @@ const ROWS = [
   // The title alone is not key: the branch name also names the key. The fork list and the pull
   // request page flag are read only when no PR is linked. The PR number is used only in reasons.
   ['prLinked', ['pr', 'pr.number', 'pr.state', 'pr.merged', 'prCandidates', 'prCandidates.0', 'ticket', 'ticket.key'],
-    { allow: { 'pr.number': ['missing', 'null', 'empty_string', 'empty_array', 'null_element', 'NaN', 'Infinity'] } }],
+    { allow: { 'pr.number': Object.keys(BAD) } }],
   ['ciGreen', ['pr', 'pr.headSha', ...RUN, 'prFiles', 'prFiles.0', 'truncated', 'truncated.runs', 'config.requiredWorkflowPaths'],
     // No configured list means the default pinned workflow, which the good run is.
     { allow: merge(RUN_ALLOW, { 'config.requiredWorkflowPaths': ['missing'] }) }],
@@ -180,8 +181,8 @@ const ROWS = [
   ['manual', ['arg:0'], { expect: 'unknown' }],
   ['onMain', ['pr', 'pr.merged', 'prCandidates', 'prCandidates.0', 'ticket', 'ticket.key'],
     // The key is used only in reasons once a PR is linked.
-    { allow: { ticket: ['missing', 'null', 'empty_string', 'empty_array', 'null_element', 'NaN', 'Infinity'],
-      'ticket.key': ['missing', 'null', 'empty_string', 'empty_array', 'null_element', 'NaN', 'Infinity'] } }],
+    { allow: { ticket: Object.keys(BAD),
+      'ticket.key': Object.keys(BAD) } }],
   ['acTestsRunNewCode', ['prPatches', 'prPatches.[src/x.py]', 'report.tests', 'report.tests.0'], { expect: null }],
   // An empty earlierFailures list is the read result "no step failed in an earlier attempt". The
   // run's own status and conclusion are ci_green's inputs; ci_attempts reads only the attempts.
@@ -394,4 +395,37 @@ test('coverageOk: a total coverage outside 0 to 100 gives unknown', () => {
     Object.assign(ctx.report.coverage, { head_total: head, base_total: base });
     assert.equal(c.coverageOk(ctx).status, 'pass', `${head}/${base}`);
   }
+});
+
+// Final review, item 1: a metric that is not a finite number (1e999 parses to Infinity, also
+// -Infinity) gives unknown in both directions, as one number and as a median.
+test('metricCompare: a non-finite metric value gives unknown, never pass', () => {
+  for (const value of [1e999, -1e999, Number.NaN]) {
+    for (const [direction, bound] of [['min', 5], ['max', 20]]) {
+      for (const shape of ['number', 'median']) {
+        const ctx = good();
+        ctx.report.metrics.latency_ms = shape === 'number' ? value : { median: value, iqr_low: 1, iqr_high: 2, runs: 5 };
+        const r = c.metricCompare(ctx, 'latency_ms', bound, direction);
+        assert.equal(r.status, 'unknown', `${shape} ${value} ${direction}: ${r.reason}`);
+      }
+    }
+  }
+});
+
+// Final review, item 1: a version that does not start with a release number gives unknown.
+test('versionAtLeast: an unparsable version gives unknown, never pass', () => {
+  for (const found of ['latest', 'abc', 'v', '*', '.', '-1', 'x.y.z']) {
+    const ctx = good();
+    ctx.report.deps.requests = found;
+    const r = c.versionAtLeast(ctx, 'requests', '0.0.0');
+    assert.equal(r.status, 'unknown', `found ${found}: ${r.reason}`);
+  }
+  for (const wanted of ['latest', 'abc', 'x.1']) {
+    const r = c.versionAtLeast(good(), 'requests', wanted);
+    assert.equal(r.status, 'unknown', `wanted ${wanted}: ${r.reason}`);
+  }
+  // Release numbers still compare as before.
+  assert.equal(c.versionAtLeast(good(), 'requests', '2.32.0').status, 'pass');
+  assert.equal(c.versionAtLeast(good(), 'requests', '2.32.1').status, 'fail');
+  assert.equal(c.versionAtLeast(good(), 'requests', '2.4').status, 'pass');
 });
