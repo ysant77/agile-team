@@ -23,6 +23,26 @@ This repository starts from the Forge template. The app code arrives in reviewed
 one review unit at a time. Each pull request needs green CI, an independent review and the
 owner's approval.
 
+## No check passes by default
+
+Every check in `src/verifier/checks.js` gives `unknown` (the verdict `cannot_verify`) when a key
+input is missing, empty, not a finite number, or of the wrong type. A check never passes because
+an input was absent. A check that gives `fail` on such an input (for example "no pull request")
+keeps that result. A check that only applies under a condition can return no result.
+
+Exceptions, where an empty list is a valid read result and not missing evidence:
+
+- `subtasks_done`, `blocked_by_done`: Jira gives an empty list when the ticket has no sub-tasks
+  or links, so none is open.
+- `unique_migrations`: a repository with no migrations reports an empty list.
+- `ci_attempts`: an empty list of earlier failures means no earlier attempt failed.
+- `reproduced`: an empty `changed_support` list means no pytest support file changed; a Bug with
+  no acceptance criteria uses the tests named for its key.
+- `coverage`: an empty `unmeasured_files` list means every changed file is in the coverage data.
+
+`test/checks-bad-input.test.js` feeds each exported check the values `null`, `""`, `[]`, `NaN`
+and `Infinity` in its key inputs and asserts that the result is never `pass`.
+
 ## Run the tests
 
 You need Node.js 24 (the Forge runtime is `nodejs24.x`).
