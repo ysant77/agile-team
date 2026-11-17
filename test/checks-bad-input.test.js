@@ -1,14 +1,18 @@
 // General rule (README, "No check passes by default"): every check gives unknown on a missing,
 // empty, non-finite or malformed input. Each row starts from a context where the check passes,
-// replaces one key input with each bad value, and asserts that the check does not pass and does
-// not throw. A check that returns null (rule not applicable) or a reason string is also covered.
+// replaces one input it reads (also an element inside a list) with each bad value, and asserts
+// that the check does not pass and does not throw. A check that returns null (rule not
+// applicable) or a reason string is also covered. The app's own config constant is read only
+// where a bad value could turn a check into a pass (required workflows, security check).
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as c from '../src/verifier/checks.js';
 import { nextEvent } from '../src/audit.js';
 
-const BAD = { null: null, empty_string: '', empty_array: [], NaN: Number.NaN, Infinity: Number.POSITIVE_INFINITY };
+// missing: the key is deleted. null_element: a list whose only element is null (also a wrong
+// type where the input is not a list).
+const BAD = { missing: undefined, null: null, empty_string: '', empty_array: [], null_element: [null], NaN: Number.NaN, Infinity: Number.POSITIVE_INFINITY };
 const HEAD = 'a'.repeat(40);
 const BASE = 'b'.repeat(40);
 const MERGE = 'c'.repeat(40);
@@ -77,7 +81,8 @@ function good() {
     timeline: [{ link: 'https://example.test/1' }],
     baseTip: BASE,
     securityRuns: [{ headSha: HEAD, name: 'CodeQL', appSlug: 'github-advanced-security', appId: 57789, status: 'completed', conclusion: 'success', title: 'No new alerts' }],
-    truncated: {},
+    // The reader always sets every flag; false means the list is complete.
+    truncated: { pulls: false, comments: false, runs: false, files: false, checks: false },
     config: {
       requiredWorkflowPaths: [CI],
       securityCheck: { mode: 'enforce', checkName: 'CodeQL', appSlug: 'github-advanced-security', appId: 57789 },
@@ -85,12 +90,15 @@ function good() {
   };
 }
 
-// Path segments: "report.coverage.head_total", "workflowRuns.0.earlierFailures".
+// Path segments: "report.coverage.head_total", "workflowRuns.0.earlierFailures". A key with a
+// dot goes in brackets: "prPatches.[tests/test_x.py]". undefined deletes the key; in a list it
+// becomes an undefined element (JSON has no holes).
 function setPath(obj, path, value) {
-  const keys = path.split('.');
+  const keys = path.match(/\[[^\]]*\]|[^.]+/g).map((k) => k.replace(/^\[|\]$/g, ''));
   let o = obj;
   for (const k of keys.slice(0, -1)) o = o[k];
-  o[keys.at(-1)] = value;
+  if (value === undefined && !Array.isArray(o)) delete o[keys.at(-1)];
+  else o[keys.at(-1)] = value;
 }
 
 // Each row: the call, the key inputs (context paths, or "arg:<n>" for an argument), and options.
@@ -108,53 +116,96 @@ const ARGS = {
   securityCheck: ['done'],
   metricIntegrity: ['latency_ms'],
 };
+// The inputs of reportTrusted, read by every check that needs a trusted report.
+const TRUST = ['report', 'report.head_sha', 'report.workflow_files', 'reportAuthor', 'pr', 'pr.headSha', 'baseWorkflowFiles', 'truncated', 'truncated.comments',
+  'reportComment', 'reportComment.updatedAt', 'prFiles', 'prFiles.0', 'workflowRuns', 'workflowRuns.0', 'workflowRuns.0.path', 'workflowRuns.0.headSha',
+  'workflowRuns.0.createdAt', 'workflowRuns.0.runStartedAt', 'workflowRuns.0.updatedAt'];
+// A run's start and end times fall back to its creation time (GitHub leaves run_started_at out
+// of old runs). The fallback keeps the edit inside the window here.
+const TRUST_ALLOW = { 'workflowRuns.0.runStartedAt': ['missing', 'null'], 'workflowRuns.0.updatedAt': ['missing', 'null'],
+  'workflowRuns.0.createdAt': ['missing', 'null', 'empty_string', 'empty_array', 'null_element', 'NaN', 'Infinity'] };
+const RUN = ['workflowRuns', 'workflowRuns.0', 'workflowRuns.0.path', 'workflowRuns.0.headSha', 'workflowRuns.0.status', 'workflowRuns.0.conclusion',
+  'workflowRuns.0.attempt', 'workflowRuns.0.earlierConclusions', 'workflowRuns.0.earlierConclusions.0', 'workflowRuns.0.earlierConclusions.0.attempt',
+  'workflowRuns.0.earlierConclusions.0.conclusion', 'workflowRuns.0.earlierUnread', 'workflowRuns.0.createdAt'];
+// GitHub gives run_attempt 1 for a run that was never re-run, and old runs leave it out: a
+// missing attempt is attempt 1. A missing earlierUnread count is 0. A run's time is read only
+// when a run without a result is on the head.
+const RUN_ALLOW = { 'workflowRuns.0.attempt': ['missing'], 'workflowRuns.0.earlierUnread': ['missing'],
+  'workflowRuns.0.createdAt': ['missing', 'null', 'empty_string', 'empty_array', 'null_element', 'NaN', 'Infinity'] };
+const merge = (...a) => Object.assign({}, ...a);
 const ROWS = [
-  ['pipelineChange', ['prFiles']],
-  ['reportTrusted', ['report', 'report.head_sha', 'report.workflow_files', 'reportAuthor', 'pr.headSha', 'baseWorkflowFiles', 'reportComment', 'reportComment.updatedAt', 'prFiles', 'workflowRuns']],
-  // The title alone is not key: the branch name also names the key.
-  ['prLinked', ['pr', 'pr.state', 'pr.merged', 'prCandidates', 'ticket.key']],
-  ['ciGreen', ['pr.headSha', 'workflowRuns', 'workflowRuns.0.conclusion', 'workflowRuns.0.status', 'workflowRuns.0.earlierConclusions',
-    'workflowRuns.0.earlierConclusions.0.conclusion', 'prFiles', 'config.requiredWorkflowPaths']],
-  ['testPasses', ['arg:0', 'report', 'report.tests']],
-  ['bugTestExists', ['report.tests', 'ticket.key']],
+  ['pipelineChange', ['prFiles', 'prFiles.0']],
+  ['reportTrusted', TRUST, { allow: TRUST_ALLOW }],
+  // The title alone is not key: the branch name also names the key. The fork list and the pull
+  // request page flag are read only when no PR is linked. The PR number is used only in reasons.
+  ['prLinked', ['pr', 'pr.number', 'pr.state', 'pr.merged', 'prCandidates', 'prCandidates.0', 'ticket', 'ticket.key'],
+    { allow: { 'pr.number': ['missing', 'null', 'empty_string', 'empty_array', 'null_element', 'NaN', 'Infinity'] } }],
+  ['ciGreen', ['pr', 'pr.headSha', ...RUN, 'prFiles', 'prFiles.0', 'truncated', 'truncated.runs', 'config.requiredWorkflowPaths'],
+    // No configured list means the default pinned workflow, which the good run is.
+    { allow: merge(RUN_ALLOW, { 'config.requiredWorkflowPaths': ['missing'] }) }],
+  ['testPasses', ['arg:0', ...TRUST, 'report.tests', 'report.tests.0', 'report.tests.0.id', 'report.tests.0.outcome'], { allow: TRUST_ALLOW }],
+  ['bugTestExists', [...TRUST, 'report.tests', 'report.tests.0', 'report.tests.0.id', 'report.tests.0.outcome', 'ticket', 'ticket.key'], { allow: TRUST_ALLOW }],
   // For a metric the test list is a guard (no failed test), not the evidence: an empty list has
-  // no failed test.
-  ['metricIntegrity', ['arg:0', 'report.tests', 'prFiles', 'prPatches'], { allow: { 'report.tests': ['empty_array'] } }],
-  ['metricCompare', ['arg:0', 'arg:1', 'arg:2', 'report.metrics', 'report.metrics.latency_ms', 'report.tests', 'prFiles'], { allow: { 'report.tests': ['empty_array'] } }],
-  ['versionAtLeast', ['arg:0', 'arg:1', 'report.deps', 'report.deps.requests']],
-  ['pathAbsent', ['arg:0', 'headPaths']],
-  // Jira returns an empty list when a ticket has no sub-tasks or links: none is open.
-  ['subtasksDone', ['ticket.subtasks', 'ticket.subtasks.0.statusCategory'], { allow: { 'ticket.subtasks': ['empty_array'] } }],
-  ['blockedByDone', ['ticket.links', 'ticket.links.0.statusCategory', 'ticket.links.0.type'], { allow: { 'ticket.links': ['empty_array'] } }],
-  ['deployed', ['deployRuns', 'deployRuns.0.conclusion', 'deployRuns.0.createdAt']],
-  // An empty modules_without_ids list means every changed test module gave its base test ids.
-  ['testsNotRemoved', ['report', 'report.tests', 'baseReport', 'baseReport.tests', 'report.repro.base_test_ids', 'report.repro.base_collect',
-    'report.repro.base_collect.rc', 'report.repro.base_collect.modules_without_ids'], { allow: { 'report.repro.base_collect.modules_without_ids': ['empty_array'] } }],
-  ['migrationAdditive', ['arg:0', 'report.migrations', 'report.migrations.0.operations']],
-  // A repository with no migrations reports an empty list: no two numbers can clash.
-  ['uniqueMigrations', ['arg:0', 'arg:0.migrations'], { allow: { 'arg:0.migrations': ['empty_array'] } }],
-  ['mergedClean', ['mergeReport', 'mergeSha', 'mergeReport.migrations', 'mergeReport.tests', 'baseReport'], { allow: { 'mergeReport.migrations': ['empty_array'] } }],
-  ['repairBalanced', ['report.repair', 'report.repair.debits_minor', 'report.repair.credits_minor', 'report.repair.rows_deleted', 'report.repair.rows_updated']],
-  ['reconProof', ['report.recon', 'report.recon.accounts', 'report.recon.accounts_matching', 'report.recon.diff_minor']],
-  ['evidenceLinked', ['timeline', 'timeline.0.link']],
+  // no failed test. A missing list is a report without tests.
+  ['metricIntegrity', ['arg:0', 'report.tests', 'report.tests.0', 'prFiles', 'prFiles.0', 'prPatches', 'prPatches.[tests/test_x.py]', 'workflowRuns'],
+    { allow: { 'report.tests': ['missing', 'empty_array'], workflowRuns: ['empty_array'] } }],
+  ['metricCompare', ['arg:0', 'arg:1', 'arg:2', ...TRUST, 'report.metrics', 'report.metrics.latency_ms', 'report.tests', 'report.tests.0', 'prPatches'],
+    { allow: merge(TRUST_ALLOW, { 'report.tests': ['missing', 'empty_array'] }) }],
+  ['versionAtLeast', ['arg:0', 'arg:1', ...TRUST, 'report.deps', 'report.deps.requests'], { allow: TRUST_ALLOW }],
+  ['pathAbsent', ['arg:0', 'headPaths', 'headPaths.0']],
+  // Jira returns an empty list when a ticket has no sub-tasks or links: none is open. A missing
+  // field was not read.
+  ['subtasksDone', ['ticket', 'ticket.subtasks', 'ticket.subtasks.0', 'ticket.subtasks.0.statusCategory'], { allow: { 'ticket.subtasks': ['empty_array'] } }],
+  ['blockedByDone', ['ticket', 'ticket.links', 'ticket.links.0', 'ticket.links.0.statusCategory', 'ticket.links.0.type'], { allow: { 'ticket.links': ['empty_array'] } }],
+  ['deployed', ['deployRuns', 'deployRuns.0', 'deployRuns.0.conclusion', 'deployRuns.0.createdAt', 'deployRuns.0.tag']],
+  // An empty modules_without_ids list means every changed test module gave its base test ids. A
+  // report without a repro block is from before the base record existed (as a block without
+  // base_test_ids). Approvals can only turn a fail into a pass, so none stored means none.
+  ['testsNotRemoved', ['report', 'report.tests', 'report.tests.0', 'report.tests.0.id', 'baseReport', 'baseReport.tests', 'baseReport.tests.0', 'baseReport.tests.0.id',
+    'report.repro', 'report.repro.base_test_ids', 'report.repro.base_test_ids.0', 'report.repro.base_collect',
+    'report.repro.base_collect.rc', 'report.repro.base_collect.modules_without_ids', 'ticket', 'ticket.approvedTestRemovals'],
+  { allow: { 'report.repro.base_collect.modules_without_ids': ['empty_array'], 'report.repro': ['missing'], 'ticket.approvedTestRemovals': ['missing', 'empty_array'] } }],
+  ['migrationAdditive', ['arg:0', ...TRUST, 'report.migrations', 'report.migrations.0', 'report.migrations.0.number', 'report.migrations.0.operations',
+    'report.migrations.0.operations.0'], { allow: TRUST_ALLOW }],
+  // A repository with no migrations reports an empty list, or none: no two numbers can clash.
+  ['uniqueMigrations', ['arg:0', 'arg:0.migrations', 'arg:0.migrations.0', 'arg:0.migrations.0.number'], { allow: { 'arg:0.migrations': ['missing', 'empty_array'] } }],
+  // An empty list of tests required after merge means no test by name; the merge report must
+  // still keep every base test and unique migrations.
+  ['mergedClean', ['mergeReport', 'mergeSha', 'mergeReport.migrations', 'mergeReport.migrations.0', 'mergeReport.tests', 'mergeReport.tests.0', 'baseReport',
+    'mergeRequiredTests', 'mergeRequiredTests.0', 'reportAuthor', 'baseWorkflowFiles'],
+  { allow: { 'mergeReport.migrations': ['missing', 'empty_array'], mergeRequiredTests: ['empty_array'] } }],
+  ['repairBalanced', [...TRUST, 'report.repair', 'report.repair.debits_minor', 'report.repair.credits_minor', 'report.repair.rows_deleted', 'report.repair.rows_updated'], { allow: TRUST_ALLOW }],
+  ['reconProof', [...TRUST, 'report.recon', 'report.recon.accounts', 'report.recon.accounts_matching', 'report.recon.diff_minor'], { allow: TRUST_ALLOW }],
+  ['evidenceLinked', ['timeline', 'timeline.0', 'timeline.0.link']],
   ['manual', ['arg:0'], { expect: 'unknown' }],
-  ['onMain', ['pr', 'pr.merged', 'prCandidates']],
-  ['acTestsRunNewCode', ['prPatches', 'report.tests'], { expect: null }],
-  // An empty earlierFailures list is the read result "no step failed in an earlier attempt".
-  ['ciAttempts', ['workflowRuns', 'workflowRuns.0.earlierFailures', 'workflowRuns.0.attempt', 'workflowRuns.0.earlierConclusions',
-    'workflowRuns.0.earlierConclusions.0.conclusion'], { allow: { 'workflowRuns.0.earlierFailures': ['empty_array'] } }],
+  ['onMain', ['pr', 'pr.merged', 'prCandidates', 'prCandidates.0', 'ticket', 'ticket.key'],
+    // The key is used only in reasons once a PR is linked.
+    { allow: { ticket: ['missing', 'null', 'empty_string', 'empty_array', 'null_element', 'NaN', 'Infinity'],
+      'ticket.key': ['missing', 'null', 'empty_string', 'empty_array', 'null_element', 'NaN', 'Infinity'] } }],
+  ['acTestsRunNewCode', ['prPatches', 'prPatches.[src/x.py]', 'report.tests', 'report.tests.0'], { expect: null }],
+  // An empty earlierFailures list is the read result "no step failed in an earlier attempt". The
+  // run's own status and conclusion are ci_green's inputs; ci_attempts reads only the attempts.
+  ['ciAttempts', [...RUN, 'workflowRuns.0.earlierFailures', 'workflowRuns.0.earlierFailures.0', 'pr', 'pr.headSha'],
+    { allow: merge(RUN_ALLOW, { 'workflowRuns.0.earlierFailures': ['empty_array'], 'workflowRuns.0.status': Object.keys(BAD), 'workflowRuns.0.conclusion': Object.keys(BAD) }) }],
   ['baseCurrent', ['baseTip', 'report.base_sha'], { tweak: (ctx) => { ctx.pr.merged = false; } }],
   ['measurementUnchanged', ['prFiles', 'config.guardedPaths'], { expect: null }],
-  ['checkHumanSignoff', ['ticket.signoff', 'ticket.signoff.by', 'ticket.signoff.sha', 'pr.mergeSha']],
+  ['checkHumanSignoff', ['ticket.signoff', 'ticket.signoff.by', 'ticket.signoff.sha', 'ticket.signoff.auditSeq', 'pr.mergeSha', 'claimant', 'signoffEvent', 'signoffEvent.hash']],
   // An empty changed_support list means no pytest support file changed. A Bug with no AC (none
   // stored, or an empty list) uses the tests named for its key.
-  ['reproduced', ['report.repro', 'report.repro.tests', 'report.repro.full_suite', 'report.repro.base_run', 'report.repro.changed_support', 'report.repro.base_collect', 'baseReport', 'ticket.acceptanceCriteria'],
-    { allow: { 'report.repro.changed_support': ['empty_array'], 'ticket.acceptanceCriteria': ['null', 'empty_array'] } }],
+  ['reproduced', [...TRUST, 'report.repro', 'report.repro.head_sha', 'report.repro.tests', 'report.repro.tests.0', 'report.repro.tests.0.id', 'report.repro.tests.0.base',
+    'report.repro.tests.0.base.outcome', 'report.repro.tests.0.base.exc_type', 'report.repro.tests.0.head', 'report.repro.tests.0.head.outcome',
+    'report.repro.full_suite', 'report.repro.full_suite.outcome', 'report.repro.base_run', 'report.repro.base_run.report', 'report.repro.base_run.rc',
+    'report.repro.changed_support', 'report.repro.changed_support.0', 'report.repro.base_collect', 'baseReport', 'ticket.acceptanceCriteria', 'ticket.acceptanceCriteria.0'],
+  { allow: merge(TRUST_ALLOW, { 'report.repro.changed_support': ['empty_array'], 'ticket.acceptanceCriteria': ['missing', 'null', 'empty_array'] }) }],
   // An empty unmeasured_files list means every changed file is in the coverage data.
-  ['coverageOk', ['report.coverage', 'report.coverage.changed_executable', 'report.coverage.changed_covered', 'report.coverage.head_total', 'report.coverage.base_total', 'report.coverage.unmeasured_files', 'report.coverage.changed_excluded', 'prFiles', 'prPatches'],
-    { allow: { 'report.coverage.unmeasured_files': ['empty_array'] } }],
-  ['codeScanning', ['pr.headSha', 'securityRuns', 'securityRuns.0.conclusion', 'config.securityCheck.checkName']],
-  ['securityCheck', ['securityRuns', 'pr.headSha']],
+  ['coverageOk', [...TRUST, 'report.coverage', 'report.coverage.changed_executable', 'report.coverage.changed_covered', 'report.coverage.head_total', 'report.coverage.base_total',
+    'report.coverage.unmeasured_files', 'report.coverage.unmeasured_files.0', 'report.coverage.changed_excluded', 'prPatches', 'prPatches.[src/x.py]'],
+  { allow: merge(TRUST_ALLOW, { 'report.coverage.unmeasured_files': ['empty_array'] }) }],
+  ['codeScanning', ['pr', 'pr.headSha', 'prFiles', 'truncated', 'truncated.checks', 'workflowRuns.0', 'securityRuns', 'securityRuns.0', 'securityRuns.0.headSha', 'securityRuns.0.status', 'securityRuns.0.conclusion',
+    'config.securityCheck', 'config.securityCheck.checkName', 'config.securityCheck.appSlug'],
+  // Other workflow runs only change the reason when no scanning result exists.
+  { allow: { 'workflowRuns.0': Object.keys(BAD) } }],
+  ['securityCheck', ['securityRuns', 'securityRuns.0', 'pr.headSha', 'config.securityCheck', 'config.securityCheck.mode']],
 ];
 
 // The status a call gives: 'pass' for a pass result, a null reason (helpers), or an all-pass list.
@@ -191,7 +242,8 @@ for (const [name, keys, opts = {}] of ROWS) {
     const passed = [];
     for (const key of keys) {
       for (const [label, value] of Object.entries(BAD)) {
-        if (opts.allow?.[key]?.includes(label)) continue;
+        // An allowed value may pass, but no value may make a check throw.
+        const allowed = opts.allow?.[key]?.includes(label);
         const ctx = fresh();
         const args = argsOf(ctx);
         if (key.startsWith('arg:')) {
@@ -208,7 +260,7 @@ for (const [name, keys, opts = {}] of ROWS) {
           passed.push(`${key}=${label} throws ${error.message}`);
           continue;
         }
-        if (statusOf(name, out) === 'pass') passed.push(`${key}=${label}`);
+        if (!allowed && statusOf(name, out) === 'pass') passed.push(`${key}=${label}`);
       }
     }
     assert.deepEqual(passed, []);
