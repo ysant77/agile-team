@@ -82,3 +82,25 @@ export function buildMonitor(events) {
     ],
   };
 }
+
+// The audit chain holds events for every project. The chain is checked over all events, but a
+// viewer gets only the tickets and decisions on work items they can see (PR 4 review, finding 2).
+// canSee(key) asks Jira as the viewer; an error counts as not visible. Posteriors and the outcome
+// count are totals per (twin, skill) and hold no issue key or account id.
+export async function monitorForViewer(events, canSee) {
+  const monitor = buildMonitor(events);
+  const keys = [...new Set([...monitor.tickets, ...monitor.decisions].map((x) => x.issueKey))];
+  const visible = new Set();
+  const BATCH = 10;
+  for (let i = 0; i < keys.length; i += BATCH) {
+    const batch = keys.slice(i, i + BATCH);
+    const seen = await Promise.all(batch.map((k) => Promise.resolve().then(() => canSee(k)).catch(() => false)));
+    batch.forEach((k, j) => { if (seen[j] === true) visible.add(k); });
+  }
+  return {
+    ...monitor,
+    tickets: monitor.tickets.filter((t) => visible.has(t.issueKey)),
+    decisions: monitor.decisions.filter((d) => visible.has(d.issueKey)),
+    notes: [...monitor.notes, 'Only work items you can see in Jira are listed.'],
+  };
+}

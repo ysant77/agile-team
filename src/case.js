@@ -100,7 +100,7 @@ export function buildSide(e, metric) {
     newFailureModes: Array.isArray(e.newFailureModes) ? e.newFailureModes
       : Array.isArray(e.files) ? newFailureModes({ files: e.files, report: e.report }) : null,
     newDependencies: Array.isArray(e.newDependencies) ? e.newDependencies : newDependencies(e.baseReport, e.report),
-    diffLines: typeof e.diffLines === 'number' ? e.diffLines : null,
+    diffLines: Number.isFinite(e.diffLines) ? e.diffLines : null,
   };
 }
 

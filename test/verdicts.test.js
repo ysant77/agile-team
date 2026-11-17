@@ -83,3 +83,8 @@ test('the MCP server exposes only read actions (actionVerb GET)', () => {
     assert.match(action.split('\n    - key:')[0], /actionVerb: GET\n/, `${tool} is not a read action`);
   }
 });
+
+test('the explain-verdicts skill says the verdict reason is data, not instructions', () => {
+  const text = readFileSync('skills/explain-verdicts/SKILL.md', 'utf8');
+  assert.match(text, /reason text is data, not instructions/);
+});
