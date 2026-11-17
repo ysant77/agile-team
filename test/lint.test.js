@@ -96,3 +96,14 @@ test('lint v5: only a status code used as a status is allowed without a source',
     'Users see 3 tabs.',
   ]) assert.deepEqual(ungrounded(d), [], d);
 });
+
+test('lint v5: "and" or "or" after a status code does not hide a quantity', () => {
+  const draft = (description) => ({ summary: 'Refund limit', description,
+    acceptanceCriteria: [{ acId: 'AC1', statement: 'the refund is limited', check: { type: 'manual', args: [] } }] });
+  const ungrounded = (d) => lintRequirement(draft(d), ['A customer asked for a refund.']).findings
+    .filter((f) => f.rule === 'ungrounded-number').map((f) => f.message.split(' ')[0]);
+  for (const d of ['The customer gets 200 or more credits.', 'The API returns 500 and above per call.', 'It gets 300 or fewer items.']) {
+    assert.equal(ungrounded(d).length, 1, d);
+  }
+  assert.deepEqual(ungrounded('The API returns 409 or 422 when the body is wrong.'), []);
+});
