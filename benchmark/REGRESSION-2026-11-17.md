@@ -68,3 +68,33 @@ Not done: the scorer is not changed. A fix would give the simulated ticket `subt
 `links: []` (as the collector does) and give the simulated GitHub the earlier-attempt and job
 conclusions. That is a harness change after results were seen; it needs a SCORER-CHANGES entry
 and the lead's approval before a re-score.
+
+## Update, 17 Nov 2026, 16:00 SGT: scorer fix (SCORER-CHANGES 17), development sets
+
+Approved by the lead after the cause above was classified. Made after the results were seen; no
+rule change; PR 9 at 88c468d throughout. Raw results: `*-rebuilt-88c468d-scorer17.json`.
+
+| Set | Count | Baseline (28e6647, old evidence) | Rebuilt, scorer before item 17 | Rebuilt, scorer item 17 |
+|---|---|---|---|---|
+| 1 (39) | Unsafe supported | 1 (B01) | 0 | 1 (B01) |
+| 1 | False block | 1 (B04) | 1 (B04) | 1 (B04) |
+| 1 | False cannot_verify, 10 controls | 1 (B28) | 10 | 1 (B28) |
+| 1 | Friction cannot_verify | 1 (B10) | - | 1 (B10) |
+| 1 | Right / strict | 36 / 36 | 28 / 28 | 36 / 36 |
+| 2 (20) | Unsafe supported | 3 (S09, S13, S14) | 0 | 2 (S09, S14) |
+| 2 | Unearned supported | 1 (S18) | 0 | 0 |
+| 2 | False cannot_verify, 8 controls | 0 | 8 | 0 |
+| 2 | Friction cannot_verify | 1 (S19) | - | 1 (S19) |
+| 2 | Right / strict | 16 / 16 | 12 / 12 | 18 / 18 |
+| 3 (20) | Unsafe supported | 5 | 0 | 5 (T02, T08, T12, T14, T23) |
+| 3 | False block | 3 (T05, T09, T22) | 3 | 3 (T05, T09, T22) |
+| 3 | False cannot_verify, 9 controls | 1 (T13) | 8 | 1 (T13) |
+| 3 | Right / strict | 12 / 10 | 10 / 6 | 12 / 10 |
+
+**Result under the regression policy: no worse on any count of any set.** Set 1 and set 3 are
+equal to the baseline; set 2 is better (S13 and S18 are now right). These are development sets:
+this shows no regression, not that the fixes work. The fix list is scored on the next blind set.
+
+While making item 17, a first version keyed the cancelled run by `id >= 9500`, which also matched
+the main run of B29 (PR numbers here start at 1000) and held B29. It was found from B29's reason
+and corrected before this table (the cancelled run is now matched by its exact id).

@@ -126,6 +126,9 @@ function recordGithub(c, ev, prNumber) {
   const attempts = rerun ? { 1: { jobs: [{ name: 'test', conclusion: 'failure', steps: g.failedRunThenRerun
     ? [step('Set up job', 'success'), step('Run uv sync --locked --extra fraud', 'success'), step('Run uv run pytest -q --cov=src --cov-branch --cov-report=json:coverage.json', 'failure')]
     : [step('Set up job', 'success'), step('Run uv sync --locked --extra fraud', 'failure')] }] } } : {};
+  // SCORER-CHANGES 17: the jobs of a cancelled run are what the case states: one job, cancelled,
+  // no failed step.
+  const cancelledJobs = { jobs: [{ name: 'test', conclusion: 'cancelled', steps: [step('Set up job', 'success')] }] };
   if (g.cancelledRunOnHead) runs.push({ id: 9500 + prNumber, name: 'CI', path: CI_PATH, head_sha: prHead, status: 'completed', conclusion: 'cancelled', created_at: at(20), updated_at: at(21), run_started_at: at(20), run_attempt: 1, html_url: 'x' });
   let report = ev.report ? structuredClone(ev.report) : null;
   if (report && g.reportFromWorkflow) {
@@ -144,7 +147,7 @@ function recordGithub(c, ev, prNumber) {
   const main = merged && report ? 'report' : mainReport;
   const files = ev.meta.files.map((f) => ({ filename: f.filename, status: f.status, previous_filename: f.previous_filename, patch: f.patch }));
   const baseTip = g.baseMovedTo ? (ev.meta.base_tip ?? c.baseTipSha ?? 'b'.repeat(40)) : ev.meta.merge_base;
-  return { pulls, runs, attempts, report, comment, files, filesTruncated: Boolean(g.filesTruncated), runs404: Boolean(g.runs404),
+  return { pulls, runs, attempts, cancelledJobs, cancelledRunId: g.cancelledRunOnHead ? 9500 + prNumber : null, report, comment, files, filesTruncated: Boolean(g.filesTruncated), runs404: Boolean(g.runs404),
     stats: { additions: ev.meta.additions, deletions: ev.meta.deletions }, prHead, main, baseTip };
 }
 
@@ -152,7 +155,19 @@ export function fetchFrom(d) {
   const page = (u) => Number(new URL(u).searchParams.get('page') ?? 1);
   const routes = [
     [/\/pulls\?/, (u) => (page(u) === 1 ? d.pulls : [])],
-    [/\/actions\/runs\/\d+\/attempts\/(\d+)\/jobs/, (u) => d.attempts?.[/attempts\/(\d+)/.exec(u)[1]] ?? 404],
+    // SCORER-CHANGES 17: attempts are kept per run id. The main run has its earlier attempts;
+    // the cancelled run (id 9500 + PR number) has its own attempt only. An attempt's conclusion is the
+    // conclusion of its job (the reader asks for both).
+    [/\/actions\/runs\/\d+\/attempts\/(\d+)\/jobs/, (u) => {
+      const [, id, n] = /runs\/(\d+)\/attempts\/(\d+)/.exec(u);
+      if (Number(id) === d.cancelledRunId) return Number(n) === 1 ? d.cancelledJobs : 404;
+      return d.attempts?.[n] ?? 404;
+    }],
+    [/\/actions\/runs\/\d+\/attempts\/\d+(?:\?|$)/, (u) => {
+      const [, id, n] = /runs\/(\d+)\/attempts\/(\d+)/.exec(u);
+      const jobs = Number(id) === d.cancelledRunId ? (Number(n) === 1 ? d.cancelledJobs : null) : d.attempts?.[n];
+      return jobs ? { run_attempt: Number(n), conclusion: jobs.jobs[0].conclusion } : 404;
+    }],
     [/\/actions\/runs\?head_sha=/, (u) => (d.runs404 ? 404 : { workflow_runs: page(u) === 1 ? d.runs : [] })],
     [/\/issues\/\d+\/comments/, (u) => (page(u) === 1 && d.comment ? [{ user: BOT, ...d.comment,
       body: `<!-- aat-ci-report -->\n\`\`\`json\n${JSON.stringify(d.report)}\n\`\`\`` }] : [])],
@@ -181,7 +196,9 @@ async function armC(c, ev, n) {
   if (DUMP) writeFileSync(join(resolve(DUMP), `${c.id}.json`), `${JSON.stringify({ id: c.id, ticket: c.ticket, claim: c.claim, github: data })}\n`);
   const fetchFn = fetchFrom(data);
   const d = {
-    collectJira: async () => structuredClone(c.ticket),
+    // SCORER-CHANGES 17: the live collector always sets subtasks and links (empty when Jira has
+    // none). A case that names sub-tasks or links keeps its own lists.
+    collectJira: async () => ({ subtasks: [], links: [], ...structuredClone(c.ticket) }),
     env: () => ({ repo: REPO, token: 'local' }),
     collectGithub, collectPrStats, fetchFn,
   };
