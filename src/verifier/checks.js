@@ -2,7 +2,7 @@
 // No model is involved. Unknown means "cannot verify": a human or more evidence is needed.
 
 import { canonical, sha256 } from '../audit.js';
-import { namesKey, sameFiles, testName, testsByName } from './report.js';
+import { finiteNumber, namesKey, sameFiles, testName, testsByName } from './report.js';
 
 const BOT = 'github-actions[bot]';
 const result = (name, status, reason) => ({ name, status, reason });
@@ -11,9 +11,11 @@ const result = (name, status, reason) => ({ name, status, reason });
 // input gives unknown, never pass.
 const isList = Array.isArray;
 const isText = (v) => typeof v === 'string' && v.length > 0;
-const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
+// Every numeric read of evidence goes through finiteNumber (report.js).
+const isNum = (v) => finiteNumber(v) !== null;
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
-const timeOf = (v) => (typeof v === 'string' ? Date.parse(v) : Number.NaN);
+// A time in ms, or null when it is missing or does not parse.
+const timeOf = (v) => (typeof v === 'string' ? finiteNumber(Date.parse(v)) : null);
 // An optional list: undefined means none; any other value that is not an array is malformed (null).
 const optList = (v) => (v === undefined ? [] : isList(v) ? v : null);
 // Lists whose elements must all be objects, or all non-empty strings (a null element is malformed).
@@ -66,11 +68,11 @@ function commentEditedLater(ctx) {
   const paths = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
   const runs = ctx.workflowRuns.filter((r) => isList(paths) && paths.includes(runPath(r)) && r.headSha === ctx.pr?.headSha);
   if (runs.length === 0) return `${HEURISTIC}: no pinned CI run on the head, so the comment has no source`;
-  const edited = Date.parse(c.updatedAt);
-  const inside = runs.some((r) => {
-    const start = Date.parse(r.runStartedAt ?? r.createdAt);
-    const end = Date.parse(r.updatedAt ?? r.createdAt) + EDIT_SLACK_MS;
-    return edited >= start && edited <= end;
+  const edited = timeOf(c.updatedAt);
+  const inside = edited !== null && runs.some((r) => {
+    const start = timeOf(r.runStartedAt ?? r.createdAt);
+    const end = timeOf(r.updatedAt ?? r.createdAt);
+    return start !== null && end !== null && edited >= start && edited <= end + EDIT_SLACK_MS;
   });
   return inside ? null : `${HEURISTIC}: the comment was last edited outside the pinned CI run`;
 }
@@ -245,10 +247,11 @@ export function ciGreen(ctx) {
     // counts only when it was created after every run without a result; equal or missing times
     // give unknown.
     const noResult = all.filter((r) => !runs.includes(r));
-    const time = (r) => Date.parse(r.createdAt ?? '');
-    const lastNoResult = Math.max(...noResult.map(time));
-    const lastSuccess = Math.max(...runs.map(time));
-    if (noResult.length && !(Number.isFinite(lastNoResult) && Number.isFinite(lastSuccess) && lastSuccess > lastNoResult)) {
+    const times = (list) => list.map((r) => timeOf(r.createdAt));
+    const known = (t) => t.every((v) => v !== null);
+    const lastNoResult = Math.max(...times(noResult));
+    const lastSuccess = Math.max(...times(runs));
+    if (noResult.length && !(known(times(noResult)) && known(times(runs)) && lastSuccess > lastNoResult)) {
       unknown = true;
       reasons.push(`${path}: a run on ${head.slice(0, 7)} concluded ${noResult[0].conclusion}, and no successful run is known to come after it`);
     } else {
@@ -356,8 +359,11 @@ export function metricCompare(ctx, name, bound, direction) {
   if (integrity) return result(label, 'unknown', `${integrity}: human review`);
   // A repeated benchmark reports {median, iqr_low, iqr_high, runs}; the gate uses the median.
   const raw = ctx.report.metrics?.[name];
-  const value = typeof raw === 'number' ? raw : typeof raw?.median === 'number' ? raw.median : undefined;
-  if (typeof value !== 'number') return result(label, 'fail', `${name} not reported`);
+  const read = isObj(raw) ? raw.median : raw;
+  if (read === undefined || read === null) return result(label, 'fail', `${name} not reported`);
+  // 1e999 in JSON is Infinity, and -Infinity passes any upper bound: not a measurement.
+  const value = finiteNumber(read);
+  if (value === null) return result(label, 'unknown', `${name} is not a finite number in the report`);
   const shown = typeof raw === 'number' ? `${value}` : `median ${value} (IQR ${raw.iqr_low ?? '?'} to ${raw.iqr_high ?? '?'}${raw.runs ? `, ${raw.runs} runs` : ''})`;
   // Metrics are written by the code under test. A PR that changes how they are measured
   // cannot pass a metric gate by itself (DESIGN.md section 12, risk 12).
@@ -374,7 +380,7 @@ export function metricCompare(ctx, name, bound, direction) {
     if (typeof raw !== 'object' || raw === null) {
       return result(label, 'unknown', `${name} is a registered benchmark but was reported as one number, not as repeated runs: human review`);
     }
-    if (raw.runs !== bench.runs) {
+    if (finiteNumber(raw.runs) === null || raw.runs !== bench.runs) {
       return result(label, 'unknown', `${name} has ${raw.runs ?? 'no'} runs; ${bench.runs} are registered: human review`);
     }
     const touched = (ctx.prFiles ?? []).filter((f) => (ctx.config.benchmarkGuardedPaths ?? []).some((g) => (g.endsWith('/') ? f.startsWith(g) : f === g)));
@@ -392,6 +398,7 @@ export function metricCompare(ctx, name, bound, direction) {
     return result(label, 'unknown', 'data hashes for training and live data are equal: the drift number compares a dataset with itself');
   }
   const guard = tooGoodLimit(ctx.config?.tooGood, name);
+  if (guard !== undefined && finiteNumber(guard) === null) return result(label, 'unknown', `the too-good limit for ${name} is not a finite number`);
   if (guard !== undefined && value > guard) {
     return result(label, 'unknown', `${name} = ${shown} is above ${guard}: too good, human review`);
   }
@@ -399,9 +406,16 @@ export function metricCompare(ctx, name, bound, direction) {
   return result(label, ok ? 'pass' : 'fail', `${name} = ${shown}`);
 }
 
-function compareVersions(a, b) {
-  const pa = String(a).split(/[.+-]/).map((x) => Number.parseInt(x, 10) || 0);
-  const pb = String(b).split(/[.+-]/).map((x) => Number.parseInt(x, 10) || 0);
+// The release numbers at the start of a version ("2.32.0rc1" gives [2, 32, 0]), or null when the
+// version does not start with one. A suffix (rc1, +local, -1) is not compared.
+function releaseOf(v) {
+  const m = /^(\d+(?:\.\d+)*)/.exec(String(v));
+  if (!m) return null;
+  const parts = m[1].split('.').map((x) => finiteNumber(Number(x)));
+  return parts.every((x) => x !== null) ? parts : null;
+}
+
+function compareVersions(pa, pb) {
   for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
     if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) - (pb[i] ?? 0);
   }
@@ -417,7 +431,10 @@ export function versionAtLeast(ctx, pkg, version) {
   const found = ctx.report.deps[pkg];
   if (found !== undefined && !isText(found)) return result(label, 'unknown', `${pkg} has no valid version in the report`);
   if (!found) return result(label, 'fail', `${pkg} not in the lock file`);
-  return result(label, compareVersions(found, version) >= 0 ? 'pass' : 'fail', `${pkg} ${found}`);
+  const have = releaseOf(found);
+  const want = releaseOf(version);
+  if (!have || !want) return result(label, 'unknown', `${pkg} ${found} or the wanted version ${version} has no release number to compare`);
+  return result(label, compareVersions(have, want) >= 0 ? 'pass' : 'fail', `${pkg} ${found}`);
 }
 
 export function pathAbsent(ctx, path) {
@@ -455,7 +472,7 @@ export function deployed(ctx, tag) {
   const label = `deployed(${tag ?? 'any'})`;
   if (!isObjList(ctx.deployRuns)) return result(label, 'unknown', 'no deploy run yet, or the run list is malformed');
   const tagged = ctx.deployRuns.filter((r) => !tag || r.tag === tag);
-  if (!tagged.every((r) => Number.isFinite(timeOf(r.createdAt)))) return result(label, 'unknown', 'a deploy run has no valid time');
+  if (!tagged.every((r) => timeOf(r.createdAt) !== null)) return result(label, 'unknown', 'a deploy run has no valid time');
   const runs = tagged
     .filter((r) => !ctx.fixAt || String(r.createdAt) >= String(ctx.fixAt))
     .sort((a, b) => timeOf(b.createdAt) - timeOf(a.createdAt));
@@ -954,6 +971,9 @@ export function coverageOk(ctx) {
     }
   }
   const conf = { ...DEFAULT_COVERAGE, ...(ctx.config?.coverage ?? {}) };
+  if (finiteNumber(conf.changedFloor) === null || finiteNumber(conf.maxDropPoints) === null) {
+    return result('coverage', 'unknown', 'the coverage floor or the allowed drop in the config is not a finite number');
+  }
   const exec = cov.changed_executable;
   const covered = cov.changed_covered;
   // Counts of lines: whole numbers, at least 0, and no more covered lines than executable ones.
