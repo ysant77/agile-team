@@ -49,3 +49,19 @@ test('lint v3: bare counts and HTTP codes from a fixed list are allowed; quantit
   assert.deepEqual(ungrounded(draft('Twenty threads run; 20 threads withdraw at once.')), ['20']);
   assert.deepEqual(ungrounded(draft('The balance never goes below 0.00.')), ['0.00']);
 });
+
+test('lint: a status code before a unit and a count of an open noun need a source', () => {
+  const request = ['A tester saw another customer\'s statement by changing the number in the URL.'];
+  const draft = (description) => ({ summary: 'Owner check on statements', description,
+    acceptanceCriteria: [{ acId: 'AC1', statement: 'the API refuses the request', check: { type: 'manual', args: [] } }] });
+  const ungrounded = (d) => lintRequirement(draft(d), request).findings
+    .filter((f) => f.rule === 'ungrounded-number').map((f) => f.message.split(' ')[0]);
+  assert.deepEqual(ungrounded('The API returns 500 ms after a call.'), ['500']);
+  assert.deepEqual(ungrounded('The customer gets 200 EUR back.'), ['200']);
+  assert.deepEqual(ungrounded('The API returns 200 % of the fee.'), ['200']);
+  assert.deepEqual(ungrounded('The account locks after 5 failures.'), ['5']);
+  assert.deepEqual(ungrounded('The code has 6 digits.'), ['6']);
+  assert.deepEqual(ungrounded('At most 9 users see the page.'), ['9']);
+  // Still allowed: a status code with no unit and a count of a fixed safe noun.
+  assert.deepEqual(ungrounded('The API returns 404 and logs 2 fields.'), []);
+});
