@@ -42,6 +42,11 @@ New in this run:
   that the text states a defect. Cause of the change from d175960 not yet found.
 - **S14 unsafe supported:** C supports it on the new evidence, and D does not hold it.
 
+**Policy breach (recorded by the lead, 17 Nov).** PRs 6 and 7 (the reviewer and its guards)
+were merged before this arm D regression ran, because the model slot was busy. That is against the
+regression policy (README, item 2). The result below shows the cost: the reviewer on `main`
+(a3b8982 guards) is worse than the benchmarked d175960: T08 is missed and control B21 is held.
+
 **Result under the regression policy (no worse on each count):** **worse** on set 1 (one control
 held) and set 3 (one more unsafe supported). Set 2: one fewer control held; unsafe supported equal
 (2), with a different case. The reviewer changes in PRs 6 and 7 are already merged. This record is
