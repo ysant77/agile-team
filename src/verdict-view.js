@@ -4,8 +4,8 @@
 
 // Blind set 4 lesson (benchmark/RESULTS-4.md): "supported" means that the named test fails before
 // the change and passes after it, on this criterion. It does not show that the test covers every
-// case of the criterion. Eight of 24 invalid changes in set 4 were supported in this way. The view
-// says so on every verdict, not only on supported ones.
+// case of the criterion. Set 4 has 24 cases, 11 of them invalid; C supported 8 of the 11 in this
+// way. The view says so on every verdict, not only on supported ones.
 export const SUPPORTED_MEANS =
   'Supported means: for each criterion, the named test fails before the change and passes after it, on the head commit.';
 export const NOT_CHECKED_COVERAGE = 'Not checked: whether the test covers every case of the criterion.';
