@@ -5,8 +5,17 @@ benchmark cases. Each case below is from the benchmark files in this repository.
 the reason are the ones the app gave, copied from the result files.
 
 **Status of this draft:** the four cases ran on the local mock of the benchmark (simulated GitHub
-and Jira, bank branches built locally). They are not yet on the demo Jira site. To show them
-live, each case needs a work item and a pull request on the demo site; that is not done.
+and Jira, bank branches built locally). They are not yet on the demo Jira site.
+
+- **Local check (done):** `fixtures/judge/` holds the recorded evidence of each case, and
+  `test/judge-path.test.js` replays it through `decide()`, the verdict view and the panel's
+  verdict section. It reads each text on the screen and checks the four states.
+- **Demo site (prepared, not done):** `scripts/judge-seed.mjs` writes the `aat.ticket` property
+  of each case (with the case's own test names) and prints the branch, PR title and claim.
+  - Each case claims `done`, so its PR must be merged. A `ready` claim does not run the
+    reproduction check, and U04 and U20 then show Supported.
+  - Where to merge (the bank `main` or a second demo repository) is an owner decision.
+  - Setting the property needs the owner's sign-in.
 
 ## What a judge must see first (30 s)
 
