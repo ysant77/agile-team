@@ -47,6 +47,17 @@ This is fail-open on purpose. No review, a refused review, a review for another 
 failed read of the property changes nothing, and the code checks decide. A model or Jira failure
 must not block every claim.
 
+Rules for the parts of a review (17 Nov, after the arm D regression):
+
+- A guard that faults one part of a review refuses that part only. A proposed check for an AC
+  that already has a code check is dropped and listed in `droppedChecks`; the findings stay and
+  the other guards judge them.
+- A finding whose text is only a hunk or line reference (for example "Finding 1: see P121:H3,
+  line 62.") is refused as a finding and listed in `droppedFindings`; the review stays.
+- After a style fallback, people see a template text in the review, but the hold decision uses
+  the model's own guard-accepted findings (`modelFindings`). The hold reason shows the model's
+  defect statement.
+
 A malformed stored review (findings missing or not a list, or a finding that is not an object)
 also counts as no review: it never holds a claim and never stops the verdict.
 
