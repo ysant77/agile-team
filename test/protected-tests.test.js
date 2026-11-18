@@ -41,10 +41,13 @@ test('an unchanged pinned test whose base copy fails on head (behaviour broken):
   assert.equal(r.status, 'fail');
 });
 
-test('an edited pinned test whose base copy still passes: unknown until a person approves the new pin', () => {
+// Changed after the development-set results (docs/PROTECTED-TESTS.md, "Change after the results"):
+// the protection is the base copy. When it still passes on the head code, the old assertion
+// holds, so an edit of the head copy (benchmark S02, a control) is not a reason to hold the claim.
+test('an edited pinned test whose base copy still passes: pass, and the reason names the edit', () => {
   const r = pinnedTestsHold(ctxOf([pin('test_transfer_errors', { head_hash: H('c') })]));
-  assert.equal(r.status, 'unknown');
-  assert.match(r.reason, /changed; a person approves the new pin/);
+  assert.equal(r.status, 'pass', r.reason);
+  assert.match(r.reason, /test_transfer_errors is edited, and its base copy still passes/);
 });
 
 test('a deleted pinned test: fail, unless its removal is approved', () => {
