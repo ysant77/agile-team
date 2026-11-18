@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "ungrounded-number",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "aa1367c81ec0e441cf6ab732d08283240bb6c0e4400083aff51fc31fecb196e6",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-314",
+      "prNumber": 114
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-314",
+      "prNumber": 114,
+      "review": "{\"findings\": [{\"hunk\": \"P114:H1\", \"file\": \"src/bank/api.py\", \"line\": 224, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Code does not check decimals for all currencies.\"}, {\"hunk\": \"P114:H2\", \"file\": \"tests/test_api.py\", \"line\": 158, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Test only checks EUR currency for too many decimals.\"}], \"risks\": [\"The fix only applies to EUR, not JPY or BHD as per AC1.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH314_transfer_refuses_too_many_decimals_jpy\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Transfer with 0.005 amount for JPY account should return 422.\", \"failsBeforeFix\": true}, {\"testName\": \"test_BENCH314_transfer_refuses_too_many_decimals_bhd\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Transfer with 0.0005 amount for BHD account should return 422.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ungrounded-number",
+   "reasons": [
+    "0.005 not in the packet"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-314",
+      "prNumber": 114,
+      "review": "{\"findings\": [{\"hunk\": \"P114:H1\", \"file\": \"src/bank/api.py\", \"line\": 224, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Code does not check decimals for all currencies.\"}, {\"hunk\": \"P114:H2\", \"file\": \"tests/test_api.py\", \"line\": 158, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Test only checks EUR currency for too many decimals.\"}], \"risks\": [\"The fix only applies to EUR, not JPY or BHD as per AC1.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH314_transfer_refuses_too_many_decimals_jpy\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Transfer with 0.005 amount for JPY account should return 422.\", \"failsBeforeFix\": true}, {\"testName\": \"test_BENCH314_transfer_refuses_too_many_decimals_bhd\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Transfer with 0.0005 amount for BHD account should return 422.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "ungrounded-number",
+   "reasons": [
+    "0.005 not in the packet"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

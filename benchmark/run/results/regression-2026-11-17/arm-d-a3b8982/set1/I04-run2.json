@@ -1,0 +1,94 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P134:H1",
+     "file": "src/bank/ledger.py",
+     "line": 334,
+     "text": "Code handles blank reference by setting to None.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P134:H2",
+     "file": "tests/test_api.py",
+     "line": 245,
+     "text": "Test covers blank reference cases including whitespace.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The change only handles leading/trailing whitespace, not all blank values.",
+    "No check for non-string references."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "dcfa2fafef17af58ee8f8aee305ecd59810d6907ef9a1ff53b04ea38706b5121",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-104",
+      "prNumber": 134
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-104",
+      "prNumber": 134,
+      "review": "{\"findings\": [{\"hunk\": \"P134:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 334, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Code handles blank reference by setting to None.\"}, {\"hunk\": \"P134:H2\", \"file\": \"tests/test_api.py\", \"line\": 245, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test covers blank reference cases including whitespace.\"}], \"risks\": [\"The change only handles leading/trailing whitespace, not all blank values.\", \"No check for non-string references.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH104_blank_reference_is_stored_as_none\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Reference is None when blank, INV-1 remains as INV-1\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-104",
+      "prNumber": 134,
+      "review": "{\"findings\": [{\"hunk\": \"P134:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 334, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Code handles blank reference by setting to None.\"}, {\"hunk\": \"P134:H2\", \"file\": \"tests/test_api.py\", \"line\": 245, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test covers blank reference cases including whitespace.\"}], \"risks\": [\"The change only handles leading/trailing whitespace, not all blank values.\", \"No check for non-string references.\"], \"proposedChecks\": []}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

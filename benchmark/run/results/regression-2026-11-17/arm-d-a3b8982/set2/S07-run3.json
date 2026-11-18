@@ -1,0 +1,93 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "fallback",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P107:H1",
+     "file": "src/bank/api.py",
+     "line": 226,
+     "text": "Finding 1: see P107:H1, line 226.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P107:H2",
+     "file": "src/bank/api.py",
+     "line": 235,
+     "text": "Finding 2: see P107:H2, line 235.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "Risk 1: see the audited review input."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "c1a3364f2916593e4a981fd6dcf5f1f0442a196f570d7ac0f340130c82931d15",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-207",
+      "prNumber": 107
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-207",
+      "prNumber": 107,
+      "review": "{\"findings\": [{\"hunk\": \"P107:H1\", \"file\": \"src/bank/api.py\", \"line\": 226, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Reference is stripped before being used in transfer.\"}, {\"hunk\": \"P107:H2\", \"file\": \"src/bank/api.py\", \"newStart\": 235, \"line\": 235, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Stripped reference is passed to ledger transfer.\"}], \"risks\": [\"The change may introduce a subtle behavior difference if the reference is only whitespace.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH207_spaces_around_the_reference_do_not_change_the_request\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"A transfer with a reference containing only spaces should be treated the same as a transfer with no reference.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-207",
+      "prNumber": 107,
+      "review": "{\"findings\": [{\"hunk\": \"P107:H1\", \"file\": \"src/bank/api.py\", \"line\": 226, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Reference is stripped before being used in transfer.\"}, {\"hunk\": \"P107:H2\", \"file\": \"src/bank/api.py\", \"newStart\": 235, \"line\": 235, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Stripped reference is passed to ledger transfer.\"}], \"risks\": [\"The change may introduce a subtle behavior difference if the reference is only whitespace.\"], \"proposedChecks\": []}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}
