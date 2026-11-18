@@ -102,3 +102,30 @@ rebuilt evidence. They are not shown here, and they are not claimed.
   old test body.
 - The panel action to approve a changed pin (`approvedTestChanges`, audited).
 - Blind set 5 before any claim.
+
+## Trust (lead review of PR 22)
+
+**App side.**
+- Whether a repository runs the pinned step is `VERIFY_CONFIG.pinnedRequired`, set per
+  repository in the app. It is never read from a report.
+- When it is true, a report without a `pinned` block gives `unknown`. A change cannot drop the
+  block to switch the check off.
+- It is `false` until the bank's `main` runs the step.
+- `scripts/pinned.py` is a report trust path: a PR that changes it gets no trust in its report
+  (`pipeline_change`), as for `scripts/repro.py`.
+
+**Bank side (what the head can and cannot edit):**
+
+| Input to the block | Source | Can the head change it? |
+|---|---|---|
+| Base test bodies and hashes | `git show <base>:<path>` (git objects of the base commit) | No |
+| Base copies that run | written from the same base objects into a fresh clone of the head commit | No |
+| The code under test | the head commit | Yes, by design: this is what is tested |
+| `conftest.py` | the head tree | Yes, but it is a trust path: the report is not trusted |
+| The report plugin (`src/bank/testing/`) | the head tree | Yes, but it is a trust path |
+| `scripts/repro.py`, `scripts/pinned.py` and the workflow | the checked-out PR | Yes, but they are trust paths |
+| pytest `addopts` in `pyproject.toml` | the head tree | Ignored: the base-copy run passes `-o addopts=`, then sets the report plugin and the marker selection itself, so a head `-p` plugin or `--deselect` does not apply to the base copies |
+
+**Limit:** the trust paths make a changed runner part `cannot_verify`; they do not run the
+runner from the base commit. Running the step itself from the base commit is the stronger
+design, and it is open (DESIGN section 12, a check run that no user can edit).
