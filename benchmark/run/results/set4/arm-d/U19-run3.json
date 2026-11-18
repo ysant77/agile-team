@@ -1,0 +1,70 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P119:H1",
+     "file": "src/bank/api.py",
+     "line": 248,
+     "text": "internal flag set based on customer_id comparison",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P119:H3",
+     "file": "tests/test_api.py",
+     "line": 245,
+     "text": "test checks internal flag for own account transfer",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "No explicit check for replay behavior in tests"
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "97466fe31a17d681caa56552df8bbf924abea388d8a6b265fd7de82ecb8794d0",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-419",
+      "prNumber": 119
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-419",
+      "prNumber": 119,
+      "review": "{\"findings\": [{\"hunk\": \"P119:H1\", \"file\": \"src/bank/api.py\", \"line\": 248, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"internal flag set based on customer_id comparison\"}, {\"hunk\": \"P119:H3\", \"file\": \"tests/test_api.py\", \"line\": 245, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"test checks internal flag for own account transfer\"}], \"risks\": [\"No explicit check for replay behavior in tests\"], \"proposedChecks\": [{\"testName\": \"test_BENCH419_transfer_replay_internal_flag\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"A replay with the same Idempotency-Key returns the same internal flag as the first response\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

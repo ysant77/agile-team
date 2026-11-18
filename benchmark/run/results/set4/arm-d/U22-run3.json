@@ -1,0 +1,62 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P122:H1",
+     "file": "src/bank/api.py",
+     "line": 180,
+     "text": "start date is now clamped to EARLIEST_DATE",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The change may affect existing behavior for dates near the EARLIEST_DATE boundary."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "ab9bb123803c072ce1126d834f9a126365c4ac510b79751cba944d6d6fa5a1a3",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-422",
+      "prNumber": 122
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-422",
+      "prNumber": 122,
+      "review": "{\"findings\": [{\"hunk\": \"P122:H1\", \"file\": \"src/bank/api.py\", \"line\": 180, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"start date is now clamped to EARLIEST_DATE\"}], \"risks\": [\"The change may affect existing behavior for dates near the EARLIEST_DATE boundary.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH422_default_statement_start_stays_in_range\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"the default start date is clamped to EARLIEST_DATE when the calculated start is before that date\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

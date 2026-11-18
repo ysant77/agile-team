@@ -1,0 +1,70 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P102:H1",
+     "file": "src/bank/api.py",
+     "line": 181,
+     "text": "The check for 366 days includes both start and end dates.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P102:H2",
+     "file": "tests/test_api.py",
+     "line": 240,
+     "text": "Test covers the maximum window of 366 days.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The test does not cover a window of exactly 367 days to confirm it raises an error."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "a0dd7870acca33e6a701afcf9c3a61c42eb962614c8c96b287abccc98e851d90",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-402",
+      "prNumber": 102
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-402",
+      "prNumber": 102,
+      "review": "{\"findings\": [{\"hunk\": \"P102:H1\", \"file\": \"src/bank/api.py\", \"line\": 181, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"The check for 366 days includes both start and end dates.\"}, {\"hunk\": \"P102:H2\", \"file\": \"tests/test_api.py\", \"line\": 240, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test covers the maximum window of 366 days.\"}], \"risks\": [\"The test does not cover a window of exactly 367 days to confirm it raises an error.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH402_statement_window_exactly_367_days\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"A request with a window of exactly 367 days should return a 400 status code.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

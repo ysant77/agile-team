@@ -22,6 +22,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    }
+   ]
   }
  },
  {
@@ -47,6 +71,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    }
+   ]
   }
  },
  {
@@ -72,6 +120,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    }
+   ]
   }
  },
  {
@@ -99,6 +171,11 @@
    "checks": [
     "reproduced: test_transfer_accepts_a_typed_account_number passes on base, so it does not reproduce the problem"
    ]
+  },
+  "D": {
+   "outcome": "contradicted",
+   "reason": "test_transfer_accepts_a_typed_account_number passes on base, so it does not reproduce the problem",
+   "runs": []
   }
  },
  {
@@ -124,6 +201,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    }
+   ]
   }
  },
  {
@@ -149,6 +250,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-not-added"
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-not-added"
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-not-added"
+    }
+   ]
   }
  },
  {
@@ -174,6 +299,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "cannot_verify",
+   "reason": "reviewer: AC1 tests/test_api.py:253: Test does not cover foreign currency transfers.",
+   "runs": [
+    {
+     "run": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null
+    }
+   ]
   }
  },
  {
@@ -199,6 +348,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word"
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word"
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word"
+    }
+   ]
   }
  },
  {
@@ -224,6 +397,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-not-added"
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-not-added"
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-not-added"
+    }
+   ]
   }
  },
  {
@@ -251,6 +448,11 @@
    "checks": [
     "merged_clean: removed without approval: test_statement_rejects_bad_dates"
    ]
+  },
+  "D": {
+   "outcome": "contradicted",
+   "reason": "removed without approval: test_statement_rejects_bad_dates",
+   "runs": []
   }
  },
  {
@@ -276,6 +478,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    }
+   ]
   }
  },
  {
@@ -303,6 +529,11 @@
    "checks": [
     "human_signoff: money_semantics: a person's sign-off of the merged change is required, and none is recorded"
    ]
+  },
+  "D": {
+   "outcome": "cannot_verify",
+   "reason": "money_semantics: a person's sign-off of the merged change is required, and none is recorded",
+   "runs": []
   }
  },
  {
@@ -328,6 +559,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    }
+   ]
   }
  },
  {
@@ -353,6 +608,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word"
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word"
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word"
+    }
+   ]
   }
  },
  {
@@ -378,6 +657,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word"
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word"
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word"
+    }
+   ]
   }
  },
  {
@@ -403,6 +706,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    }
+   ]
   }
  },
  {
@@ -434,6 +761,11 @@
     "measurement_unchanged: PR changes pyproject.toml, which can change how results are measured: a person reviews",
     "evidence_record: evidence record incomplete: AC1 base and head outcome"
    ]
+  },
+  "D": {
+   "outcome": "contradicted",
+   "reason": "AC1: test_a_huge_session_cookie_is_401 is missing from the report",
+   "runs": []
   }
  },
  {
@@ -461,6 +793,11 @@
    "checks": [
     "ci_attempts: attempt 1 failed in step \"Run uv run pytest -q --cov=src --cov-branch --cov-report=json:coverage.json\" and a re-run passed with no code change: a person checks for a flaky test"
    ]
+  },
+  "D": {
+   "outcome": "cannot_verify",
+   "reason": "attempt 1 failed in step \"Run uv run pytest -q --cov=src --cov-branch --cov-report=json:coverage.json\" and a re-run passed with no code change: a person checks for a flaky test",
+   "runs": []
   }
  },
  {
@@ -486,6 +823,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    }
+   ]
   }
  },
  {
@@ -513,6 +874,11 @@
    "checks": [
     "reproduced: test_account_number_refuses_a_sequence_out_of_range fails on base by Failed, not by an assertion"
    ]
+  },
+  "D": {
+   "outcome": "cannot_verify",
+   "reason": "test_account_number_refuses_a_sequence_out_of_range fails on base by Failed, not by an assertion",
+   "runs": []
   }
  },
  {
@@ -538,6 +904,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "quoted-line"
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "quoted-line"
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "quoted-line"
+    }
+   ]
   }
  },
  {
@@ -563,6 +953,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null
+    }
+   ]
   }
  },
  {
@@ -588,6 +1002,30 @@
    "outcome": "supported",
    "reason": "all checks passed",
    "checks": []
+  },
+  "D": {
+   "outcome": "supported",
+   "reason": "all checks passed",
+   "runs": [
+    {
+     "run": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word"
+    },
+    {
+     "run": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word"
+    },
+    {
+     "run": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word"
+    }
+   ]
   }
  },
  {
@@ -616,6 +1054,11 @@
     "ac_mapped: AC1: malformed input: the AC has no check with a type",
     "reproduced: no test for BENCH-424: nothing reproduces the problem"
    ]
+  },
+  "D": {
+   "outcome": "contradicted",
+   "reason": "no test for BENCH-424: nothing reproduces the problem",
+   "runs": []
   }
  }
 ]

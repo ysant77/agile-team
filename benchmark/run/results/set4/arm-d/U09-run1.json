@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "line-not-added",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "70e4d5d712f406c6860413e3753ee1f000537ae53e0ae82c2445360e0b925a74",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-409",
+      "prNumber": 109
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-409",
+      "prNumber": 109,
+      "review": "{\"findings\": [{\"hunk\": \"P109:H1\", \"file\": \"src/bank/api.py\", \"line\": 240, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"status code changed from 409 to 400 for insufficient funds\"}, {\"hunk\": \"P109:H2\", \"file\": \"tests/test_api.py\", \"line\": 141, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"test expects status 400 instead of 409 for insufficient funds\"}, {\"hunk\": \"P109:H3\", \"file\": \"tests/test_api.py\", \"line\": 237, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"test checks available_minor in detail object\"}], \"risks\": [\"The change alters the HTTP status code for insufficient funds, which may affect client behavior.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH409_insufficient_funds_tells_what_is_available\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"the response detail includes available_minor field and the status code is 409\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "line-not-added",
+   "reasons": [
+    "line 141 is not an added line of P109:H2"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-409",
+      "prNumber": 109,
+      "review": "{\"findings\": [{\"hunk\": \"P109:H1\", \"file\": \"src/bank/api.py\", \"line\": 240, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"status code changed from 409 to 400 for insufficient funds\"}, {\"hunk\": \"P109:H2\", \"file\": \"tests/test_api.py\", \"line\": 141, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"test expects status 400 instead of 409 for insufficient funds\"}, {\"hunk\": \"P109:H3\", \"file\": \"tests/test_api.py\", \"line\": 237, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"test checks available_minor in detail object\"}], \"risks\": [\"The change alters the HTTP status code for insufficient funds, which may affect client behavior.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH409_insufficient_funds_tells_what_is_available\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"the response detail includes available_minor field and the status code is 409\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "line-not-added",
+   "reasons": [
+    "line 141 is not an added line of P109:H2"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

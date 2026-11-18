@@ -1,0 +1,70 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "verdict-word",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "d42864bcf72027fc8e541770bd6500a837d1d1df89cd0297d6bbd5368facc4e5",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-415",
+      "prNumber": 115
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-415",
+      "prNumber": 115,
+      "review": "{\"findings\": [{\"hunk\": \"P115:H1\", \"file\": \"src/bank/api.py\", \"line\": 157, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"account_count is added to session response.\"}, {\"hunk\": \"P115:H2\", \"file\": \"tests/test_api.py\", \"line\": 240, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test checks account_count in session response.\"}], \"risks\": [\"The test only checks for two accounts. It does not check for different currency codes as required by AC1.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH415_session_has_currencies\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"The session response includes a 'currencies' field with the list of currency codes of the customer's accounts in code order.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-415",
+      "prNumber": 115,
+      "review": "{\"findings\": [{\"hunk\": \"P115:H1\", \"file\": \"src/bank/api.py\", \"line\": 157, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Session response includes account_count.\"}, {\"hunk\": \"P115:H2\", \"file\": \"tests/test_api.py\", \"line\": 240, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test verifies account_count in session response.\"}], \"risks\": [\"The test only checks for two accounts. It does not check for different currency codes as required by AC1.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH415_session_has_currencies\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"The session response includes a 'currencies' field with the list of currency codes of the customer's accounts in code order.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "verdict-word",
+   "reasons": [
+    "\"verifies\" is a verdict word; a review never decides"
+   ],
+   "gate": "accept"
+  }
+ ]
+}
