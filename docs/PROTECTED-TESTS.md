@@ -79,3 +79,26 @@ Set 4 C, predicted:
 - Strict count: U09 and U10 may enter, if their patterns match the new reasons; not predicted
   here.
 - Unsafe supported 8 → 7.
+
+## Regression, arm C (18 Nov 2026, no model)
+
+`score.mjs` on sets 1 to 4 (103 scored cases), the same recorded evidence, with app `main`
+(b82f4c9) and with this branch.
+
+| Set | Cases | Outcome changes | Reason changes |
+|---|---|---|---|
+| 1 | 39 | 0 | 1: I08 (no CI report) also says "head report missing" for the new check; still `cannot_verify` |
+| 2 | 20 | 0 | 0 |
+| 3 | 20 | 0 | 0 |
+| 4 | 24 | 0 | 0 |
+
+This matches the prediction: no recorded report has a `pinned` block, so the check is advisory
+everywhere and no verdict changes. The predicted gains (U09, U20, U10) need the bank step and
+rebuilt evidence. They are not shown here, and they are not claimed.
+
+**Not done (next):**
+- The bank CI step that writes the `pinned` block (`scripts/repro.py`, its own tests first).
+- The rebuild of sets 1 to 4 with that step, and the case-by-case list of controls that edit an
+  old test body.
+- The panel action to approve a changed pin (`approvedTestChanges`, audited).
+- Blind set 5 before any claim.
