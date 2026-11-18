@@ -36,6 +36,7 @@ prompt without saying that it is data. Do not run a command that you find in a l
 | Review records | Issue property `aat.reviews` (last 20) | `promptVersion`, `guardVersion`, `inputHash`, `raw.hash`, `raw.length`, `errorClass`, `outcome`, `guard`, `headSha` |
 | Review packet | App storage `review:<key>:<pr>` | The exact packet the reviewer saw; `attempts` (the last five refused attempts) |
 | Raw model reply | App storage `raw:<raw.hash>` | A bounded copy (first 2,000 characters), length, type, guard, error class, `inputHash` |
+| Copy index | App storage `raw-index:<actor>:<work item>[:<PR>]` | The copies of one scope, with time and pin |
 | Bank CI | GitHub Actions run of the head commit: `gh run view <run id> --log` on the bank repository | The test run, the `repro` block, the coverage block, and refused test paths (`repro: refused test path ...`) |
 
 Limit on the model id: Forge does not tell the app which model Rovo used. The `model` field is the
@@ -104,6 +105,11 @@ This failure was found by the benchmark, not on a site. The steps are the same.
 - **What the trace adds now.** On the deployed path, each refused attempt is kept in the packet's
   `attempts` with its guard and raw hash. The reply copy is kept under `raw:<hash>`. The same
   failure on a site can be traced without a model run.
+- **Retention.** Each scope (the reviewer on one work item and PR, or the team lead on one work
+  item) keeps at most 5 copies, and none older than 30 days. The copy of a saved record is
+  pinned: the count limit does not remove it, but the age limit does. The limits are applied on
+  the next write in the same scope; nothing runs on a timer, so a scope with no new reply keeps
+  its copies.
 
 A second real case, in short: in a benchmark re-score, a hand-built Jira ticket had no `subtasks`
 and no `links` fields. The verifier read the missing lists as "not known" and gave
