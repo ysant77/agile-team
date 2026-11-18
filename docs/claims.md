@@ -54,6 +54,11 @@ Rules for the parts of a review (17 Nov, after the arm D regression):
   the other guards judge them.
 - A finding whose text is only a hunk or line reference (for example "Finding 1: see P121:H3,
   line 62.") is refused as a finding and listed in `droppedFindings`; the review stays.
+- Guard version 7 (after blind set 4): a finding on a line that the hunk does not add
+  (`line-not-added`) and a blocking finding that quotes changed code (`quoted-line`) are also
+  refused as findings and listed in `droppedFindings`; the review stays. Later guards do not see
+  a dropped finding. A dropped finding never holds a claim. The other guards still refuse the
+  whole review.
 - After a style fallback, people see a template text in the review, but the hold decision uses
   the model's own guard-accepted findings (`modelFindings`). The hold reason shows the model's
   defect statement.
