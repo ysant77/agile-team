@@ -42,3 +42,24 @@ jobs:
       - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # One check to require in the ruleset. It runs always, also when a job before it failed or was
+  # skipped, and fails unless every other job succeeded. A job skipped by its own "if" (for
+  # example "if: false") is then a failure, not a pass.
+  # Limit: this job is in the same file, so a pull request that edits this file can also change or
+  # skip the gate; GitHub reports a skipped required check as passed. Review every change to
+  # .github/workflows/ by hand.
+  gate:
+    if: ${{ always() }}
+    needs: [test, secrets]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Every job succeeded
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: |
+          echo "job results: $RESULTS"
+          if [ "$(echo "$RESULTS" | jq -r 'map(select(. != "success")) | length')" != 0 ]; then
+            echo "::error::every job must succeed"; exit 1
+          fi
