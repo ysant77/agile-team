@@ -507,6 +507,8 @@ export function testsNotRemoved(ctx, report = ctx.report) {
   if (report.repro !== undefined && !isObj(report.repro)) return result('tests_not_removed', 'unknown', 'the repro block of the report is malformed');
   const head = new Set(report.tests.map((t) => testName(t.id)));
   const approved = new Set(approvals);
+  // A rename with the same body (pinned block) is not a removal (benchmark U10).
+  for (const [from, to] of pinnedRenames(report)) if (head.has(to)) approved.add(from);
   // The base side: the main report, and the base test ids of every test module the PR changes,
   // renames or removes (repro block). After a merge the main report is the merge commit's, so the
   // repro ids are what still show a dropped test (benchmark I10).
@@ -522,6 +524,63 @@ export function testsNotRemoved(ctx, report = ctx.report) {
   const gap = baseCollectGap(repro, listed);
   if (gap) return result('tests_not_removed', 'unknown', gap);
   return result('tests_not_removed', 'pass', 'no test removed');
+}
+
+// Protected regression set (docs/PROTECTED-TESTS.md). The bank CI pins every base test by the
+// hash of its body and runs the base copy against the head code; the report's "pinned" block
+// holds the result. A change cannot pass by editing, weakening, deselecting or deleting a pinned
+// test. A changed pin needs a recorded approval (ticket approvedTestChanges). A report without
+// the block is from before the bank step: the check is advisory and does not change the verdict.
+const PIN_OUTCOMES = ['passed', 'failed', 'error', 'not_run'];
+const isHash = (v) => typeof v === 'string' && /^[0-9a-f]{64}$/.test(v);
+const pinEntryOk = (t) => isObj(t) && isText(t.id) && isHash(t.base_hash) && PIN_OUTCOMES.includes(t.outcome)
+  && ((t.head_id === null && t.head_hash === null) || (isText(t.head_id) && isHash(t.head_hash)));
+const approvalOk = (a) => isObj(a) && isText(a.test) && typeof a.reason === 'string' && a.reason.trim().length >= 5
+  && Number.isInteger(a.auditSeq) && a.auditSeq >= 0;
+
+// Renames that the pinned block shows: base name -> head name, when the body hash is the same.
+function pinnedRenames(report) {
+  const p = isObj(report) ? report.pinned : undefined;
+  if (!isObj(p) || !isObjList(p.tests)) return new Map();
+  return new Map(p.tests.filter((t) => pinEntryOk(t) && t.head_id !== null && t.head_id !== t.id && t.head_hash === t.base_hash)
+    .map((t) => [testName(t.id), testName(t.head_id)]));
+}
+
+export function pinnedTestsHold(ctx, report = ctx.report) {
+  const name = 'pinned_tests_hold';
+  if (!isObj(report)) return result(name, 'unknown', 'head report missing');
+  if (report.pinned === undefined) {
+    return { ...result(name, 'pass', 'not run: the CI report has no pinned block, so no base test copy ran against the head code'), advisory: true };
+  }
+  const p = report.pinned;
+  if (!isObj(p) || p.version !== 1 || !isList(p.tests)) return result(name, 'unknown', 'the pinned block of the report is malformed');
+  if (!p.tests.length) return result(name, 'unknown', 'the pinned block lists no base test, so it cannot show that old tests still hold');
+  if (!p.tests.every(pinEntryOk)) return result(name, 'unknown', 'an entry of the pinned block is malformed');
+  if (!isObj(ctx.ticket)) return result(name, 'unknown', 'the ticket is not readable, so its approved test changes are not known');
+  const removals = optList(ctx.ticket.approvedTestRemovals);
+  const changes = optList(ctx.ticket.approvedTestChanges);
+  if (!removals || !removals.every(isText) || !changes || !changes.every(isObj)) {
+    return result(name, 'unknown', 'the approved test removals or changes of the ticket are not readable');
+  }
+  const approvedChange = new Set(changes.filter(approvalOk).map((a) => a.test));
+  const approvedRemoval = new Set(removals);
+  const fails = [];
+  const changed = [];
+  for (const t of p.tests) {
+    const n = testName(t.id);
+    if (t.head_id === null) {
+      if (!approvedRemoval.has(n)) fails.push(`${n} is deleted`);
+      continue;
+    }
+    const edited = t.head_hash !== t.base_hash;
+    if (approvedChange.has(n)) continue;
+    if (t.outcome === 'not_run') fails.push(`${n}: its base copy did not run on the head code (deselected or skipped)`);
+    else if (t.outcome !== 'passed') fails.push(`${n}: its base copy fails on the head code (${t.outcome})${edited ? ', and the change edits this test' : ''}`);
+    else if (edited) changed.push(n);
+  }
+  if (fails.length) return result(name, 'fail', `pinned base test: ${fails.join('; ')}; a real requirement change needs a person's approval of the new pin`);
+  if (changed.length) return result(name, 'unknown', `pinned test ${changed.join(', ')} changed; a person approves the new pin with a reason`);
+  return result(name, 'pass', `${p.tests.length} pinned base test(s) hold on the head code`);
 }
 
 // The base collection record (bank scripts/repro.py): pytest --collect-only on base over the

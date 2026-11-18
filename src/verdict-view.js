@@ -40,6 +40,8 @@ export function compactChecks(checks) {
       name: clip(c.name, 80),
       status: ['pass', 'fail', 'unknown'].includes(c.status) ? c.status : 'unknown',
       reason: clip(c.reason, 200),
+      // An advisory check did not count; the view lists it under "not checked".
+      ...(c.advisory === true ? { advisory: true } : {}),
       ...(Array.isArray(c.parts) && c.parts.length
         ? { parts: c.parts.filter((p) => p && typeof p === 'object').slice(0, 20).map((p) => ({
           acId: clip(p.acId, 20), name: clip(p.name, 120),
@@ -66,6 +68,10 @@ export function verdictView(record) {
   const notChecked = [];
   const failed = [];
   for (const c of checks) {
+    if (c.advisory) {
+      notChecked.push(`${c.name}: ${c.reason}`);
+      continue;
+    }
     const rows = c.parts?.length ? c.parts.map((p) => ({ ...p, check: c.name })) : [{ acId: null, name: c.name, status: c.status, reason: c.reason, check: c.name }];
     for (const r of rows) {
       const line = `${r.acId ? `${r.acId} ` : ''}${r.name}: ${r.reason}`.trim();

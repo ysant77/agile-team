@@ -30,6 +30,9 @@ function good() {
       { id: 'tests/test_x.py::test_X1_fix', outcome: 'passed' },
       { id: 'tests/test_x.py::test_other', outcome: 'passed' },
     ],
+    // Protected regression set: one pinned base test, unchanged, its base copy passes on head.
+    pinned: { version: 1, base_sha: BASE, tests: [{ id: 'tests/test_x.py::test_other', base_hash: 'e'.repeat(64),
+      head_id: 'tests/test_x.py::test_other', head_hash: 'e'.repeat(64), outcome: 'passed' }] },
     metrics: { latency_ms: 10 },
     deps: { requests: '2.32.0' },
     migrations: [{ number: '0007', operations: ['ADD COLUMN note'] }],
@@ -167,6 +170,11 @@ const ROWS = [
     'report.repro', 'report.repro.base_test_ids', 'report.repro.base_test_ids.0', 'report.repro.base_collect',
     'report.repro.base_collect.rc', 'report.repro.base_collect.modules_without_ids', 'ticket', 'ticket.approvedTestRemovals'],
   { allow: { 'report.repro.base_collect.modules_without_ids': ['empty_array'], 'report.repro': ['missing'], 'ticket.approvedTestRemovals': ['missing', 'empty_array'] } }],
+  // No pinned block is a report from before the bank step: advisory, so it cannot turn a verdict
+  // into a pass. Approvals can only turn a fail into a pass, so none stored means none.
+  ['pinnedTestsHold', ['report', 'report.pinned', 'report.pinned.tests', 'report.pinned.tests.0', 'report.pinned.tests.0.id', 'report.pinned.tests.0.base_hash',
+    'report.pinned.tests.0.head_id', 'report.pinned.tests.0.head_hash', 'report.pinned.tests.0.outcome', 'ticket', 'ticket.approvedTestRemovals', 'ticket.approvedTestChanges'],
+  { allow: { 'report.pinned': ['missing'], 'ticket.approvedTestRemovals': ['missing', 'empty_array'], 'ticket.approvedTestChanges': ['missing', 'empty_array'] } }],
   ['migrationAdditive', ['arg:0', ...TRUST, 'report.migrations', 'report.migrations.0', 'report.migrations.0.number', 'report.migrations.0.operations',
     'report.migrations.0.operations.0'], { allow: TRUST_ALLOW }],
   // A repository with no migrations reports an empty list, or none: no two numbers can clash.
