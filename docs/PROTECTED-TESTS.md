@@ -27,10 +27,10 @@ A change can also deselect an old test in `pyproject.toml`.
      - a base copy fails or errors on head;
      - a base copy did not run (deselected or skipped);
      - a pinned test is deleted with no approved removal.
-   - **unknown:**
-     - a pinned test body changed, and its base copy passes on head. A person approves the
-       new pin.
-     - the block is malformed.
+   - **unknown:** the block is malformed.
+   - (Changed after the development-set results; see the end of this note.) A pinned test
+     whose body changed but whose base copy passes on head does not hold the claim: the base
+     copy keeps the old assertion in force. The reason names the edit.
    - **pass:** every pinned test is unchanged, renamed with the same body, or approved, and
      every base copy passes on head.
    - **advisory, not counted:** the report has no `pinned` block (the bank step is not

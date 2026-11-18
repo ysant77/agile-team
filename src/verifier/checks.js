@@ -589,8 +589,11 @@ export function pinnedTestsHold(ctx, report = ctx.report) {
     else if (edited) changed.push(n);
   }
   if (fails.length) return result(name, 'fail', `pinned base test: ${fails.join('; ')}; a real requirement change needs a person's approval of the new pin`);
-  if (changed.length) return result(name, 'unknown', `pinned test ${changed.join(', ')} changed; a person approves the new pin with a reason`);
-  return result(name, 'pass', `${p.tests.length} pinned base test(s) hold on the head code`);
+  // The protection is the base copy: when it still passes on the head code, an edit of the head
+  // copy keeps the old assertion in force, so it does not hold the claim (benchmark S02). The
+  // reason names the edit, so a person sees it.
+  const edits = changed.length ? `; ${changed.join(', ')} ${changed.length === 1 ? 'is' : 'are'} edited, and ${changed.length === 1 ? 'its base copy still passes' : 'their base copies still pass'}` : '';
+  return result(name, 'pass', `${p.tests.length} pinned base test(s) hold on the head code${edits}`);
 }
 
 // The base collection record (bank scripts/repro.py): pytest --collect-only on base over the
