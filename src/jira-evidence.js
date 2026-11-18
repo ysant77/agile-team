@@ -66,11 +66,18 @@ export async function collectReviews(issueKey, requestJira = asApp) {
   return Array.isArray(value) ? value : [];
 }
 
+export function stripChecks(record) {
+  if (!record || typeof record !== 'object' || !('checks' in record)) return record;
+  const { checks: _, ...rest } = record;
+  return rest;
+}
+
 export async function addVerdictProperty(issueKey, verdict) {
   const path = route`/rest/api/3/issue/${issueKey}/properties/aat.verdicts`;
   const current = await api.asApp().requestJira(path);
   const list = current.ok ? ((await current.json()).value ?? []) : [];
-  const next = [...list, verdict].slice(-50);
+  // Only the newest verdict keeps its checks, so 50 records stay inside the property size limit.
+  const next = [...list.map(stripChecks), verdict].slice(-50);
   const put = await api.asApp().requestJira(path, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

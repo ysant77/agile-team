@@ -7,6 +7,7 @@ import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment, findComment } from './jira.js';
 import { addVerdictProperty, collectJira, collectReviews } from './jira-evidence.js';
 import { applyReviewHold } from './review-hold.js';
+import { compactChecks } from './verdict-view.js';
 import { parseTwin } from './monitor.js';
 import { buildDoneEvidence, formatEvidence } from './verifier/evidence.js';
 import { verify } from './verifier/verdict.js';
@@ -195,6 +196,8 @@ export async function decide({ issueKey, claim }, d) {
     claimId: claim.id, type: claim.type, result: verdict.result, reason: verdict.reason, checker: verdict.checkerVersion,
     at: new Date().toISOString(), headSha: github.pr?.headSha ?? null, twin, origin, skill: ticket.labels?.[0] ?? null,
     ...(verdict.reviewHold ? { reviewHold: verdict.reviewHold.acs } : {}),
+    // The verdict view shows what was proved and what was not checked (src/verdict-view.js).
+    checks: compactChecks(verdict.checks).slice(0, 30),
   };
   let comment = formatVerdict(issueKey, claim, verdict, { prUrl: github.pr?.url, githubConfigured: Boolean(repo) });
   // DESIGN 15d: every done verdict carries the evidence record that code built from what it saw.
