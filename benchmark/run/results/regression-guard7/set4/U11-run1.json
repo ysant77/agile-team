@@ -1,0 +1,70 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P111:H1",
+     "file": "src/bank/money.py",
+     "line": 82,
+     "text": "Function format_minor added to handle currency formatting.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P111:H2",
+     "file": "tests/test_money.py",
+     "line": 63,
+     "text": "Test test_format_minor_groups_thousands added for format_minor function.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The implementation of format_minor does not handle negative numbers correctly as per AC1."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "0afbf36b43cc7c8022eef22292c356a66150662968a7e8fb6d7ca6402c5e5dd0",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-411",
+      "prNumber": 111
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-411",
+      "prNumber": 111,
+      "review": "{\"findings\": [{\"hunk\": \"P111:H1\", \"file\": \"src/bank/money.py\", \"line\": 82, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Function format_minor added to handle currency formatting.\"}, {\"hunk\": \"P111:H2\", \"file\": \"tests/test_money.py\", \"line\": 63, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test test_format_minor_groups_thousands added for format_minor function.\"}], \"risks\": [\"The implementation of format_minor does not handle negative numbers correctly as per AC1.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH411_format_minor_handles_negative_numbers\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"format_minor(-12345, 'EUR') should return '-123.45'\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

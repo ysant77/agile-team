@@ -1,0 +1,62 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P121:H2",
+     "file": "tests/test_api.py",
+     "line": 240,
+     "text": "Test only checks for non-existent account, not wrong currency or system account.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The code change may expose account existence for system accounts or accounts with wrong currencies."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "68ee31a0ba7d60dcdcc07d8695fd7fc51ec840db0c366a43de35eb9a9600b2ab",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-421",
+      "prNumber": 121
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-421",
+      "prNumber": 121,
+      "review": "{\"findings\": [{\"hunk\": \"P121:H1\", \"file\": \"src/bank/api.py\", \"line\": 223, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Code does not check target.kind != \\\"customer\\\" or target.currency != source.currency.\"}, {\"hunk\": \"P121:H2\", \"file\": \"tests/test_api.py\", \"line\": 240, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test only checks for non-existent account, not wrong currency or system account.\"}], \"risks\": [\"The code change may expose account existence for system accounts or accounts with wrong currencies.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH421_unknown_destination_has_a_clear_message\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"A transfer to a system account or an account with wrong currency returns 404 with detail 'destination account not found'\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

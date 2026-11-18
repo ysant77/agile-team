@@ -1,0 +1,71 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P106:H3",
+     "file": "src/bank/ledger.py",
+     "line": 415,
+     "text": "SQL query fetches counterparty_number for transfers.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P106:H4",
+     "file": "tests/test_api.py",
+     "line": 243,
+     "text": "Test checks that transfer lines have counterparty_number and deposit lines do not.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The change adds a new field to the API response without a formal schema update.",
+    "The SQL query uses a subquery which may impact performance for large datasets."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "a22e9cd03886d38e2d9f6f03685a89a5a5fe82cd9e189b693b123768283958e4",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-406",
+      "prNumber": 106
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-406",
+      "prNumber": 106,
+      "review": "{\"findings\": [{\"hunk\": \"P106:H1\", \"file\": \"src/bank/api.py\", \"line\": 200, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"counterparty_number added to API response.\"}, {\"hunk\": \"P106:H2\", \"file\": \"src/bank/ledger.py\", \"line\": 63, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"counterparty_number field added to ledger line struct.\"}, {\"hunk\": \"P106:H3\", \"file\": \"src/bank/ledger.py\", \"line\": 415, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"SQL query fetches counterparty_number for transfers.\"}, {\"hunk\": \"P106:H4\", \"file\": \"tests/test_api.py\", \"line\": 243, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test checks that transfer lines have counterparty_number and deposit lines do not.\"}], \"risks\": [\"The change adds a new field to the API response without a formal schema update.\", \"The SQL query uses a subquery which may impact performance for large datasets.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH406_transfer_lines_have_a_counterparty\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Transfer lines include counterparty_number starting with 'YMS-', and deposit lines have no counterparty_number.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

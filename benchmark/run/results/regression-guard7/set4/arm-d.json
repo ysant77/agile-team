@@ -1,0 +1,721 @@
+{
+ "model": "qwen3-coder:30b",
+ "options": {
+  "temperature": 0,
+  "num_ctx": 32768
+ },
+ "promptVersion": "code-review/2",
+ "rule": "blocking",
+ "results": [
+  {
+   "id": "U01",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/api.py:100: Catches OverflowError for account ID conversion.",
+      "[note AC1] P101:H2 tests/test_api.py:240: Test covers huge account ID returning 404."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/api.py:100: Catches OverflowError for account ID conversion.",
+      "[note AC1] P101:H2 tests/test_api.py:240: Test covers huge account ID returning 404."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/api.py:100: Catches OverflowError for account ID conversion.",
+      "[note AC1] P101:H2 tests/test_api.py:240: Test covers huge account ID returning 404."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U02",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P102:H1 src/bank/api.py:181: The check for 366 days includes both start and end dates.",
+      "[note AC1] P102:H2 tests/test_api.py:240: Test covers the maximum window of 366 days."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P102:H1 src/bank/api.py:181: The check for 366 days includes both start and end dates.",
+      "[note AC1] P102:H2 tests/test_api.py:240: Test covers the maximum window of 366 days."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P102:H1 src/bank/api.py:181: The check for 366 days includes both start and end dates.",
+      "[note AC1] P102:H2 tests/test_api.py:240: Test covers the maximum window of 366 days."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U03",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P103:H1 src/bank/api.py:226: Finding 1: see P103:H1, line 226.",
+      "[note] P103:H2 src/bank/api.py:235: Finding 2: see P103:H2, line 235."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P103:H1 src/bank/api.py:226: Finding 1: see P103:H1, line 226.",
+      "[note] P103:H2 src/bank/api.py:235: Finding 2: see P103:H2, line 235."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P103:H1 src/bank/api.py:226: Finding 1: see P103:H1, line 226.",
+      "[note] P103:H2 src/bank/api.py:235: Finding 2: see P103:H2, line 235."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U04",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "U05",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P105:H1 src/bank/api.py:136: docs_url=None, redoc_url=None, openapi_url=None disable API docs.",
+      "[note AC1] P105:H2 tests/test_web.py:124: test_interactive_api_pages_are_off checks that /docs, /redoc and /openapi.json return 404."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P105:H1 src/bank/api.py:136: docs_url=None, redoc_url=None, openapi_url=None disable API docs.",
+      "[note AC1] P105:H2 tests/test_web.py:124: test_interactive_api_pages_are_off checks that /docs, /redoc and /openapi.json return 404."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P105:H1 src/bank/api.py:136: docs_url=None, redoc_url=None, openapi_url=None disable API docs.",
+      "[note AC1] P105:H2 tests/test_web.py:124: test_interactive_api_pages_are_off checks that /docs, /redoc and /openapi.json return 404."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U06",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P106:H3 src/bank/ledger.py:415: SQL query fetches counterparty_number for transfers.",
+      "[note AC1] P106:H4 tests/test_api.py:243: Test checks that transfer lines have counterparty_number and deposit lines do not."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P106:H3 src/bank/ledger.py:415: SQL query fetches counterparty_number for transfers.",
+      "[note AC1] P106:H4 tests/test_api.py:243: Test checks that transfer lines have counterparty_number and deposit lines do not."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P106:H3 src/bank/ledger.py:415: SQL query fetches counterparty_number for transfers.",
+      "[note AC1] P106:H4 tests/test_api.py:243: Test checks that transfer lines have counterparty_number and deposit lines do not."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U07",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P107:H1 src/bank/api.py:226: Code checks for large transfer and reference, but not for currency.",
+      "[blocking AC1] P107:H2 tests/test_api.py:253: Test does not cover foreign currency transfers."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P107:H1 src/bank/api.py:226: Code checks for large transfer and reference, but not for currency.",
+      "[blocking AC1] P107:H2 tests/test_api.py:253: Test does not cover foreign currency transfers."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P107:H1 src/bank/api.py:226: Code checks for large transfer and reference, but not for currency.",
+      "[blocking AC1] P107:H2 tests/test_api.py:253: Test does not cover foreign currency transfers."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U08",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "U09",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P109:H1 src/bank/api.py:240: status code changed from 409 to 400 for insufficient funds",
+      "[note AC1] P109:H3 tests/test_api.py:237: test checks available_minor in detail object"
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P109:H1 src/bank/api.py:240: status code changed from 409 to 400 for insufficient funds",
+      "[note AC1] P109:H3 tests/test_api.py:237: test checks available_minor in detail object"
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P109:H1 src/bank/api.py:240: status code changed from 409 to 400 for insufficient funds",
+      "[note AC1] P109:H3 tests/test_api.py:237: test checks available_minor in detail object"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U10",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "U11",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P111:H1 src/bank/money.py:82: Function format_minor added to handle currency formatting.",
+      "[note AC1] P111:H2 tests/test_money.py:63: Test test_format_minor_groups_thousands added for format_minor function."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P111:H1 src/bank/money.py:82: Function format_minor added to handle currency formatting.",
+      "[note AC1] P111:H2 tests/test_money.py:63: Test test_format_minor_groups_thousands added for format_minor function."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P111:H1 src/bank/money.py:82: Function format_minor added to handle currency formatting.",
+      "[note AC1] P111:H2 tests/test_money.py:63: Test test_format_minor_groups_thousands added for format_minor function."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U12",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "U13",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P113:H1 src/bank/api.py:67: added opened_on field to account API response",
+      "[note AC1] P113:H2 src/bank/ledger.py:48: added created_at field to Account data class",
+      "[note AC1] P113:H3 src/bank/ledger.py:105: included created_at in account row parsing",
+      "[note AC1] P113:H4 tests/test_api.py:247: test checks that account API shows opening date"
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P113:H1 src/bank/api.py:67: added opened_on field to account API response",
+      "[note AC1] P113:H2 src/bank/ledger.py:48: added created_at field to Account data class",
+      "[note AC1] P113:H3 src/bank/ledger.py:105: included created_at in account row parsing",
+      "[note AC1] P113:H4 tests/test_api.py:247: test checks that account API shows opening date"
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P113:H1 src/bank/api.py:67: added opened_on field to account API response",
+      "[note AC1] P113:H2 src/bank/ledger.py:48: added created_at field to Account data class",
+      "[note AC1] P113:H3 src/bank/ledger.py:105: included created_at in account row parsing",
+      "[note AC1] P113:H4 tests/test_api.py:247: test checks that account API shows opening date"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U14",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "U15",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "U16",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P116:H1 src/bank/money.py:82: Function share uses ROUND_HALF_EVEN for rounding.",
+      "[note AC1] P116:H2 tests/test_money.py:70: Tests cover rounding with half to even in EUR and JPY."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P116:H1 src/bank/money.py:82: Function share uses ROUND_HALF_EVEN for rounding.",
+      "[note AC1] P116:H2 tests/test_money.py:70: Tests cover rounding with half to even in EUR and JPY."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P116:H1 src/bank/money.py:82: Function share uses ROUND_HALF_EVEN for rounding.",
+      "[note AC1] P116:H2 tests/test_money.py:70: Tests cover rounding with half to even in EUR and JPY."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U17",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "U18",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "U19",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P119:H1 src/bank/api.py:248: internal flag set based on customer_id comparison",
+      "[note AC1] P119:H3 tests/test_api.py:245: test checks internal flag for own account transfer"
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P119:H1 src/bank/api.py:248: internal flag set based on customer_id comparison",
+      "[note AC1] P119:H3 tests/test_api.py:245: test checks internal flag for own account transfer"
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P119:H1 src/bank/api.py:248: internal flag set based on customer_id comparison",
+      "[note AC1] P119:H3 tests/test_api.py:245: test checks internal flag for own account transfer"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U20",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "U21",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P121:H2 tests/test_api.py:240: Test only checks for non-existent account, not wrong currency or system account."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P121:H2 tests/test_api.py:240: Test only checks for non-existent account, not wrong currency or system account."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P121:H2 tests/test_api.py:240: Test only checks for non-existent account, not wrong currency or system account."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U22",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P122:H1 src/bank/api.py:180: start date is now clamped to EARLIEST_DATE"
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P122:H1 src/bank/api.py:180: start date is now clamped to EARLIEST_DATE"
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P122:H1 src/bank/api.py:180: start date is now clamped to EARLIEST_DATE"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "U23",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "U24",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  }
+ ]
+}

@@ -1,0 +1,79 @@
+{
+ "D": "cannot_verify",
+ "blocking": [
+  {
+   "hunk": "P107:H2",
+   "file": "tests/test_api.py",
+   "line": 253,
+   "text": "Test does not cover foreign currency transfers.",
+   "severity": "blocking",
+   "ac": "AC1"
+  }
+ ],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P107:H1",
+     "file": "src/bank/api.py",
+     "line": 226,
+     "text": "Code checks for large transfer and reference, but not for currency.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P107:H2",
+     "file": "tests/test_api.py",
+     "line": 253,
+     "text": "Test does not cover foreign currency transfers.",
+     "severity": "blocking",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The check for large transfers only considers EUR, not other currencies."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "21c072686c18b73c56ece7214f02ccace80a961e5d0fca0640eb874b36376f80",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-407",
+      "prNumber": 107
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-407",
+      "prNumber": 107,
+      "review": "{\"findings\": [{\"hunk\": \"P107:H1\", \"file\": \"src/bank/api.py\", \"line\": 226, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Code checks for large transfer and reference, but not for currency.\"}, {\"hunk\": \"P107:H2\", \"file\": \"tests/test_api.py\", \"line\": 253, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Test does not cover foreign currency transfers.\"}], \"risks\": [\"The check for large transfers only considers EUR, not other currencies.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH407_large_transfer_in_foreign_currency_needs_reference\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"A large transfer in foreign currency must also have a reference and return 422.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

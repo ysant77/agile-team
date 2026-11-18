@@ -38,7 +38,44 @@ not `supported` on it (worst of three runs, as in the protocols).
 - Risk: a control whose review was refused as a whole can now be accepted with a blocking
   finding. At 48165f5 on 17 Nov, S02 was such a control.
 
-## Runs
+## Runs (18 Nov, 18:20 to 19:55 SGT)
 
-Pending: the model slot. Commands: as in `REGRESSION-ARM-D-2026-11-18.md`, with `--rev` set to
-this branch; set 4 with the frozen set 4 runner and its C evidence.
+Reviewer at 27eb482 (this branch). The rest as in the same-day runs: rule `blocking`,
+`qwen3-coder:30b` (digest 06c1097efce0), temperature 0, `num_ctx` 32768, seeds 1 to 3, fresh
+copies of the C evidence. Sets 1 to 3 with the runner of `main`; set 4 with the frozen set 4
+runner. Raw results: `run/results/regression-guard7/set{1,2,3,4}/`. Old code (48165f5) same-day
+runs: `run/results/regression-2026-11-18/arm-d-48165f5-same-day/` (sets 1 to 3) and
+`run/results/set4/arm-d/` (set 4). Score: `python3 run/armd_guard7_score.py <runs folder> run`.
+
+**Same-day check.** In all 147 model runs, the model's tool calls are byte-identical to the old
+code's runs of 18 Nov, up to the guard decision. In the 4 changed cases the old guard refused the
+first record and the model wrote a second one; with guard 7 the first record is accepted. So each
+difference below comes from the guard change, not from the model run.
+
+## Result: acceptance NOT MET
+
+| Set | Controls held (old / new) | Caught (old / new) | Acceptance |
+|---|---|---|---|
+| 1 | B21 / B21 | 28 / 28 | met |
+| 2 | none / **S02** | 11 / 11 | **not met** |
+| 3 | none / none | 8 / 8 | met |
+| 4 | none / none | 7 / **8** | met |
+
+Controls held on sets 1 to 3: 1 before, 2 after. The condition "not more than now" fails.
+
+**Every case that changes (all three runs agree in each):**
+
+| Case | Kind | Old (48165f5) | New (guard 7) | Model text |
+|---|---|---|---|---|
+| U09 | invalid | refused (`line-not-added`), D supported | accepted, **held** | "status code changed from 409 to 400 for insufficient funds" (AC1) |
+| S02 | control | refused (`line-not-added`), D supported | accepted, **held (false hold)** | "Test only checks for 10 accounts but does not assert the correct number of customer accounts." (AC1) |
+| U06 | invalid | refused (`line-not-added`) | accepted, notes only; D supported (no change) | none blocking |
+| U21 | invalid | refused (`quoted-line`) | accepted, no blocking finding; D supported (no change) | the quoted finding is dropped, as predicted |
+
+## Decision
+
+The branch does not merge. The rule held: the change was fixed before the run, the acceptance was
+fixed before the run, and the run shows a second clean control held. No guard is tuned after this
+result. The same mechanism that recovers a true finding (U09) also recovers a finding on a clean
+control (S02): refusing a whole review hid both. A next step needs a new idea and its own
+acceptance, not a tweak of this one; set 4 cannot score it, and a claim needs set 5.
