@@ -1,0 +1,90 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "fallback",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P103:H1",
+     "file": "src/bank/api.py",
+     "line": 226,
+     "text": "Finding 1: see P103:H1, line 226.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P103:H2",
+     "file": "src/bank/api.py",
+     "line": 235,
+     "text": "Finding 2: see P103:H2, line 235.",
+     "severity": "note"
+    }
+   ],
+   "risks": [
+    "Risk 1: see the audited review input."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "5949a1306ea918d00f830554328b55d9f45e831823db4ff8f6a1382bd4bf6204",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-403",
+      "prNumber": 103
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-403",
+      "prNumber": 103,
+      "review": "{\"findings\": [{\"hunk\": \"P103:H1\", \"file\": \"src/bank/api.py\", \"line\": 226, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Reference is stripped and set to None if blank.\"}, {\"hunk\": \"P103:H2\", \"file\": \"src/bank/api.py\", \"line\": 235, \"text\": \"Reference is passed to ledger.transfer_once after processing.\"}], \"risks\": [\"No risk identified for AC1.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH403_reference_is_stored_without_outer_spaces\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Transfer with reference '  Rent  ' stores 'Rent' without outer spaces.\", \"failsBeforeFix\": false}, {\"testName\": \"test_BENCH403_blank_reference_is_stored_as_none\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Transfer with blank reference '   ' stores None as reference.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-403",
+      "prNumber": 103,
+      "review": "{\"findings\": [{\"hunk\": \"P103:H1\", \"file\": \"src/bank/api.py\", \"line\": 226, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Reference is stripped of outer spaces. Blank reference becomes None.\"}, {\"hunk\": \"P103:H2\", \"file\": \"src/bank/api.py\", \"line\": 235, \"text\": \"Processed reference is passed to ledger.transfer_once.\"}], \"risks\": [\"No risk identified for AC1.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH403_reference_is_stored_without_outer_spaces\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Transfer with reference '  Rent  ' stores 'Rent' without outer spaces.\", \"failsBeforeFix\": false}, {\"testName\": \"test_BENCH403_blank_reference_is_stored_as_none\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Transfer with blank reference '   ' stores None as reference.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

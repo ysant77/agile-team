@@ -1,0 +1,86 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P113:H1",
+     "file": "src/bank/api.py",
+     "line": 67,
+     "text": "added opened_on field to account API response",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P113:H2",
+     "file": "src/bank/ledger.py",
+     "line": 48,
+     "text": "added created_at field to Account data class",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P113:H3",
+     "file": "src/bank/ledger.py",
+     "line": 105,
+     "text": "included created_at in account row parsing",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P113:H4",
+     "file": "tests/test_api.py",
+     "line": 247,
+     "text": "test checks that account API shows opening date",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "no risk identified"
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "070d91ae28586f8305d9812f718c5d689a0a9460ff3daf4f59fda24c5f50c65f",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-413",
+      "prNumber": 113
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-413",
+      "prNumber": 113,
+      "review": "{\"findings\": [{\"hunk\": \"P113:H1\", \"file\": \"src/bank/api.py\", \"line\": 67, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"added opened_on field to account API response\"}, {\"hunk\": \"P113:H2\", \"file\": \"src/bank/ledger.py\", \"line\": 48, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"added created_at field to Account data class\"}, {\"hunk\": \"P113:H3\", \"file\": \"src/bank/ledger.py\", \"line\": 105, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"included created_at in account row parsing\"}, {\"hunk\": \"P113:H4\", \"file\": \"tests/test_api.py\", \"line\": 247, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"test checks that account API shows opening date\"}], \"risks\": [\"no risk identified\"], \"proposedChecks\": [{\"testName\": \"test_BENCH413_account_shows_its_opening_date\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"API response for an account includes the opened_on field with correct date format\", \"failsBeforeFix\": false}, {\"testName\": \"test_BENCH413_each_listed_account_has_an_opening_date\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"API list response for accounts includes the opened_on field with correct date format\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

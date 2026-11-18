@@ -4,6 +4,7 @@
 
 import { DECAY, updatePosterior } from './assignment.js';
 import { verifyChain } from './audit.js';
+import { verdictState } from './verdict-view.js';
 
 // The scenario generator writes "Twin change: scripted (Raj)" or "Twin change: live (Raj)" into
 // the PR body. Anything else is treated as unknown, never guessed.
@@ -43,7 +44,7 @@ export function buildMonitor(events) {
     t.twin = d.twin ?? t.twin;
     t.origin = d.origin ?? t.origin;
     t.skill = d.skill ?? t.skill;
-    t.claims.push({ seq: e.seq, type: d.type, result: d.result, at: d.at ?? e.at });
+    t.claims.push({ seq: e.seq, type: d.type, result: d.result, state: verdictState(d) ?? d.result, at: d.at ?? e.at });
     if (!t.closed && d.result === 'contradicted') t.contradictions += 1;
     // A ticket's outcome is fixed by its first supported claim; later claims do not change it.
     if (!t.closed && d.result === 'supported') {

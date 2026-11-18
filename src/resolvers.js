@@ -4,6 +4,7 @@ import { appendAudit, readAudit } from './audit-store.js';
 import { monitorForViewer } from './monitor.js';
 import { kvs } from '@forge/kvs';
 import { adoptFromReviews } from './review.js';
+import { latestView } from './verdict-view.js';
 
 const resolver = new Resolver();
 
@@ -20,7 +21,8 @@ resolver.define('getPanel', async ({ context }) => {
     getProperty(key, 'aat.approval'),
     getProperty(key, 'aat.reviews'),
   ]);
-  return { key, spec, verdicts: verdicts ?? [], approval, reviews: reviews ?? [] };
+  // The verdict view explains the newest verdict; code set it, and the view never changes it.
+  return { key, spec, verdicts: verdicts ?? [], view: latestView(verdicts), approval, reviews: reviews ?? [] };
 });
 
 resolver.define('approve', async ({ payload, context }) => {

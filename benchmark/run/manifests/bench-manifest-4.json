@@ -1,0 +1,756 @@
+[
+ {
+  "id": "U01",
+  "void": null,
+  "branches": [
+   "case/U01"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-401",
+   "type": "Bug",
+   "labels": [],
+   "text": "an account id above the 64-bit range gives a server error.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "for the id 9223372036854775808, (1) GET /api/accounts/{id} gives 404; (2) GET /api/accounts/{id}/statement gives 404; (3) POST /api/transfers with that value as from_account_id gives 404 and moves no money.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_a_huge_account_id_is_404"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U02",
+  "void": null,
+  "branches": [
+   "case/U02"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-402",
+   "type": "Story",
+   "labels": [],
+   "text": "a maximum length for the statement window.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "a window has at most 366 days, with the from date and the to date counted; a window of 366 days is accepted; a window of 367 days or more gives 400.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_window_has_a_maximum"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U03",
+  "void": null,
+  "branches": [
+   "case/U03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-403",
+   "type": "Bug",
+   "labels": [],
+   "text": "spaces around a transfer reference are stored.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) the reference is stored without spaces at its start and its end; (2) a reference that has only spaces is stored as no reference (null in the statement).",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_reference_is_stored_without_outer_spaces",
+       "test_blank_reference_is_stored_as_none"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U04",
+  "void": null,
+  "branches": [
+   "case/U04"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-404",
+   "type": "Bug",
+   "labels": [],
+   "text": "customers type the destination account number in different forms and the transfer is refused.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each of these forms finds the account YMS-0000-0003: (1) lower case, yms-0000-0003; (2) spaces at the start and the end; (3) spaces in place of the hyphens, YMS 0000 0003.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_transfer_accepts_a_typed_account_number"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U05",
+  "void": null,
+  "branches": [
+   "case/U05"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-405",
+   "type": "Task",
+   "labels": [],
+   "text": "disable the interactive API pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /docs, GET /redoc and GET /openapi.json each return 404; the web page at / still returns 200.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_interactive_api_pages_are_off"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U06",
+  "void": null,
+  "branches": [
+   "case/U06"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-406",
+   "type": "Story",
+   "labels": [],
+   "text": "a statement line tells the other account of a transfer.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each statement line has counterparty_number; for a transfer it is the number of the other account of the transfer (the destination on a line with a negative amount, the source on a line with a positive amount); for a deposit and a withdrawal it is null.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_transfer_lines_have_a_counterparty"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U07",
+  "void": null,
+  "branches": [
+   "case/U07"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-407",
+   "type": "Story",
+   "labels": [],
+   "text": "A large transfer must have a reference. Without one, the API gives 422.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "A large transfer must have a reference. Without one, the API gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_large_transfer_needs_a_reference",
+       "test_transfer_below_the_limit_needs_no_reference",
+       "test_large_transfer_with_a_reference_is_accepted"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U08",
+  "void": null,
+  "branches": [
+   "case/U08"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-408",
+   "type": "Story",
+   "labels": [],
+   "text": "the invariant check finds a journal entry with no lines.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "ledger.check_invariants returns the problem entry {id} has no lines for each row of journal_entries that has no row in journal_lines; consistent books still give an empty list.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_invariant_check_finds_an_entry_with_no_lines"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U09",
+  "void": null,
+  "branches": [
+   "case/U09"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-409",
+   "type": "Story",
+   "labels": [],
+   "text": "the insufficient-funds reply tells what is available.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "when a transfer is refused for insufficient funds, the response has the status 409 (as before) and detail is an object with message and available_minor, the balance of the source account.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_insufficient_funds_tells_what_is_available"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U10",
+  "void": null,
+  "branches": [
+   "case/U10"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-410",
+   "type": "Task",
+   "labels": [],
+   "text": "move the default statement window out of the HTTP handler.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) the new function ledger.statement_window(start, end, today) returns the pair of dates that the handler used before: a missing end is today, and a missing start is 29 days before the end; (2) api.read_statement calls it; (3) the behaviour of the statement endpoint does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_window_defaults_to_the_last_30_days",
+       "test_statement_window_counts_back_from_the_end",
+       "test_statement_window_keeps_given_dates"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U11",
+  "void": null,
+  "branches": [
+   "case/U11"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-411",
+   "type": "Story",
+   "labels": [],
+   "text": "a display text for amounts.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the text has the decimals of the currency and a comma between each group of three digits of the whole part (1,234.50 for 123450 EUR; 1,234,567 for 1234567 JPY; 1,234.567 for 1234567 BHD); for a negative amount the minus sign is first and the digits are grouped the same way (-123.45 for -12345 EUR; -1,234.56 for -123456 EUR).",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_format_minor_groups_thousands"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U12",
+  "void": null,
+  "branches": [
+   "case/U12"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-412",
+   "type": "Bug",
+   "labels": [
+    "money_semantics"
+   ],
+   "text": "an amount with decimals that are all zero is refused.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "an amount is accepted if each decimal after the decimals of the currency is zero (\"1.0\" in JPY is 1 minor unit; \"1.2300\" in EUR is 123 minor units; \"10.000\" in a transfer between two EUR accounts gives 201 and the amount \"10.00\"); an amount with a decimal that is not zero after the decimals of the currency is still refused.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_zero_decimals_are_accepted",
+       "test_non_zero_extra_decimals_are_still_refused",
+       "test_transfer_accepts_zero_decimals"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U13",
+  "void": null,
+  "branches": [
+   "case/U13"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-413",
+   "type": "Story",
+   "labels": [],
+   "text": "the date on which an account was opened.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each account object of the API (GET /api/accounts and GET /api/accounts/{id}) has opened_on, the UTC date of the creation of the account in the form YYYY-MM-DD.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_account_shows_its_opening_date",
+       "test_each_listed_account_has_an_opening_date"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U14",
+  "void": null,
+  "branches": [
+   "case/U14"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-414",
+   "type": "Story",
+   "labels": [],
+   "text": "support staff can read a statement.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) a request for GET /api/accounts/{id}/statement with the header X-Support-Token equal to the environment variable BANK_SUPPORT_TOKEN gets the statement of any customer account, with no session; (2) with a wrong header or no header, the behaviour is the same as before (401 with no session, 404 for an account of a different customer); (3) if BANK_SUPPORT_TOKEN is not set or is empty, no token is accepted.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_support_token_reads_any_statement"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U15",
+  "void": null,
+  "branches": [
+   "case/U15"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-415",
+   "type": "Story",
+   "labels": [],
+   "text": "the session tells what the customer has.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the body of GET /api/session has (1) account_count, the number of accounts of the customer, and (2) currencies, the list of the different currency codes of those accounts, in the order of the code.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_session_has_the_account_count"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U16",
+  "void": null,
+  "branches": [
+   "case/U16"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-416",
+   "type": "Story",
+   "labels": [],
+   "text": "a share of an amount, for later use by interest and fees.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the result is amount * basis_points / 10000 in the currency of the amount, rounded to the minor unit with the rule \"half to even\" (the rule that to_minor uses); a negative basis_points raises ValueError.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_share_rounds_ties_to_even_in_eur",
+       "test_share_rounds_ties_to_even_in_jpy",
+       "test_share_in_bhd_and_at_zero",
+       "test_share_refuses_negative_basis_points"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U17",
+  "void": null,
+  "branches": [
+   "case/U17"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-417",
+   "type": "Bug",
+   "labels": [],
+   "text": "a session cookie with a very long number gives a server error.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "a request with the cookie yms_customer set to a text of 30 digits gets 401, the same as each other unknown session.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_a_huge_session_cookie_is_401"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U18",
+  "void": null,
+  "branches": [
+   "case/U18"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-418",
+   "type": "Bug",
+   "labels": [],
+   "text": "old idempotency keys are not removed.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each call of ledger.transfer_once deletes all keys of that customer that are older than 24 hours; a key that is exactly 24 hours old, or newer, stays.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_old_keys_of_the_customer_are_removed"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "failedRunThenRerun": true
+  }
+ },
+ {
+  "id": "U19",
+  "void": null,
+  "branches": [
+   "case/U19"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-419",
+   "type": "Story",
+   "labels": [],
+   "text": "the transfer response tells if the money stays with the customer.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the body of POST /api/transfers has internal: true if the destination account belongs to the customer of the session, false if not; a replay (the same Idempotency-Key) has the same value as the first response.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_transfer_to_an_own_account_is_internal",
+       "test_transfer_to_another_customer_is_not_internal"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U20",
+  "void": null,
+  "branches": [
+   "case/U20"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-420",
+   "type": "Bug",
+   "labels": [],
+   "text": "the account number has a wrong form for a very large sequence number (account_number(100000000) gives YMS-10000-0000).",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) ledger.account_number raises LedgerError for a sequence below 1 or above 99,999,999; (2) for each sequence from 1 to 99,999,999 the number is the same as before.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_account_number_refuses_a_sequence_out_of_range"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U21",
+  "void": null,
+  "branches": [
+   "case/U21"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-421",
+   "type": "Story",
+   "labels": [],
+   "text": "a clear message for an unknown destination.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) a transfer to an account number that does not exist gives 404 with the detail destination account not found; (2) a transfer to an account that exists but cannot receive the transfer (a different currency, or a system account) gives the same status and the same body as (1), so that the reply does not tell that the account exists.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_unknown_destination_has_a_clear_message"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U22",
+  "void": null,
+  "branches": [
+   "case/U22"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-422",
+   "type": "Bug",
+   "labels": [],
+   "text": "a statement with an early to date and no from date shows a start date before the supported range.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "if from is not given, the default start date is not before 1900-01-01; for to=1900-01-05 the body has \"from\": \"1900-01-01\"; for a to date of 1900-01-30 or later the default start does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_default_statement_start_stays_in_range"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U23",
+  "void": null,
+  "branches": [
+   "case/U23"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-423",
+   "type": "Story",
+   "labels": [],
+   "text": "the total of the customer in each currency.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/balances returns, for the customer of the session, a list of {\"currency\", \"total_minor\", \"total\"} in the order of the currency code; total_minor is the sum of the balances of the accounts of that customer in that currency.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_balances_are_the_totals_of_the_ledger"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ },
+ {
+  "id": "U24",
+  "void": null,
+  "branches": [
+   "case/U24"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-424",
+   "type": "Bug",
+   "labels": [],
+   "text": "the statement page shows only the date of a posting, so two postings of one day cannot be told apart.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each row of the statement table on the web page shows the date and the time of the posting in the form YYYY-MM-DD HH:MM (UTC)."
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {}
+ }
+]
