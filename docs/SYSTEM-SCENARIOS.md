@@ -93,3 +93,105 @@ A MISS is a limit of a rule or of the model, not a missing test.
     (T13).
 - **Model limits: 3, 12 and 13.** The reviewer is the only line. Typed answers per acceptance
   criterion are a design for this; they have not been built or run.
+
+## Memory
+
+### 1. What exists now
+
+**Short-term memory** (one conversation or one claim):
+
+| Store | Where | Who writes | Who reads | Can a model write to it directly? | Retention |
+|---|---|---|---|---|---|
+| Rovo conversation | Rovo, outside the app | the user and the agent | the agent | yes (its own turns) | Rovo decides; the app does not control it and stores none of it |
+| Evidence context of a claim | in memory during `decide()` (`src/verify-claim.js`) | the readers (`src/jira-evidence.js`, `src/github-evidence.js`) | the verifier | no | one run; not stored. A done claim keeps its evidence record (below) |
+| Claim progress | Forge storage `claim-progress:<claim id>`, `claim-lease:<claim id>` (`src/verify-claim.js`) | code | code (a retry resumes the steps) | no | kept; no expiry |
+| Review packet | Forge storage `review:<key>:<pr>` (`src/review-actions.js`) | code (`get-pr-diff`) | code (`record-review` guards) | no: the model sends a review, and code guards it before anything is stored | kept; no expiry |
+| Arbitration case | Forge storage `case:<key>` (`src/case-actions.js`) | code (`open-case`, `record-opinion`) | code, `get-verdicts` | no: an opinion is stored only after the guards | kept; no expiry |
+| Intake slots | Forge storage `claim-slot:<scope>:<n>` (`src/claim-intake.js`) | code | code (the claim caps) | no | deleted when the window ends |
+
+**Long-term memory** (across claims):
+
+| Store | Where | Who writes | Who reads | Can a model write to it directly? | Retention |
+|---|---|---|---|---|---|
+| Audit chain | Forge storage `audit-head` and one entry per sequence number (`src/audit-store.js`) | code only (`appendAudit`): verdicts, done evidence, reviews, opinions, decisions | the monitor (`src/monitor.js`, `src/resolvers.js`), `get-verdicts` (head), the sign-off check | no | kept; hash-chained; no expiry and no delete path |
+| Verdicts | issue property `aat.verdicts`, last 50 (`src/jira-evidence.js`) | code | `get-verdicts`, the panel | no | last 50 per issue |
+| Reviews | issue property `aat.reviews`, last 20 (`src/review-actions.js`) | code, after the guards | the review hold (`src/review-hold.js`), the panel, adoption | no | last 20 per issue |
+| Ticket spec | issue property `aat.ticket` (`src/jira.js`, `src/resolvers.js`) | code (`create-ticket`, adoption by a person) | the verifier (ACs, domain) | no: `create-ticket` checks the draft first, and the user confirms it | while the issue lives |
+| Human decisions | issue properties `aat.approval`, `aat.signoff` (`src/resolvers.js`), and audit events | a person, through the panel | the verifier (sign-off), the monitor | no | while the issue lives; in the audit chain |
+| Assignment learning | replayed from the verdicts in the audit chain (`src/monitor.js`) | code | the monitor | no | as the audit chain |
+
+No model reads long-term memory as text in its prompt today. The agents read verdicts through
+`get-verdicts` as data. The verifier reads past records as fields, never as instructions.
+
+### 2. Gaps
+
+- **No expiry and no delete path.** Storage records and the audit chain grow without limit. A
+  site has no way to remove a record (for example a person's data) without breaking the hash
+  chain.
+- **No memory across claims for a decision.** A claim does not see:
+  - past verdicts on the same criterion or test;
+  - known flaky tests;
+  - review findings that a person rejected before.
+  Each claim starts from zero.
+- **Not isolated by repository.** The app reads one repository for each Forge environment. The
+  storage keys use the issue key only, so a per-site repository setting would also need keys
+  per repository.
+- **Not tested as memory.** There is no test for a poisoned record, a stale record or a record
+  from another site, because no feature reads memory for a decision.
+
+### 3. Design proposal (no code today)
+
+**What long-term memory would add, as structured records:**
+- past verdicts and human decisions on the same repository, the same criterion or the same test;
+- known flaky tests: a test that failed and passed on one commit (as in U18);
+- review findings that a person rejected, so that the reviewer does not hold the same claim
+  again for the same reason;
+- guard refusals per prompt version, as a signal for the reviewer regression.
+
+**Rules:**
+1. **Only code writes memory.** A record is written only from a verified record that is already
+   in the audit chain: a verdict, a human decision, or a guarded review. The record carries that
+   entry's sequence number and hash. A model has no write action for memory.
+2. **Memory text is data, never instruction.** A record holds fields (ids, outcomes, test names,
+   hashes). Free text is kept only when it is quoted, and it is shown to a model inside a block
+   marked as data, with the same note as the review packet.
+3. **Memory can add a hold or context, never a pass.** A record can make a result
+   `cannot_verify` (for example, a test on the known-flaky list), or add a line to the reason. It
+   can never turn a result into `supported`. This is the same rule as the review hold.
+4. **Isolation per site.** The keys carry the site (cloud id) and the repository. A read never
+   crosses a site.
+5. **Expiry and a delete path.**
+   - Each record has a fixed lifetime (for example 90 days) and its source hash.
+   - A delete removes the memory record. It does not remove the audit entry, which keeps only
+     ids and hashes.
+   - A record whose source entry is missing or does not match its hash is not used.
+6. **Read as of the claim.** Memory is read as it was when the claim started, and the verdict
+   names each record it used (sequence number and hash). The same claim and the same memory
+   then give the same verdict.
+
+**Tests to write before any code:**
+
+| Test | It checks that |
+|---|---|
+| memory poisoning: a record with no audit entry | it is not used |
+| memory poisoning: a record whose hash does not match its audit entry | it is not used |
+| memory poisoning: injected text in a stored finding | it is shown as data; the verdict is the same with and without the text |
+| a model action that tries to write memory | it is refused; there is no such action in the manifest |
+| a record that would turn `cannot_verify` into `supported` | the result stays `cannot_verify` |
+| a stale record (past its lifetime) | it is not used |
+| a flaky-test record from before a fix commit | it is not used after that commit |
+| a record of another site or another repository | it is not read |
+| a deleted record | it is not used, and the audit chain still verifies |
+| the same claim with the same memory, twice | it gives the same verdict, and the verdict names the records it used |
+
+**Before merge:** memory changes verifier results, so it is a verifier change. It needs:
+- **Sets 1 to 4, run as development sets**, with memory empty: they must give the same results as
+  without the feature (no regression).
+- **A new blind set built in sequence.** Some cases need an earlier event on the same repository:
+  a flaky test seen before, a finding a person rejected, a stale record, a poisoned record, and a
+  record of another repository. The protocol, the truth and the predictions are committed before
+  the build, as for set 4.
+- **Pre-set conditions:**
+  - no control is newly held by memory, except a test on the known-flaky list;
+  - every poisoned or stale record is ignored;
+  - at least one invalid case that C supports without memory is held with memory.
