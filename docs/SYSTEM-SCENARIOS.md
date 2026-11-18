@@ -107,7 +107,7 @@ A MISS is a limit of a rule or of the model, not a missing test.
 | Claim progress | Forge storage `claim-progress:<claim id>`, `claim-lease:<claim id>` (`src/verify-claim.js`) | code | code (a retry resumes the steps) | no | kept; no expiry |
 | Review packet | Forge storage `review:<key>:<pr>` (`src/review-actions.js`) | code (`get-pr-diff`) | code (`record-review` guards) | no: the model sends a review, and code guards it before anything is stored | kept; no expiry |
 | Arbitration case | Forge storage `case:<key>` (`src/case-actions.js`) | code (`open-case`, `record-opinion`) | code, `get-verdicts` | no: an opinion is stored only after the guards | kept; no expiry |
-| Intake slots | Forge storage `claim-slot:<scope>:<n>` (`src/claim-intake.js`) | code | code (the claim caps) | no | deleted when the window ends |
+| Intake slots and seen comments | Forge storage `claim-slot:<scope>:<hour>:<n>` and `claim-seen:<key>:<comment id>` (`src/claim-intake.js`) | code | code (the claim caps, no double queueing) | no | kept; a new hour uses new keys. The slots are released only when a claim is refused. No expiry |
 
 **Long-term memory** (across claims):
 
