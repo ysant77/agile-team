@@ -69,3 +69,39 @@ export function rawCopy(raw, record, context) {
     inputHash: record.inputHash ?? null,
   };
 }
+
+// Retention of the copies (corrections after the 18 Nov review). Each scope (actor, work item and
+// pull request) has an index of its copies. On each write in a scope: a copy older than
+// RAW_MAX_AGE_DAYS is deleted, then the oldest copies over RAW_KEEP that are not pinned. The copy
+// of an accepted record is pinned, so the count limit does not remove it; the age limit does.
+// Identical replies share one copy; a copy that another scope still lists is not deleted.
+// Limit: a scope with no new write keeps its copies; nothing runs on a timer.
+export const RAW_KEEP = 5;
+export const RAW_MAX_AGE_DAYS = 30;
+export const rawIndexKey = (scope) => `raw-index:${scope}`;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const asIndex = (v) => (Array.isArray(v) ? v.filter((e) => e && typeof e.hash === 'string' && Number.isFinite(e.at)) : []);
+
+export async function storeRawCopy(store, scope, hash, copy, { now = Date.now(), pin = false } = {}) {
+  // The copy lists the scopes that keep it, so a reply shared by two scopes stays while one lists it.
+  const current = await store.get(rawKey(hash));
+  const scopes = [...new Set([...(Array.isArray(current?.scopes) ? current.scopes : []), scope])];
+  await store.set(rawKey(hash), { ...copy, scopes });
+  const old = asIndex(await store.get(rawIndexKey(scope)));
+  const prev = old.find((e) => e.hash === hash);
+  let index = [...old.filter((e) => e.hash !== hash), { hash, at: now, pin: pin || Boolean(prev?.pin) }];
+  const expired = index.filter((e) => now - e.at > RAW_MAX_AGE_DAYS * DAY_MS);
+  index = index.filter((e) => !expired.includes(e));
+  const unpinned = index.filter((e) => !e.pin);
+  const over = unpinned.slice(0, Math.max(0, unpinned.length - RAW_KEEP));
+  index = index.filter((e) => !over.includes(e));
+  await store.set(rawIndexKey(scope), index);
+  for (const e of [...expired, ...over]) {
+    const stored = await store.get(rawKey(e.hash));
+    const rest = (Array.isArray(stored?.scopes) ? stored.scopes : []).filter((x) => x !== scope);
+    if (stored && rest.length) await store.set(rawKey(e.hash), { ...stored, scopes: rest });
+    else await store.delete(rawKey(e.hash));
+  }
+  return index;
+}

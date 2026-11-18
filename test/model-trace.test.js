@@ -13,7 +13,7 @@ import { sha256 } from '../src/audit.js';
 import { applyGuards } from '../src/opinion.js';
 import { recordReview } from '../src/review-actions.js';
 import { applyReviewGuards, buildReviewPacket } from '../src/review.js';
-import { RAW_EXCERPT_MAX, rawKey, rawTrace, schemaErrorClass } from '../src/trace.js';
+import { RAW_EXCERPT_MAX, RAW_KEEP, rawIndexKey, rawKey, rawTrace, schemaErrorClass } from '../src/trace.js';
 
 const s56 = JSON.parse(readFileSync(new URL('../fixtures/S56.json', import.meta.url), 'utf8'));
 const step = s56.steps.find((s) => s.kind === 'review');
@@ -69,6 +69,7 @@ function stubForge(t) {
   const puts = [];
   t.mock.method(kvs, 'get', async (k) => structuredClone(store.get(k)));
   t.mock.method(kvs, 'set', async (k, v) => { store.set(k, structuredClone(v)); });
+  t.mock.method(kvs, 'delete', async (k) => { store.delete(k); });
   const pathOf = (r) => r?.value_ ?? String(r);
   t.mock.method(api, 'asApp', () => ({
     requestJira: async (path, opts) => {
@@ -108,4 +109,22 @@ test('the kept attempts are bounded', async (t) => {
   await recordReview({ issueKey: 'BANK-4', prNumber: 61, review: 'nope' });
   assert.equal(store.get('review:BANK-4:61').attempts.length, 5);
   assert.equal(store.get('review:BANK-4:61').attempts.at(-1).rawHash, sha256('nope'));
+});
+
+test('record-review indexes each copy per work item and PR, pins the saved one, and keeps at most five others', async (t) => {
+  const { store } = stubForge(t);
+  store.set('review:BANK-4:61', { packet, retries: 0 });
+  const ok = await recordReview({ issueKey: 'BANK-4', prNumber: 61, review: good });
+  assert.equal(ok.ok, true, JSON.stringify(ok));
+  const savedHash = rawTrace(good).hash;
+  for (let i = 0; i < 7; i += 1) {
+    store.set('review:BANK-4:61', { ...store.get('review:BANK-4:61'), retries: 0 });
+    await recordReview({ issueKey: 'BANK-4', prNumber: 61, review: `bad ${i}` });
+  }
+  const index = store.get(rawIndexKey('code-reviewer:BANK-4:61'));
+  assert.deepEqual(index.filter((e) => e.pin).map((e) => e.hash), [savedHash]);
+  assert.equal(index.filter((e) => !e.pin).length, RAW_KEEP);
+  assert.ok(store.get(rawKey(savedHash)), 'the saved record keeps its copy');
+  assert.equal(store.get(rawKey(sha256('bad 0'))), undefined, 'the oldest refused copy is deleted');
+  assert.ok(store.get(rawKey(sha256('bad 6'))));
 });

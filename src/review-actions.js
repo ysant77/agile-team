@@ -3,7 +3,7 @@
 // and stores it as "Review (not verified)". Neither action sets a verdict; a stored blocking finding
 // can only hold a supported claim for the same head commit (src/review-hold.js).
 
-import { MAX_ATTEMPTS, rawCopy, rawKey } from './trace.js';
+import { MAX_ATTEMPTS, rawCopy, storeRawCopy } from './trace.js';
 import api, { fetch, route } from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { appendAudit } from './audit-store.js';
@@ -95,9 +95,11 @@ export async function recordReview(payload) {
   // Model "rovo": Forge does not tell the app which model Rovo used (src/trace.js).
   const raw = payload?.review ?? '';
   const guarded = applyReviewGuards(raw, stored.packet, { model: 'rovo', promptVersion: REVIEW_PROMPT_VERSION });
-  // Keep a bounded copy of every reply, refused or not, so a failure can be traced to it.
-  await kvs.set(rawKey(guarded.raw.hash), rawCopy(raw, guarded, { issueKey: input.issueKey, prNumber: input.prNumber, actor: 'code-reviewer' }));
   const gate = reviewGate(guarded, stored.retries ?? 0);
+  // Keep a bounded copy of every reply, refused or not, so a failure can be traced to it. The copy
+  // of a saved record is pinned against the count limit (src/trace.js retention).
+  await storeRawCopy(kvs, `code-reviewer:${input.issueKey}:${input.prNumber}`, guarded.raw.hash,
+    rawCopy(raw, guarded, { issueKey: input.issueKey, prNumber: input.prNumber, actor: 'code-reviewer' }), { pin: gate.action !== 'retry' });
   if (gate.action === 'retry') {
     const attempt = { at: new Date().toISOString(), outcome: guarded.outcome, guard: guarded.guard, errorClass: guarded.errorClass, rawHash: guarded.raw.hash };
     await kvs.set(reviewKey(input.issueKey, input.prNumber), {

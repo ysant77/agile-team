@@ -1,7 +1,7 @@
 // Rovo actions for arbitration: open a case from two or three pull requests, and record the AI
 // team lead's opinion on it. Code decides whatever it can; an opinion never decides.
 
-import { rawCopy, rawKey } from './trace.js';
+import { rawCopy, storeRawCopy } from './trace.js';
 import { fetch } from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { HUMAN_DOMAINS } from './arbitration.js';
@@ -89,8 +89,9 @@ export async function recordOpinion(payload) {
   // Model "rovo": Forge does not tell the app which model Rovo used (src/trace.js).
   const raw = payload?.opinion ?? '';
   const guarded = applyGuards(raw, stored.packet, { model: 'rovo', promptVersion: OPINION_PROMPT_VERSION });
-  await kvs.set(rawKey(guarded.raw.hash), rawCopy(raw, guarded, { issueKey, actor: 'ai-team-lead' }));
   const gate = styleGate(guarded, stored.styleRetries ?? 0);
+  // A bounded copy of every reply; the copy of a saved record is pinned (src/trace.js retention).
+  await storeRawCopy(kvs, `ai-team-lead:${issueKey}`, guarded.raw.hash, rawCopy(raw, guarded, { issueKey, actor: 'ai-team-lead' }), { pin: gate.action !== 'retry' });
   if (gate.action === 'retry') {
     stored.styleRetries = (stored.styleRetries ?? 0) + 1;
     await kvs.set(caseKey(issueKey), stored);
