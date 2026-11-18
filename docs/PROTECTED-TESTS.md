@@ -46,7 +46,7 @@ A change can also deselect an old test in `pyproject.toml`.
 ## The `pinned` block (bank CI report)
 
 ```json
-{ "pinned": { "version": 1, "base_sha": "<40 hex>", "tests": [
+{ "pinned": { "version": 1, "base_sha": "<40 hex>", "modules": ["tests/test_api.py"], "tests": [
   { "id": "tests/test_api.py::test_transfer_errors", "base_hash": "<sha256>",
     "head_id": "tests/test_api.py::test_transfer_errors", "head_hash": "<sha256>",
     "outcome": "passed" } ] } }
@@ -56,6 +56,10 @@ A change can also deselect an old test in `pyproject.toml`.
   `not_run`.
 - `head_id` and `head_hash` are `null` when no head test has this name or this body (deleted).
 - `head_id` differs from `id` when the body was found under another name (renamed).
+- `modules` lists the base test modules that the step covered: the ones the pull request
+  changes, renames or removes. An empty list with no test means no test module changed (pass).
+  Unchanged modules run in the head suite as they are; a test missing there is caught by
+  `tests_not_removed`.
 
 ## Prediction (written before the check code; sets 1 to 4 are development sets)
 

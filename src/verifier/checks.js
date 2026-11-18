@@ -561,8 +561,18 @@ export function pinnedTestsHold(ctx, report = ctx.report) {
   }
   const p = report.pinned;
   if (!isObj(p) || p.version !== 1 || !isList(p.tests)) return result(name, 'unknown', 'the pinned block of the report is malformed');
-  if (!p.tests.length) return result(name, 'unknown', 'the pinned block lists no base test, so it cannot show that old tests still hold');
+  // modules: the base test modules that the bank step covered (the changed ones). An empty list
+  // with no test means the pull request changes no test module.
+  if (p.modules !== undefined && !(isList(p.modules) && p.modules.every(isText))) return result(name, 'unknown', 'the module list of the pinned block is malformed');
+  if (!p.tests.length) {
+    return isList(p.modules) && p.modules.length === 0
+      ? result(name, 'pass', 'no test module changed, so every old test runs in the head suite as it is')
+      : result(name, 'unknown', 'the pinned block lists no base test, so it cannot show that old tests still hold');
+  }
   if (!p.tests.every(pinEntryOk)) return result(name, 'unknown', 'an entry of the pinned block is malformed');
+  if (isList(p.modules) && !p.tests.every((t) => p.modules.includes(t.id.split('::')[0]))) {
+    return result(name, 'unknown', 'a pinned test is outside the modules that the pinned block lists');
+  }
   if (!isObj(ctx.ticket)) return result(name, 'unknown', 'the ticket is not readable, so its approved test changes are not known');
   const removals = optList(ctx.ticket.approvedTestRemovals);
   const changes = optList(ctx.ticket.approvedTestChanges);
