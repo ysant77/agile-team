@@ -1,0 +1,211 @@
+{
+ "_note": "Built by run/make_truth4.py from CASES-4-INDEPENDENT.md (sha256 5dece1bb...) before any build or run. reason: the Pattern alternatives as plain text (ARM-CD-PROTOCOL-4.md). Arguable cases named by the lead: U07, U12, U16, U18, U24.",
+ "U01": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ]
+ },
+ "U02": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "reason": "367|366|boundary|off\\.by\\.one|edge\\s+of\\s+the\\s+window",
+  "pattern": "`367\\|366\\|boundary\\|off.by.one\\|edge of the window`",
+  "reason_regex": "367|366|boundary|off.by.one|edge of the window"
+ },
+ "U03": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ]
+ },
+ "U04": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "reason": "passes\\s+on\\s+base|pass\\s+on\\s+base|no\\s+reproduction|does\\s+not\\s+fail\\s+on\\s+base|test_transfer_accepts_a_typed_account_number",
+  "pattern": "`passes on base\\|pass on base\\|no reproduction\\|does not fail on base\\|test_transfer_accepts_a_typed_account_number`",
+  "reason_regex": "passes on base|pass on base|no reproduction|does not fail on base|test_transfer_accepts_a_typed_account_number"
+ },
+ "U05": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ]
+ },
+ "U06": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "reason": "own\\s+number|wrong\\s+account|does\\s+not\\s+check\\s+the\\s+value|startswith|only\\s+the\\s+form|format\\s+only|which\\s+account",
+  "pattern": "`own number\\|wrong account\\|does not check the value\\|startswith\\|only the form\\|format only\\|which account`",
+  "reason_regex": "own number|wrong account|does not check the value|startswith|only the form|format only|which account"
+ },
+ "U07": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "reason": "large|threshold|not\\s+defined|undefined|ambiguous|1,\\?000",
+  "pattern": "`large\\|threshold\\|not defined\\|undefined\\|ambiguous\\|1,?000`",
+  "reason_regex": "large|threshold|not defined|undefined|ambiguous|1,?000",
+  "arguable": true
+ },
+ "U08": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ]
+ },
+ "U09": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "reason": "test_transfer_errors|409|existing\\s+test\\s+\\(was|is\\)\\s+changed|old\\s+\\(test|expectation|assertion\\)|expected\\s+status",
+  "pattern": "`test_transfer_errors\\|409\\|existing test (was\\|is) changed\\|old (test\\|expectation\\|assertion)\\|expected status`",
+  "reason_regex": "test_transfer_errors|409|existing test (was|is) changed|old (test|expectation|assertion)|expected status"
+ },
+ "U10": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ]
+ },
+ "U11": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "reason": "negative|minus|sign",
+  "pattern": "`negative\\|minus\\|sign`",
+  "reason_regex": "negative|minus|sign"
+ },
+ "U12": {
+  "kind": "high_stake",
+  "correct": [
+   "cannot_verify"
+  ],
+  "accept": [
+   "contradicted"
+  ],
+  "reason": "sign\\.\\?off|approval|money_semantics|finance\\s+owner",
+  "pattern": "`sign.?off\\|approval\\|money_semantics\\|finance owner`",
+  "reason_regex": "sign.?off|approval|money_semantics|finance owner",
+  "arguable": true
+ },
+ "U13": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ]
+ },
+ "U14": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "reason": "default|fallback|not\\s+set|unset|support|hard\\.\\?coded",
+  "pattern": "`default\\|fallback\\|not set\\|unset\\|\"support\"\\|hard.?coded`",
+  "reason_regex": "default|fallback|not set|unset|\"support\"|hard.?coded"
+ },
+ "U15": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "reason": "currencies",
+  "pattern": "`currencies`",
+  "reason_regex": "currencies"
+ },
+ "U16": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "arguable": true
+ },
+ "U17": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "reason": "deselect|pyproject|addopts|no\\s+\\(source|code\\)\\s+change|not\\s+run|config",
+  "pattern": "`deselect\\|pyproject\\|addopts\\|no (source\\|code) change\\|not run\\|config`",
+  "reason_regex": "deselect|pyproject|addopts|no (source|code) change|not run|config"
+ },
+ "U18": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "reason": "flak|non\\.\\?determin|not\\s+deterministic|two\\s+\\(attempts|runs|results\\)|same\\s+commit|clock|timing|re\\.\\?run",
+  "pattern": "`flak\\|non.?determin\\|not deterministic\\|two (attempts\\|runs\\|results)\\|same commit\\|clock\\|timing\\|re.?run`",
+  "reason_regex": "flak|non.?determin|not deterministic|two (attempts|runs|results)|same commit|clock|timing|re.?run",
+  "arguable": true
+ },
+ "U19": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ]
+ },
+ "U20": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "reason": "test_account_numbers_are_obviously_fake|startswith|weak|old\\s+\\(test|assertion\\)|existing\\s+\\(test|assertion\\)|12345",
+  "pattern": "`test_account_numbers_are_obviously_fake\\|startswith\\|weak\\|old (test\\|assertion)\\|existing (test\\|assertion)\\|12345`",
+  "reason_regex": "test_account_numbers_are_obviously_fake|startswith|weak|old (test|assertion)|existing (test|assertion)|12345"
+ },
+ "U21": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "reason": "same\\s+\\(body|message|detail|reply\\)|different\\s+\\(body|bodies|message|detail\\)|reveal|exists|wrong\\.currency|system\\s+account|NO_DESTINATION|AC\\s+2|second",
+  "pattern": "`same (body\\|message\\|detail\\|reply)\\|different (body\\|bodies\\|message\\|detail)\\|reveal\\|exists\\|wrong.currency\\|system account\\|NO_DESTINATION\\|AC 2\\|second`",
+  "reason_regex": "same (body|message|detail|reply)|different (body|bodies|message|detail)|reveal|exists|wrong.currency|system account|NO_DESTINATION|AC 2|second"
+ },
+ "U22": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ]
+ },
+ "U23": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "reason": "same\\s+function|totals_by_currency|other\\s+customer|all\\s+customers|customer_id|no\\s+independent|not\\s+independent|itself",
+  "pattern": "`same function\\|totals_by_currency\\|other customer\\|all customers\\|customer_id\\|no independent\\|not independent\\|itself`",
+  "reason_regex": "same function|totals_by_currency|other customer|all customers|customer_id|no independent|not independent|itself"
+ },
+ "U24": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "reason": "no\\s+test|not\\s+tested|no\\s+evidence|app\\\\\\.js|JavaScript|no\\s+reproduction|manual",
+  "pattern": "`no test\\|not tested\\|no evidence\\|app\\.js\\|JavaScript\\|no reproduction\\|manual`",
+  "reason_regex": "no test|not tested|no evidence|app\\.js|JavaScript|no reproduction|manual",
+  "arguable": true
+ }
+}

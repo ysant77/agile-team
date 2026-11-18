@@ -1,0 +1,70 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P116:H1",
+     "file": "src/bank/money.py",
+     "line": 82,
+     "text": "Function share uses ROUND_HALF_EVEN for rounding.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P116:H2",
+     "file": "tests/test_money.py",
+     "line": 70,
+     "text": "Tests cover rounding with half to even in EUR and JPY.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The function share does not handle zero amount inputs explicitly, but the tests do not cover this case."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "537f92519ef13a97af877d21d7335a1b92987846ea70795ff1747b9be9bc76b8",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-416",
+      "prNumber": 116
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-416",
+      "prNumber": 116,
+      "review": "{\"findings\": [{\"hunk\": \"P116:H1\", \"file\": \"src/bank/money.py\", \"line\": 82, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Function share uses ROUND_HALF_EVEN for rounding.\"}, {\"hunk\": \"P116:H2\", \"file\": \"tests/test_money.py\", \"line\": 70, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Tests cover rounding with half to even in EUR and JPY.\"}], \"risks\": [\"The function share does not handle zero amount inputs explicitly, but the tests do not cover this case.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH416_share_handles_zero_amount\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"share(Money.of('0.00', 'EUR'), 100) == Money.of('0.00', 'EUR')\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

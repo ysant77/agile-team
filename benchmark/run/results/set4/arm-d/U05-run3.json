@@ -1,0 +1,70 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P105:H1",
+     "file": "src/bank/api.py",
+     "line": 136,
+     "text": "docs_url=None, redoc_url=None, openapi_url=None disable API docs.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P105:H2",
+     "file": "tests/test_web.py",
+     "line": 124,
+     "text": "test_interactive_api_pages_are_off checks that /docs, /redoc and /openapi.json return 404.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The change disables API documentation endpoints. Ensure this is intentional and aligns with project goals."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "78dc4513f39a4f07edcd58c2c170d06db5128d2eedeeb67953f7c8d208d40339",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-405",
+      "prNumber": 105
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-405",
+      "prNumber": 105,
+      "review": "{\"findings\": [{\"hunk\": \"P105:H1\", \"file\": \"src/bank/api.py\", \"line\": 136, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"docs_url=None, redoc_url=None, openapi_url=None disable API docs.\"}, {\"hunk\": \"P105:H2\", \"file\": \"tests/test_web.py\", \"line\": 124, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"test_interactive_api_pages_are_off checks that /docs, /redoc and /openapi.json return 404.\"}], \"risks\": [\"The change disables API documentation endpoints. Ensure this is intentional and aligns with project goals.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH405_interactive_api_pages_are_off\", \"file\": \"tests/test_web.py\", \"ac\": \"AC1\", \"asserts\": \"GET requests to /docs, /redoc, and /openapi.json return 404; GET request to / returns 200.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

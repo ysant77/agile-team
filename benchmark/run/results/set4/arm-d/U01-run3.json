@@ -1,0 +1,70 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P101:H1",
+     "file": "src/bank/api.py",
+     "line": 100,
+     "text": "Catches OverflowError for account ID conversion.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P101:H2",
+     "file": "tests/test_api.py",
+     "line": 240,
+     "text": "Test covers huge account ID returning 404.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The fix handles OverflowError but does not check for other potential errors in account ID processing."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "806a03b93ccbf42974e2ed66e4a4780645b3261603f3eb929fa83369b1dc9d9e",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-401",
+      "prNumber": 101
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-401",
+      "prNumber": 101,
+      "review": "{\"findings\": [{\"hunk\": \"P101:H1\", \"file\": \"src/bank/api.py\", \"line\": 100, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Catches OverflowError for account ID conversion.\"}, {\"hunk\": \"P101:H2\", \"file\": \"tests/test_api.py\", \"line\": 240, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test covers huge account ID returning 404.\"}], \"risks\": [\"The fix handles OverflowError but does not check for other potential errors in account ID processing.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH401_a_huge_account_id_is_404\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"GET /api/accounts/{id} gives 404 for huge ID; GET /api/accounts/{id}/statement gives 404; POST /api/transfers with huge ID as from_account_id gives 404 and moves no money.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}
