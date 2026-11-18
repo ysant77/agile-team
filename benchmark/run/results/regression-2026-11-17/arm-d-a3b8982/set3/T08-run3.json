@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "ac-has-check",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "f4552c895dd2ca41b5b433d8c31771fadb524feb47a85db7465a28210d3f1f9e",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-308",
+      "prNumber": 108
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-308",
+      "prNumber": 108,
+      "review": "{\"findings\": [{\"hunk\": \"P108:H2\", \"file\": \"src/bank/api.py\", \"line\": 187, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Code does not handle kind=debit case for filtering lines.\"}, {\"hunk\": \"P108:H4\", \"file\": \"tests/test_api.py\", \"line\": 123, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Test only checks kind=credit, missing kind=debit case.\"}], \"risks\": [\"The code does not filter for debit lines, which is a gap in the AC implementation.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH308_statement_can_show_debits_only\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Assert that when kind=debit is specified, only lines with negative amounts are returned.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-308",
+      "prNumber": 108,
+      "review": "{\"findings\": [{\"hunk\": \"P108:H2\", \"file\": \"src/bank/api.py\", \"line\": 187, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Code does not handle kind=debit case for filtering lines.\"}], \"risks\": [\"The code does not filter for debit lines, which is a gap in the AC implementation.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH308_statement_can_show_debits_only\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Assert that when kind=debit is specified, only lines with negative amounts are returned.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

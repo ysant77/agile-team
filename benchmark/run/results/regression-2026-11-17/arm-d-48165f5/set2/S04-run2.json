@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "ungrounded-id",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "ad14297970ef65c615aae17bc1659a774141349da760a0f32f4fa5e3b837bef3",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-204",
+      "prNumber": 104
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-204",
+      "prNumber": 104,
+      "review": "{\"findings\": [{\"hunk\": \"P104:H2\", \"file\": \"src/bank/account_numbers/parse.py\", \"line\": 10, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"The code parses YMS-0001-2345 to 12345. This matches AC1.\"}, {\"hunk\": \"P104:H3\", \"file\": \"tests/test_account_numbers.py\", \"line\": 12, \"severity\": \"note\", \"ac\": \"AC2\", \"text\": \"The test covers round-trip with ledger.account_number for sequences 1, 9999, 10000, 99999999. This matches AC2.\"}, {\"hunk\": \"P104:H3\", \"file\": \"tests/test_account_numbers.py\", \"line\": 18, \"severity\": \"note\", \"ac\": \"AC3\", \"text\": \"The test covers ValueError for invalid account numbers like YMS-CLR-EUR, YMS-1-2, and empty string. This matches AC3.\"}], \"risks\": [\"The tests do not cover all possible valid formats of the account number pattern.\", \"The regex does not validate that the sequence is within a specific range.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH204_parse_gives_exact_value_for_edge_cases\", \"file\": \"tests/test_account_numbers.py\", \"ac\": \"AC1\", \"asserts\": \"parse_account_number should return exact value for edge cases like YMS-0000-0000 and YMS-9999-9999\", \"failsBeforeFix\": false}, {\"testName\": \"test_BENCH204_parse_refuses_out_of_range_sequences\", \"file\": \"tests/test_account_numbers.py\", \"ac\": \"AC3\", \"asserts\": \"parse_account_number should raise ValueError for sequences outside the expected range like YMS-10000-0000 or YMS-0000-10000\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ungrounded-id",
+   "reasons": [
+    "YMS-9999 not in the packet"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-204",
+      "prNumber": 104,
+      "review": "{\"findings\": [{\"hunk\": \"P104:H2\", \"file\": \"src/bank/account_numbers/parse.py\", \"line\": 10, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"The code parses YMS-0001-2345 to 12345. This matches AC1.\"}, {\"hunk\": \"P104:H3\", \"file\": \"tests/test_account_numbers.py\", \"line\": 12, \"severity\": \"note\", \"ac\": \"AC2\", \"text\": \"The test covers round-trip with ledger.account_number for sequences 1, 9999, 10000, 99999999. This matches AC2.\"}, {\"hunk\": \"P104:H3\", \"file\": \"tests/test_account_numbers.py\", \"line\": 18, \"severity\": \"note\", \"ac\": \"AC3\", \"text\": \"The test covers ValueError for invalid account numbers like YMS-CLR-EUR, YMS-1-2, and empty string. This matches AC3.\"}], \"risks\": [\"The tests do not cover all possible valid formats of the account number pattern.\", \"The regex does not validate that the sequence is within a specific range.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH204_parse_gives_exact_value_for_edge_cases\", \"file\": \"tests/test_account_numbers.py\", \"ac\": \"AC1\", \"asserts\": \"parse_account_number should return exact value for edge cases like YMS-0000-0000 and YMS-9999-9999\", \"failsBeforeFix\": false}, {\"testName\": \"test_BENCH204_parse_refuses_out_of_range_sequences\", \"file\": \"tests/test_account_numbers.py\", \"ac\": \"AC3\", \"asserts\": \"parse_account_number should raise ValueError for sequences outside the expected range like YMS-10000-0000 or YMS-0000-10000\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "ungrounded-id",
+   "reasons": [
+    "YMS-9999 not in the packet"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

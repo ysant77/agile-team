@@ -9,13 +9,14 @@ import { canonical, sha256 } from './audit.js';
 import { numbersIn, quantityText } from './lint.js';
 import { idsIn } from './opinion.js';
 import { lintText, STYLE_CONTRACT, lintMessage } from './style.js';
+import { statesDefect } from './review-hold.js';
 import { VERIFY_CONFIG } from './verify-claim.js';
 import { testName, testsByName } from './verifier/report.js';
 import { rawRef, schemaErrorClass } from './trace.js';
 
 // Guard version 4: the severity guards (3) plus the line, number, verdict-word and adoption
 // guards from the unit 6 review.
-export const REVIEW_GUARD_VERSION = 5;
+export const REVIEW_GUARD_VERSION = 6;
 export const REVIEW_PROMPT_VERSION = 'code-review/2';
 export const REVIEW_LABEL = 'Review (not verified)';
 export const MAX_FINDINGS = 6;
@@ -239,7 +240,17 @@ export function applyReviewGuards(raw, packet, meta = {}) {
   };
   const checked = validateReview(raw);
   if (!checked.ok) return { ...base, outcome: 'invalid_review', guard: 'schema', errorClass: schemaErrorClass(checked.errors), reasons: checked.errors, review: null };
-  const review = checked.review;
+  // Rule (i), 17 Nov: a guard that faults one part of a review refuses that part only. A part
+  // that is dropped is listed in the record with its guard and reason.
+  const droppedFindings = [];
+  const droppedChecks = [];
+  // Rule (iii): a finding whose text is only a hunk or line reference is refused as a finding.
+  const findingsKept = checked.review.findings.filter((f) => {
+    if (statesDefect(f.text)) return true;
+    droppedFindings.push({ hunk: f.hunk, line: f.line, guard: 'no-defect-statement', reason: `the finding at ${f.hunk} has no defect statement, only a reference` });
+    return false;
+  });
+  const review = { ...checked.review, findings: findingsKept };
   const invalid = (guard, why) => ({ ...base, outcome: 'invalid_review', guard, reasons: [why], review });
 
   // Guard 5 first: patch text can ask for an approval; no review may give one.
@@ -288,7 +299,10 @@ export function applyReviewGuards(raw, packet, meta = {}) {
   const pattern = new RegExp(`^test_${token}_[a-z0-9_]+$`);
   for (const c of review.proposedChecks) {
     if (!acs.has(c.ac)) return invalid('unknown-ac', `${c.ac} is not an AC of ${packet.ticket.key}`);
-    if (hasCodeCheck(acs.get(c.ac))) return invalid('ac-has-check', `${c.ac} already has a code check; a review proposes checks only for a manual AC`);
+    if (hasCodeCheck(acs.get(c.ac))) {
+      droppedChecks.push({ testName: c.testName, ac: c.ac, guard: 'ac-has-check', reason: `${c.ac} already has a code check; a review proposes checks only for a manual AC` });
+      continue;
+    }
     if (!pattern.test(c.testName)) return invalid('test-name', `${c.testName} must look like test_${token}_what_it_checks`);
     if (packet.existingTests.includes(c.testName)) return invalid('test-exists', `${c.testName} is already in the CI report`);
     if (!/^tests\/[\w./-]+\.py$/.test(c.file)) return invalid('test-file', `${c.file} must be a Python file under tests/`);
@@ -296,7 +310,8 @@ export function applyReviewGuards(raw, packet, meta = {}) {
       return invalid('guarded-path', `${c.file} is a guarded path; a change there makes the verifier refuse metric evidence`);
     }
   }
-  return { ...base, outcome: 'review', guard: null, reasons: [], review };
+  const reviewOut = { ...review, proposedChecks: review.proposedChecks.filter((c) => !hasCodeCheck(acs.get(c.ac))) };
+  return { ...base, outcome: 'review', guard: null, reasons: [], review: reviewOut, droppedFindings, droppedChecks };
 }
 
 function templateReview(review) {
@@ -325,7 +340,8 @@ export function reviewGate(record, retries) {
   if (retries < 1) {
     return { action: 'retry', message: `Style findings: ${lintMessage(findings)}. ${STYLE_CONTRACT} Keep the same hunk ids and checks, and call record-review again.` };
   }
-  return { action: 'accept', record: { ...record, review: templateReview(record.review), style: 'fallback', styleFindings: findings.length } };
+  // Rule (ii): people see the template; the hold decision keeps the model's guard-accepted findings.
+  return { action: 'accept', record: { ...record, review: templateReview(record.review), modelFindings: record.review.findings, style: 'fallback', styleFindings: findings.length } };
 }
 
 // A human adopts a proposed check: the AC now names the test. The verifier decides the rest.

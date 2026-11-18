@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "schema",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "edbdeade1f9129f6e7ec8a3545176cd86749502b22eb3e65015d53ad61e80bb0",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-22",
+      "prNumber": 122
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-22",
+      "prNumber": 122,
+      "review": "{\"findings\": [], \"risks\": [\"The patch does not handle the case where the limit is zero, which could lead to unexpected behavior if a customer has no transfer allowance.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH22_zero_limit_is_refused\", \"file\": \"tests/test_bench22_limits.py\", \"ac\": \"AC2\", \"asserts\": \"A LimitExceeded exception is raised when trying to send any amount with a zero limit\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC2 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-22",
+      "prNumber": 122,
+      "review": "{\"findings\": [], \"risks\": [\"The patch does not handle the case where the limit is zero, which could lead to unexpected behavior if a customer has no transfer allowance.\"], \"proposedChecks\": []}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "schema",
+   "reasons": [
+    "a review needs a finding or a proposed check"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

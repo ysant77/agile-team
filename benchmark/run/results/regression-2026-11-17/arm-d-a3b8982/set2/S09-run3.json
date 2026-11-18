@@ -1,0 +1,94 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P109:H1",
+     "file": "src/bank/ledger.py",
+     "line": 219,
+     "text": "Code handles blank deposit description correctly.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P109:H2",
+     "file": "tests/test_ledger.py",
+     "line": 27,
+     "text": "Test checks for default deposit description.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The change only handles deposit descriptions, not withdraw descriptions.",
+    "No check for withdraw description defaults in the test suite."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "78ff8150cec5b7a9ae47bd3c5fbcaf208eb75b34a5fc0f5af77b7c700a603007",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-209",
+      "prNumber": 109
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-209",
+      "prNumber": 109,
+      "review": "{\"findings\": [{\"hunk\": \"P109:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 219, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Code handles blank deposit description correctly.\"}, {\"hunk\": \"P109:H2\", \"file\": \"tests/test_ledger.py\", \"line\": 27, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test checks for default deposit description.\"}], \"risks\": [\"The change only handles deposit descriptions, not withdraw descriptions.\", \"No check for withdraw description defaults in the test suite.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH209_blank_withdraw_description_gets_the_default\", \"file\": \"tests/test_ledger.py\", \"ac\": \"AC1\", \"asserts\": \"A blank withdraw description should be stored as 'Cash withdrawal'\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-209",
+      "prNumber": 109,
+      "review": "{\"findings\": [{\"hunk\": \"P109:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 219, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Code handles blank deposit description correctly.\"}, {\"hunk\": \"P109:H2\", \"file\": \"tests/test_ledger.py\", \"line\": 27, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test checks for default deposit description.\"}], \"risks\": [\"The change only handles deposit descriptions, not withdraw descriptions.\", \"No check for withdraw description defaults in the test suite.\"], \"proposedChecks\": []}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}
