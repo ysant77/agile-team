@@ -88,7 +88,7 @@ does not match it, so the strict count of D on U07 is not met.
 
 So in 4 of the 8 unsafe cases the model named the defect in all three runs: twice as a blocking
 finding that a guard then refused, and twice as a risk. The guards and the rating rule, not only
-the model, decide the result. 9 of the 17 D records were refused by a guard after one retry
+the model, decide the result. 7 of the 17 D cases had their record refused by a guard after one retry
 (U06, U08, U09, U14, U15, U21, U23 in all runs). A refused record on a control is safe (D equals
 C), but a refused record on an unsafe case loses the finding.
 
