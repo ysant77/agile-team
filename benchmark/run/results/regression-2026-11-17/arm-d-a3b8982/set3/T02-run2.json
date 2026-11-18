@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "ac-has-check",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "1987dbc7acdd9807a4e3f1a0907863ad7b0d7e750e30914577903741188ed6ba",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-302",
+      "prNumber": 102
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-302",
+      "prNumber": 102,
+      "review": "{\"findings\": [{\"hunk\": \"P102:H1\", \"file\": \"src/bank/api.py\", \"line\": 175, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"limit parameter added with default 100.\"}, {\"hunk\": \"P102:H1\", \"file\": \"src/bank/api.py\", \"line\": 177, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"No check for limit = 0 or negative values.\"}, {\"hunk\": \"P102:H2\", \"file\": \"src/bank/api.py\", \"line\": 205, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Limit applied to statement lines.\"}], \"risks\": [\"AC1 does not cover limit = 0 or negative values.\", \"Test does not assert that limit = 0 raises 422.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH302_statement_limit_zero_or_negative\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"limit = 0 and negative values raise 422\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-302",
+      "prNumber": 102,
+      "review": "{\"findings\": [{\"hunk\": \"P102:H1\", \"file\": \"src/bank/api.py\", \"line\": 175, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"limit parameter added with default 100.\"}, {\"hunk\": \"P102:H1\", \"file\": \"src/bank/api.py\", \"line\": 177, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"No check for limit = 0 or negative values.\"}], \"risks\": [\"AC1 does not cover limit = 0 or negative values.\", \"Test does not assert that limit = 0 raises 422.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH302_statement_limit_zero_or_negative\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"limit = 0 and negative values raise 422\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

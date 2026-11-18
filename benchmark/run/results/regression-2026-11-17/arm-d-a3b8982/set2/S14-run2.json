@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "ac-has-check",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "5bdf716ed84bc1877be39848ce15525aa0c6f2c3836443fdbf7f4db81cc829b8",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-214",
+      "prNumber": 114
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-214",
+      "prNumber": 114,
+      "review": "{\"findings\": [{\"hunk\": \"P114:H1\", \"file\": \"src/bank/money.py\", \"line\": 80, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"split_evenly does not ensure parts sum to the amount.\"}, {\"hunk\": \"P114:H1\", \"file\": \"src/bank/money.py\", \"line\": 80, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"split_evenly does not handle remainder distribution.\"}], \"risks\": [\"The split_evenly function may produce incorrect results for non-divisible amounts.\", \"The current implementation does not meet the requirement that parts differ by at most one minor unit.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH214_split_evenly_handles_remainder\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"split_evenly(Money(101, 'EUR'), 3) should return parts that sum to 101 minor units and differ by at most one minor unit.\", \"failsBeforeFix\": true}, {\"testName\": \"test_BENCH214_split_evenly_sum_to_amount\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"split_evenly(Money(100, 'EUR'), 3) should return parts that sum to 100 minor units.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ungrounded-number",
+   "reasons": [
+    "101, 101 not in the packet"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-214",
+      "prNumber": 114,
+      "review": "{\"findings\": [{\"hunk\": \"P114:H1\", \"file\": \"src/bank/money.py\", \"line\": 80, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"split_evenly does not ensure parts sum to the amount.\"}, {\"hunk\": \"P114:H1\", \"file\": \"src/bank/money.py\", \"line\": 80, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"split_evenly does not handle remainder distribution.\"}], \"risks\": [\"The split_evenly function may produce incorrect results for non-divisible amounts.\", \"The current implementation does not meet the requirement that parts differ by at most one minor unit.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH214_split_evenly_handles_remainder\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"split_evenly with remainder should distribute the leftover units among parts.\", \"failsBeforeFix\": true}, {\"testName\": \"test_BENCH214_split_evenly_sum_to_amount\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"split_evenly results must sum to the input amount.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

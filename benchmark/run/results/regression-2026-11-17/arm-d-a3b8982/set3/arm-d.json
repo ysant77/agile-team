@@ -1,0 +1,475 @@
+{
+ "model": "qwen3-coder:30b",
+ "options": {
+  "temperature": 0,
+  "num_ctx": 32768
+ },
+ "promptVersion": "code-review/2",
+ "rule": "blocking",
+ "results": [
+  {
+   "id": "T01",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T02",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ac-has-check",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ac-has-check",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ac-has-check",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T04",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "schema",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "schema",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "schema",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T05",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T07",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T08",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ac-has-check",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ac-has-check",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ac-has-check",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T09",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T10",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T11",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T12",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P112:H2 src/bank/api.py:142: Missing check for 404 error shape in non-BANK_NEW_ERRORS mode."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P112:H2 src/bank/api.py:142: Missing check for 404 error shape in non-BANK_NEW_ERRORS mode."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P112:H2 src/bank/api.py:142: Missing check for 404 error shape in non-BANK_NEW_ERRORS mode."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "T13",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T14",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ungrounded-number",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ungrounded-number",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ungrounded-number",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T15",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T16",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ac-has-check",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ac-has-check",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ac-has-check",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T18",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ac-has-check",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ac-has-check",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "ac-has-check",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T19",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T21",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P121:H2 src/bank/api.py:140: Health endpoint returns dict or JSONResponse.",
+      "[note AC2] P121:H3 tests/test_health.py:25: Test checks database error case with closed connection."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P121:H2 src/bank/api.py:140: Health endpoint returns dict or JSONResponse.",
+      "[note AC2] P121:H3 tests/test_health.py:25: Test checks database error case with closed connection."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P121:H2 src/bank/api.py:140: Health endpoint returns dict or JSONResponse.",
+      "[note AC2] P121:H3 tests/test_health.py:25: Test checks database error case with closed connection."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "T22",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "T23",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "T24",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P124:H2 src/bank/api.py:256: Finding 1: see P124:H2, line 256.",
+      "[note AC1] P124:H3 src/bank/ledger.py:358: Finding 2: see P124:H3, line 358."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P124:H2 src/bank/api.py:256: Finding 1: see P124:H2, line 256.",
+      "[note AC1] P124:H3 src/bank/ledger.py:358: Finding 2: see P124:H3, line 358."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P124:H2 src/bank/api.py:256: Finding 1: see P124:H2, line 256.",
+      "[note AC1] P124:H3 src/bank/ledger.py:358: Finding 2: see P124:H3, line 358."
+     ]
+    }
+   ]
+  }
+ ]
+}

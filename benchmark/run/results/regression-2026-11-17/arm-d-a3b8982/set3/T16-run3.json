@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "ac-has-check",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "00a7a2dcaf3e60e6ef56721f157a3daf5e1bde68cdeaccc58931275d4bc24ce9",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-316",
+      "prNumber": 116
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-316",
+      "prNumber": 116,
+      "review": "{\"findings\": [{\"hunk\": \"P116:H1\", \"file\": \"src/bank/money.py\", \"line\": 28, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Function returns 10 ** exponent for any currency in EXPONENTS.\"}, {\"hunk\": \"P116:H3\", \"file\": \"tests/test_money.py\", \"line\": 65, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test covers exact values for EUR, JPY, BHD.\"}, {\"hunk\": \"P116:H3\", \"file\": \"tests/test_money.py\", \"line\": 71, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test checks all currencies in EXPONENTS.\"}], \"risks\": [\"No explicit check for currency existence in EXPONENTS before calling exponent().\"], \"proposedChecks\": [{\"testName\": \"test_BENCH316_minor_units_per_major_handles_all_currencies\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"Function returns correct minor units for all currencies in EXPONENTS.\", \"failsBeforeFix\": false}, {\"testName\": \"test_BENCH316_minor_units_per_major_rejects_invalid_currency\", \"file\": \"tests/test_money.py\", \"ac\": \"AC2\", \"asserts\": \"Function raises ValueError for unknown currency.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-316",
+      "prNumber": 116,
+      "review": "{\"findings\": [{\"hunk\": \"P116:H1\", \"file\": \"src/bank/money.py\", \"line\": 28, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Function returns 10 ** exponent for any currency in EXPONENTS.\"}, {\"hunk\": \"P116:H3\", \"file\": \"tests/test_money.py\", \"line\": 65, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test covers exact values for EUR, JPY, BHD.\"}, {\"hunk\": \"P116:H3\", \"file\": \"tests/test_money.py\", \"line\": 71, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test checks all currencies in EXPONENTS.\"}], \"risks\": [\"No explicit check for currency existence in EXPONENTS before calling exponent().\"], \"proposedChecks\": [{\"testName\": \"test_BENCH316_minor_units_per_major_handles_all_currencies\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"Function returns correct minor units for all currencies in EXPONENTS.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

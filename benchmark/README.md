@@ -29,5 +29,10 @@ Every change to the runner or the scorer is in `run/SCORER-CHANGES.md`.
    16 Dec 2026. That set follows the set 3 rules: protocol committed before the case file is
    opened, predictions and truth before any build, void cases recorded before any run, no change
    to rules, reviewer, prompt or scorer after the file is opened.
-6. Frozen files stay byte-identical. A scorer change is logged in `run/SCORER-CHANGES.md` and
+6. A change to the Code Reviewer (prompt, guards, rating rule, style gate or template) merges
+   only after the arm D regression on sets 1 to 3 has run on the PR head and is no worse than
+   the benchmarked reviewer (d175960) on controls held and on catches. There is no exception
+   when the model slot is busy: the PR waits for the slot. (Added 17 Nov 2026 after PRs 6 and 7
+   merged before their arm D regression; see `REGRESSION-ARM-D-2026-11-17.md`.)
+7. Frozen files stay byte-identical. A scorer change is logged in `run/SCORER-CHANGES.md` and
    never rescores a result file silently.
