@@ -549,7 +549,14 @@ function pinnedRenames(report) {
 export function pinnedTestsHold(ctx, report = ctx.report) {
   const name = 'pinned_tests_hold';
   if (!isObj(report)) return result(name, 'unknown', 'head report missing');
-  if (report.pinned === undefined) {
+  // Whether the repository runs the pinned step comes from the app's configuration
+  // (VERIFY_CONFIG.pinnedRequired), never from the head report: a change cannot drop the block
+  // to switch the check off. Not set or false: the step is not deployed, so the check is
+  // advisory. Any other value is read as required.
+  const setting = ctx.config?.pinnedRequired;
+  const required = setting !== undefined && setting !== false;
+  if (report.pinned === undefined || (required && report.pinned === null)) {
+    if (required) return result(name, 'unknown', 'the repository runs the pinned step, but the CI report has no pinned block');
     return { ...result(name, 'pass', 'not run: the CI report has no pinned block, so no base test copy ran against the head code'), advisory: true };
   }
   const p = report.pinned;
