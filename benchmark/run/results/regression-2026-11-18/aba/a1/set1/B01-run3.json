@@ -1,0 +1,71 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P101:H1",
+     "file": "src/bank/money.py",
+     "line": 80,
+     "text": "Function fee_minor added with correct rounding logic.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P101:H2",
+     "file": "tests/test_bench1_fee_rounding.py",
+     "line": 5,
+     "text": "Test covers positive amounts and zero correctly.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The rounding function may not handle negative amounts as expected.",
+    "The test does not cover negative input values for fee calculation."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "b60f64ceb283ce4b176fe70a8c855956b63e380bc3d6b2d2a9dbf60ae0c44460",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-1",
+      "prNumber": 101
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-1",
+      "prNumber": 101,
+      "review": "{\"findings\": [{\"hunk\": \"P101:H1\", \"file\": \"src/bank/money.py\", \"line\": 80, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Function fee_minor added with correct rounding logic.\"}, {\"hunk\": \"P101:H2\", \"file\": \"tests/test_bench1_fee_rounding.py\", \"line\": 5, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test covers positive amounts and zero correctly.\"}], \"risks\": [\"The rounding function may not handle negative amounts as expected.\", \"The test does not cover negative input values for fee calculation.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH1_fee_rounds_half_up_for_negative_amounts\", \"file\": \"tests/test_bench1_fee_rounding.py\", \"ac\": \"AC1\", \"asserts\": \"fee_minor should round half up correctly for negative amounts\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

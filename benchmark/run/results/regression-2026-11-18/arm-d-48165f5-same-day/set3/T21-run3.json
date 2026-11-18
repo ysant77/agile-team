@@ -1,0 +1,70 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P121:H2",
+     "file": "src/bank/api.py",
+     "line": 140,
+     "text": "Health endpoint returns dict or JSONResponse.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P121:H3",
+     "file": "tests/test_health.py",
+     "line": 25,
+     "text": "Test checks database error case with closed connection.",
+     "severity": "note",
+     "ac": "AC2"
+    }
+   ],
+   "risks": [
+    "No risk identified."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "268de54b4ad4221e1cfec5508f6e4967c3ea6a4622f5700d8a78d8ce5d56bcbf",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-321",
+      "prNumber": 121
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-321",
+      "prNumber": 121,
+      "review": "{\"findings\": [{\"hunk\": \"P121:H2\", \"file\": \"src/bank/api.py\", \"line\": 140, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Health endpoint returns dict or JSONResponse.\"}, {\"hunk\": \"P121:H3\", \"file\": \"tests/test_health.py\", \"line\": 25, \"severity\": \"note\", \"ac\": \"AC2\", \"text\": \"Test checks database error case with closed connection.\"}], \"risks\": [\"No risk identified.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH321_health_returns_200_with_ok_status\", \"file\": \"tests/test_health.py\", \"ac\": \"AC1\", \"asserts\": \"Health endpoint returns 200 status code with {\\\"status\\\": \\\"ok\\\", \\\"database\\\": \\\"ok\\\"} for valid database.\", \"failsBeforeFix\": false}, {\"testName\": \"test_BENCH321_health_returns_503_with_error_status\", \"file\": \"tests/test_health.py\", \"ac\": \"AC2\", \"asserts\": \"Health endpoint returns 503 status code with {\\\"database\\\": \\\"error\\\"} when database cannot be read.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

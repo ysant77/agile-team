@@ -13,6 +13,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { checkToolCall, fetchWithTimeout } from './dispatch.mjs';
 
 const args = process.argv.slice(2);
 const opt = (name) => args.filter((_, i) => args[i - 1] === name);
@@ -32,6 +33,9 @@ const reviewMod = await imp('src/review.js');
 const { buildReviewPacket, applyReviewGuards, reviewGate, reviewSuggested, REVIEW_PROMPT_VERSION } = reviewMod;
 if (RULE === 'blocking' && !reviewMod.blockingFindings) throw new Error('--rule blocking needs a reviewer with blockingFindings (code-review/2)');
 const { packetForAgent } = await imp('src/review-actions.js');
+const { TOOL_SPECS } = await imp('src/tool-specs.js');
+// Time limit of one model server call (--timeout-s, default 600 s).
+const TIMEOUT_MS = 1000 * Number(opt('--timeout-s')[0] ?? 600);
 
 const MODEL = 'qwen3-coder:30b';
 const OLLAMA = 'http://localhost:11434';
@@ -64,6 +68,8 @@ const TOOLS = [
     parameters: { type: 'object', properties: { issueKey: { type: 'string' } }, required: ['issueKey'] } } },
 ];
 
+const TOOL_NAMES = TOOLS.map((t) => t.function.name);
+
 const readJson = (p) => (existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null);
 
 function packetFor(c, n, cResult) {
@@ -81,8 +87,8 @@ function packetFor(c, n, cResult) {
 }
 
 async function chat(messages, seed) {
-  const r = await fetch(`${OLLAMA}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, messages, tools: TOOLS, stream: false, options: { ...OPTIONS, seed } }) });
+  const r = await fetchWithTimeout(`${OLLAMA}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: MODEL, messages, tools: TOOLS, stream: false, options: { ...OPTIONS, seed } }) }, TIMEOUT_MS);
   if (!r.ok) throw new Error(`ollama ${r.status}: ${await r.text()}`);
   return (await r.json()).message;
 }
@@ -104,7 +110,12 @@ async function runCase(c, n, cResult, seed) {
       const name = call.function?.name;
       const a = call.function?.arguments ?? {};
       let result;
-      if (name === 'get-pr-diff') result = agentView;
+      // The model's call is untrusted: check the name and the arguments against the tool spec.
+      const checked = checkToolCall(TOOL_SPECS, TOOL_NAMES, name, call.function?.arguments);
+      if (!checked.ok) {
+        result = { ok: false, error: checked.error };
+        trace.push({ turn, refusedCall: name ?? null, error: checked.error });
+      } else if (name === 'get-pr-diff') result = agentView;
       else if (name === 'get-verdicts') result = { ok: true, verdicts: [packet.verdict] };
       else if (name === 'record-review') {
         const raw = typeof a.review === 'string' ? a.review : JSON.stringify(a.review ?? '');

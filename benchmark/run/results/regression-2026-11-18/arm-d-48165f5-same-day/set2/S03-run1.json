@@ -1,0 +1,78 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P103:H1",
+     "file": "src/bank/ledger.py",
+     "line": 146,
+     "text": "Function customer_totals sums balance_minor per currency.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P103:H2",
+     "file": "tests/test_ledger.py",
+     "line": 27,
+     "text": "Test covers summing balance_minor for each currency.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P103:H2",
+     "file": "tests/test_ledger.py",
+     "line": 42,
+     "text": "Test checks empty customer totals.",
+     "severity": "note",
+     "ac": "AC2"
+    }
+   ],
+   "risks": [
+    "No explicit check for invalid customer ID in customer_totals function."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "c7f39249216c77477247346e34cdd8b2708ca94e16e1d5704ffcb65c14172e67",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-203",
+      "prNumber": 103
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-203",
+      "prNumber": 103,
+      "review": "{\"findings\": [{\"hunk\": \"P103:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 146, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Function customer_totals sums balance_minor per currency.\"}, {\"hunk\": \"P103:H2\", \"file\": \"tests/test_ledger.py\", \"line\": 27, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test covers summing balance_minor for each currency.\"}, {\"hunk\": \"P103:H2\", \"file\": \"tests/test_ledger.py\", \"line\": 42, \"severity\": \"note\", \"ac\": \"AC2\", \"text\": \"Test checks empty customer totals.\"}], \"risks\": [\"No explicit check for invalid customer ID in customer_totals function.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH203_customer_totals_handles_invalid_customer_id\", \"file\": \"tests/test_ledger.py\", \"ac\": \"AC2\", \"asserts\": \"customer_totals raises NotFound for non-existent customer ID\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

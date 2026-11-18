@@ -1,0 +1,92 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P124:H2",
+     "file": "src/bank/api.py",
+     "line": 256,
+     "text": "source_balance_minor set from result.get or from_balance_minor.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P124:H3",
+     "file": "src/bank/ledger.py",
+     "line": 358,
+     "text": "source_balance_minor set to from_balance_minor in ledger.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "Tests cover only EUR and JPY, not all currencies.",
+    "Code assumes from_balance_minor is always present, which may not be true."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "c63e52ff1574feebb39dda07aca6f6ac474c0a8753fc2d65844d8c3c07290731",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-324",
+      "prNumber": 124
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-324",
+      "prNumber": 124,
+      "review": "{\"findings\": [{\"hunk\": \"P124:H2\", \"file\": \"src/bank/api.py\", \"line\": 256, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"source_balance_minor is set from result.get or from_balance_minor.\"}, {\"hunk\": \"P124:H3\", \"file\": \"src/bank/ledger.py\", \"line\": 358, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"source_balance_minor is set to from_balance_minor in ledger.\"}], \"risks\": [\"The tests only cover EUR and JPY, not all currencies.\", \"The code assumes from_balance_minor is always present, which may not be true.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH324_transfer_returns_the_source_balance_for_all_currencies\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"A transfer response includes source_balance_minor for each currency tested, and its value matches the expected balance after the transfer.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-324",
+      "prNumber": 124,
+      "review": "{\"findings\": [{\"hunk\": \"P124:H2\", \"file\": \"src/bank/api.py\", \"line\": 256, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"source_balance_minor set from result.get or from_balance_minor.\"}, {\"hunk\": \"P124:H3\", \"file\": \"src/bank/ledger.py\", \"line\": 358, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"source_balance_minor set to from_balance_minor in ledger.\"}], \"risks\": [\"Tests cover only EUR and JPY, not all currencies.\", \"Code assumes from_balance_minor is always present, which may not be true.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH324_transfer_returns_the_source_balance_for_all_currencies\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Transfer response includes source_balance_minor for each currency tested, and its value matches expected balance after transfer.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

@@ -1,0 +1,52 @@
+{
+ "model": "qwen3-coder:30b",
+ "options": {
+  "temperature": 0,
+  "num_ctx": 32768
+ },
+ "promptVersion": "code-review/2",
+ "rule": "blocking",
+ "results": [
+  {
+   "id": "B01",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/money.py:80: Function fee_minor added with correct rounding logic.",
+      "[note AC1] P101:H2 tests/test_bench1_fee_rounding.py:5: Test covers positive amounts and zero correctly."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/money.py:80: Function fee_minor added with correct rounding logic.",
+      "[note AC1] P101:H2 tests/test_bench1_fee_rounding.py:5: Test covers positive amounts and zero correctly."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/money.py:80: Function fee_minor added with correct rounding logic.",
+      "[note AC1] P101:H2 tests/test_bench1_fee_rounding.py:5: Test covers positive amounts and zero correctly."
+     ]
+    }
+   ]
+  }
+ ]
+}

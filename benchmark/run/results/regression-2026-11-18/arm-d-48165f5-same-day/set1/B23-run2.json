@@ -1,0 +1,91 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "fallback",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P123:H1",
+     "file": "src/bank/ledger.py",
+     "line": 216,
+     "text": "Finding 1: see P123:H1, line 216.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P123:H1",
+     "file": "src/bank/ledger.py",
+     "line": 217,
+     "text": "Finding 2: see P123:H1, line 217.",
+     "severity": "note",
+     "ac": "AC2"
+    }
+   ],
+   "risks": [
+    "Risk 1: see the audited review input."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "8a277cdbc42b109fa4cfb92fd9d6f439a895e7614af6c86f554ed4c14d926ad3",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-23",
+      "prNumber": 123
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-23",
+      "prNumber": 123,
+      "review": "{\"findings\": [{\"hunk\": \"P123:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 216, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Reference is stored as None for blank input.\"}, {\"hunk\": \"P123:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 217, \"severity\": \"note\", \"ac\": \"AC2\", \"text\": \"Reference is stripped of surrounding spaces.\"}], \"risks\": [\"No risk identified for AC1 or AC2.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH23_blank_reference_is_stored_as_none\", \"file\": \"tests/test_bench23_reference.py\", \"ac\": \"AC1\", \"asserts\": \"A blank reference is stored as None\", \"failsBeforeFix\": false}, {\"testName\": \"test_BENCH23_reference_is_stored_without_surrounding_spaces\", \"file\": \"tests/test_bench23_reference.py\", \"ac\": \"AC2\", \"asserts\": \"Reference is stored without surrounding spaces\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-23",
+      "prNumber": 123,
+      "review": "{\"findings\": [{\"hunk\": \"P123:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 216, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"A blank reference is stored as None.\"}, {\"hunk\": \"P123:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 217, \"severity\": \"note\", \"ac\": \"AC2\", \"text\": \"A reference is stored without surrounding spaces.\"}], \"risks\": [\"No risk identified for AC1 or AC2.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH23_blank_reference_is_stored_as_none\", \"file\": \"tests/test_bench23_reference.py\", \"ac\": \"AC1\", \"asserts\": \"A blank reference is stored as None\", \"failsBeforeFix\": false}, {\"testName\": \"test_BENCH23_reference_is_stored_without_surrounding_spaces\", \"file\": \"tests/test_bench23_reference.py\", \"ac\": \"AC2\", \"asserts\": \"Reference is stored without surrounding spaces\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

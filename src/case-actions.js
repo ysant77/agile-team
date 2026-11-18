@@ -1,6 +1,7 @@
 // Rovo actions for arbitration: open a case from two or three pull requests, and record the AI
 // team lead's opinion on it. Code decides whatever it can; an opinion never decides.
 
+import { rawCopy, rawKey } from './trace.js';
 import { fetch } from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { HUMAN_DOMAINS } from './arbitration.js';
@@ -85,7 +86,10 @@ export async function recordOpinion(payload) {
   if (!stored.opinionAllowed && !stored.highStake) {
     return { ok: false, error: `code already decided this case (${stored.arbitration.rule}); no opinion is needed` };
   }
-  const guarded = applyGuards(payload?.opinion ?? '', stored.packet, { model: 'rovo', promptVersion: OPINION_PROMPT_VERSION });
+  // Model "rovo": Forge does not tell the app which model Rovo used (src/trace.js).
+  const raw = payload?.opinion ?? '';
+  const guarded = applyGuards(raw, stored.packet, { model: 'rovo', promptVersion: OPINION_PROMPT_VERSION });
+  await kvs.set(rawKey(guarded.raw.hash), rawCopy(raw, guarded, { issueKey, actor: 'ai-team-lead' }));
   const gate = styleGate(guarded, stored.styleRetries ?? 0);
   if (gate.action === 'retry') {
     stored.styleRetries = (stored.styleRetries ?? 0) + 1;
@@ -98,7 +102,8 @@ export async function recordOpinion(payload) {
   await kvs.set(caseKey(issueKey), stored);
   const audit = await appendAudit({ actor: 'ai-team-lead', event: 'opinion', data: {
     issueKey, outcome: record.outcome, guard: record.guard, decision: record.opinion?.decision ?? null,
-    confidence: record.opinion?.confidence ?? null, inputHash: record.inputHash } });
+    confidence: record.opinion?.confidence ?? null, inputHash: record.inputHash, rawHash: record.raw?.hash ?? null,
+    errorClass: record.errorClass ?? null } });
   await addComment(issueKey, `${formatOpinion(issueKey, record, stored.arbitration)}\nAudit seq ${audit.seq}.`);
   return { ok: true, outcome: record.outcome, guard: record.guard, reasons: record.reasons, finalDecision: 'human' };
 }

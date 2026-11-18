@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "verdict-word",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "29d3313ea268c9385eb9cda23e2ead24ae6cebdc135efaf3875e33d679f259c9",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-102",
+      "prNumber": 132
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-102",
+      "prNumber": 132,
+      "review": "{\"findings\": [{\"hunk\": \"P132:H1\", \"file\": \"tests/test_money.py\", \"line\": 60, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test for negative amounts added but not checked by AC.\"}, {\"hunk\": \"P132:H1\", \"file\": \"tests/test_money.py\", \"line\": 67, \"severity\": \"note\", \"ac\": \"AC2\", \"text\": \"Test for three-decimal currencies added but not checked by AC.\"}], \"risks\": [\"Tests may not cover all cases named in ACs.\", \"No explicit check for all currency types in from_minor function.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH102_from_minor_handles_all_currencies\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"All currencies supported by from_minor function are tested with negative amounts.\", \"failsBeforeFix\": true}, {\"testName\": \"test_BENCH102_from_minor_three_decimal_currencies\", \"file\": \"tests/test_money.py\", \"ac\": \"AC2\", \"asserts\": \"Three-decimal currencies like BHD are handled correctly in from_minor function.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "verdict-word",
+   "reasons": [
+    "\"supported\" is a verdict word; a review never decides"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-102",
+      "prNumber": 132,
+      "review": "{\"findings\": [{\"hunk\": \"P132:H1\", \"file\": \"tests/test_money.py\", \"line\": 60, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test for negative amounts added but not checked by AC.\"}, {\"hunk\": \"P132:H1\", \"file\": \"tests/test_money.py\", \"line\": 67, \"severity\": \"note\", \"ac\": \"AC2\", \"text\": \"Test for three-decimal currencies added but not checked by AC.\"}], \"risks\": [\"Tests may not cover all cases named in ACs.\", \"No explicit check for all currency types in from_minor function.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH102_from_minor_handles_all_currencies\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"All currencies supported by from_minor function are tested with negative amounts.\", \"failsBeforeFix\": true}, {\"testName\": \"test_BENCH102_from_minor_three_decimal_currencies\", \"file\": \"tests/test_money.py\", \"ac\": \"AC2\", \"asserts\": \"Three-decimal currencies like BHD are handled correctly in from_minor function.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "verdict-word",
+   "reasons": [
+    "\"supported\" is a verdict word; a review never decides"
+   ],
+   "gate": "accept"
+  }
+ ]
+}
