@@ -1,0 +1,84 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "unknown-ac",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "0b61e84575b27285b22ab453b529144184c738fc28bc51848ad84d607485bb63",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-205",
+      "prNumber": 105
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-verdicts",
+     "arguments": {
+      "issueKey": "BENCH-205"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-205",
+      "prNumber": 105,
+      "review": "{\"findings\": [], \"risks\": [], \"proposedChecks\": []}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "schema",
+   "reasons": [
+    "a review needs a finding or a proposed check"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 3,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-205",
+      "prNumber": 105,
+      "review": "{\"findings\": [], \"risks\": [\"The patch updates the README.md file with new status codes for the POST /api/transfers endpoint. However, there is no corresponding test coverage for these new status codes in the existing test suite. This could lead to untested behavior and potential regressions if the implementation changes.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH205_transfer_endpoint_returns_correct_status_codes\", \"file\": \"tests/test_api_transfers.py\", \"ac\": \"AC1\", \"asserts\": \"The test must assert that POST /api/transfers returns 201 for successful transfers, 200 for replays, 400 for invalid requests, 401 for unauthorized access, 404 for non-existent or unauthorized accounts, 409 for insufficient funds, and 422 for idempotency key conflicts.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 3,
+   "guard": "invalid_review",
+   "guardName": "unknown-ac",
+   "reasons": [
+    "AC1 is not an AC of BENCH-205"
+   ],
+   "gate": "accept"
+  }
+ ]
+}
