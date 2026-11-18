@@ -1,0 +1,131 @@
+{
+ "source": "benchmark set 4, case U01: the pinned block of the bank step (bank main 60f141e, scripts/pinned.py) run on the case branch, 18 Nov 2026",
+ "pinned": {
+  "version": 1,
+  "base_sha": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+  "modules": [
+   "tests/test_api.py"
+  ],
+  "tests": [
+   {
+    "id": "tests/test_api.py::test_a_replay_returns_the_original_result",
+    "base_hash": "dc234235a9fec348251b3edc5a0f133789baf83601fc09c8c537599c362cc32e",
+    "head_id": "tests/test_api.py::test_a_replay_returns_the_original_result",
+    "head_hash": "dc234235a9fec348251b3edc5a0f133789baf83601fc09c8c537599c362cc32e",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_amount_spelling_does_not_change_the_request",
+    "base_hash": "41c33d01843919645b40ae6b6ec503c529d3412f4dbf74bfd4a264f844465255",
+    "head_id": "tests/test_api.py::test_amount_spelling_does_not_change_the_request",
+    "head_hash": "41c33d01843919645b40ae6b6ec503c529d3412f4dbf74bfd4a264f844465255",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_customer_list_for_demo_chooser",
+    "base_hash": "984fe7833691b7d4f62f9746224bf543186dae205b842369eb2c4414f62c705e",
+    "head_id": "tests/test_api.py::test_customer_list_for_demo_chooser",
+    "head_hash": "984fe7833691b7d4f62f9746224bf543186dae205b842369eb2c4414f62c705e",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_every_account_route_checks_the_owner",
+    "base_hash": "6993ae5f9820394a0753d07d442d2629e5f72fa80de6b819b219a99688ed9f51",
+    "head_id": "tests/test_api.py::test_every_account_route_checks_the_owner",
+    "head_hash": "6993ae5f9820394a0753d07d442d2629e5f72fa80de6b819b219a99688ed9f51",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_list_accounts_shows_only_own",
+    "base_hash": "5b58cdd69a8f597630084092a36055285592ec55408806a9f6a4a6d366a7e772",
+    "head_id": "tests/test_api.py::test_list_accounts_shows_only_own",
+    "head_hash": "5b58cdd69a8f597630084092a36055285592ec55408806a9f6a4a6d366a7e772",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_retry_with_the_same_key_moves_money_once",
+    "base_hash": "a010a1b0e93713a021a9e201e831f835a45d41f1c4150fab75aad749616f5e8e",
+    "head_id": "tests/test_api.py::test_retry_with_the_same_key_moves_money_once",
+    "head_hash": "a010a1b0e93713a021a9e201e831f835a45d41f1c4150fab75aad749616f5e8e",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_same_key_with_a_different_body_is_rejected",
+    "base_hash": "83ea489a712e63208fe33f6ac54b1e7b9ca064546c8d3b32ef60ddd2af8efd98",
+    "head_id": "tests/test_api.py::test_same_key_with_a_different_body_is_rejected",
+    "head_hash": "83ea489a712e63208fe33f6ac54b1e7b9ca064546c8d3b32ef60ddd2af8efd98",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_session_cookie_and_unknown_customer",
+    "base_hash": "bcfffefee724d7c5d88a8b8d03b40710fc0aea4a00ab7bb1beb1fc78fba9f3ff",
+    "head_id": "tests/test_api.py::test_session_cookie_and_unknown_customer",
+    "head_hash": "bcfffefee724d7c5d88a8b8d03b40710fc0aea4a00ab7bb1beb1fc78fba9f3ff",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_statement_dates_out_of_range_are_400",
+    "base_hash": "7e57af00252e86c3cf044471671d62d83f52693f7e170268b33030c1ad805fd8",
+    "head_id": "tests/test_api.py::test_statement_dates_out_of_range_are_400",
+    "head_hash": "7e57af00252e86c3cf044471671d62d83f52693f7e170268b33030c1ad805fd8",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_statement_end_date_is_inclusive",
+    "base_hash": "fc723bdd46d0cba16b5776510e855ffda58d42c7ad97893b25e85605b7080f0e",
+    "head_id": "tests/test_api.py::test_statement_end_date_is_inclusive",
+    "head_hash": "fc723bdd46d0cba16b5776510e855ffda58d42c7ad97893b25e85605b7080f0e",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_statement_rejects_bad_dates",
+    "base_hash": "51921f94c643497b095f0e88dc21b18341544f4c487454330f90be4e277b7875",
+    "head_id": "tests/test_api.py::test_statement_rejects_bad_dates",
+    "head_hash": "51921f94c643497b095f0e88dc21b18341544f4c487454330f90be4e277b7875",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_the_same_key_is_scoped_to_each_customer",
+    "base_hash": "66e973b385747f4e8ddd6f74a3c9e99f1c74211e75021b5fa1d0e79016802a7f",
+    "head_id": "tests/test_api.py::test_the_same_key_is_scoped_to_each_customer",
+    "head_hash": "66e973b385747f4e8ddd6f74a3c9e99f1c74211e75021b5fa1d0e79016802a7f",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_transfer_errors",
+    "base_hash": "05e2d42febb89d3f1795c1058b86ab9db4146997ec57046ca19d731046464ec6",
+    "head_id": "tests/test_api.py::test_transfer_errors",
+    "head_hash": "05e2d42febb89d3f1795c1058b86ab9db4146997ec57046ca19d731046464ec6",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_transfer_from_foreign_account_is_404",
+    "base_hash": "bfa2ad652fef6363a59e6c8d1173a2a231be256057816753dc5fe9783582b17d",
+    "head_id": "tests/test_api.py::test_transfer_from_foreign_account_is_404",
+    "head_hash": "bfa2ad652fef6363a59e6c8d1173a2a231be256057816753dc5fe9783582b17d",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_transfer_requires_an_idempotency_key",
+    "base_hash": "726ea75c022c17f6fc48e20afbea18931c05f254942f8ecf2e962aed8327ff87",
+    "head_id": "tests/test_api.py::test_transfer_requires_an_idempotency_key",
+    "head_hash": "726ea75c022c17f6fc48e20afbea18931c05f254942f8ecf2e962aed8327ff87",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_transfer_success",
+    "base_hash": "9004235399e50e54f47230f63bfc7f979822a0f0386907cdbac11f40442d8903",
+    "head_id": "tests/test_api.py::test_transfer_success",
+    "head_hash": "9004235399e50e54f47230f63bfc7f979822a0f0386907cdbac11f40442d8903",
+    "outcome": "passed"
+   },
+   {
+    "id": "tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency",
+    "base_hash": "0f08ae22136f4274f042a73e0e95457656f3b47088a1eb3270ab9551fa6280d2",
+    "head_id": "tests/test_api.py::test_wrong_currency_destination_does_not_reveal_its_currency",
+    "head_hash": "0f08ae22136f4274f042a73e0e95457656f3b47088a1eb3270ab9551fa6280d2",
+    "outcome": "passed"
+   }
+  ]
+ }
+}
