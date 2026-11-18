@@ -27,10 +27,10 @@ A change can also deselect an old test in `pyproject.toml`.
      - a base copy fails or errors on head;
      - a base copy did not run (deselected or skipped);
      - a pinned test is deleted with no approved removal.
-   - **unknown:**
-     - a pinned test body changed, and its base copy passes on head. A person approves the
-       new pin.
-     - the block is malformed.
+   - **unknown:** the block is malformed.
+   - (Changed after the development-set results; see the end of this note.) A pinned test
+     whose body changed but whose base copy passes on head does not hold the claim: the base
+     copy keeps the old assertion in force. The reason names the edit.
    - **pass:** every pinned test is unchanged, renamed with the same body, or approved, and
      every base copy passes on head.
    - **advisory, not counted:** the report has no `pinned` block (the bank step is not
@@ -46,7 +46,7 @@ A change can also deselect an old test in `pyproject.toml`.
 ## The `pinned` block (bank CI report)
 
 ```json
-{ "pinned": { "version": 1, "base_sha": "<40 hex>", "tests": [
+{ "pinned": { "version": 1, "base_sha": "<40 hex>", "modules": ["tests/test_api.py"], "tests": [
   { "id": "tests/test_api.py::test_transfer_errors", "base_hash": "<sha256>",
     "head_id": "tests/test_api.py::test_transfer_errors", "head_hash": "<sha256>",
     "outcome": "passed" } ] } }
@@ -56,6 +56,10 @@ A change can also deselect an old test in `pyproject.toml`.
   `not_run`.
 - `head_id` and `head_hash` are `null` when no head test has this name or this body (deleted).
 - `head_id` differs from `id` when the body was found under another name (renamed).
+- `modules` lists the base test modules that the step covered: the ones the pull request
+  changes, renames or removes. An empty list with no test means no test module changed (pass).
+  Unchanged modules run in the head suite as they are; a test missing there is caught by
+  `tests_not_removed`.
 
 ## Prediction (written before the check code; sets 1 to 4 are development sets)
 
@@ -129,3 +133,48 @@ rebuilt evidence. They are not shown here, and they are not claimed.
 **Limit:** the trust paths make a changed runner part `cannot_verify`; they do not run the
 runner from the base commit. Running the step itself from the base commit is the stronger
 design, and it is open (DESIGN section 12, a check run that no user can edit).
+
+## Regression with the bank step (development evidence, 18 Nov 2026, no model)
+
+**Bank step:** `scripts/pinned.py`, called from `scripts/repro.py` (bank branch
+`feat/pinned-base-tests`).
+
+**How the evidence was made:**
+- The step ran locally on every case branch of sets 1 to 4 (the local benchmark clones).
+- Its `pinned` block was added to each case's recorded CI report.
+- Nothing else in the evidence changed. These are not new CI runs.
+- Then `score.mjs` ran with app `main` (b82f4c9) and with this branch, on the same pinned
+  evidence.
+
+**Two bugs found on the real cases, both fixed in the bank step before scoring, tests first:**
+1. A parametrized test has report ids `name[param]`. The first version read every parametrized
+   base test as `not_run` (a false fail on almost every case). Now the worst outcome of its
+   parameters counts.
+2. The CI report step runs `-m "bench or not bench"`; the first version used the default marker
+   selection, so a bench test (B28) was `not_run`. Now the same selection is used.
+
+**Change after the results (development sets only).** In the first rule, an edited pinned test
+whose base copy still passes gave `unknown`. On set 2 this held control S02: `supported` became
+`cannot_verify`. That rule was my own addition, not part of the brief. It is not needed: the
+protection is the base copy, and when the base copy passes on head, the old assertion still
+holds. Now such an edit passes, and the reason names it. Before the change, set 2 had right
+17 of 20 and S02 not supported. After it, the numbers are as in the table below.
+
+**Result (after the change):**
+
+| Set | Right (main → branch) | Controls not supported | Supported on a case that is not correct as supported | Cases that change |
+|---|---|---|---|---|
+| 1 | 35 → 35 of 39 | B28 → B28 | 1 → 1 | none |
+| 2 | 18 → 18 of 20 | none → none | 2 → 2 | S16 cannot_verify → contradicted (`contradicted` is accepted for S16) |
+| 3 | 12 → 13 of 20 | T13 → T13 | 5 → 4 | T14 supported → contradicted (caught) |
+| 4 | 13 → 15 of 24 | U10 → none | 9 → 8 | U09 supported → contradicted (caught); U10 contradicted → supported (false block fixed); U20 cannot_verify → contradicted (better reason) |
+
+Against the prediction written before the code: U09, U20 and U10 moved as predicted. T14 (set 3)
+was not in the set 4 prediction, because sets 1 to 3 were not predicted case by case. No set is
+worse on any count.
+
+**Limits:**
+- Sets 1 to 4 are development sets, and the rule was changed after seeing them.
+- A claim needs blind set 5.
+- The pinned blocks were made locally, not by CI.
+- The approval action for a changed pin (`approvedTestChanges`) has no panel button yet.

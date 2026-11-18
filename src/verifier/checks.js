@@ -561,8 +561,18 @@ export function pinnedTestsHold(ctx, report = ctx.report) {
   }
   const p = report.pinned;
   if (!isObj(p) || p.version !== 1 || !isList(p.tests)) return result(name, 'unknown', 'the pinned block of the report is malformed');
-  if (!p.tests.length) return result(name, 'unknown', 'the pinned block lists no base test, so it cannot show that old tests still hold');
+  // modules: the base test modules that the bank step covered (the changed ones). An empty list
+  // with no test means the pull request changes no test module.
+  if (p.modules !== undefined && !(isList(p.modules) && p.modules.every(isText))) return result(name, 'unknown', 'the module list of the pinned block is malformed');
+  if (!p.tests.length) {
+    return isList(p.modules) && p.modules.length === 0
+      ? result(name, 'pass', 'no test module changed, so every old test runs in the head suite as it is')
+      : result(name, 'unknown', 'the pinned block lists no base test, so it cannot show that old tests still hold');
+  }
   if (!p.tests.every(pinEntryOk)) return result(name, 'unknown', 'an entry of the pinned block is malformed');
+  if (isList(p.modules) && !p.tests.every((t) => p.modules.includes(t.id.split('::')[0]))) {
+    return result(name, 'unknown', 'a pinned test is outside the modules that the pinned block lists');
+  }
   if (!isObj(ctx.ticket)) return result(name, 'unknown', 'the ticket is not readable, so its approved test changes are not known');
   const removals = optList(ctx.ticket.approvedTestRemovals);
   const changes = optList(ctx.ticket.approvedTestChanges);
@@ -586,8 +596,11 @@ export function pinnedTestsHold(ctx, report = ctx.report) {
     else if (edited) changed.push(n);
   }
   if (fails.length) return result(name, 'fail', `pinned base test: ${fails.join('; ')}; a real requirement change needs a person's approval of the new pin`);
-  if (changed.length) return result(name, 'unknown', `pinned test ${changed.join(', ')} changed; a person approves the new pin with a reason`);
-  return result(name, 'pass', `${p.tests.length} pinned base test(s) hold on the head code`);
+  // The protection is the base copy: when it still passes on the head code, an edit of the head
+  // copy keeps the old assertion in force, so it does not hold the claim (benchmark S02). The
+  // reason names the edit, so a person sees it.
+  const edits = changed.length ? `; ${changed.join(', ')} ${changed.length === 1 ? 'is' : 'are'} edited, and ${changed.length === 1 ? 'its base copy still passes' : 'their base copies still pass'}` : '';
+  return result(name, 'pass', `${p.tests.length} pinned base test(s) hold on the head code${edits}`);
 }
 
 // The base collection record (bank scripts/repro.py): pytest --collect-only on base over the
