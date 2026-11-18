@@ -1,0 +1,85 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P129:H1",
+     "file": "src/bank/ledger.py",
+     "line": 333,
+     "text": "Check for blank idempotency key added.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "No risk identified."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "bac7c4261c2ddb5076ff8a05dae002989b938e61e11974afe73deba9d7d5cad0",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-29",
+      "prNumber": 129
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-29",
+      "prNumber": 129,
+      "review": "{\"findings\": [{\"hunk\": \"P129:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 333, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Check for blank idempotency key added.\"}, {\"hunk\": \"P129:H2\", \"file\": \"tests/test_bench29_blank_key.py\", \"line\": 20, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test checks blank key rejection.\"}], \"risks\": [\"No risk identified.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH29_blank_idempotency_key_is_refused\", \"file\": \"tests/test_bench29_blank_key.py\", \"ac\": \"AC1\", \"asserts\": \"A blank idempotency key raises LedgerError and no money moves.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-29",
+      "prNumber": 129,
+      "review": "{\"findings\": [{\"hunk\": \"P129:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 333, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Check for blank idempotency key added.\"}], \"risks\": [\"No risk identified.\"], \"proposedChecks\": []}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

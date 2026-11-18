@@ -1,0 +1,85 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P133:H3",
+     "file": "tests/test_api_transfers.py",
+     "line": 240,
+     "text": "Test for spaces in account number uses a fixed value.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The test uses a hardcoded account number which may not reflect real-world variations."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "4bb3ab4ae4c131eaeb6a99daf6b244913079716d98e4fd3eb6923aa7fd17da3a",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-103",
+      "prNumber": 133
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-103",
+      "prNumber": 133,
+      "review": "{\"findings\": [{\"hunk\": \"P133:H3\", \"file\": \"tests/test_api_transfers.py\", \"line\": 240, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test for spaces in account number uses a fixed value.\"}], \"risks\": [\"The test uses a hardcoded account number which may not reflect real-world variations.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH103_destination_number_with_spaces_resolves\", \"file\": \"tests/test_api_transfers.py\", \"ac\": \"AC1\", \"asserts\": \"A transfer to an account number with spaces succeeds and the balance is updated correctly.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "ac-has-check",
+   "reasons": [
+    "AC1 already has a code check; a review proposes checks only for a manual AC"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-103",
+      "prNumber": 133,
+      "review": "{\"findings\": [{\"hunk\": \"P133:H3\", \"file\": \"tests/test_api_transfers.py\", \"line\": 240, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test for spaces in account number uses a fixed value.\"}], \"risks\": [\"The test uses a hardcoded account number which may not reflect real-world variations.\"], \"proposedChecks\": []}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}
