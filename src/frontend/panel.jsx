@@ -32,8 +32,32 @@ function App() {
     if (result.ok) load();
   };
 
+  const view = data.view;
   return (
     <Stack space="space.200">
+      <Heading as="h3">Verdict</Heading>
+      {!view ? (
+        <Text>No verdict yet. Comment "claim: fixed" or "claim: done" to verify.</Text>
+      ) : (
+        <Stack space="space.100">
+          <Inline space="space.100">
+            <Lozenge appearance={view.tone} isBold>{view.label}</Lozenge>
+            <Text>{view.meta.claim ?? 'claim'} · head {view.meta.head ?? 'unknown'} · {(view.meta.at ?? '').slice(0, 16).replace('T', ' ')}</Text>
+          </Inline>
+          <Text weight="bold">{view.headline}</Text>
+          <Text>Why: {view.why}</Text>
+          <Heading as="h4">What was proved</Heading>
+          {view.proved.length === 0 ? <Text>Nothing was proved.</Text> : view.proved.map((line) => <Text key={`p-${line}`}>{line}</Text>)}
+          {view.failed.length > 0 && <Heading as="h4">What failed</Heading>}
+          {view.failed.map((line) => <Text key={`f-${line}`}>{line}</Text>)}
+          <Heading as="h4">What was not checked</Heading>
+          {view.notChecked.map((line) => <Text key={`n-${line}`}>{line}</Text>)}
+          <SectionMessage appearance="information"><Text>{view.meaning}</Text></SectionMessage>
+          <Heading as="h4">Human decision</Heading>
+          <Text>{view.human}</Text>
+          <Text>Verdict set by code (checker {view.meta.checker ?? 'unknown'}). Agents explain it; only a person decides.</Text>
+        </Stack>
+      )}
       <Heading as="h3">Acceptance criteria</Heading>
       {acs.length === 0 ? (
         <SectionMessage appearance="warning"><Text>No acceptance criteria with checks. A "done" claim will be contradicted.</Text></SectionMessage>
