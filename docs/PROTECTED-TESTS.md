@@ -178,3 +178,44 @@ worse on any count.
 - A claim needs blind set 5.
 - The pinned blocks were made locally, not by CI.
 - The approval action for a changed pin (`approvedTestChanges`) has no panel button yet.
+
+## Required for the bank repository (18 Nov 2026, late evening)
+
+`VERIFY_CONFIG.pinnedRequired` is `true`: the bank's `main` runs the pinned step (bank PR 20,
+60f141e). A CI report without a `pinned` block now gives `cannot_verify`.
+
+**Rebuilt evidence:**
+- The merged bank step (`scripts/pinned.py` at 60f141e; identical to the tested head 8b615c4)
+  ran locally on every case branch of sets 1 to 4, on both sides of the two-sided cases.
+- Its block was added to each recorded CI report. These are not new CI runs.
+- The notable rows are the same as in the earlier run: renames in I03, I09, I10 and U10; edits
+  that pass in S02, S15 and S19; base copies that fail in S16, T14, T15, U09 and U20; the
+  deleted test in I10.
+
+**Arm C regression** (app `main` 5a949e2, flag false, against this branch, flag true, on the
+same rebuilt evidence):
+
+| Set | Right | Controls not supported | Changes |
+|---|---|---|---|
+| 1 | 35 → 35 of 39 | B28 → B28 | none |
+| 2 | 18 → 18 of 20 | none | none |
+| 3 | 13 → 13 of 20 | T13 → T13 | none |
+| 4 | 15 → 15 of 24 | none | none |
+
+No set is worse, and no outcome or reason changes. A first run had skipped the two sides of the
+two-sided cases B17 and B18 (a gap in the local rebuild script, not in the app). B18 then
+changed, because its sides had no block; with both sides pinned, it does not change.
+
+**Tests that replay older recordings.** Recordings made before the step have no block. Under
+the real configuration they give `cannot_verify`, which is right for a live claim
+(`test/pinned-required.test.js`). Tests that use them to test other rules pass
+`PRE_PINNED_CONFIG` (`test/helpers/pre-pinned.js`). `decide()` accepts `d.config` for this; the
+deployed app never sets it.
+
+**Effects on the demo:**
+- The demo repository `ysant77/yms-bank-demo-cases` has bank `main` at 00167dd, from before the
+  step. While the app points at it, every claim there gives `cannot_verify` ("no pinned
+  block"), until that `main` gets the step through a PR.
+- With the step, the judge path's U20 is `contradicted`, not `cannot_verify`: the base copy of
+  its edited old test fails. The judge path then needs another `cannot_verify` example (U12,
+  money sign-off, or U18, a failed run then a re-run).

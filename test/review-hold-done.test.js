@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { decide } from '../src/verify-claim.js';
 import { withReader } from './helpers/reader.js';
+import { PRE_PINNED_CONFIG } from './helpers/pre-pinned.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../fixtures/S59.json', import.meta.url), 'utf8'));
 const defaults = JSON.parse(readFileSync(new URL('../fixtures/_defaults.json', import.meta.url), 'utf8'));
@@ -37,6 +38,7 @@ const deps = (reviews) => ({
   collectReviews: async () => reviews,
   readAudit: async () => [],
   fetchFn: null,
+  config: PRE_PINNED_CONFIG,
 });
 
 const done = async (reviews) => (await decide({ issueKey: 'BANK-4', claim: { id: 'BANK-4:d', type: 'done', by: 'acc-dev' } }, deps(reviews))).verdict;

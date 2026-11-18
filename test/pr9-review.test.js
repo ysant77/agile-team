@@ -9,6 +9,7 @@ import { verify } from '../src/verifier/verdict.js';
 import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
 import { withReader } from './helpers/reader.js';
+import { PRE_PINNED_CONFIG } from './helpers/pre-pinned.js';
 
 const H = 'a'.repeat(40);
 const CI = '.github/workflows/ci.yml';
@@ -91,7 +92,7 @@ async function verdictOf(c) {
   const d = {
     collectJira: async () => structuredClone(c.ticket),
     env: () => ({ repo: 'ysant77/yms-bank-demo', token: 'local' }),
-    collectGithub, collectPrStats, fetchFn: fetchFrom(c.github),
+    collectGithub, collectPrStats, config: PRE_PINNED_CONFIG, fetchFn: fetchFrom(c.github),
   };
   const log = console.log;
   console.log = () => {};

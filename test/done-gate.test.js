@@ -8,6 +8,7 @@ import { buildDoneEvidence, formatEvidence } from '../src/verifier/evidence.js';
 import { verify } from '../src/verifier/verdict.js';
 import { verifyClaim } from '../src/verify-claim.js';
 import { withReader } from './helpers/reader.js';
+import { PRE_PINNED_CONFIG } from './helpers/pre-pinned.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../fixtures/S59.json', import.meta.url), 'utf8'));
 const defaults = JSON.parse(readFileSync(new URL('../fixtures/_defaults.json', import.meta.url), 'utf8'));
@@ -62,6 +63,7 @@ test('a done verdict writes the evidence to the audit chain before the comment, 
     collectJira: async () => ctx.ticket,
     collectGithub: async () => { const { ticket, config, ...g } = ctx; return g; },
     collectPrStats: async () => ({ patches: ctx.prPatches }),
+    config: PRE_PINNED_CONFIG,
     addVerdictProperty: async () => { order.push('property'); return true; },
     appendAudit: async (e) => { order.push(e.event); return { seq: order.length, hash: 'abcdef0123456789abcdef' }; },
     addComment: async (k, t) => { order.push('comment'); order.text = t; },

@@ -10,6 +10,7 @@ import { checkHumanSignoff, ciGreen } from '../src/verifier/checks.js';
 import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
 import { withReader } from './helpers/reader.js';
+import { PRE_PINNED_CONFIG } from './helpers/pre-pinned.js';
 
 // The recorded reports predate unmeasured_files (review finding 14) and changed_excluded; read
 // them as the current coverage script writes them, with an empty list and a count of 0.
@@ -25,7 +26,7 @@ async function verdictOf(c) {
   const d = {
     collectJira: async () => structuredClone(c.ticket),
     env: () => ({ repo: 'ysant77/yms-bank-demo', token: 'local' }),
-    collectGithub, collectPrStats, fetchFn: fetchFrom(c.github),
+    collectGithub, collectPrStats, config: PRE_PINNED_CONFIG, fetchFn: fetchFrom(c.github),
   };
   const log = console.log;
   console.log = () => {};

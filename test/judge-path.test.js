@@ -11,6 +11,7 @@ import { decide } from '../src/verify-claim.js';
 import { NOT_CHECKED_COVERAGE, SUPPORTED_MEANS, compactChecks, verdictView } from '../src/verdict-view.js';
 import { VerdictSection } from '../src/frontend/verdict-section.js';
 import { fetchFrom } from './helpers/recorded-github.js';
+import { PRE_PINNED_CONFIG } from './helpers/pre-pinned.js';
 
 const load = (id) => JSON.parse(readFileSync(new URL(`../fixtures/judge/${id}.json`, import.meta.url), 'utf8'));
 
@@ -18,7 +19,7 @@ async function verdictOf(c) {
   const d = {
     collectJira: async () => ({ subtasks: [], links: [], ...structuredClone(c.ticket) }),
     env: () => ({ repo: 'ysant77/yms-bank-demo', token: 'local' }),
-    collectGithub, collectPrStats, fetchFn: fetchFrom(c.github),
+    collectGithub, collectPrStats, config: PRE_PINNED_CONFIG, fetchFn: fetchFrom(c.github),
     collectReviews: async () => structuredClone(c.reviews ?? []),
   };
   const log = console.log;

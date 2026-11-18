@@ -8,6 +8,7 @@ import { test } from 'node:test';
 import { collectGithub, collectPrStats } from '../src/github-evidence.js';
 import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
+import { PRE_PINNED_CONFIG } from './helpers/pre-pinned.js';
 
 const DIR = new URL('../fixtures/bench/', import.meta.url);
 const recorded = (id) => JSON.parse(readFileSync(new URL(`${id}.json`, DIR), 'utf8'));
@@ -33,7 +34,7 @@ async function runCase(c) {
   const d = {
     collectJira: async () => structuredClone(c.ticket),
     env: () => ({ repo: 'ysant77/yms-bank-demo', token: 'local' }),
-    collectGithub, collectPrStats, fetchFn: fetchFrom(c.github),
+    collectGithub, collectPrStats, config: PRE_PINNED_CONFIG, fetchFn: fetchFrom(c.github),
   };
   const log = console.log;
   console.log = () => {};

@@ -6,7 +6,7 @@ import { VERIFY_CONFIG } from '../src/verify-claim.js';
 
 const sha = 'b'.repeat(40);
 const BENCH = [{ id: 'tests/test_bench.py::test_transfer_throughput', outcome: 'passed' }];
-const ctx = ({ prFiles = ['tests/test_bank17_gate.py'], metrics = { pr_auc: 0.39, auc: 0.89 }, checks, config = VERIFY_CONFIG, workflowFiles, tests = BENCH, patches } = {}) => withReader({
+const ctx = ({ prFiles = ['tests/test_bank17_gate.py'], metrics = { pr_auc: 0.39, auc: 0.89 }, checks, config = PRE_PINNED_CONFIG, workflowFiles, tests = BENCH, patches } = {}) => withReader({
   ticket: { key: 'BANK-17', type: 'Story', acceptanceCriteria: (checks ?? [['metric_at_least', 'pr_auc', 0.25]]).map(([type, ...args], i) => ({ acId: `AC${i + 1}`, check: { type, args } })) },
   pr: { number: 9, title: 'BANK-17: ship fraud model v3', state: 'open', headSha: sha },
   report: { schema: 'aat-ci-report/1', head_sha: sha, tests, metrics, workflow_files: workflowFiles ?? { '.github/workflows/ci.yml': 'base' } },
@@ -131,6 +131,7 @@ test('a report for another commit, or a run that is not green, is not trusted fo
 
 import { applyGuards, idsIn } from '../src/opinion.js';
 import { withReader } from './helpers/reader.js';
+import { PRE_PINNED_CONFIG } from './helpers/pre-pinned.js';
 
 test('ids in an opinion must match the evidence exactly', () => {
   assert.deepEqual(idsIn('PR #7 at b941c25 fixes AC1 of BANK-4 (E2)').sort(), ['AC1', 'BANK-4', 'E2', 'PR7', 'b941c25'].sort());

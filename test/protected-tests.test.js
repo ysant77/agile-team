@@ -11,6 +11,7 @@ import { collectGithub, collectPrStats } from '../src/github-evidence.js';
 import { decide } from '../src/verify-claim.js';
 import { verdictView } from '../src/verdict-view.js';
 import { fetchFrom } from './helpers/recorded-github.js';
+import { PRE_PINNED_CONFIG } from './helpers/pre-pinned.js';
 
 const H = (c) => c.repeat(64);
 const pin = (name, extra = {}) => ({
@@ -132,7 +133,7 @@ async function verdictWith(pinned) {
     return await decide({ issueKey: c.ticket.key, claim: { id: 'p', type: c.claim } }, {
       collectJira: async () => ({ subtasks: [], links: [], ...structuredClone(c.ticket) }),
       env: () => ({ repo: 'ysant77/yms-bank-demo', token: 'local' }),
-      collectGithub, collectPrStats, fetchFn: fetchFrom(c.github), collectReviews: async () => [],
+      collectGithub, collectPrStats, config: PRE_PINNED_CONFIG, fetchFn: fetchFrom(c.github), collectReviews: async () => [],
     });
   } finally {
     console.log = log;

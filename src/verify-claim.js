@@ -17,10 +17,10 @@ export const VERIFY_CONFIG = {
   reportTrustPaths: ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py', 'src/bank/testing/',
     // The scripts that write the repro and coverage blocks of the report.
     'scripts/repro.py', 'scripts/changed_coverage.py', 'scripts/pinned.py'],
-  // Protected regression set (docs/PROTECTED-TESTS.md): true once the bank's main runs the
-  // pinned step (scripts/pinned.py). Then a CI report without a pinned block gives unknown.
+  // Protected regression set (docs/PROTECTED-TESTS.md): the bank's main runs the pinned step
+  // (scripts/pinned.py, bank PR 20, 60f141e), so a CI report without a pinned block gives unknown.
   // Set here, per repository, never read from a report.
-  pinnedRequired: false,
+  pinnedRequired: true,
   tooGood: { auc: 0.95 },
   // D-cov (DESIGN 15c): fixed per repository before work starts, never per PR.
   coverage: { changedFloor: 0.8, maxDropPoints: 0.5 },
@@ -176,7 +176,9 @@ export async function decide({ issueKey, claim }, d) {
   // mergeRequiredTests: tests that must pass by name in the merge result. None are configured;
   // merged_clean still needs every base test kept and unique migrations. The checks read a
   // missing list as not known, so it is always set here.
-  const ctx = { ticket, ...github, mergeRequiredTests: [], config: VERIFY_CONFIG, claimant: claim.by ?? null, signoffEvent };
+  // d.config: a test that replays a recording made before a configured step passes its own
+  // configuration (test/helpers/pre-pinned.js). The deployed app never sets it.
+  const ctx = { ticket, ...github, mergeRequiredTests: [], config: d.config ?? VERIFY_CONFIG, claimant: claim.by ?? null, signoffEvent };
   let verdict = verify(claim, ctx);
   // Without the code host, a PR check that does not pass says why (a fail or an unknown).
   if ((githubError || !repo) && verdict.result !== 'supported' && verdict.checks.some((c) => ['pr_linked', 'on_main'].includes(c.name) && c.status !== 'pass')) {

@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { decide } from '../src/verify-claim.js';
 import { COMPLETE } from './helpers/reader.js';
+import { PRE_PINNED_CONFIG } from './helpers/pre-pinned.js';
 
 const HEAD = 'a'.repeat(40);
 const OTHER = 'b'.repeat(40);
@@ -41,6 +42,7 @@ function deps({ gh = github(), reviews = [] } = {}) {
     collectPrStats: async () => ({ patches: {} }),
     collectReviews: async () => reviews,
     fetchFn: null,
+    config: PRE_PINNED_CONFIG,
   };
 }
 
