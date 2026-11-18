@@ -1,6 +1,7 @@
 // AI team lead opinion (DESIGN.md section 6b). The model gives an opinion only; code checks the
 // schema, applies the guards and always leaves the decision to a human.
 
+import { rawRef, schemaErrorClass } from './trace.js';
 import { canonical, sha256 } from './audit.js';
 import { HUMAN_DOMAINS } from './arbitration.js';
 
@@ -144,9 +145,11 @@ export function applyGuards(raw, packet, meta = {}) {
     digest: meta.digest ?? null,
     inputHash: packetHash(packet),
     finalDecision: 'human',
+    raw: rawRef(raw),
+    errorClass: null,
   };
   const checked = validateOpinion(raw);
-  if (!checked.ok) return { ...base, outcome: 'invalid_opinion', guard: 'schema', reasons: checked.errors, opinion: null };
+  if (!checked.ok) return { ...base, outcome: 'invalid_opinion', guard: 'schema', errorClass: schemaErrorClass(checked.errors), reasons: checked.errors, opinion: null };
   const opinion = checked.opinion;
   const invalid = (guard, why) => ({ ...base, outcome: 'invalid_opinion', guard, reasons: [why], opinion });
 

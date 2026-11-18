@@ -1,0 +1,585 @@
+{
+ "model": "qwen3-coder:30b",
+ "options": {
+  "temperature": 0,
+  "num_ctx": 32768
+ },
+ "promptVersion": "code-review/2",
+ "rule": "blocking",
+ "results": [
+  {
+   "id": "B01",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/money.py:80: Function fee_minor added with correct rounding logic.",
+      "[note AC1] P101:H2 tests/test_bench1_fee_rounding.py:5: Test covers positive amounts and zero correctly."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/money.py:80: Function fee_minor added with correct rounding logic.",
+      "[note AC1] P101:H2 tests/test_bench1_fee_rounding.py:5: Test covers positive amounts and zero correctly."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/money.py:80: Function fee_minor added with correct rounding logic.",
+      "[note AC1] P101:H2 tests/test_bench1_fee_rounding.py:5: Test covers positive amounts and zero correctly."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "B02",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B03",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B04",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B05",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B06",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B07",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B08",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B09",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B10",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B11",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B12",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B13",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B14",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B15",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B16",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B17",
+   "C": "human",
+   "runs": [],
+   "D": "human",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B18",
+   "C": "code winner case/B18-a",
+   "runs": [],
+   "D": "code winner case/B18-a",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B19",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B20",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B21",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P121:H3 src/bank/money.py:62: Code does not reject underscores or spaces in amount strings.",
+      "[blocking AC1] P121:H4 tests/test_bench21_money_input.py:17: Test does not cover all underscore and space cases."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P121:H3 src/bank/money.py:62: Code does not reject underscores or spaces in amount strings.",
+      "[blocking AC1] P121:H4 tests/test_bench21_money_input.py:17: Test does not cover all underscore and space cases."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P121:H3 src/bank/money.py:62: Code does not reject underscores or spaces in amount strings.",
+      "[blocking AC1] P121:H4 tests/test_bench21_money_input.py:17: Test does not cover all underscore and space cases."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "B22",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "B23",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P123:H1 src/bank/ledger.py:216: Finding 1: see P123:H1, line 216.",
+      "[note AC2] P123:H1 src/bank/ledger.py:217: Finding 2: see P123:H1, line 217."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P123:H1 src/bank/ledger.py:216: Finding 1: see P123:H1, line 216.",
+      "[note AC2] P123:H1 src/bank/ledger.py:217: Finding 2: see P123:H1, line 217."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P123:H1 src/bank/ledger.py:216: Finding 1: see P123:H1, line 216.",
+      "[note AC2] P123:H1 src/bank/ledger.py:217: Finding 2: see P123:H1, line 217."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "B24",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "unknown-ac",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "unknown-ac",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "unknown-ac",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "B25",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B26",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B27",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B28",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "B29",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P129:H1 src/bank/ledger.py:333: Check for blank idempotency key added.",
+      "[note AC1] P129:H2 tests/test_bench29_blank_key.py:20: Test checks blank key rejection."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P129:H1 src/bank/ledger.py:333: Check for blank idempotency key added.",
+      "[note AC1] P129:H2 tests/test_bench29_blank_key.py:20: Test checks blank key rejection."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P129:H1 src/bank/ledger.py:333: Check for blank idempotency key added.",
+      "[note AC1] P129:H2 tests/test_bench29_blank_key.py:20: Test checks blank key rejection."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "I01",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "I02",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "I03",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P133:H3 tests/test_api_transfers.py:240: Test for spaces in account number uses a fixed value."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P133:H3 tests/test_api_transfers.py:240: Test for spaces in account number uses a fixed value."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P133:H3 tests/test_api_transfers.py:240: Test for spaces in account number uses a fixed value."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "I04",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P134:H1 src/bank/ledger.py:334: Code handles blank reference by setting to None.",
+      "[note AC1] P134:H2 tests/test_api.py:245: Test covers blank reference cases including whitespace."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P134:H1 src/bank/ledger.py:334: Code handles blank reference by setting to None.",
+      "[note AC1] P134:H2 tests/test_api.py:245: Test covers blank reference cases including whitespace."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P134:H1 src/bank/ledger.py:334: Code handles blank reference by setting to None.",
+      "[note AC1] P134:H2 tests/test_api.py:245: Test covers blank reference cases including whitespace."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "I05",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "I06",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "I07",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "I08",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "I09",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "I10",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  }
+ ]
+}

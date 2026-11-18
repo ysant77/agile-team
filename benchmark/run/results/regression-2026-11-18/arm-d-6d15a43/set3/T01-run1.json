@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "verdict-word",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "259f3e3e21affe426c9c7d05bc3207ff0e38b2ed1581abbb99fa96022ab53660",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-301",
+      "prNumber": 101
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-301",
+      "prNumber": 101,
+      "review": "{\"findings\": [{\"hunk\": \"P101:H1\", \"file\": \"src/bank/api.py\", \"line\": 162, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Added response parameter to list_accounts function.\"}, {\"hunk\": \"P101:H1\", \"file\": \"src/bank/api.py\", \"line\": 165, \"file\": \"src/bank/api.py\", \"line\": 165, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Cache-Control header is set to no-store.\"}, {\"hunk\": \"P101:H2\", \"file\": \"tests/test_api.py\", \"line\": 63, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test verifies Cache-Control header is set to no-store.\"}], \"risks\": [\"The change only affects the GET /api/accounts endpoint. Other endpoints may also need similar headers.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH301_account_list_is_not_cached\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Response header Cache-Control equals 'no-store' for GET /api/accounts\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "verdict-word",
+   "reasons": [
+    "\"verifies\" is a verdict word; a review never decides"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-301",
+      "prNumber": 101,
+      "review": "{\"findings\": [{\"hunk\": \"P101:H1\", \"file\": \"src/bank/api.py\", \"line\": 162, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Added response parameter to list_accounts function.\"}, {\"hunk\": \"P101:H1\", \"file\": \"src/bank/api.py\", \"line\": 165, \"file\": \"src/bank/api.py\", \"line\": 165, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Cache-Control header is set to no-store.\"}, {\"hunk\": \"P101:H2\", \"file\": \"tests/test_api.py\", \"line\": 63, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test verifies Cache-Control header is set to no-store.\"}], \"risks\": [\"The change only affects the GET /api/accounts endpoint. Other endpoints may also need similar headers.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH301_account_list_is_not_cached\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Response header Cache-Control equals 'no-store' for GET /api/accounts\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "verdict-word",
+   "reasons": [
+    "\"verifies\" is a verdict word; a review never decides"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

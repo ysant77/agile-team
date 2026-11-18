@@ -1,0 +1,55 @@
+{
+ "model": "qwen3-coder:30b",
+ "options": {
+  "temperature": 0,
+  "num_ctx": 32768
+ },
+ "promptVersion": "code-review/2",
+ "rule": "blocking",
+ "results": [
+  {
+   "id": "T02",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P102:H1 src/bank/api.py:175: limit parameter added with default 100.",
+      "[note AC1] P102:H1 src/bank/api.py:177: Validation for limit > 500 added.",
+      "[note AC1] P102:H2 src/bank/api.py:205: Limit applied to st.lines slice."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P102:H1 src/bank/api.py:175: limit parameter added with default 100.",
+      "[note AC1] P102:H1 src/bank/api.py:177: Validation for limit > 500 added.",
+      "[note AC1] P102:H2 src/bank/api.py:205: Limit applied to st.lines slice."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P102:H1 src/bank/api.py:175: limit parameter added with default 100.",
+      "[note AC1] P102:H1 src/bank/api.py:177: Validation for limit > 500 added.",
+      "[note AC1] P102:H2 src/bank/api.py:205: Limit applied to st.lines slice."
+     ]
+    }
+   ]
+  }
+ ]
+}

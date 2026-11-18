@@ -1,0 +1,51 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [],
+   "risks": [],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "24082e84896508212dd939867bd8d5279db9e4b997493263717ef30ad106991f",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-101",
+      "prNumber": 131
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-101",
+      "prNumber": 131,
+      "review": "{\"findings\": [], \"risks\": [], \"proposedChecks\": [{\"testName\": \"test_BENCH101_statement_window_bounds\", \"file\": \"src/bank/ledger.py\", \"ac\": \"AC1\", \"asserts\": \"The _statement_window function returns correct ISO bounds for inclusive date ranges, including edge cases like start == end and maximum date ranges.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

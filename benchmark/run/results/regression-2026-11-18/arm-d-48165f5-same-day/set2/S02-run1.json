@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "line-not-added",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "55b8463b3951fd53342fecd0e6482729059c039d4f6300ff2f1a94be92db57ea",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-202",
+      "prNumber": 102
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-202",
+      "prNumber": 102,
+      "review": "{\"findings\": [{\"hunk\": \"P102:H1\", \"file\": \"src/bank/seed_data.py\", \"line\": 120, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Code change updates summary.accounts to use len(owners) instead of accounts.\"}, {\"hunk\": \"P102:H2\", \"file\": \"tests/test_seed_data.py\", \"line\": 80, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Test only checks for 10 accounts but does not assert the correct number of customer accounts.\"}], \"risks\": [\"The test change may not fully validate the intended behavior if the number of customers is not correctly reflected in the summary.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH202_seed_data_accounts_match_customers\", \"file\": \"tests/test_seed_data.py\", \"ac\": \"AC1\", \"asserts\": \"The summary.accounts should equal the number of customer accounts created during seeding.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "line-not-added",
+   "reasons": [
+    "line 120 is not an added line of P102:H1"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-202",
+      "prNumber": 102,
+      "review": "{\"findings\": [{\"hunk\": \"P102:H1\", \"file\": \"src/bank/seed_data.py\", \"line\": 120, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Code change updates summary.accounts to use len(owners) instead of accounts.\"}, {\"hunk\": \"P102:H2\", \"file\": \"tests/test_seed_data.py\", \"line\": 80, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Test only checks for 10 accounts but does not assert the correct number of customer accounts.\"}], \"risks\": [\"The test change may not fully validate the intended behavior if the number of customers is not correctly reflected in the summary.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH202_seed_data_accounts_match_customers\", \"file\": \"tests/test_seed_data.py\", \"ac\": \"AC1\", \"asserts\": \"The summary.accounts should equal the number of customer accounts created during seeding.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "line-not-added",
+   "reasons": [
+    "line 120 is not an added line of P102:H1"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

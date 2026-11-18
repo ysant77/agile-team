@@ -1,0 +1,446 @@
+{
+ "model": "qwen3-coder:30b",
+ "options": {
+  "temperature": 0,
+  "num_ctx": 32768
+ },
+ "promptVersion": "code-review/2",
+ "rule": "blocking",
+ "results": [
+  {
+   "id": "S01",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/api.py:180: start date is now clamped to EARLIEST_DATE"
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/api.py:180: start date is now clamped to EARLIEST_DATE"
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/api.py:180: start date is now clamped to EARLIEST_DATE"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S02",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-not-added",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-not-added",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-not-added",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S03",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P103:H1 src/bank/ledger.py:146: Function customer_totals sums balance_minor per currency.",
+      "[note AC1] P103:H2 tests/test_ledger.py:27: Test covers summing balance_minor for each currency.",
+      "[note AC2] P103:H2 tests/test_ledger.py:42: Test checks empty customer totals."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P103:H1 src/bank/ledger.py:146: Function customer_totals sums balance_minor per currency.",
+      "[note AC1] P103:H2 tests/test_ledger.py:27: Test covers summing balance_minor for each currency.",
+      "[note AC2] P103:H2 tests/test_ledger.py:42: Test checks empty customer totals."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P103:H1 src/bank/ledger.py:146: Function customer_totals sums balance_minor per currency.",
+      "[note AC1] P103:H2 tests/test_ledger.py:27: Test covers summing balance_minor for each currency.",
+      "[note AC2] P103:H2 tests/test_ledger.py:42: Test checks empty customer totals."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S04",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S05",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "unknown-ac",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "unknown-ac",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "unknown-ac",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S06",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S07",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P107:H1 src/bank/api.py:226: Finding 1: see P107:H1, line 226.",
+      "[note AC1] P107:H2 src/bank/api.py:235: Finding 2: see P107:H2, line 235."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P107:H1 src/bank/api.py:226: Finding 1: see P107:H1, line 226.",
+      "[note AC1] P107:H2 src/bank/api.py:235: Finding 2: see P107:H2, line 235."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P107:H1 src/bank/api.py:226: Finding 1: see P107:H1, line 226.",
+      "[note AC1] P107:H2 src/bank/api.py:235: Finding 2: see P107:H2, line 235."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S08",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "S09",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P109:H1 src/bank/ledger.py:219: Code handles blank deposit description correctly.",
+      "[note AC1] P109:H2 tests/test_ledger.py:27: Test checks for default deposit description."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P109:H1 src/bank/ledger.py:219: Code handles blank deposit description correctly.",
+      "[note AC1] P109:H2 tests/test_ledger.py:27: Test checks for default deposit description."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P109:H1 src/bank/ledger.py:219: Code handles blank deposit description correctly.",
+      "[note AC1] P109:H2 tests/test_ledger.py:27: Test checks for default deposit description."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S10",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S11",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S12",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S13",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S14",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P114:H1 src/bank/money.py:80: split_evenly does not ensure parts sum to the amount.",
+      "[blocking AC1] P114:H1 src/bank/money.py:80: split_evenly does not handle remainder distribution."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P114:H1 src/bank/money.py:80: split_evenly does not ensure parts sum to the amount.",
+      "[blocking AC1] P114:H1 src/bank/money.py:80: split_evenly does not handle remainder distribution."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P114:H1 src/bank/money.py:80: split_evenly does not ensure parts sum to the amount.",
+      "[blocking AC1] P114:H1 src/bank/money.py:80: split_evenly does not handle remainder distribution."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "S15",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S16",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S17",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S18",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S19",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "S20",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  }
+ ]
+}
