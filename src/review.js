@@ -11,6 +11,7 @@ import { idsIn } from './opinion.js';
 import { lintText, STYLE_CONTRACT, lintMessage } from './style.js';
 import { VERIFY_CONFIG } from './verify-claim.js';
 import { testName, testsByName } from './verifier/report.js';
+import { rawRef, schemaErrorClass } from './trace.js';
 
 // Guard version 4: the severity guards (3) plus the line, number, verdict-word and adoption
 // guards from the unit 6 review.
@@ -233,9 +234,11 @@ export function applyReviewGuards(raw, packet, meta = {}) {
     model: meta.model ?? null,
     inputHash: packetHash(packet),
     trigger: packet.trigger,
+    raw: rawRef(raw),
+    errorClass: null,
   };
   const checked = validateReview(raw);
-  if (!checked.ok) return { ...base, outcome: 'invalid_review', guard: 'schema', reasons: checked.errors, review: null };
+  if (!checked.ok) return { ...base, outcome: 'invalid_review', guard: 'schema', errorClass: schemaErrorClass(checked.errors), reasons: checked.errors, review: null };
   const review = checked.review;
   const invalid = (guard, why) => ({ ...base, outcome: 'invalid_review', guard, reasons: [why], review });
 

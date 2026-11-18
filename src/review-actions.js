@@ -3,6 +3,7 @@
 // and stores it as "Review (not verified)". Neither action sets a verdict; a stored blocking finding
 // can only hold a supported claim for the same head commit (src/review-hold.js).
 
+import { MAX_ATTEMPTS, rawCopy, rawKey } from './trace.js';
 import api, { fetch, route } from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { appendAudit } from './audit-store.js';
@@ -91,10 +92,17 @@ export async function recordReview(payload) {
   if (input.errors.length) return { ok: false, error: input.errors.join('; ') };
   const stored = await kvs.get(reviewKey(input.issueKey, input.prNumber));
   if (!stored) return { ok: false, error: `no packet for ${input.issueKey} PR ${input.prNumber}; call get-pr-diff first` };
-  const guarded = applyReviewGuards(payload?.review ?? '', stored.packet, { model: 'rovo', promptVersion: REVIEW_PROMPT_VERSION });
+  // Model "rovo": Forge does not tell the app which model Rovo used (src/trace.js).
+  const raw = payload?.review ?? '';
+  const guarded = applyReviewGuards(raw, stored.packet, { model: 'rovo', promptVersion: REVIEW_PROMPT_VERSION });
+  // Keep a bounded copy of every reply, refused or not, so a failure can be traced to it.
+  await kvs.set(rawKey(guarded.raw.hash), rawCopy(raw, guarded, { issueKey: input.issueKey, prNumber: input.prNumber, actor: 'code-reviewer' }));
   const gate = reviewGate(guarded, stored.retries ?? 0);
   if (gate.action === 'retry') {
-    await kvs.set(reviewKey(input.issueKey, input.prNumber), { ...stored, retries: (stored.retries ?? 0) + 1 });
+    const attempt = { at: new Date().toISOString(), outcome: guarded.outcome, guard: guarded.guard, errorClass: guarded.errorClass, rawHash: guarded.raw.hash };
+    await kvs.set(reviewKey(input.issueKey, input.prNumber), {
+      ...stored, retries: (stored.retries ?? 0) + 1, attempts: [...(stored.attempts ?? []), attempt].slice(-MAX_ATTEMPTS),
+    });
     return { ok: false, error: gate.message };
   }
   // The head commit lets the verifier use the review only for the code it read.
@@ -107,7 +115,7 @@ export async function recordReview(payload) {
   const audit = await appendAudit({ actor: 'code-reviewer', event: 'review', data: {
     issueKey: input.issueKey, prNumber: input.prNumber, outcome: record.outcome, guard: record.guard,
     findings: record.review?.findings.length ?? 0, proposedChecks: (record.review?.proposedChecks ?? []).map((c) => c.testName),
-    inputHash: record.inputHash } });
+    inputHash: record.inputHash, rawHash: record.raw?.hash ?? null, errorClass: record.errorClass ?? null } });
   await addComment(input.issueKey, `${formatReview(input.issueKey, input.prNumber, record)}\nAudit seq ${audit.seq}.`);
   return {
     ok: true,
