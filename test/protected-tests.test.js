@@ -105,6 +105,19 @@ test('a malformed pinned block gives unknown', () => {
   assert.equal(pinnedTestsHold(ctxOf([])).status, 'unknown', 'an empty pinned set cannot show protection');
 });
 
+test('no changed test module (empty modules list and no tests): pass; a module list that does not match the tests: unknown', () => {
+  const ctx = ctxOf([]);
+  ctx.report.pinned.modules = [];
+  assert.equal(pinnedTestsHold(ctx).status, 'pass', pinnedTestsHold(ctx).reason);
+  const listed = ctxOf([pin('test_transfer_errors')]);
+  listed.report.pinned.modules = ['tests/test_api.py'];
+  assert.equal(pinnedTestsHold(listed).status, 'pass');
+  listed.report.pinned.modules = ['tests/test_other.py'];
+  assert.equal(pinnedTestsHold(listed).status, 'unknown');
+  listed.report.pinned.modules = 'tests/test_api.py';
+  assert.equal(pinnedTestsHold(listed).status, 'unknown');
+});
+
 // The real U01 evidence (fixtures/judge): supported today; with a failing pinned base copy, the
 // whole claim is contradicted. Without a block it stays supported, and the view says "not checked".
 async function verdictWith(pinned) {
