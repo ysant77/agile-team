@@ -12,6 +12,8 @@ const packet = buildReviewPacket(step.packet);
 const finding = (extra) => ({ hunk: 'P61:H1', file: 'src/bank/accounts.py', line: 41, text: 'The lock in P61:H1 covers the balance check and the debit.', ...extra });
 const review = (f) => ({ findings: [f], risks: [], proposedChecks: [] });
 const guard = (f) => applyReviewGuards(review(f), packet);
+// Guard version 7: quoted-line refuses the finding only; the review stays (rule i).
+const dropped = (r) => (r.outcome === 'review' ? r.droppedFindings.map((d) => d.guard).join() : `whole review: ${r.guard}`);
 
 test('the prompt version is code-review/2', () => {
   assert.equal(REVIEW_PROMPT_VERSION, 'code-review/2');
@@ -39,28 +41,29 @@ test('a blocking finding needs an AC of the ticket', () => {
   assert.equal(guard(finding({ severity: 'blocking', ac: 'AC9' })).guard, 'unknown-ac');
 });
 
-test('a blocking finding that only quotes a changed line is refused', () => {
+test('a blocking finding that only quotes a changed line is refused as a finding', () => {
   const quote = finding({ severity: 'blocking', ac: 'AC1', text: 'if self.balance_cents < amount_cents:' });
-  assert.equal(guard(quote).guard, 'quoted-line');
+  assert.equal(dropped(guard(quote)), 'quoted-line');
+  assert.deepEqual(blockingFindings(guard(quote)), []);
   // The same quote as a note is allowed; it never blocks.
   assert.equal(guard({ ...quote, severity: 'note' }).outcome, 'review');
 });
 
-test('a blocking finding that is mostly a copied line plus a label is refused', () => {
+test('a blocking finding that is mostly a copied line plus a label is refused as a finding', () => {
   const copied = [
     'Bad: if self.balance_cents < amount_cents:',
     'P61:H1 AC1: self.balance_cents -= amount_cents',
     'Wrong: with self._lock: if self.balance_cents < amount_cents: raise InsufficientFunds(self.id)',
   ];
   for (const text of copied) {
-    assert.equal(guard(finding({ severity: 'blocking', ac: 'AC1', text })).guard, 'quoted-line', text);
+    assert.equal(dropped(guard(finding({ severity: 'blocking', ac: 'AC1', text }))), 'quoted-line', text);
   }
   // A short identifier inside the reviewer's own sentence is not a copied line.
   const own = finding({ severity: 'blocking', ac: 'AC2', text: 'The lock guards self.balance_cents, but no test runs 20 threads, so AC2 has no evidence.' });
   assert.equal(guard(own).outcome, 'review', JSON.stringify(guard(own).reasons));
 });
 
-test('a blocking quote in other letter case or with extra spaces is refused', () => {
+test('a blocking quote in other letter case or with extra spaces is refused as a finding', () => {
   const quotes = [
     'IF SELF.BALANCE_CENTS < AMOUNT_CENTS:',
     'BAD: IF SELF.BALANCE_CENTS < AMOUNT_CENTS:',
@@ -68,7 +71,7 @@ test('a blocking quote in other letter case or with extra spaces is refused', ()
     'assert acct . balance_cents == 700',
   ];
   for (const text of quotes) {
-    assert.equal(guard(finding({ severity: 'blocking', ac: 'AC1', text })).guard, 'quoted-line', text);
+    assert.equal(dropped(guard(finding({ severity: 'blocking', ac: 'AC1', text }))), 'quoted-line', text);
   }
 });
 

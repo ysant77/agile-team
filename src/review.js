@@ -15,7 +15,7 @@ import { testName, testsByName } from './verifier/report.js';
 
 // Guard version 4: the severity guards (3) plus the line, number, verdict-word and adoption
 // guards from the unit 6 review.
-export const REVIEW_GUARD_VERSION = 6;
+export const REVIEW_GUARD_VERSION = 7;
 export const REVIEW_PROMPT_VERSION = 'code-review/2';
 export const REVIEW_LABEL = 'Review (not verified)';
 export const MAX_FINDINGS = 6;
@@ -247,8 +247,12 @@ export function applyReviewGuards(raw, packet, meta = {}) {
     droppedFindings.push({ hunk: f.hunk, line: f.line, guard: 'no-defect-statement', reason: `the finding at ${f.hunk} has no defect statement, only a reference` });
     return false;
   });
-  const review = { ...checked.review, findings: findingsKept };
+  let review = { ...checked.review, findings: findingsKept };
   const invalid = (guard, why) => ({ ...base, outcome: 'invalid_review', guard, reasons: [why], review });
+  // Rule (i), extended after blind set 4 (guard version 7): line-not-added and quoted-line fault
+  // one finding, so they refuse that finding only. Later guards do not see a dropped finding.
+  const drop = (f, guard, reason) => droppedFindings.push({ hunk: f.hunk, line: f.line, guard, reason });
+  const keepOnly = (dropped) => { review = { ...review, findings: review.findings.filter((f) => !dropped.has(f)) }; };
 
   // Guard 5 first: patch text can ask for an approval; no review may give one.
   for (const t of freeTexts(review)) {
@@ -257,19 +261,25 @@ export function applyReviewGuards(raw, packet, meta = {}) {
   }
   // Guard 1: hunk ids match exactly, the file is the hunk's file, the line is an added line of the hunk.
   const hunks = new Map(packet.hunks.map((h) => [h.id, h]));
+  const notAdded = new Set();
   for (const f of review.findings) {
     const h = hunks.get(f.hunk);
     if (!h) return invalid('unknown-hunk', `${JSON.stringify(f.hunk)} is not a hunk id of this packet`);
     if (f.file !== h.file) return invalid('wrong-file', `${f.hunk} is in ${h.file}, not ${f.file}`);
     if (f.line < h.newStart || f.line > h.newEnd) return invalid('line-outside-hunk', `line ${f.line} is outside ${f.hunk} (${h.newStart} to ${h.newEnd})`);
-    if (!addedLines(h).has(f.line)) return invalid('line-not-added', `line ${f.line} is not an added line of ${f.hunk}`);
+    if (!addedLines(h).has(f.line)) {
+      notAdded.add(f);
+      drop(f, 'line-not-added', `line ${f.line} is not an added line of ${f.hunk}`);
+    }
   }
+  keepOnly(notAdded);
   // Guard 7 (code-review/2): a blocking finding names an AC of the ticket and states a defect in
   // the reviewer's own words. A quoted changed line is not a defect statement.
   // Known limit (docs/claims.md): the guard refuses copied code only. A short text with no defect
   // statement and no copied code, such as "Bad.", passes. Such a finding can only hold a
   // supported claim for a person to check; it can never pass a claim.
   const acSet = new Set(packet.ticket.acs.map((a) => a.acId));
+  const quoted = new Set();
   for (const f of review.findings) {
     if (f.ac !== undefined && !acSet.has(f.ac)) return invalid('unknown-ac', `${f.ac} is not an AC of ${packet.ticket.key}`);
     if (f.severity !== 'blocking') continue;
@@ -277,9 +287,11 @@ export function applyReviewGuards(raw, packet, meta = {}) {
     const body = fold(f.text);
     const code = packet.hunks.map((h) => fold(h.text.split('\n').map((l) => l.replace(/^[+\- ]/, '')).join('\n')));
     if (code.some((c) => c.includes(body)) || copiedShare(f.text, code.join('\n')) > 0.5) {
-      return invalid('quoted-line', `the blocking finding at ${f.hunk} quotes changed code; state the defect against ${f.ac}`);
+      quoted.add(f);
+      drop(f, 'quoted-line', `the blocking finding at ${f.hunk} quotes changed code; state the defect against ${f.ac}`);
     }
   }
+  keepOnly(quoted);
   // Guard 2: ids and numbers come from the packet.
   const known = packetText(packet);
   // Commit shas are ids, not numbers.

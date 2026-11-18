@@ -57,9 +57,11 @@ test('item 3: "verify", "criteria are met" and "merge now" are verdict words', (
 
 test('item 4: a finding line must be an added line of its hunk', () => {
   // Line 40 is a context line of P61:H1 (40 to 44).
+  // Guard version 7: the finding is refused; the review stays (rule i).
   const r = guardOf(withReview((v) => { v.findings[0].line = 40; return v; }));
-  assert.equal(r.outcome, 'invalid_review');
-  assert.equal(r.guard, 'line-not-added');
+  assert.equal(r.outcome, 'review');
+  assert.deepEqual(r.droppedFindings.map((d) => d.guard), ['line-not-added']);
+  assert.ok(!r.review.findings.some((x) => x.line === 40));
   assert.equal(guardOf(withReview((v) => { v.findings[0].line = 44; return v; })).outcome, 'review');
 });
 
