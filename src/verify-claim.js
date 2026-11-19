@@ -25,14 +25,15 @@ export const VERIFY_CONFIG = {
   // repository that is not listed: advisory. pinnedRequiredRepos lists the repositories ("owner/
   // name") whose main runs the pinned step (scripts/pinned.py); for them a CI report without a
   // pinned block gives unknown. configFor() sets pinnedRequired per repository. Set here, never
-  // read from a report. Empty until the rollout (docs/PROTECTED-TESTS.md, "Rollout").
+  // read from a report. Listed at rollout step 6 (19 Nov; docs/PROTECTED-TESTS.md, "Rollout").
   pinnedRequired: false,
-  pinnedRequiredRepos: [],
+  pinnedRequiredRepos: ['ysant77/yms-bank-demo', 'ysant77/yms-bank-demo-cases'],
   // Report provenance (design P0-3): the repositories whose CI uploads the report hash markers.
-  // Empty: advisory everywhere. A repository is listed only after a real PR run on it shows that
-  // the comment text and the marker hash agree.
+  // A repository is listed only after a real PR run on it shows that the comment text and the
+  // marker hash agree: the bank (PR run 44455535406, push run 44456621300) and the demo
+  // repository (demo PR runs of 19 Nov; push run 44473706448). Any other repository: advisory.
   provenanceRequired: false,
-  provenanceRequiredRepos: [],
+  provenanceRequiredRepos: ['ysant77/yms-bank-demo', 'ysant77/yms-bank-demo-cases'],
   tooGood: { auc: 0.95 },
   // D-cov (DESIGN 15c): fixed per repository before work starts, never per PR.
   coverage: { changedFloor: 0.8, maxDropPoints: 0.5 },

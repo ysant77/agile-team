@@ -8,6 +8,7 @@ import { buildDoneEvidence, formatEvidence } from '../src/verifier/evidence.js';
 import { verify } from '../src/verifier/verdict.js';
 import { verifyClaim } from '../src/verify-claim.js';
 import { withReader } from './helpers/reader.js';
+import './helpers/unlisted.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../fixtures/S59.json', import.meta.url), 'utf8'));
 const defaults = JSON.parse(readFileSync(new URL('../fixtures/_defaults.json', import.meta.url), 'utf8'));

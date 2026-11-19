@@ -65,9 +65,11 @@ workflow:
 current attempt counts. Two different hashes for one attempt give unknown. Two identical names
 cannot exist in one run.
 
-**Required per repository.** `VERIFY_CONFIG.provenanceRequiredRepos` decides it. The list is
-empty, so the check is advisory and never counted. A repository is listed only after a real PR run
-on it shows that the comment text and the marker hash agree.
+**Required per repository.** `VERIFY_CONFIG.provenanceRequiredRepos` decides it. A repository is
+listed only after a real PR run on it shows that the comment text and the marker hash agree. Listed
+on 19 Nov: `ysant77/yms-bank-demo` (PR run 44455535406, push run 44456621300) and
+`ysant77/yms-bank-demo-cases` (demo PR runs of 19 Nov; push run 44473706448). For any other
+repository the check is advisory and never counted.
 
 **Limits:**
 - The marker binds a report to a run of the pinned workflow on the right commit. It does not make

@@ -130,9 +130,11 @@ test('verify: a merged claim on a forged main.json is cannot_verify when provena
   assert.ok(v.checks.some((c) => c.name === 'report_provenance' && c.status === 'unknown'));
 });
 
-test('configFor: provenance is required per listed repository; the deployed list is empty', () => {
-  assert.deepEqual(VERIFY_CONFIG.provenanceRequiredRepos, []);
-  assert.equal(configFor('ysant77/yms-bank-demo').provenanceRequired, false);
+test('configFor: provenance is required per listed repository; the deployed list names the two bank repositories', () => {
+  assert.deepEqual(VERIFY_CONFIG.provenanceRequiredRepos, ['ysant77/yms-bank-demo', 'ysant77/yms-bank-demo-cases']);
+  assert.equal(configFor('ysant77/yms-bank-demo').provenanceRequired, true);
+  assert.equal(configFor('ysant77/yms-bank-demo-cases').provenanceRequired, true);
+  assert.equal(configFor('acme/payments').provenanceRequired, false);
   assert.equal(configFor('YSANT77/yms-bank-demo', [], ['ysant77/yms-bank-demo']).provenanceRequired, true);
   assert.equal(configFor('acme/x', [], ['ysant77/yms-bank-demo']).provenanceRequired, false);
 });

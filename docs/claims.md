@@ -22,8 +22,8 @@ that the change reached the default branch.
 |---|---|---|
 | CI report trust (pinned workflow, bot comment, head commit, fingerprint, file list, time window) | `report_trusted` | yes |
 | Dependency and pytest config files are trust paths (PR 26) | `report_trusted` | yes |
-| Report provenance: hash marker of the run (PR 31, bank PR 22) | `report_provenance` | **advisory**: `provenanceRequiredRepos` is empty. Byte identity is confirmed on bank PR run 44455535406 and push run 44456621300. Listing waits for the arm C regression (listing design) |
-| Protected regression set: base copies of the changed test modules (PR 22 to 24, bank PR 20) | `pinned_tests_hold` | counted when the report has a `pinned` block; a missing block is **advisory**: `pinnedRequiredRepos` is empty (PR 27). PR 25 (listing) is a draft |
+| Report provenance: hash marker of the run (PR 31, bank PR 22) | `report_provenance` | **required** for the two bank repositories (listed 19 Nov after the real-run gates and the listing regression); advisory elsewhere |
+| Protected regression set: base copies of the changed test modules (PR 22 to 24, bank PR 20) | `pinned_tests_hold` | counted when the report has a `pinned` block; a missing block gives unknown for the two bank repositories (listed 19 Nov) and is **advisory** elsewhere |
 | Test approvals from the panel only, audited, not by the claimant (PR 28) | `tests_not_removed`, `pinned_tests_hold` | yes |
 | ACs match the last audited record, not made by the claimant (PR 28, PR 30) | `acs_recorded` | yes when a record exists; **advisory** when none |
 | Code-scanning result | `code_scanning` | **advisory** (`observe`) |

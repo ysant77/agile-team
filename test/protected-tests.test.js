@@ -12,6 +12,7 @@ import { collectGithub, collectPrStats } from '../src/github-evidence.js';
 import { decide } from '../src/verify-claim.js';
 import { verdictView } from '../src/verdict-view.js';
 import { fetchFrom } from './helpers/recorded-github.js';
+import './helpers/unlisted.js';
 
 const H = (c) => c.repeat(64);
 const pin = (name, extra = {}) => ({
@@ -136,7 +137,7 @@ test('no changed test module (empty modules list and no tests): pass; a module l
 // The real U01 evidence (fixtures/judge): supported today; with a failing pinned base copy, the
 // whole claim is contradicted. Without a block it stays supported, and the view says "not checked".
 async function verdictWith(pinned) {
-  const c = JSON.parse(readFileSync(new URL('../fixtures/judge/U01.json', import.meta.url), 'utf8'));
+  const c = JSON.parse(readFileSync(new URL('../fixtures/before-markers/U01.json', import.meta.url), 'utf8'));
   if (pinned !== undefined) c.github.report.pinned = pinned;
   const log = console.log;
   console.log = () => {};
