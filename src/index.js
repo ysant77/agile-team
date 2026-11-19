@@ -3,7 +3,7 @@ import { kvs } from '@forge/kvs';
 import { appendAudit } from './audit-store.js';
 import { canonical, sha256 } from './audit.js';
 import { createOnce, currentAccountId } from './action-guard.js';
-import { applyDecision, formatDecision, parseDecision } from './decision.js';
+import { applyDecision, deciderRule, formatDecision, parseDecision, parseGithubAccounts } from './decision.js';
 import { admitClaim } from './claim-intake.js';
 import { readLatestCommit } from './github.js';
 import { addComment, createIssue, getComment } from './jira.js';
@@ -144,6 +144,8 @@ export async function onComment(event) {
     console.log('claim not queued', issueKey, admitted.reason);
     return;
   }
+  // The latest claimant may not decide an arbitration case on this work item (deciderRule).
+  await kvs.set(latestClaimKey(issueKey), { by: comment?.author?.accountId ?? null, commentId, at: new Date().toISOString() });
   await verifyQueue.push({
     // The claimant: a sign-off by the same person does not count.
     body: { issueKey, claim: { id: `${issueKey}:${commentId}`, type: claim.type, text: claim.detail, by: comment?.author?.accountId ?? null } },
@@ -152,10 +154,26 @@ export async function onComment(event) {
   console.log('claim queued', issueKey, claim.type);
 }
 
-// A human's "decision: PR<n> because ..." comment on an open arbitration case.
+const latestClaimKey = (issueKey) => `latest-claim:${issueKey}`;
+
+// A human's "decision: PR<n> because ..." comment on an open arbitration case. The latest claimant
+// may not decide; a PR author may not decide when GITHUB_ACCOUNTS links the decider, and otherwise
+// the decision says "PR author not compared" (src/decision.js). A refusal changes nothing and is
+// not audited, and the reply says why.
 async function recordDecision(issueKey, parsed, meta) {
   const key = `case:${issueKey}`;
-  const result = applyDecision(await kvs.get(key), parsed, meta);
+  const kase = await kvs.get(key);
+  let authorCheck = null;
+  if (kase) {
+    const rule = deciderRule({ by: meta.by, kase, latestClaim: (await kvs.get(latestClaimKey(issueKey))) ?? null, accounts: parseGithubAccounts(process.env.GITHUB_ACCOUNTS) });
+    if (rule.refused) {
+      await addComment(issueKey, `Decision not recorded: ${rule.refused}.`);
+      console.log('decision refused', issueKey);
+      return;
+    }
+    authorCheck = rule.authorCheck;
+  }
+  const result = applyDecision(kase, parsed, { ...meta, authorCheck });
   if (!result.ok) {
     await addComment(issueKey, `Decision not recorded: ${result.error}.`);
     return;

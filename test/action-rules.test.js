@@ -124,7 +124,11 @@ test('create-ticket: a failed create can be tried again', async (t) => {
 // A duplicate comment event (at-least-once delivery) records one decision and one audit event.
 test('a decision comment delivered twice is recorded once', async (t) => {
   const store = mockKvs(t);
-  store.set('case:BANK-32', { prNumbers: [7, 8], packet: { sides: [] }, arbitration: { winner: null }, opinions: [] });
+  // The decider is neither a PR author nor the claimant (decider rule, src/decision.js).
+  store.set('case:BANK-32', { prNumbers: [7, 8], prAuthors: { PR7: { login: 'dev-a' }, PR8: { login: 'dev-b' } }, packet: { sides: [] }, arbitration: { winner: null }, opinions: [] });
+  const old = process.env.GITHUB_ACCOUNTS;
+  process.env.GITHUB_ACCOUNTS = 'lead-1=team-lead';
+  t.after(() => { if (old === undefined) delete process.env.GITHUB_ACCOUNTS; else process.env.GITHUB_ACCOUNTS = old; });
   const appCalls = mockApp(t, (path) => {
     if (path.includes('/comment/9001')) {
       return { ok: true, status: 200, json: async () => ({ author: { accountId: 'lead-1', accountType: 'atlassian' }, body: { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'decision: PR7 because the lock table is easier to read' }] }] } }) };
