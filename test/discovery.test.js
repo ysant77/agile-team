@@ -204,8 +204,9 @@ test('the site budget per hour is enforced across investigations', async () => {
   const limits = { ...DISCOVERY_LIMITS, callsPerSiteHour: 2 };
   const d = { ...deps(gh, store), limits };
   assert.equal((await startInvestigation(START, d)).ok, true);
-  assert.equal((await startInvestigation({ ...START, symptom: 'The Send button is gone on my phone.' }, d)).ok, true);
-  const third = await startInvestigation({ ...START, symptom: 'A third symptom.' }, d);
+  // Three people: one person has one open investigation at a time; the site budget is shared.
+  assert.equal((await startInvestigation({ ...START, by: 'pm-2', symptom: 'The Send button is gone on my phone.' }, d)).ok, true);
+  const third = await startInvestigation({ ...START, by: 'pm-3', symptom: 'A third symptom.' }, d);
   assert.equal(third.ok, false);
   assert.match(third.error, /site read budget \(2 GitHub calls an hour\) is used/);
   assert.equal(gh.calls.length, 2);
@@ -348,4 +349,48 @@ test('with the shape right, every grounding check still applies', async () => {
   const ok = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(FINDING) }, d);
   assert.equal(ok.ok, true, ok.error);
   assert.equal((await d.store.get(`finding:${ok.findingId}`)).status, 'unconfirmed');
+});
+
+// Dev check 19 Nov: on the control, the model opened a second investigation with a symptom it
+// wrote itself and grounded a finding in it. One open investigation per person; the finding
+// carries the symptom it answers.
+test('a second start with another symptom is refused while an investigation is open, with no call and no slot', async () => {
+  const { d, id } = await started();
+  const before = d.calls.length;
+  const r = await startInvestigation({ ...START, symptom: 'The test test_statement_running_balance fails with a runtime error.' }, d);
+  assert.equal(r.ok, false);
+  assert.equal(r.error, `an investigation is open: ${id}; record a finding for it first`);
+  assert.equal(d.calls.length, before);
+  assert.equal([...d.store.map.keys()].filter((k) => k.startsWith('investigation:')).length, 1);
+  const same = await startInvestigation(START, d);
+  assert.equal(same.ok, true);
+  assert.equal(same.investigationId, id);
+  assert.equal(same.duplicate, true);
+  // Another person has an investigation of their own.
+  const other = await startInvestigation({ ...START, by: 'pm-2', symptom: 'Another report.' }, d);
+  assert.equal(other.ok, true, other.error);
+});
+
+test('after a recorded finding the person can start the next investigation', async () => {
+  const { d, id } = await withRead();
+  const f = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(FINDING) }, d);
+  assert.equal(f.ok, true, f.error);
+  const next = await startInvestigation({ ...START, symptom: 'A second, different report.' }, d);
+  assert.equal(next.ok, true, next.error);
+  assert.notEqual(next.investigationId, id);
+});
+
+test('a start that GitHub refuses leaves no open investigation', async () => {
+  const d = deps(github({ rateLimited: true }));
+  const r = await startInvestigation(START, d);
+  assert.equal(r.ok, false);
+  const d2 = { ...d, get: github().get };
+  const next = await startInvestigation({ ...START, symptom: 'Another report.' }, d2);
+  assert.equal(next.ok, true, next.error);
+});
+
+test('the recorded finding carries the symptom of its investigation, word for word', async () => {
+  const { d, id } = await withRead();
+  const f = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(FINDING) }, d);
+  assert.equal((await d.store.get(`finding:${f.findingId}`)).symptom, START.symptom);
 });

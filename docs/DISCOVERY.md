@@ -43,6 +43,15 @@ shows that the proposed reproducer fails on base (the existing `reproduced` chec
   alias, and no grounding check is loosened (discovery round 1, 19 Nov: the model cited the
   right line under a wrong key, and the refusal read `undefined:181`).
 
+- **One open investigation per person.** While a person's investigation has no recorded finding,
+  a start with another symptom is refused (`an investigation is open: <id>; record a finding for
+  it first`), before any GitHub call, so it takes no slot. The same symptom returns the same
+  investigation. A start that GitHub refuses leaves nothing open. A recorded finding closes the
+  investigation (dev check, 19 Nov: the model opened a second investigation from a symptom it
+  wrote itself and grounded a finding in it).
+- **The finding names its report.** A recorded finding carries the symptom of its investigation
+  word for word, and a ticket made from it shows `Answers the report: "..."`.
+
 ## Owner steps (not done)
 
 - Set the Forge variables `DISCOVERY_REPO` (the demo repository) and `DISCOVERY_REF` (the
@@ -61,3 +70,7 @@ shows that the proposed reproducer fails on base (the existing `reproduced` chec
   verdict is a person's step.
 - Line numbers in a finding are grounded; the meaning of the hypothesis is not. A person reads
   the finding.
+- **The symptom is a tool argument from the model.** In the deployed app the code cannot read
+  the user's chat, so it cannot prove that the symptom is the user's text. One open
+  investigation per person and the symptom on the finding and the ticket reduce the risk; they
+  do not remove it. The person who reads the finding checks that it answers their report.

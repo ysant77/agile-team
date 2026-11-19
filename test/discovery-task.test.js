@@ -86,7 +86,8 @@ test('runDiscovery runs the tool loop with the real rules and stops at a recorde
   const r = repo();
   try {
     const plan = [
-      [{ name: 'start-investigation', arguments: { symptom: 'IGNORED' } }],
+      // The model passes the case's symptom; a finding for any other symptom scores 0 (rule 3).
+      [{ name: 'start-investigation', arguments: { symptom: 'My balance went below zero after two withdrawals.' } }],
       [{ name: 'read-repo-file', arguments: { investigationId: '$ID', path: 'seeds/k1_race.patch' } }],
       [{ name: 'read-repo-file', arguments: { investigationId: '$ID', path: 'src/bank/ledger.py' } }],
       [{ name: 'record-finding', arguments: { investigationId: '$ID', finding: JSON.stringify({ kind: 'defect', hypothesis: 'withdraw checks the balance, then sleeps, so two withdrawals at the same time both pass.', citations: [{ file: 'src/bank/ledger.py', line: 2 }], reproducer: { testName: 'test_two_withdrawals_at_once', file: 'tests/test_ledger.py', asserts: 'one of two withdrawals succeeds' }, severity: { level: 'high', reason: 'overdraft' }, priority: { level: 'P1', reason: 'money' } }) } }],
@@ -225,5 +226,57 @@ test('the set 2 truths: a statement that drops its end day, and a statement rout
     assert.equal(loadDiscoveryCases(file).length, 3);
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// Rule 3 of the lead (19 Nov): the finding must answer the case's own symptom.
+test('a finding that answers a symptom the model wrote scores 0', () => {
+  const kase = { id: 'D2', truth: 'button', symptom: 'I cannot send money on my phone.' };
+  const finding = { kind: 'defect', hypothesis: 'A media rule hides the Send button below 430px.', citations: [{ file: 'src/bank/web/app.css', line: 3 }], symptom: kase.symptom };
+  assert.equal(scoreDiscovery(kase, finding).score, 1);
+  const other = scoreDiscovery(kase, { ...finding, symptom: 'The Send button is hidden by CSS.' });
+  assert.equal(other.score, 0);
+  assert.equal(other.reason, 'finding answers a symptom the model wrote');
+});
+
+test('the stored D-3 dev-check run (19 Nov) fails: an empty final text and a recorded defect on a control', () => {
+  const rows = readFileSync(new URL('../benchmark/run/results/discovery-dev/discovery-dev-shape.jsonl', import.meta.url), 'utf8')
+    .trim().split('\n').map((l) => JSON.parse(l));
+  const row = rows.find((r) => r.task === 'D-3');
+  assert.equal(row.finalText, '');
+  const starts = row.toolCallLog.filter((c) => c.name === 'start-investigation').map((c) => c.args.symptom);
+  assert.equal(starts.length, 2);
+  const kase = { id: 'D-3', truth: 'none', symptom: starts[0] };
+  const byFinding = scoreDiscovery(kase, row.finding, '');
+  assert.equal(byFinding.score, 0);
+  assert.equal(byFinding.inventedDefect, true);
+  const withSymptom = scoreDiscovery(kase, { ...row.finding, symptom: starts[1] }, '');
+  assert.equal(withSymptom.score, 0);
+  assert.equal(withSymptom.reason, 'finding answers a symptom the model wrote');
+});
+
+test('runDiscovery scores 0 when the investigation behind the finding has another symptom', async () => {
+  const r = repo();
+  try {
+    const plan = [
+      [{ name: 'start-investigation', arguments: { symptom: 'withdraw has a race in ledger.py' } }],
+      [{ name: 'read-repo-file', arguments: { investigationId: '$ID', path: 'src/bank/ledger.py' } }],
+      [{ name: 'record-finding', arguments: { investigationId: '$ID', finding: JSON.stringify({ kind: 'defect', hypothesis: 'withdraw checks the balance, then sleeps, so two withdrawals at the same time both pass.', citations: [{ file: 'src/bank/ledger.py', line: 2 }], reproducer: { testName: 'test_two_withdrawals_at_once', file: 'tests/test_ledger.py', asserts: 'one of two withdrawals succeeds' }, severity: { level: 'high', reason: 'overdraft' }, priority: { level: 'P1', reason: 'money' } }) } }],
+      [],
+    ];
+    let id = null;
+    let step = 0;
+    const ask = async (messages) => {
+      const last = messages.at(-1);
+      if (last.role === 'tool' && !id) id = JSON.parse(last.content).investigationId;
+      const calls = (plan[step++] ?? []).map((c) => ({ name: c.name, arguments: JSON.parse(JSON.stringify(c.arguments).replaceAll('$ID', id)) }));
+      return { ok: true, content: calls.length ? '' : 'done', toolCalls: calls };
+    };
+    const out = await runDiscovery(ask, { id: 'D1', symptom: 'My balance went below zero after two withdrawals.', truth: 'race' }, { tree: r.dir });
+    assert.equal(out.finding.symptom, 'withdraw has a race in ledger.py');
+    assert.equal(out.score, 0);
+    assert.equal(out.reason, 'finding answers a symptom the model wrote');
+  } finally {
+    r.cleanup();
   }
 });

@@ -26,6 +26,25 @@ It loosens no check.
 - Each run keeps its full tool calls (`toolCallLog`), with the full `record-finding` arguments
   and the full refusal texts.
 
+## One investigation, and the case's own symptom (added 19 Nov, before the freeze)
+
+A development check on set 1 (D-3, seed 11) found that the model could open a second
+investigation from a symptom it wrote itself, and record a defect grounded in it. Two rules
+follow; neither loosens a check:
+
+- **Tool:** one open investigation per person. A start with another symptom is refused until
+  the open investigation has a recorded finding. The refusal takes no slot and makes no call.
+  The recorded finding carries its investigation's symptom word for word.
+- **Score:** a run whose recorded finding answers any symptom other than the case's own scores 0
+  with the reason "finding answers a symptom the model wrote". This holds on every case, the
+  control included.
+- The stored D-3 run (`run/results/discovery-dev/discovery-dev-shape.jsonl`) is pinned in a test.
+  It had an empty final text and a recorded defect, and it scores 0.
+- **Limit:** in the deployed app the symptom arrives as a tool argument from the model. These
+  rules reduce the risk that a finding answers a report the user never made. They do not prove
+  that the text is the user's. In the bake-off, the score compares the finding with the case's
+  symptom, so there the check is exact.
+
 ## Control score: the final text is read too (in code)
 
 `scoreDiscovery(kase, finding, finalText)` in `bakeoff/tasks/discovery.js`.

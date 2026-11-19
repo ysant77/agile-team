@@ -108,3 +108,12 @@ test('the Forge read actions use no token and the configured branch', async (t) 
   assert.equal(refused.ok, false);
   assert.equal(seen.length, 2);
 });
+
+test('a ticket from a finding shows the report the finding answers', async (t) => {
+  const store = mockKvs(t);
+  store.set(`finding:${FINDING_ID}`, { ...finding(), symptom: 'My balance went to -60.00 after two withdrawals.' });
+  const posts = mockUser(t);
+  const r = await createTicket(draft({ findingId: FINDING_ID }));
+  assert.equal(r.ok, true, r.error);
+  assert.match(JSON.stringify(posts[0].description), /Answers the report: \\"My balance went to -60.00 after two withdrawals.\\"/);
+});
