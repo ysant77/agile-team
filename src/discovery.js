@@ -23,6 +23,8 @@ export const DISCOVERY_LIMITS = {
   lineCap: 400,
   sizeCap: 300_000,
   symptomMax: 2000,
+  // An open investigation with no finding blocks a new start for at most this long (24 h).
+  openMaxMs: 24 * 60 * 60 * 1000,
 };
 
 const ALLOW_PREFIXES = ['src/', 'tests/', 'docs/'];
@@ -151,11 +153,15 @@ export async function startInvestigation({ symptom, by, repo, ref }, d) {
   // check comes before any call, so a refused start takes no slot (dev check, 19 Nov: the model
   // opened a second investigation from a symptom it wrote itself).
   const refusal = (open) => ({ ok: false, error: `an investigation is open: ${open}; record a finding for it first` });
+  // A pointer older than the age limit (or with no start time) no longer blocks: the model may
+  // have stopped, used the budget or crashed, and a person is never locked out for good.
+  const live = (p) => Number.isFinite(p?.at) && d.now() - p.at < lim.openMaxMs;
   const open = await d.store.get(openKey(by));
-  if (open?.id && open.id !== id) return refusal(open.id);
-  if (!open) {
+  if (open?.id && open.id !== id && live(open)) return refusal(open.id);
+  if (open?.id !== id) {
+    if (open) await d.store.delete(openKey(by));
     try {
-      await d.store.set(openKey(by), { id }, { keyPolicy: 'FAIL_IF_EXISTS' });
+      await d.store.set(openKey(by), { id, at: d.now() }, { keyPolicy: 'FAIL_IF_EXISTS' });
     } catch {
       const now = await d.store.get(openKey(by));
       if (now?.id !== id) return refusal(now?.id ?? 'unknown');
