@@ -71,7 +71,7 @@ test('record the ACs: the hash of the ACs the verifier reads, with its audit eve
   const approvals = await readApprovals('BANK-9', d.store);
   assert.equal(approvals.acs.acHash, acHash(acs));
   assert.equal(d.events[0].event, 'acs.recorded');
-  const ctx = { ticket: { key: 'BANK-9', acceptanceCriteria: acs }, approvals, approvalEvents: new Map(d.events.map((e) => [e.seq, e])) };
+  const ctx = { ticket: { key: 'BANK-9', acceptanceCriteria: acs }, claimant: 'dev-1', approvals, approvalEvents: new Map(d.events.map((e) => [e.seq, e])) };
   assert.equal(acsRecorded(ctx).status, 'pass');
   assert.equal((await recordAcsAction({ key: 'BANK-9', accountId: 'x' }, deps({ canEdit: false }))).ok, false);
 });

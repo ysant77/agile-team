@@ -40,5 +40,16 @@ Every action, trigger and panel call that writes something.
   repeated call.
 - **Who may decide on a case.** Any commenter can record a decision today, the PR author
   included. The role rule waits for the owner's decision.
+- **Approvals written at the same moment.** `recordApproval` reads, changes and writes one KVS
+  key per work item. Two approvals at the same moment can lose one. Each approval keeps its
+  audit event, but the verifier counts only the entries in the store. Not fixed yet.
+- **FAIL_IF_EXISTS has not run on a live site.** The create-ticket and decision deduplication,
+  claim admission and the audit chain rely on the KVS option `keyPolicy: 'FAIL_IF_EXISTS'`. It
+  is tested only with a local double. If the deployed KVS ignored the option, deduplication would
+  silently do nothing. This is on the checklist of the first live run: create the same draft
+  twice, and post the same decision comment event twice.
+- **The keys never expire.** The `decision-seen:` and `ticket-create:` keys are never deleted
+  (a done `ticket-create:` key older than 24 hours is overwritten by a new create). They grow
+  by one per decision comment and per created draft.
 - **The browse check.** It asks Jira as the user, so it depends on the Rovo action running with
   the user's identity (as `create-ticket` already does).

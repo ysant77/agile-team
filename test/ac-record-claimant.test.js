@@ -31,9 +31,12 @@ test('ACs recorded by the claimant give unknown', () => {
 });
 
 test('a record with an unknown claimant gives unknown', () => {
-  for (const claimant of [null, undefined, '']) {
+  for (const claimant of [null, '']) {
     assert.equal(acsRecorded(ctxOf({ claimant })).status, 'unknown', String(claimant));
   }
+  const missing = ctxOf();
+  delete missing.claimant;
+  assert.equal(acsRecorded(missing).status, 'unknown');
 });
 
 test('no record and an unknown claimant stay advisory', () => {

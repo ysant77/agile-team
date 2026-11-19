@@ -101,7 +101,8 @@ test('a changed pin with an audited approval by another person passes; by the cl
 const ACS = [{ acId: 'AC1', statement: 'balance never below 0.00', check: { type: 'test_passes', args: ['test_BANK9_balance'] } }];
 const acRecord = (acs, seq, by = 'lead-1') => ({ acHash: acHash(acs), by, at: '2026-11-19T00:00:00Z', auditSeq: seq });
 const acEvent = (acs, by = 'lead-1') => ({ actor: by, event: 'acs.recorded', data: { key: KEY, acHash: acHash(acs) } });
-const acCtx = (ticketAcs, approvals, events = []) => ({ ticket: { key: KEY, acceptanceCriteria: ticketAcs }, approvals, approvalEvents: eventsMap(events) });
+// The claimant ('dev-1') is not the person who recorded the ACs ('lead-1').
+const acCtx = (ticketAcs, approvals, events = []) => ({ ticket: { key: KEY, acceptanceCriteria: ticketAcs }, claimant: 'dev-1', approvals, approvalEvents: eventsMap(events) });
 
 test('ACs with no audited record: advisory, shown as not checked', () => {
   const r = acsRecorded(acCtx(ACS, undefined));
