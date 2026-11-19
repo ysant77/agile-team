@@ -80,6 +80,8 @@ test('item 5: a failed save of the review property is an error, and no comment i
   const store = new Map();
   t.mock.method(kvs, 'get', async (k) => structuredClone(store.get(k)));
   t.mock.method(kvs, 'set', async (k, v) => { store.set(k, structuredClone(v)); });
+  // The person can see the work item (browse check of the action, docs/ACTIONS.md).
+  t.mock.method(api, 'asUser', () => ({ requestJira: async () => ({ ok: true, status: 200, json: async () => ({ id: '1' }) }) }));
   const calls = [];
   // route`...` returns an object that holds the path in value_.
   const pathOf = (r) => r?.value_ ?? String(r);

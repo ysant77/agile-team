@@ -1,6 +1,8 @@
 import { Queue } from '@forge/events';
 import { kvs } from '@forge/kvs';
 import { appendAudit } from './audit-store.js';
+import { canonical, sha256 } from './audit.js';
+import { createOnce, currentAccountId } from './action-guard.js';
 import { applyDecision, formatDecision, parseDecision } from './decision.js';
 import { admitClaim } from './claim-intake.js';
 import { readLatestCommit } from './github.js';
@@ -9,8 +11,22 @@ import { malformedAcLines, normaliseAcs, parseAcLines } from './ticket-spec.js';
 import { lintRequirement } from './lint.js';
 import { adfToText, checkStoryPoints, parseClaim } from './text.js';
 
-// Rovo action: create a work item and set story points.
+// Rovo action: create a work item and set story points. Rules (docs/ACTIONS.md): every input is
+// checked before any Jira call; Jira checks the user's create permission (the call is made as the
+// user); the same draft from the same person within 24 hours creates one work item (idempotency
+// key in KVS); each creation writes the audit event ticket.created. The user's confirmation of
+// the draft is the Rovo agent's step; the code cannot see the chat (limit, docs/ACTIONS.md).
+const PROJECT_KEY = /^[A-Z][A-Z0-9_]{1,9}$/;
+export const ISSUE_TYPES = ['Task', 'Story', 'Bug'];
+const CREATE_PENDING_MS = 10 * 60 * 1000;
+const CREATE_WINDOW_MS = 24 * 60 * 60 * 1000;
+
 export async function createTicket(payload) {
+  if (!payload || typeof payload !== 'object') return { ok: false, error: 'no input' };
+  const projectKey = String(payload.projectKey ?? '').trim().toUpperCase();
+  if (!PROJECT_KEY.test(projectKey)) return { ok: false, error: 'projectKey must be a Jira project key, for example BANK' };
+  const issueType = payload.issueType === undefined || payload.issueType === null || payload.issueType === '' ? 'Task' : String(payload.issueType).trim();
+  if (!ISSUE_TYPES.includes(issueType)) return { ok: false, error: `issueType must be one of ${ISSUE_TYPES.join(', ')}` };
   const storyPoints = checkStoryPoints(payload.storyPoints);
   const malformed = malformedAcLines(payload.acceptanceCriteria);
   if (malformed.length) {
@@ -23,19 +39,45 @@ export async function createTicket(payload) {
   }
   const grounding = ticketGrounding(payload);
   if (grounding) return { ok: false, error: grounding };
-  const result = await createIssue({
-    projectKey: String(payload.projectKey).trim().toUpperCase(),
-    summary: String(payload.summary).trim(),
+  const by = await currentAccountId();
+  if (!by) return { ok: false, error: 'Jira did not say who is asking, so no work item is created' };
+  const draft = {
+    projectKey,
+    summary: String(payload.summary ?? '').trim(),
     description: String(payload.description ?? ''),
-    issueType: payload.issueType,
+    issueType,
     storyPoints,
-    acceptanceCriteria: normaliseAcs(
-      parseAcLines(payload.acceptanceCriteria),
-      String(payload.projectKey).trim().toUpperCase(),
-    ),
-  });
+    acceptanceCriteria: normaliseAcs(parseAcLines(payload.acceptanceCriteria), projectKey),
+  };
+  // One work item per draft and person: a retried or repeated call returns the first result.
+  const onceKey = `ticket-create:${sha256(canonical({ by, ...draft }))}`;
+  const now = Date.now();
+  if (!(await createOnce(kvs, onceKey, { state: 'pending', at: now }))) {
+    const prior = await kvs.get(onceKey);
+    if (prior?.state === 'done' && now - prior.at < CREATE_WINDOW_MS) {
+      return { ok: true, key: prior.key, duplicate: true, note: `This draft was already created as ${prior.key}; no second work item.` };
+    }
+    if (prior?.state === 'pending' && now - prior.at < CREATE_PENDING_MS) {
+      return { ok: false, error: 'the same draft is being created now; check Jira before you try again' };
+    }
+    await kvs.set(onceKey, { state: 'pending', at: now }); // an old or stale entry
+  }
+  let result;
+  try {
+    result = await createIssue(draft);
+  } catch (error) {
+    await kvs.delete(onceKey);
+    throw error;
+  }
   console.log('create-ticket result', JSON.stringify(result));
-  return result;
+  if (!result.ok) {
+    await kvs.delete(onceKey); // nothing was created: the person may try again
+    return result;
+  }
+  await kvs.set(onceKey, { state: 'done', key: result.key, at: now });
+  const audit = await appendAudit({ actor: by, event: 'ticket.created', data: {
+    key: result.key, projectKey, issueType, storyPoints, acHash: sha256(canonical(draft.acceptanceCriteria)) } });
+  return { ...result, auditSeq: audit.seq };
 }
 
 // Every number, unit or threshold in a ticket must come from the user's request; otherwise the
@@ -81,7 +123,18 @@ export async function onComment(event) {
   const text = adfToText(comment.body);
   const decision = parseDecision(text);
   if (decision) {
-    await recordDecision(issueKey, decision, { by: comment.author?.accountId ?? null, at: new Date().toISOString() });
+    // A comment event can be delivered twice: one comment records one decision (finding E3).
+    const seen = `decision-seen:${issueKey}:${commentId}`;
+    if (!(await createOnce(kvs, seen, { at: new Date().toISOString() }))) {
+      console.log('decision comment already recorded', issueKey, commentId);
+      return;
+    }
+    try {
+      await recordDecision(issueKey, decision, { by: comment.author?.accountId ?? null, at: new Date().toISOString() });
+    } catch (error) {
+      await kvs.delete(seen); // not recorded: a later delivery may try again
+      throw error;
+    }
     return;
   }
   const claim = parseClaim(text);
