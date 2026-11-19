@@ -1,0 +1,31 @@
+{
+ "branch": "case/V19",
+ "head": "151000914147522fc9c44adba523ccd228026a21",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/web/index.html",
+   "status": "modified",
+   "patch": "@@ -47,10 +47,10 @@\n           <select name=\"from_account_id\" required></select>\n         </label>\n         <label>To account number\n-          <input name=\"to_account_number\" placeholder=\"YMS-0000-0002\" autocomplete=\"off\" required>\n+          <input name=\"to_account_number\" placeholder=\"YMS-0000-0002\" maxlength=\"32\" autocomplete=\"off\" required>\n         </label>\n         <label>Amount\n-          <input name=\"amount\" inputmode=\"decimal\" placeholder=\"25.00\" autocomplete=\"off\" required>\n+          <input name=\"amount\" inputmode=\"decimal\" placeholder=\"25.00\" maxlength=\"16\" autocomplete=\"off\" required>\n         </label>\n         <label>Reference (optional)\n           <input name=\"reference\" maxlength=\"40\" autocomplete=\"off\">\n"
+  },
+  {
+   "filename": "tests/test_web.py",
+   "status": "modified",
+   "patch": "@@ -121,3 +121,11 @@ def test_pages_are_served_without_external_assets(tmp_path):\n         text = path.read_text(encoding=\"utf-8\")\n         assert not re.search(r\"(src|href)=\\\"(https?:)?//\", text), path.name\n         assert \"@import\" not in text and \"url(http\" not in text, path.name\n+\n+\n+def test_transfer_inputs_have_length_limits():\n+    page = (WEB_DIR / \"index.html\").read_text(encoding=\"utf-8\")\n+    to_tag = re.search(r'<input[^>]*name=\"to_account_number\"[^>]*>', page).group(0)\n+    amount_tag = re.search(r'<input[^>]*name=\"amount\"[^>]*>', page).group(0)\n+    assert 'maxlength=\"32\"' in to_tag\n+    assert 'maxlength=\"16\"' in amount_tag\n"
+  }
+ ],
+ "additions": 10,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpc4104dp4/bench-bank-5/coverage.json\n367 passed, 1 deselected in 170.61s (0:02:50)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

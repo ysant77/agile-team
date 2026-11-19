@@ -1,0 +1,36 @@
+{
+ "branch": "case/V17",
+ "head": "8969d6337aefdabfd4fb25db13ec915846bd6e62",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "README.md",
+   "status": "modified",
+   "patch": "@@ -57,7 +57,7 @@ the session model is for a demo, not for a server that others can reach. The API\n | `GET /api/accounts` | The session customer's accounts. |\n | `GET /api/accounts/{id}` | One account. |\n | `GET /api/accounts/{id}/statement?from=YYYY-MM-DD&to=YYYY-MM-DD` | Lines with a running balance; both dates inclusive; default is the last 30 days. |\n-| `POST /api/transfers` | `{\"from_account_id\", \"to_account_number\", \"amount\", \"reference\"}`; amount is a decimal string. Requires an `Idempotency-Key` header: a retry with the same key returns the first transfer (200, `\"replayed\": true`); the same key with a different body is 422. Keys are per customer and expire after 24 hours; a failed attempt (for example insufficient funds) stores no key, so it can be retried. |\n+| `POST /api/transfers` | `{\"from_account_id\", \"to_account_number\", \"amount\", \"reference\"}`; amount is a decimal string. Requires an `Idempotency-Key` header: a retry with the same key returns the first transfer (200, `\"replayed\": true`); the same key with a different body is 422. Keys are per customer and expire after 48 hours; a failed attempt (for example insufficient funds) stores no key, so it can be retried. |\n \n Account routes answer 404 for any account the session customer does not own.\n \n"
+  },
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -296,7 +296,7 @@ class IdempotencyConflict(LedgerError):\n     \"\"\"The idempotency key was already used for a different request.\"\"\"\n \n \n-IDEMPOTENCY_WINDOW_SECONDS = 24 * 60 * 60\n+IDEMPOTENCY_WINDOW_SECONDS = 48 * 60 * 60\n \n \n def request_fingerprint(\n@@ -320,7 +320,7 @@ def transfer_once(\n     reference: str | None = None,\n     now: datetime | None = None,\n ) -> tuple[dict[str, object], bool]:\n-    \"\"\"Post a transfer at most once per (customer, key) within 24 hours.\n+    \"\"\"Post a transfer at most once per (customer, key) within 48 hours.\n \n     The key is checked and stored in the same write transaction as the postings, so a retry\n     after a timeout returns the first result instead of moving money twice. The stored result\n"
+  },
+  {
+   "filename": "tests/test_idempotency.py",
+   "status": "modified",
+   "patch": "@@ -76,12 +76,24 @@ def test_a_failed_attempt_stores_no_key(accounts):\n     assert replayed is False and entries(conn) == 1\n \n \n-def test_keys_expire_after_24_hours(accounts):\n+def test_keys_expire_after_48_hours(accounts):\n     _, conn, owner, source, target = accounts\n     start = datetime.now(UTC)\n     ledger.transfer_once(conn, owner, \"k\", source.id, target.id, Money.of(\"1.00\", \"EUR\"), now=start)\n-    later = start + timedelta(hours=25)\n+    later = start + timedelta(hours=49)\n     _, replayed = ledger.transfer_once(\n         conn, owner, \"k\", source.id, target.id, Money.of(\"2.00\", \"EUR\"), now=later\n     )\n     assert replayed is False and entries(conn) == 2\n+\n+\n+def test_a_key_is_still_known_after_47_hours(accounts):\n+    _, conn, owner, source, target = accounts\n+    start = datetime.now(UTC)\n+    ledger.transfer_once(conn, owner, \"k\", source.id, target.id, Money.of(\"1.00\", \"EUR\"), now=start)\n+    later = start + timedelta(hours=47)\n+    _, replayed = ledger.transfer_once(\n+        conn, owner, \"k\", source.id, target.id, Money.of(\"1.00\", \"EUR\"), now=later\n+    )\n+    assert replayed is True\n+    assert entries(conn) == 1\n"
+  }
+ ],
+ "additions": 17,
+ "deletions": 5,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpc27yhhdj/bench-bank-5/coverage.json\n367 passed, 1 deselected in 165.11s (0:02:45)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

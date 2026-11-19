@@ -1,0 +1,31 @@
+{
+ "branch": "case/V01",
+ "head": "6faac831c7223e110305f28302914ffe1523f7bd",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -44,7 +44,7 @@ NO_DESTINATION = \"destination account not found or cannot receive this transfer\"\n \n \n class SessionIn(BaseModel):\n-    customer_id: int\n+    customer_id: int = Field(ge=1)\n \n \n class TransferIn(BaseModel):\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,13 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_session_refuses_ids_below_one(bank):\n+    client = TestClient(bank[\"app\"])\n+    assert client.post(\"/api/session\", json={\"customer_id\": 0}).status_code == 422\n+    assert client.post(\"/api/session\", json={\"customer_id\": -1}).status_code == 422\n+    assert client.cookies.get(COOKIE) is None\n+    assert client.post(\"/api/session\", json={\"customer_id\": 999}).status_code == 404\n+    assert client.post(\"/api/session\", json={\"customer_id\": bank[\"owner\"]}).status_code == 200\n+    assert client.cookies.get(COOKIE) == str(bank[\"owner\"])\n"
+  }
+ ],
+ "additions": 11,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpdu7glmfv/bench-bank-5/coverage.json\n367 passed, 1 deselected in 178.70s (0:02:58)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

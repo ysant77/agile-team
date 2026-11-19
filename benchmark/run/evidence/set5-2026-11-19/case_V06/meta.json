@@ -1,0 +1,31 @@
+{
+ "branch": "case/V06",
+ "head": "f23ab87a04f12fefef27dcdffa61c93ed20f759f",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -51,7 +51,7 @@ class TransferIn(BaseModel):\n     from_account_id: int\n     to_account_number: str = Field(min_length=1, max_length=32)\n     amount: str = Field(pattern=r\"^\\d{1,12}(\\.\\d{1,3})?$\")\n-    reference: str | None = Field(default=None, max_length=40)\n+    reference: str | None = Field(default=None, max_length=35)\n \n \n def money_fields(prefix: str, minor: int, currency: str) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,12 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_reference_has_at_most_35_characters(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    ok = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"1.00\", reference=\"x\" * 35)\n+    assert ok.status_code == 201\n+    too_long = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"1.00\", reference=\"x\" * 36)\n+    assert too_long.status_code == 422\n+    assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"99.00\"\n"
+  }
+ ],
+ "additions": 10,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpja2sf9ut/bench-bank-5/coverage.json\n367 passed, 1 deselected in 165.59s (0:02:45)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

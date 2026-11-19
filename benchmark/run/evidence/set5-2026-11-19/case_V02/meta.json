@@ -1,0 +1,31 @@
+{
+ "branch": "case/V02",
+ "head": "ac3cc1c7ad4eb944c775585c185a491ec82a16d8",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -108,6 +108,7 @@ ACCOUNT_COLUMNS = \"id, number, customer_id, kind, currency, balance_minor\"\n \n \n def create_customer(conn: sqlite3.Connection, name: str, at: datetime | None = None) -> int:\n+    name = \" \".join(name.split())\n     if not name.strip():\n         raise LedgerError(\"customer name is empty\")\n     with write_txn(conn):\n"
+  },
+  {
+   "filename": "tests/test_ledger.py",
+   "status": "modified",
+   "patch": "@@ -269,3 +269,8 @@ def test_a_failed_rollback_to_stops_the_job_and_commits_nothing(tmp_path):\n     assert not conn.in_transaction\n     assert ledger.list_customers(conn) == []\n     assert conn.execute(\"SELECT COUNT(*) FROM app_flags\").fetchone()[0] == 0\n+\n+\n+def test_customer_name_whitespace_is_collapsed(conn):\n+    customer_id = ledger.create_customer(conn, \"  Ada   Abel  \")\n+    assert ledger.get_customer(conn, customer_id)[\"name\"] == \"Ada Abel\"\n"
+  }
+ ],
+ "additions": 6,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpwv13q_0q/bench-bank-5/coverage.json\n367 passed, 1 deselected in 178.59s (0:02:58)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

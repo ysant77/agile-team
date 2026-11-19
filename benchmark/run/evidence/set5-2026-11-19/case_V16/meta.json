@@ -1,0 +1,31 @@
+{
+ "branch": "case/V16",
+ "head": "92dc84d2d0b82106a8aa99f9dd1bb7aab680f00b",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/seed_data.py",
+   "status": "modified",
+   "patch": "@@ -105,7 +105,10 @@ def build(\n                 elif roll < 0.6:\n                     ledger.withdraw(conn, account_id, amount, \"Card payment\", moment)\n                 else:\n-                    target = rng.choice([a for a in by_currency[currency] if a != account_id])\n+                    others = [a for a in by_currency[currency] if a != account_id]\n+                    if not others:\n+                        continue\n+                    target = rng.choice(others)\n                     reference = rng.choice([\"Rent\", \"Dinner\", \"Gift\", \"Loan\", None])\n                     ledger.transfer(conn, account_id, target, amount, reference, moment)\n             except ledger.InsufficientFunds:\n"
+  },
+  {
+   "filename": "tests/test_seed_data.py",
+   "status": "modified",
+   "patch": "@@ -107,3 +107,20 @@ def test_invariants_catch_a_negative_running_balance(conn, at):\n     )\n     problems = ledger.check_invariants(conn)\n     assert any(\"negative running balance\" in p for p in problems), problems\n+\n+\n+def test_build_with_one_account_in_a_currency_completes(tmp_path):\n+    conn = ledger.open_db(tmp_path / \"one.db\")\n+    kept = None\n+    try:\n+        seed_data.build(conn, customers=5, accounts=5, days=3, end=date(2026, 1, 31))\n+    except IndexError as exc:\n+        kept = exc\n+    assert kept is None\n+    assert ledger.check_invariants(conn) == []\n+\n+\n+def test_small_build_is_unchanged(tmp_path):\n+    conn = small(tmp_path / \"small.db\")\n+    (entries,) = conn.execute(\"SELECT COUNT(*) FROM journal_entries\").fetchone()\n+    assert entries == 86\n"
+  }
+ ],
+ "additions": 21,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 97%]\n........                                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmphtepsljv/bench-bank-5/coverage.json\n368 passed, 1 deselected in 172.28s (0:02:52)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

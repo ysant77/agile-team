@@ -1,0 +1,31 @@
+{
+ "branch": "case/V09",
+ "head": "2b85ec252103c8379b534eaec9899f06b6e15aad",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager\n from datetime import UTC, date, datetime, timedelta\n from decimal import Decimal, InvalidOperation\n from pathlib import Path\n-from typing import Annotated\n+from typing import Annotated, Literal\n \n from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response\n from fastapi.staticfiles import StaticFiles\n@@ -172,6 +172,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         conn: Conn,\n         start: Annotated[date | None, Query(alias=\"from\")] = None,\n         end: Annotated[date | None, Query(alias=\"to\")] = None,\n+        kind: Literal[\"deposit\", \"withdrawal\", \"transfer\"] | None = None,\n     ) -> dict[str, object]:\n         for value in (start, end):\n             if value is not None and not EARLIEST_DATE <= value <= LATEST_DATE:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,11 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_statement_accepts_a_kind_filter(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    url = f\"/api/accounts/{bank['eur'].id}/statement\"\n+    for kind in (\"deposit\", \"withdrawal\", \"transfer\"):\n+        assert client.get(f\"{url}?kind={kind}\").status_code == 200\n+    assert client.get(f\"{url}?kind=bogus\").status_code == 422\n"
+  }
+ ],
+ "additions": 10,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpfbsl7of7/bench-bank-5/coverage.json\n367 passed, 1 deselected in 162.60s (0:02:42)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

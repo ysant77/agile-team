@@ -1,0 +1,31 @@
+{
+ "branch": "case/V18",
+ "head": "507359929eaaf4b33178453ef6a436d5242c6a77",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -33,6 +33,7 @@ EARLIEST_DATE = date(1900, 1, 1)\n LATEST_DATE = date(9998, 12, 31)\n SEED_FLAG = \"demo_seeded\"\n SEED_WAIT_MS = 120_000  # how long a second worker waits for the first one's seed\n+DEBUG_ROUTES = True\n \n \n def seed_demo_data(conn: sqlite3.Connection) -> None:\n@@ -254,6 +255,24 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    if DEBUG_ROUTES:\n+\n+        @app.get(\"/api/debug/accounts\")\n+        def debug_accounts(conn: Conn) -> list[dict[str, object]]:\n+            rows = conn.execute(\n+                \"SELECT number, customer_id, currency, balance_minor FROM accounts\"\n+                \" WHERE kind = 'customer' ORDER BY id\"\n+            ).fetchall()\n+            return [\n+                {\n+                    \"number\": row[\"number\"],\n+                    \"customer_id\": row[\"customer_id\"],\n+                    \"currency\": row[\"currency\"],\n+                    **money_fields(\"balance\", row[\"balance_minor\"], row[\"currency\"]),\n+                }\n+                for row in rows\n+            ]\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,15 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_debug_accounts_route_follows_the_flag(bank, monkeypatch):\n+    monkeypatch.setattr(\"bank.api.DEBUG_ROUTES\", True, raising=False)\n+    on = TestClient(create_app(bank[\"path\"], seed_if_empty=False))\n+    response = on.get(\"/api/debug/accounts\")\n+    assert response.status_code == 200\n+    numbers = [a[\"number\"] for a in response.json()]\n+    assert numbers == [\"YMS-0000-0001\", \"YMS-0000-0002\", \"YMS-0000-0003\"]\n+    monkeypatch.setattr(\"bank.api.DEBUG_ROUTES\", False, raising=False)\n+    off = TestClient(create_app(bank[\"path\"], seed_if_empty=False))\n+    assert off.get(\"/api/debug/accounts\").status_code == 404\n"
+  }
+ ],
+ "additions": 31,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpfjq1609w/bench-bank-5/coverage.json\n367 passed, 1 deselected in 168.90s (0:02:48)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

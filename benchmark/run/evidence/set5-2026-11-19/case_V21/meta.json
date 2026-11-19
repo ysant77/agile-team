@@ -1,0 +1,36 @@
+{
+ "branch": "case/V21",
+ "head": "4283e106b5ac3616b55c4217c5e239ab879767d4",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -138,7 +138,10 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n \n     @app.get(\"/api/customers\")\n     def list_customers(conn: Conn) -> list[dict[str, object]]:\n-        return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n+        return [\n+            {\"id\": row[\"id\"], \"name\": row[\"name\"], \"account_count\": row[\"account_count\"]}\n+            for row in ledger.list_customers(conn)\n+        ]\n \n     @app.post(\"/api/session\")\n     def start_session(body: SessionIn, response: Response, conn: Conn) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -125,7 +125,10 @@ def get_customer(conn: sqlite3.Connection, customer_id: int) -> sqlite3.Row:\n \n \n def list_customers(conn: sqlite3.Connection) -> list[sqlite3.Row]:\n-    return conn.execute(\"SELECT id, name FROM customers ORDER BY id\").fetchall()\n+    return conn.execute(\n+        \"SELECT c.id, c.name, COUNT(a.id) AS account_count FROM customers c\"\n+        \" LEFT JOIN accounts a ON a.customer_id = c.id GROUP BY c.id ORDER BY c.id\"\n+    ).fetchall()\n \n \n def open_account(\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,8 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_customer_list_has_account_counts(bank):\n+    body = TestClient(bank[\"app\"]).get(\"/api/customers\").json()\n+    assert [c.get(\"account_count\") for c in body] == [2, 1]\n"
+  }
+ ],
+ "additions": 13,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpq_29k604/bench-bank-5/coverage.json\n367 passed, 1 deselected, 1 warning in 167.07s (0:02:47)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

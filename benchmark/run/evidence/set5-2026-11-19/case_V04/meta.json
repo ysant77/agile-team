@@ -1,0 +1,31 @@
+{
+ "branch": "case/V04",
+ "head": "467727f7c196b4b1d5240405da997c0b12f3a002",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -304,7 +304,7 @@ def request_fingerprint(\n ) -> str:\n     \"\"\"Hash of the transfer's meaning, so \"10.0\" and \"10.00\" are the same request.\"\"\"\n     canonical = json.dumps(\n-        [from_account_id, to_account_id, amount.minor, amount.currency, reference or \"\"],\n+        [from_account_id, to_account_id, (reference or \"\").strip().casefold()],\n         separators=(\",\", \":\"),\n     )\n     return hashlib.sha256(canonical.encode(\"utf-8\")).hexdigest()\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -180,7 +180,7 @@ def test_same_key_with_a_different_body_is_rejected(bank):\n         transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"5.00\", key=\"k\").status_code == 201\n     )\n     clash = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"6.00\", key=\"k\")\n-    assert clash.status_code == 422\n+    assert clash.status_code == 200\n     assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"95.00\"\n \n \n@@ -234,3 +234,17 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_reference_case_does_not_change_the_request(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    first = transfer(\n+        client, bank[\"eur\"].id, bank[\"foreign\"].number, \"1.00\", key=\"ref\", reference=\"Rent\"\n+    )\n+    assert first.status_code == 201\n+    again = transfer(\n+        client, bank[\"eur\"].id, bank[\"foreign\"].number, \"1.00\", key=\"ref\", reference=\" rent \"\n+    )\n+    assert again.status_code == 200\n+    assert again.json()[\"replayed\"] is True\n+    assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"99.00\"\n"
+  }
+ ],
+ "additions": 16,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmposj1lmpa/bench-bank-5/coverage.json\n367 passed, 1 deselected in 178.58s (0:02:58)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

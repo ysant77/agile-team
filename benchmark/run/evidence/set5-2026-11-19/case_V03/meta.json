@@ -1,0 +1,31 @@
+{
+ "branch": "case/V03",
+ "head": "78b601aaaa37bc39096edfb14773bfa43dbb879f",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -29,7 +29,12 @@ def to_minor(amount: Decimal | str | int, currency: str) -> int:\n     \"\"\"Convert a major-unit amount to minor units. Floats are rejected.\"\"\"\n     if isinstance(amount, float):\n         raise TypeError(\"use Decimal or str for money, not float\")\n-    value = Decimal(amount)\n+    try:\n+        value = Decimal(amount)\n+    except ArithmeticError:\n+        raise ValueError(f\"{amount!r} is not a number\") from None\n+    if not value.is_finite():\n+        raise ValueError(f\"{amount!r} is not a finite amount\")\n     scaled = value.scaleb(exponent(currency)).quantize(Decimal(1), rounding=ROUND_HALF_EVEN)\n     return int(scaled)\n \n"
+  },
+  {
+   "filename": "tests/test_money.py",
+   "status": "modified",
+   "patch": "@@ -56,3 +56,25 @@ def test_money_of_rejects_extra_decimals():\n def test_money_of_rejects_non_numbers(value):\n     with pytest.raises(ValueError):\n         Money.of(value, \"EUR\")\n+\n+\n+def error_of(value):\n+    try:\n+        to_minor(value, \"EUR\")\n+    except Exception as exc:\n+        return type(exc)\n+    return None\n+\n+\n+def test_to_minor_refuses_non_numbers_with_value_error():\n+    for value in (\"abc\", \"Infinity\", \"-Infinity\", \"NaN\"):\n+        assert error_of(value) is ValueError, value\n+\n+\n+def test_to_minor_results_are_unchanged():\n+    assert to_minor(\"12.34\", \"EUR\") == 1234\n+    assert to_minor(\"0.125\", \"EUR\") == 12\n+    assert to_minor(\"0.135\", \"EUR\") == 14\n+    assert to_minor(\"5000\", \"JPY\") == 5000\n+    with pytest.raises(TypeError):\n+        to_minor(0.1, \"EUR\")\n"
+  }
+ ],
+ "additions": 28,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 97%]\n........                                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp0ogevfdz/bench-bank-5/coverage.json\n368 passed, 1 deselected in 174.69s (0:02:54)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}
