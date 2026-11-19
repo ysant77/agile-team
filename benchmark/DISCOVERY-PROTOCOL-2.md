@@ -56,10 +56,13 @@ A second development check (app a5bdb93, seed 11) gave two facts.
   contiguous part of the case's symptom and at least half its length. An invented symptom is
   still 0.
 - **D-3 recorded a defect that rests on a false claim about a test.** The hypothesis said that
-  an existing, passing test fails. `record-finding` now refuses three things for a defect:
-  - a finding with no `read-ci-results` call;
+  an existing, passing test fails. `record-finding` now refuses two things for a defect:
   - a reproducer that a read shows exists;
-  - a hypothesis sentence that names an existing test with a failure word (an open list).
+  - a hypothesis sentence that names an existing test with a failure word (an open list). If a
+    CI run on the commit concluded success, the refusal says so.
+  Test outcomes are not readable without a token, so the tools cannot confirm or refute a
+  failing-test claim; they refuse it as ungrounded. A test name that the model never read is not
+  caught.
 - Both stored runs are pinned in tests (`run/results/discovery-dev/discovery-dev-one.jsonl`):
   D-1 scores 1, and D-3 scores 0 by its finding.
 - Limit: these rules stop a false claim about a test. They do not stop a defect claimed in other

@@ -90,7 +90,7 @@ export const TOOL_SPECS = {
   'record-finding': {
     kind: 'write',
     purpose: 'Records the finding of an investigation as unconfirmed; code checks every cited line and number against the reads.',
-    use: 'Once, after the reads and read-ci-results, before any ticket draft. A reproducer is a new test.',
+    use: 'Once, after the reads, before any ticket draft. A reproducer is a new test.',
     avoid: 'Never cite a line that a read did not return, never invent a number, never set status reproduced, never claim that an existing test fails.',
     args: {
       investigationId: { type: 'string', required: true, description: 'The id from start-investigation.' },
