@@ -21,7 +21,9 @@ that the change reached the default branch.
 - The run comes from the pinned workflow file (`.github/workflows/ci.yml`), not from a workflow
   with the same display name. Every run of it on the head commit must succeed.
 - The pull request does not change a workflow (`.github/workflows/`), a composite action
-  (`.github/actions/`), any `conftest.py`, or the report plugin (`src/bank/testing/`). Such a
+  (`.github/actions/`), any `conftest.py`, the report plugin (`src/bank/testing/`), or a
+  dependency or pytest configuration file in any folder (`pyproject.toml`, `uv.lock`,
+  `pytest.ini`, `setup.cfg`, `tox.ini`, `requirements*.txt`; added 19 Nov, finding D2). Such a
   change makes the report unknown for every claim type. The verifier reads the pull request's
   full file list to check this.
 - The report comment comes from `github-actions[bot]` (checked by user id and type), is for the
@@ -168,3 +170,16 @@ from another app does not count.
 "advisory, not counted"; the deployed default until a bank PR shows the real check) or `enforce`
 (counted for `done`, and for `fixed` and `ready` when `onFixedReady` is true). Alert details,
 dismissals and dependency alerts need a token and are after the freeze (DESIGN 14g).
+
+## Regression of the configuration trust paths (19 Nov 2026, development sets, no model)
+
+`score.mjs` on sets 1 to 4 (the rebuilt pinned evidence), app `main` 341ea2d against
+`fix/trust-paths-dependency-config`. Right: 35, 18, 13, 15 on both. No control changed. Unsafe
+`supported`: no change.
+
+| Case | Kind | `main` | Branch | Note |
+|---|---|---|---|---|
+| B10 | valid, rule | cannot_verify | cannot_verify | reason now also names `pyproject.toml, uv.lock` as untrusted |
+| U17 | invalid | contradicted | cannot_verify | both accepted; the deselect in `pyproject.toml` now makes the report untrusted, so the missing test is no longer read from it |
+
+These are development sets; no claim is made before blind set 5.

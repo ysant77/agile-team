@@ -36,12 +36,16 @@ const runPath = (r) => String(r.path ?? '').split('@')[0];
 
 // Paths that decide how CI runs or how it writes the report. A PR that changes one of them can
 // make its own CI say anything, so its CI is not evidence (DESIGN 6, review of 16 Nov).
-// Entry forms: "dir/" (everything under it), "**/name" (a file with that name in any folder),
-// or an exact path. Composite actions and pytest's conftest.py run inside CI, so they count.
-export const DEFAULT_TRUST_PATHS = ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py'];
+// Entry forms: "dir/" (everything under it), "**/name" (a file with that name in any folder; a
+// "*" in the name matches any characters except "/"), or an exact path. Composite actions and
+// pytest's conftest.py run inside CI, so they count. Dependency and pytest configuration files
+// decide which plugins and options the test run loads, so they count too (finding D2, 19 Nov).
+export const CONFIG_TRUST_PATHS = ['**/pyproject.toml', '**/uv.lock', '**/pytest.ini', '**/setup.cfg', '**/tox.ini', '**/requirements*.txt'];
+export const DEFAULT_TRUST_PATHS = ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py', ...CONFIG_TRUST_PATHS];
+const nameMatches = (name, pattern) => new RegExp(`^${pattern.split('*').map((p) => p.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*')}$`).test(name);
 const matchesPath = (file, paths) => paths.some((g) => {
   if (g.endsWith('/')) return file.startsWith(g);
-  if (g.startsWith('**/')) return file === g.slice(3) || file.endsWith(`/${g.slice(3)}`);
+  if (g.startsWith('**/')) return nameMatches(file.split('/').pop(), g.slice(3));
   return file === g;
 });
 

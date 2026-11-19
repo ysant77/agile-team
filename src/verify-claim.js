@@ -9,6 +9,7 @@ import { addVerdictProperty, collectJira, collectReviews } from './jira-evidence
 import { applyReviewHold } from './review-hold.js';
 import { compactChecks } from './verdict-view.js';
 import { parseTwin } from './monitor.js';
+import { CONFIG_TRUST_PATHS } from './verifier/checks.js';
 import { buildDoneEvidence, formatEvidence } from './verifier/evidence.js';
 import { verify } from './verifier/verdict.js';
 
@@ -16,7 +17,9 @@ export const VERIFY_CONFIG = {
   requiredWorkflowPaths: ['.github/workflows/ci.yml'],
   reportTrustPaths: ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py', 'src/bank/testing/',
     // The scripts that write the repro and coverage blocks of the report.
-    'scripts/repro.py', 'scripts/changed_coverage.py', 'scripts/pinned.py'],
+    'scripts/repro.py', 'scripts/changed_coverage.py', 'scripts/pinned.py',
+    // Dependency and pytest configuration (finding D2, 19 Nov).
+    ...CONFIG_TRUST_PATHS],
   // Protected regression set (docs/PROTECTED-TESTS.md): true once the bank's main runs the
   // pinned step (scripts/pinned.py). Then a CI report without a pinned block gives unknown.
   // Set here, per repository, never read from a report.
