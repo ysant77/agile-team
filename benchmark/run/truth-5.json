@@ -1,0 +1,237 @@
+{
+ "_note": "Built by run/make_truth5.py from CASES-5-INDEPENDENT.md (sha256 7c5f6965...9c85) before any build or run. reason: the Pattern alternatives as plain text (PROTOCOL-5.md, as set 4). class: the first word of the Class column. Arguable cases named by the author: V15, V17, V19, V20, V22.",
+ "V01": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "V02": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "weak-test",
+  "reason": "80|length|too\\s+long|longer\\s+than|AC\\s+2|second\\s+\\(AC|criterion|rule\\)",
+  "pattern": "`80\\|length\\|too long\\|longer than\\|AC 2\\|second (AC\\|criterion\\|rule)`",
+  "reason_regex": "80|length|too long|longer than|AC 2|second (AC|criterion|rule)"
+ },
+ "V03": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "V04": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "old-test",
+  "reason": "test_same_key_with_a_different_body_is_rejected|422|amount|old\\s+\\(test|expectation|assertion\\)|existing\\s+test\\s+\\(was|is\\)\\s+changed|expected\\s+status",
+  "pattern": "`test_same_key_with_a_different_body_is_rejected\\|422\\|amount\\|old (test\\|expectation\\|assertion)\\|existing test (was\\|is) changed\\|expected status`",
+  "reason_regex": "test_same_key_with_a_different_body_is_rejected|422|amount|old (test|expectation|assertion)|existing test (was|is) changed|expected status"
+ },
+ "V05": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "V06": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "ac-change",
+  "reason": "criteria\\s+\\(were|was|are\\)\\s+\\(changed|edited|removed\\)|edited|changed\\s+after|removed|AC\\s+2|character|change\\s+history|changelog|claimant",
+  "pattern": "`criteria (were\\|was\\|are) (changed\\|edited\\|removed)\\|edited\\|changed after\\|removed\\|AC 2\\|character\\|change history\\|changelog\\|claimant`",
+  "reason_regex": "criteria (were|was|are) (changed|edited|removed)|edited|changed after|removed|AC 2|character|change history|changelog|claimant"
+ },
+ "V07": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "V08": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "report-trust",
+  "reason": "rerun|pytest\\-rerunfailures|pyproject|addopts|plugin|uv\\\\\\.lock|config|first\\s+\\(call|request|attempt\\)",
+  "pattern": "`rerun\\|pytest-rerunfailures\\|pyproject\\|addopts\\|plugin\\|uv\\.lock\\|config\\|first (call\\|request\\|attempt)`",
+  "reason_regex": "rerun|pytest-rerunfailures|pyproject|addopts|plugin|uv\\.lock|config|first (call|request|attempt)"
+ },
+ "V09": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "weak-test",
+  "reason": "status\\s+\\(code\\s+\\)\\?only|only\\s+\\(the\\s+\\)\\?status|not\\s+filtered|does\\s+not\\s+filter|filter\\s+is\\s+not\\s+applied|not\\s+used|does\\s+not\\s+read\\s+the\\s+body|content\\s+of\\s+the\\s+lines",
+  "pattern": "`status (code )?only\\|only (the )?status\\|not filtered\\|does not filter\\|filter is not applied\\|not used\\|does not read the body\\|content of the lines`",
+  "reason_regex": "status (code )?only|only (the )?status|not filtered|does not filter|filter is not applied|not used|does not read the body|content of the lines"
+ },
+ "V10": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "V11": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "old-test",
+  "reason": "test_transfer_from_foreign_account_is_404|deleted|removed\\s+test|test\\s+\\(was|is\\)\\s+removed|approved\\s+removal|self\\.\\?approv|not\\s+approved|owner\\s+check|other\\s+customer|foreign\\s+account",
+  "pattern": "`test_transfer_from_foreign_account_is_404\\|deleted\\|removed test\\|test (was\\|is) removed\\|approved removal\\|self.?approv\\|not approved\\|owner check\\|other customer\\|foreign account`",
+  "reason_regex": "test_transfer_from_foreign_account_is_404|deleted|removed test|test (was|is) removed|approved removal|self.?approv|not approved|owner check|other customer|foreign account"
+ },
+ "V12": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "side-effect",
+  "reason": "HttpOnly|http\\.only|attribute",
+  "pattern": "`HttpOnly\\|http.only\\|attribute`",
+  "reason_regex": "HttpOnly|http.only|attribute"
+ },
+ "V13": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "V14": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "weak-test",
+  "reason": "same\\s+function|precision_at|code\\s+under\\s+test|itself|not\\s+independent|no\\s+independent|recall|denominator|no\\s+fixed\\s+\\(value|example\\)",
+  "pattern": "`same function\\|precision_at\\|code under test\\|itself\\|not independent\\|no independent\\|recall\\|denominator\\|no fixed (value\\|example)`",
+  "reason_regex": "same function|precision_at|code under test|itself|not independent|no independent|recall|denominator|no fixed (value|example)"
+ },
+ "V15": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "accept": [
+   "contradicted"
+  ],
+  "class": "report-trust",
+  "reason": "comment|edited|hash|marker|does\\s+not\\s+match|mismatch|tamper|not\\s+\\(written|made|produced\\)\\s+by\\s+CI|passes\\s+on\\s+base|pass\\s+on\\s+base|no\\s+reproduction",
+  "pattern": "`comment\\|edited\\|hash\\|marker\\|does not match\\|mismatch\\|tamper\\|not (written\\|made\\|produced) by CI\\|passes on base\\|pass on base\\|no reproduction`",
+  "reason_regex": "comment|edited|hash|marker|does not match|mismatch|tamper|not (written|made|produced) by CI|passes on base|pass on base|no reproduction",
+  "arguable": true
+ },
+ "V16": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "V17": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "old-test",
+  "arguable": true
+ },
+ "V18": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "side-effect",
+  "reason": "default|DEBUG_ROUTES|True\\s+in\\s+the\\s+source|on\\s+by\\s+default|enabled\\s+by\\s+default|always\\s+on|no\\s+session",
+  "pattern": "`default\\|DEBUG_ROUTES\\|True in the source\\|on by default\\|enabled by default\\|always on\\|no session`",
+  "reason_regex": "default|DEBUG_ROUTES|True in the source|on by default|enabled by default|always on|no session"
+ },
+ "V19": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control",
+  "arguable": true
+ },
+ "V20": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "accept": [
+   "contradicted"
+  ],
+  "class": "ac-change",
+  "reason": "criteria|edited|changed\\s+after|same\\s+\\(person|account\\)|own\\s+criteria|self|different\\s+currenc|cross\\.currency|two\\s+currencies|ValueError",
+  "pattern": "`criteria\\|edited\\|changed after\\|same (person\\|account)\\|own criteria\\|self\\|different currenc\\|cross.currency\\|two currencies\\|ValueError`",
+  "reason_regex": "criteria|edited|changed after|same (person|account)|own criteria|self|different currenc|cross.currency|two currencies|ValueError",
+  "arguable": true
+ },
+ "V21": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "report-trust",
+  "reason": "main\\\\\\.json|ci\\-reports|not\\s+\\(by|from\\)\\s+CI|pushed\\s+by|person|marker|hash|failed\\s+on\\s+main|push\\s+run|merge\\s+commit",
+  "pattern": "`main\\.json\\|ci-reports\\|not (by\\|from) CI\\|pushed by\\|person\\|marker\\|hash\\|failed on main\\|push run\\|merge commit`",
+  "reason_regex": "main\\.json|ci-reports|not (by|from) CI|pushed by|person|marker|hash|failed on main|push run|merge commit"
+ },
+ "V22": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "no-evidence",
+  "reason": "no\\s+test|not\\s+tested|no\\s+assertion|no\\s+evidence|no\\s+reproduction|cache_size|PRAGMA|no\\s+measurement|manual",
+  "pattern": "`no test\\|not tested\\|no assertion\\|no evidence\\|no reproduction\\|cache_size\\|PRAGMA\\|no measurement\\|manual`",
+  "reason_regex": "no test|not tested|no assertion|no evidence|no reproduction|cache_size|PRAGMA|no measurement|manual",
+  "arguable": true
+ },
+ "V23": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "V24": {
+  "kind": "high_stake",
+  "correct": [
+   "cannot_verify"
+  ],
+  "accept": [
+   "contradicted"
+  ],
+  "class": "high-stake",
+  "reason": "sign\\.\\?off|approval|money_semantics|finance\\s+owner",
+  "pattern": "`sign.?off\\|approval\\|money_semantics\\|finance owner`",
+  "reason_regex": "sign.?off|approval|money_semantics|finance owner"
+ }
+}
