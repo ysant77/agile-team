@@ -1,0 +1,31 @@
+{
+ "branch": "case/I07",
+ "head": "343f19a461b296fa50f18e480828733eec510ae4",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -9,6 +9,8 @@ through ``owned_account``, which answers 404 for accounts of other customers.\n \n from __future__ import annotations\n \n+import csv\n+import io\n import os\n import sqlite3\n from collections.abc import AsyncIterator, Iterator\n@@ -203,6 +205,41 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             ],\n         }\n \n+    @app.get(\"/api/accounts/{account_id}/statement.csv\")\n+    def export_statement(\n+        account: OwnedAccount,\n+        conn: Conn,\n+        start: Annotated[date | None, Query(alias=\"from\")] = None,\n+        end: Annotated[date | None, Query(alias=\"to\")] = None,\n+    ) -> Response:\n+        for value in (start, end):\n+            if value is not None and not EARLIEST_DATE <= value <= LATEST_DATE:\n+                raise HTTPException(400, f\"dates must be between {EARLIEST_DATE} and {LATEST_DATE}\")\n+        end = end or datetime.now(UTC).date()\n+        start = start or end - timedelta(days=STATEMENT_DAYS - 1)\n+        try:\n+            st = ledger.statement(conn, account.id, start, end)\n+        except ledger.LedgerError as exc:\n+            raise HTTPException(400, str(exc)) from None\n+        out = io.StringIO()\n+        writer = csv.writer(out, lineterminator=\"\\n\")\n+        writer.writerow(\n+            [\"entry_id\", \"posted_at\", \"kind\", \"description\", \"reference\", \"amount\", \"balance\"]\n+        )\n+        for line in st.lines:\n+            writer.writerow(\n+                [\n+                    line.entry_id,\n+                    line.posted_at,\n+                    line.kind,\n+                    line.description,\n+                    line.reference or \"\",\n+                    from_minor(line.amount_minor, account.currency),\n+                    from_minor(line.balance_minor, account.currency),\n+                ]\n+            )\n+        return Response(out.getvalue(), media_type=\"text/csv\")\n+\n     @app.post(\"/api/transfers\", status_code=201)\n     def create_transfer(\n         body: TransferIn,\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,24 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_statement_csv_header(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = client.get(f\"/api/accounts/{bank['eur'].id}/statement.csv?from=2026-05-01\")\n+    assert response.status_code == 200\n+    assert response.headers[\"content-type\"].startswith(\"text/csv\")\n+    header = response.text.splitlines()[0]\n+    assert header == \"entry_id,posted_at,kind,description,reference,amount,balance\"\n+\n+\n+def test_statement_csv_one_row_per_line(bank, at):\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"2.50\", \"EUR\"), at=at(\"2026-05-02\"))\n+    conn.close()\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    url = f\"/api/accounts/{bank['eur'].id}/statement.csv?from=2026-05-01&to=2026-05-31\"\n+    rows = client.get(url).text.splitlines()[1:]\n+    assert len(rows) == 2\n+    assert rows[0].split(\",\")[-2:] == [\"100.00\", \"100.00\"]\n+    assert rows[1].split(\",\")[-2:] == [\"2.50\", \"102.50\"]\n"
+  }
+ ],
+ "additions": 58,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n............                                                             [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp5l50bpe_/bench-bank-i/coverage.json\n300 passed, 1 deselected in 216.01s (0:03:36)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

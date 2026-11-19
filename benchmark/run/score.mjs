@@ -17,6 +17,8 @@ const APP = resolve(opt('--app')[0]);
 const OUT = resolve(opt('--out')[0]);
 const manifests = opt('--manifest').flatMap((p) => JSON.parse(readFileSync(p, 'utf8')));
 const imp = (p) => import(pathToFileURL(join(APP, p)).href);
+// SCORER-CHANGES 20: run facts and report hash markers, as the bank CI gives since bank PR 22.
+const sim = await import(new URL('./sim-provenance.mjs', import.meta.url).href);
 const { decide, VERIFY_CONFIG } = await imp('src/verify-claim.js');
 const { collectGithub, collectPrStats } = await imp('src/github-evidence.js');
 const { arbitrate } = await imp('src/arbitration.js');
@@ -119,8 +121,9 @@ function recordGithub(c, ev, prNumber) {
   const rerun = g.failedRunThenRerun || g.infraFailureThenRerun;
   // S20: the report comes from a Nightly workflow; the CI workflow run on the head was cancelled.
   const ciPath = g.reportFromWorkflow ? `.github/workflows/${g.reportFromWorkflow}.yml` : CI_PATH;
-  const runs = [{ id: 9000 + prNumber, name: g.reportFromWorkflow ? 'Nightly' : 'CI', path: ciPath, head_sha: head, status: 'completed', conclusion: runOk ? 'success' : 'failure',
-    created_at: at(0), updated_at: at(9), run_started_at: at(0), run_attempt: rerun ? 2 : 1, html_url: 'x' }];
+  const runFacts = { headBranch: `case-${c.id.toLowerCase()}`, repo: REPO, fork: Boolean(g.fork) };
+  const runs = [sim.withRunFacts({ id: 9000 + prNumber, name: g.reportFromWorkflow ? 'Nightly' : 'CI', path: ciPath, head_sha: head, status: 'completed', conclusion: runOk ? 'success' : 'failure',
+    created_at: at(0), updated_at: at(9), run_started_at: at(0), run_attempt: rerun ? 2 : 1, html_url: 'x' }, runFacts)];
   // Earlier attempts of a re-run: the job steps, with the step that failed.
   const step = (name, conclusion) => ({ name, conclusion });
   const attempts = rerun ? { 1: { jobs: [{ name: 'test', conclusion: 'failure', steps: g.failedRunThenRerun
@@ -129,7 +132,7 @@ function recordGithub(c, ev, prNumber) {
   // SCORER-CHANGES 17: the jobs of a cancelled run are what the case states: one job, cancelled,
   // no failed step.
   const cancelledJobs = { jobs: [{ name: 'test', conclusion: 'cancelled', steps: [step('Set up job', 'success')] }] };
-  if (g.cancelledRunOnHead) runs.push({ id: 9500 + prNumber, name: 'CI', path: CI_PATH, head_sha: prHead, status: 'completed', conclusion: 'cancelled', created_at: at(20), updated_at: at(21), run_started_at: at(20), run_attempt: 1, html_url: 'x' });
+  if (g.cancelledRunOnHead) runs.push(sim.withRunFacts({ id: 9500 + prNumber, name: 'CI', path: CI_PATH, head_sha: prHead, status: 'completed', conclusion: 'cancelled', created_at: at(20), updated_at: at(21), run_started_at: at(20), run_attempt: 1, html_url: 'x' }, runFacts));
   let report = ev.report ? structuredClone(ev.report) : null;
   if (report && g.reportFromWorkflow) {
     delete report.repro;
@@ -137,6 +140,8 @@ function recordGithub(c, ev, prNumber) {
   }
   if (report) for (const t of report.tests ?? []) delete t.duration_s;
   if (report && g.noCoverageBlock) delete report.coverage;
+  // SCORER-CHANGES 20: the report as CI wrote it, before a user's edit (B12); the marker is its hash.
+  const ciText = report ? JSON.stringify(report) : null;
   if (report && g.reportEditedByUser) {
     for (const t of report.tests) if (t.outcome !== 'passed') t.outcome = 'passed';
     if (report.repro?.full_suite) report.repro.full_suite = { outcome: 'passed', passed: report.tests.length, failed: 0 };
@@ -147,13 +152,31 @@ function recordGithub(c, ev, prNumber) {
   const main = merged && report ? 'report' : mainReport;
   const files = ev.meta.files.map((f) => ({ filename: f.filename, status: f.status, previous_filename: f.previous_filename, patch: f.patch }));
   const baseTip = g.baseMovedTo ? (ev.meta.base_tip ?? c.baseTipSha ?? 'b'.repeat(40)) : ev.meta.merge_base;
+  // The pinned PR run uploads a marker only when it is the ci.yml run that posts the bot report.
+  const marker = Boolean(report) && !g.reportFromWorkflow && !g.noBotReport && !g.fork;
   return { pulls, runs, attempts, cancelledJobs, cancelledRunId: g.cancelledRunOnHead ? 9500 + prNumber : null, report, comment, files, filesTruncated: Boolean(g.filesTruncated), runs404: Boolean(g.runs404),
-    stats: { additions: ev.meta.additions, deletions: ev.meta.deletions }, prHead, main, baseTip };
+    stats: { additions: ev.meta.additions, deletions: ev.meta.deletions }, prHead, main, baseTip, ciText, marker, pushRunId: 7000 + prNumber };
 }
 
 export function fetchFrom(d) {
   const page = (u) => Number(new URL(u).searchParams.get('page') ?? 1);
+  // main.json as served (also hashed for the push run's marker, SCORER-CHANGES 20).
+  const mainOf = () => (d.main === 'report' ? { ...d.report, head_sha: d.runs[0].head_sha } : d.main);
   const routes = [
+    // SCORER-CHANGES 20: the push run on main for the main.json commit, and the run artifacts.
+    [/\/actions\/runs\?head_sha=[0-9a-f]+&event=push/, (u) => {
+      const sha = new URL(u).searchParams.get('head_sha');
+      const main = mainOf();
+      if (d.runs404) return 404;
+      return { workflow_runs: main && d.pushRunId && main.head_sha === sha ? [sim.pushRun({ id: d.pushRunId, sha, repo: REPO })] : [] };
+    }],
+    [/\/actions\/runs\/\d+\/artifacts/, (u) => {
+      const id = Number(/runs\/(\d+)\/artifacts/.exec(u)[1]);
+      if (id === d.runs?.[0]?.id) return sim.prArtifacts({ attempt: d.runs[0].run_attempt, ciText: d.ciText, marker: d.marker });
+      if (id === d.cancelledRunId) return { total_count: 0, artifacts: [] };
+      if (d.pushRunId && id === d.pushRunId && mainOf()) return sim.mainArtifacts(JSON.stringify(mainOf()));
+      return 404;
+    }],
     [/\/pulls\?/, (u) => (page(u) === 1 ? d.pulls : [])],
     // SCORER-CHANGES 17: attempts are kept per run id. The main run has its earlier attempts;
     // the cancelled run (id 9500 + PR number) has its own attempt only. An attempt's conclusion is the
@@ -178,7 +201,7 @@ export function fetchFrom(d) {
     [/\/branches\/main$/, () => ({ name: 'main', commit: { sha: d.baseTip } })],
     [/\/check-runs/, () => ({ check_runs: [{ name: 'CodeQL', app: { slug: 'github-advanced-security', id: 57789 }, head_sha: d.prHead, status: 'completed', conclusion: 'success', output: { title: 'No new alerts' } }] })],
     [/\/contents\/main\.json/, () => {
-      const main = d.main === 'report' ? { ...d.report, head_sha: d.runs[0].head_sha } : d.main;
+      const main = mainOf();
       return main ? { content: Buffer.from(JSON.stringify(main)).toString('base64') } : 404;
     }],
   ];

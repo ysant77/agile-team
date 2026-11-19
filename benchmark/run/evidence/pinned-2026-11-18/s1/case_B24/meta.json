@@ -1,0 +1,26 @@
+{
+ "branch": "case/B24",
+ "head": "c62b9acd08a66a5bee5a37c8f8573f254bab3516",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "docs/spikes/statement-export.md",
+   "status": "added",
+   "patch": "@@ -0,0 +1,25 @@\n+# Spike: statement export formats\n+\n+Ticket: BENCH-24. Time box: one day. No production code changes.\n+\n+## Question\n+\n+Which file format should a customer get when they export a statement: CSV, OFX or PDF?\n+\n+## Findings\n+\n+- CSV is the cheapest. `ledger.statement` already returns every field a row needs: posting time,\n+  kind, description, reference, signed amount and running balance. A writer is about 30 lines.\n+- OFX needs a stable transaction id per line. `entry_id` is stable, but one entry can have two\n+  lines on the same account only for transfers to oneself, which the ledger refuses.\n+- PDF needs a layout library that the project does not have. It adds a dependency and a\n+  second code path to test, so it is not worth it for a demo bank.\n+\n+## Recommendation\n+\n+Build CSV first, behind `GET /api/accounts/{id}/statement.csv`, with amounts as plain decimal\n+strings in the account currency. Revisit OFX only when a customer asks for it.\n+\n+## Out of scope\n+\n+Scheduled exports, e-mail delivery and a download history.\n"
+  }
+ ],
+ "additions": 25,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "........................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n..........                                                               [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp497c8rpc/bench-bank/coverage.json\n298 passed, 1 deselected in 333.08s (0:05:33)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

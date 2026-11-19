@@ -1,0 +1,221 @@
+{
+ "branch": "case/B28",
+ "head": "55bebe4af020ab5256283e1a51dcdced364a7a88",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "README.md",
+   "status": "modified",
+   "patch": "@@ -170,3 +170,5 @@ full history before any history rewrite or new remote.\n ## Licence\n \n MIT. See [LICENSE](LICENSE).\n+\n+Source files carry an SPDX license header.\n"
+  },
+  {
+   "filename": "scripts/changed_coverage.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Write the coverage block of the CI report (DESIGN 15c).\n \n     uv run python scripts/changed_coverage.py --base <sha> --coverage coverage.json \\\\\n"
+  },
+  {
+   "filename": "scripts/repro.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Run the pull request's test files on the base commit and write the repro block (DESIGN 15b).\n \n     uv run python scripts/repro.py --base <sha> --head <sha> --head-report ci-report.json\n"
+  },
+  {
+   "filename": "scripts/scenario.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Scenario generator: builds the git side of one scenario run.\n \n For a scenario file `scenarios/Snn.toml` and a Jira issue key, it\n"
+  },
+  {
+   "filename": "seeds/README.md",
+   "status": "modified",
+   "patch": "@@ -84,3 +84,5 @@ resampled apart), on the clean model and the weak model.\n \n Make the change on a scratch branch, then `git diff > seeds/<name>.patch`, and run\n `git apply --check seeds/<name>.patch` on a clean checkout of `main`.\n+\n+Source files carry an SPDX license header.\n"
+  },
+  {
+   "filename": "src/bank/__init__.py",
+   "status": "modified",
+   "patch": "@@ -1 +1,2 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Synthetic demo bank service.\"\"\"\n"
+  },
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"HTTP API and web front end for YMS Bank.\n \n The session is a demo stand-in: ``POST /api/session`` stores the chosen customer id in the\n"
+  },
+  {
+   "filename": "src/bank/db.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"SQLite connections and explicit write transactions.\"\"\"\n \n from __future__ import annotations\n"
+  },
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Double-entry ledger for YMS Bank on SQLite.\n \n Every posting is a journal entry whose lines sum to zero per currency. A positive line adds to\n@@ -330,6 +331,8 @@ def transfer_once(\n     \"\"\"\n     if from_account_id == to_account_id:\n         raise LedgerError(\"cannot transfer to the same account\")\n+    if not key.strip():\n+        raise LedgerError(\"idempotency key is empty\")\n     now = now or datetime.now(UTC)\n     fingerprint = request_fingerprint(from_account_id, to_account_id, amount, reference)\n     oldest = timestamp(now - timedelta(seconds=IDEMPOTENCY_WINDOW_SECONDS))\n"
+  },
+  {
+   "filename": "src/bank/migrate.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Numbered SQL migrations with an up and a down section each.\n \n A migration file is ``migrations/NNNN_name.sql``. The line ``-- migrate:up`` starts the up\n"
+  },
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Money in integer minor units, with ISO 4217 exponents and banker's rounding.\"\"\"\n \n from __future__ import annotations\n"
+  },
+  {
+   "filename": "src/bank/seed_data.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Build a synthetic YMS Bank database from a fixed seed.\n \n All people, account numbers and amounts are made up. The same seed and end date always give\n"
+  },
+  {
+   "filename": "src/bank/testing/__init__.py",
+   "status": "modified",
+   "patch": "@@ -1 +1,2 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Test tooling shipped with the demo, such as the CI report plugin.\"\"\"\n"
+  },
+  {
+   "filename": "src/bank/testing/ci_report.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Pytest plugin that writes the ``aat-ci-report/2`` JSON report.\n \n Enable it with ``-p bank.testing.ci_report`` (the project's pytest config does this) and write\n"
+  },
+  {
+   "filename": "src/fraud/__init__.py",
+   "status": "modified",
+   "patch": "@@ -1 +1,2 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Synthetic fraud score kit for the YMS Bank demo (synthetic data only).\"\"\"\n"
+  },
+  {
+   "filename": "src/fraud/data.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Synthetic card transactions for the YMS Bank fraud score demo.\n \n Everything here is made up from a fixed seed: no real people, cards, merchants or institutions.\n"
+  },
+  {
+   "filename": "src/fraud/evaluate.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Evaluation for the fraud score: ranking metrics, drift, fairness and data hashes.\"\"\"\n \n from __future__ import annotations\n"
+  },
+  {
+   "filename": "src/fraud/features.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Feature matrix for the fraud score.\n \n Each feature records, per row, its source time: the time of the latest data it was built from.\n"
+  },
+  {
+   "filename": "src/fraud/model.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Train and evaluate the demo fraud score with a time-based split.\n \n The model is fitted on days 1 to 45. The decision threshold is chosen on days 46 to 60\n"
+  },
+  {
+   "filename": "tests/conftest.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n import importlib.util\n import os\n import threading\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n import re\n import uuid\n \n"
+  },
+  {
+   "filename": "tests/test_bench.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n import time\n \n import pytest\n"
+  },
+  {
+   "filename": "tests/test_bench28_blank_key.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,30 @@\n+from bank import ledger\n+from bank.money import Money\n+\n+\n+def _setup(conn):\n+    customer = ledger.create_customer(conn, \"Key Payer\")\n+    a = ledger.open_account(conn, customer, \"EUR\")\n+    b = ledger.open_account(conn, ledger.create_customer(conn, \"Key Payee\"), \"EUR\")\n+    ledger.deposit(conn, a.id, Money.of(\"20.00\", \"EUR\"))\n+    return customer, a, b\n+\n+\n+def test_BENCH28_blank_idempotency_key_is_refused(conn):\n+    customer, a, b = _setup(conn)\n+    try:\n+        ledger.transfer_once(conn, customer, \"   \", a.id, b.id, Money.of(\"1.00\", \"EUR\"))\n+        outcome = \"accepted\"\n+    except ledger.LedgerError:\n+        outcome = \"refused\"\n+    assert outcome == \"refused\"\n+    assert ledger.get_account(conn, a.id).balance_minor == 2000\n+\n+\n+def test_BENCH28_real_key_still_replays(conn):\n+    customer, a, b = _setup(conn)\n+    amount = Money.of(\"1.00\", \"EUR\")\n+    first, replayed = ledger.transfer_once(conn, customer, \"k-1\", a.id, b.id, amount)\n+    again, replayed_again = ledger.transfer_once(conn, customer, \"k-1\", a.id, b.id, amount)\n+    assert (replayed, replayed_again) == (False, True)\n+    assert first == again\n"
+  },
+  {
+   "filename": "tests/test_changed_coverage.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"scripts/changed_coverage.py: coverage of the changed lines (DESIGN 15c).\"\"\"\n \n import importlib.util\n"
+  },
+  {
+   "filename": "tests/test_ci_report.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n import hashlib\n import json\n import subprocess\n"
+  },
+  {
+   "filename": "tests/test_concurrency.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n import threading\n \n from bank import ledger\n"
+  },
+  {
+   "filename": "tests/test_fraud_data.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n import pytest\n \n pytest.importorskip(\"sklearn\", reason=\"needs the fraud extra: uv sync --extra fraud\")\n"
+  },
+  {
+   "filename": "tests/test_fraud_evaluate.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n import pytest\n \n pytest.importorskip(\"sklearn\", reason=\"needs the fraud extra: uv sync --extra fraud\")\n"
+  },
+  {
+   "filename": "tests/test_fraud_features.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n import pytest\n \n pytest.importorskip(\"sklearn\", reason=\"needs the fraud extra: uv sync --extra fraud\")\n"
+  },
+  {
+   "filename": "tests/test_fraud_model.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n import pytest\n \n pytest.importorskip(\"sklearn\", reason=\"needs the fraud extra: uv sync --extra fraud\")\n"
+  },
+  {
+   "filename": "tests/test_idempotency.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"transfer_once: one transfer per (customer, key), stored in the transfer's transaction.\"\"\"\n \n import sqlite3\n"
+  },
+  {
+   "filename": "tests/test_ledger.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n from datetime import date\n \n import pytest\n"
+  },
+  {
+   "filename": "tests/test_migrate.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n import sqlite3\n \n import pytest\n"
+  },
+  {
+   "filename": "tests/test_money.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n from decimal import Decimal\n \n import pytest\n"
+  },
+  {
+   "filename": "tests/test_repro_script.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"scripts/repro.py: the repro block from a base run and the head report (DESIGN 15b).\"\"\"\n \n import importlib.util\n"
+  },
+  {
+   "filename": "tests/test_scenario_script.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Safety rules of scripts/scenario.py: nothing unsafe may reach git.\"\"\"\n \n import importlib.util\n"
+  },
+  {
+   "filename": "tests/test_scenario_templates.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Scenario test templates must run beside the real tests under the CI report plugin.\n \n A metric is written once per run, so a template that records a metric the model test already\n"
+  },
+  {
+   "filename": "tests/test_seed_data.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n import re\n from datetime import date\n \n"
+  },
+  {
+   "filename": "tests/test_startup_seeding.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Startup seeding: one worker seeds, atomically; a failed seed leaves nothing and is retried.\"\"\"\n \n import threading\n"
+  },
+  {
+   "filename": "tests/test_web.py",
+   "status": "modified",
+   "patch": "@@ -1,3 +1,4 @@\n+# SPDX-License-Identifier: MIT\n \"\"\"Front-end checks that need no browser: static serving and a small CSS parse.\"\"\"\n \n import math\n"
+  }
+ ],
+ "additions": 73,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpo8t0s6k8/bench-bank/coverage.json\n300 passed, 1 deselected, 1 warning in 244.05s (0:04:04)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

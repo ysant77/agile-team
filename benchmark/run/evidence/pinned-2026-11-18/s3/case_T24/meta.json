@@ -1,0 +1,41 @@
+{
+ "branch": "case/T24",
+ "head": "aba80c4630678955d0c77390ce42085340a349db",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "README.md",
+   "status": "modified",
+   "patch": "@@ -57,7 +57,7 @@ the session model is for a demo, not for a server that others can reach. The API\n | `GET /api/accounts` | The session customer's accounts. |\n | `GET /api/accounts/{id}` | One account. |\n | `GET /api/accounts/{id}/statement?from=YYYY-MM-DD&to=YYYY-MM-DD` | Lines with a running balance; both dates inclusive; default is the last 30 days. |\n-| `POST /api/transfers` | `{\"from_account_id\", \"to_account_number\", \"amount\", \"reference\"}`; amount is a decimal string. Requires an `Idempotency-Key` header: a retry with the same key returns the first transfer (200, `\"replayed\": true`); the same key with a different body is 422. Keys are per customer and expire after 24 hours; a failed attempt (for example insufficient funds) stores no key, so it can be retried. |\n+| `POST /api/transfers` | `{\"from_account_id\", \"to_account_number\", \"amount\", \"reference\"}`; amount is a decimal string. Requires an `Idempotency-Key` header: a retry with the same key returns the first transfer (200, `\"replayed\": true`); the same key with a different body is 422. Keys are per customer and expire after 24 hours; a failed attempt (for example insufficient funds) stores no key, so it can be retried. The 201 body has `source_balance_minor`, the balance of the source account after the transfer. |\n \n Account routes answer 404 for any account the session customer does not own.\n \n"
+  },
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -252,6 +252,9 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             **money_fields(\"amount\", int(result[\"amount_minor\"]), str(result[\"currency\"])),\n             \"currency\": result[\"currency\"],\n             \"from_account\": from_account,\n+            \"source_balance_minor\": int(\n+                result.get(\"source_balance_minor\", result[\"from_balance_minor\"])\n+            ),\n         }\n \n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n"
+  },
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -355,6 +355,7 @@ def transfer_once(\n             \"currency\": amount.currency,\n             \"from_balance_minor\": get_account(conn, from_account_id).balance_minor,\n         }\n+        result[\"source_balance_minor\"] = result[\"from_balance_minor\"]\n         conn.execute(\n             \"INSERT INTO idempotency_keys\"\n             \" (customer_id, key, request_hash, entry_id, response_json, created_at)\"\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -127,6 +127,23 @@ def test_transfer_success(bank):\n     assert other.get(f\"/api/accounts/{bank['foreign'].id}\").json()[\"balance\"] == \"35.50\"\n \n \n+def test_transfer_returns_the_eur_source_balance(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"25.00\")\n+    assert response.status_code == 201\n+    assert response.json().get(\"source_balance_minor\") == 7500\n+\n+\n+def test_transfer_returns_the_jpy_source_balance(bank):\n+    conn = ledger.open_db(bank[\"path\"])\n+    target = ledger.open_account(conn, bank[\"other\"], \"JPY\")\n+    conn.close()\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = transfer(client, bank[\"jpy\"].id, target.number, \"500\")\n+    assert response.status_code == 201\n+    assert response.json().get(\"source_balance_minor\") == 4500\n+\n+\n def test_transfer_from_foreign_account_is_404(bank):\n     client = login(bank[\"app\"], bank[\"owner\"])\n     response = transfer(client, bank[\"foreign\"].id, bank[\"eur\"].number, \"1.00\")\n"
+  }
+ ],
+ "additions": 22,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n............                                                             [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmph70k4d3k/bench-bank-3/coverage.json\n300 passed, 1 deselected in 317.96s (0:05:17)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

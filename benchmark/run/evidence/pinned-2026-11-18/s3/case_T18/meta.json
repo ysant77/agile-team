@@ -1,0 +1,31 @@
+{
+ "branch": "case/T18",
+ "head": "4bc43cf7242f4c9d5a1af347a84433be7d6cc9de",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import EXPONENTS, Money, exponent, from_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -140,6 +140,10 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     def list_customers(conn: Conn) -> list[dict[str, object]]:\n         return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n \n+    @app.get(\"/api/currencies\")\n+    def list_currencies() -> list[dict[str, object]]:\n+        return [{\"code\": code, \"decimals\": EXPONENTS[code]} for code in sorted(EXPONENTS)]\n+\n     @app.post(\"/api/session\")\n     def start_session(body: SessionIn, response: Response, conn: Conn) -> dict[str, object]:\n         try:\n"
+  },
+  {
+   "filename": "tests/test_currencies.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,31 @@\n+import tempfile\n+import unittest\n+from pathlib import Path\n+\n+from fastapi.testclient import TestClient\n+\n+from bank import ledger, money\n+from bank.api import create_app\n+\n+\n+class CurrencyListTest(unittest.TestCase):\n+    def setUp(self):\n+        folder = tempfile.TemporaryDirectory()\n+        self.addCleanup(folder.cleanup)\n+        path = Path(folder.name) / \"currencies.db\"\n+        ledger.open_db(path).close()\n+        self.client = TestClient(create_app(path, seed_if_empty=False))\n+\n+    def test_currencies_are_listed_in_code_order(self):\n+        response = self.client.get(\"/api/currencies\")\n+        self.assertEqual(response.status_code, 200)\n+        codes = [item[\"code\"] for item in response.json()]\n+        self.assertEqual(codes, sorted(money.EXPONENTS))\n+\n+    def test_each_currency_has_its_decimals(self):\n+        response = self.client.get(\"/api/currencies\")\n+        self.assertEqual(response.status_code, 200)\n+        listed = {item[\"code\"]: item[\"decimals\"] for item in response.json()}\n+        for code, decimals in money.EXPONENTS.items():\n+            with self.subTest(code=code):\n+                self.assertEqual(listed.get(code), decimals)\n"
+  }
+ ],
+ "additions": 36,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "...... [ 45%]\n........................................................................ [ 69%]\n........................................................................ [ 93%]\n....................                                                     [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmputgsop4t/bench-bank-3/coverage.json\n300 passed, 1 deselected, 8 subtests passed in 362.29s (0:06:02)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

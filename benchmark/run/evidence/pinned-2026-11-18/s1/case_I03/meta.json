@@ -1,0 +1,32 @@
+{
+ "branch": "case/I03",
+ "head": "f1c824c2293f4fb9513be0d28862168f52d7c658",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -105,6 +105,11 @@ def owned_account(account_id: int, customer_id: CustomerId, conn: Conn) -> ledge\n OwnedAccount = Annotated[ledger.Account, Depends(owned_account)]\n \n \n+def normalise_number(text: str) -> str:\n+    \"\"\"An account number as stored: upper case, with blanks between the groups as hyphens.\"\"\"\n+    return \"-\".join(text.split()).upper()\n+\n+\n def parse_amount(text: str, currency: str) -> Money:\n     try:\n         value = Decimal(text)\n@@ -215,7 +220,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             raise HTTPException(400, \"Idempotency-Key header is required\")\n         source = owned_account(body.from_account_id, customer_id, conn)\n         try:\n-            target = ledger.get_account_by_number(conn, body.to_account_number.strip().upper())\n+            target = ledger.get_account_by_number(conn, normalise_number(body.to_account_number))\n         except ledger.NotFound:\n             target = None\n         # One message for \"no such account\" and \"wrong currency\", so the reply does not reveal\n"
+  },
+  {
+   "filename": "tests/test_api_transfers.py",
+   "status": "renamed",
+   "previous_filename": "tests/test_api.py",
+   "patch": "@@ -234,3 +234,12 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_destination_number_with_spaces_resolves(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = transfer(client, bank[\"eur\"].id, \"yms 0000 0003\", \"10.00\")\n+    assert response.status_code == 201, response.text\n+    assert response.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+    other = login(bank[\"app\"], bank[\"other\"])\n+    assert other.get(f\"/api/accounts/{bank['foreign'].id}\").json()[\"balance\"] == \"20.00\"\n"
+  }
+ ],
+ "additions": 15,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp5efeyj0s/bench-bank-i/coverage.json\n299 passed, 1 deselected in 199.16s (0:03:19)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

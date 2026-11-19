@@ -1,0 +1,31 @@
+{
+ "branch": "case/S16",
+ "head": "7971e987054ea4bb34a0cabacf3156e26f6f3101",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -1,9 +1,9 @@\n-\"\"\"Money in integer minor units, with ISO 4217 exponents and banker's rounding.\"\"\"\n+\"\"\"Money in integer minor units, with ISO 4217 exponents and half-up rounding.\"\"\"\n \n from __future__ import annotations\n \n from dataclasses import dataclass\n-from decimal import ROUND_HALF_EVEN, Decimal\n+from decimal import ROUND_HALF_UP, Decimal\n \n # ISO 4217 minor-unit exponents for the currencies the demo uses.\n EXPONENTS: dict[str, int] = {\n@@ -30,7 +30,7 @@ def to_minor(amount: Decimal | str | int, currency: str) -> int:\n     if isinstance(amount, float):\n         raise TypeError(\"use Decimal or str for money, not float\")\n     value = Decimal(amount)\n-    scaled = value.scaleb(exponent(currency)).quantize(Decimal(1), rounding=ROUND_HALF_EVEN)\n+    scaled = value.scaleb(exponent(currency)).quantize(Decimal(1), rounding=ROUND_HALF_UP)\n     return int(scaled)\n \n \n"
+  },
+  {
+   "filename": "tests/test_money.py",
+   "status": "modified",
+   "patch": "@@ -18,7 +18,7 @@ def test_bhd_has_three_decimals():\n \n \n def test_half_even_rounding():\n-    assert to_minor(\"0.125\", \"EUR\") == 12\n+    assert to_minor(\"0.125\", \"EUR\") == 13\n     assert to_minor(\"0.135\", \"EUR\") == 14\n \n \n"
+  }
+ ],
+ "additions": 4,
+ "deletions": 4,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n..........                                                               [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp2xw5a95u/bench-bank-2/coverage.json\n298 passed, 1 deselected in 297.22s (0:04:57)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

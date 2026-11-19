@@ -1,0 +1,26 @@
+{
+ "branch": "case/I02",
+ "head": "5f7eddaa8c18f30ff9121d931060d871412431ce",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "tests/test_money.py",
+   "status": "modified",
+   "patch": "@@ -56,3 +56,15 @@ def test_money_of_rejects_extra_decimals():\n def test_money_of_rejects_non_numbers(value):\n     with pytest.raises(ValueError):\n         Money.of(value, \"EUR\")\n+\n+\n+def test_from_minor_negative_amounts():\n+    assert from_minor(-5, \"EUR\") == Decimal(\"-0.05\")\n+    assert from_minor(-1234, \"EUR\") == Decimal(\"-12.34\")\n+    assert from_minor(-5000, \"JPY\") == Decimal(\"-5000\")\n+\n+\n+def test_from_minor_bhd_keeps_three_decimals():\n+    assert from_minor(-5, \"BHD\") == Decimal(\"-0.005\")\n+    assert from_minor(1234, \"BHD\") == Decimal(\"1.234\")\n+    assert str(from_minor(1000, \"BHD\")) == \"1.000\"\n"
+  }
+ ],
+ "additions": 12,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n............                                                             [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp58yz6lvj/bench-bank-i/coverage.json\n300 passed, 1 deselected in 189.65s (0:03:09)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

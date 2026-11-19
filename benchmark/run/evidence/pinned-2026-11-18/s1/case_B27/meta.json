@@ -1,0 +1,31 @@
+{
+ "branch": "case/B27",
+ "head": "d2c60b0b2eaa67c2b2fb40ac6b00251998770327",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -76,3 +76,13 @@ class Money:\n \n     def __str__(self) -> str:\n         return f\"{from_minor(self.minor, self.currency)} {self.currency}\"\n+\n+\n+def fee_minor(amount_minor: int, rate_bp: int) -> int:\n+    \"\"\"The fee for ``amount_minor`` at ``rate_bp`` basis points, rounded half to even.\n+\n+    Fees follow the same rule as ``to_minor``: a fee of exactly half a minor unit rounds to the\n+    even neighbour, so repeated rounding does not drift in one direction.\n+    \"\"\"\n+    fee = Decimal(amount_minor * rate_bp) / Decimal(10_000)\n+    return int(fee.quantize(Decimal(1), rounding=ROUND_HALF_EVEN))\n"
+  },
+  {
+   "filename": "tests/test_bench27_fee_rounding.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,10 @@\n+from bank import money\n+\n+\n+def test_BENCH27_fee_rounds_half_to_even():\n+    assert hasattr(money, \"fee_minor\"), \"money.fee_minor is missing\"\n+    assert money.fee_minor(250, 100) == 2  # 2.5 -> 2\n+    assert money.fee_minor(350, 100) == 4  # 3.5 -> 4\n+    assert money.fee_minor(249, 100) == 2\n+    assert money.fee_minor(251, 100) == 3\n+    assert money.fee_minor(-250, 100) == -2\n"
+  }
+ ],
+ "additions": 20,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "........................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmps4coa0fc/bench-bank/coverage.json\n299 passed, 1 deselected in 253.09s (0:04:13)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

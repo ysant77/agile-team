@@ -1,0 +1,31 @@
+{
+ "branch": "case/U07",
+ "head": "487e3bf615cdd9b38e5fbdfc2a645ab3eb2f2acc",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -223,6 +223,9 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         if target is None or target.kind != \"customer\" or target.currency != source.currency:\n             raise HTTPException(404, NO_DESTINATION)\n         amount = parse_amount(body.amount, source.currency)\n+        large = amount.minor >= 1000 * 10 ** exponent(source.currency)\n+        if large and not (body.reference or \"\").strip():\n+            raise HTTPException(422, \"a large transfer needs a reference\")\n         try:\n             result, replayed = ledger.transfer_once(\n                 conn,\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,29 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def funded(bank):\n+    conn = ledger.open_db(bank[\"path\"])\n+    try:\n+        ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"5000.00\", \"EUR\"))\n+    finally:\n+        conn.close()\n+    return login(bank[\"app\"], bank[\"owner\"])\n+\n+\n+def test_large_transfer_needs_a_reference(bank):\n+    client = funded(bank)\n+    assert transfer(client, bank[\"eur\"].id, \"YMS-0000-0003\", \"1000.00\").status_code == 422\n+    assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"5100.00\"\n+\n+\n+def test_transfer_below_the_limit_needs_no_reference(bank):\n+    client = funded(bank)\n+    assert transfer(client, bank[\"eur\"].id, \"YMS-0000-0003\", \"999.99\").status_code == 201\n+\n+\n+def test_large_transfer_with_a_reference_is_accepted(bank):\n+    client = funded(bank)\n+    response = transfer(client, bank[\"eur\"].id, \"YMS-0000-0003\", \"1000.00\", reference=\"Car\")\n+    assert response.status_code == 201\n"
+  }
+ ],
+ "additions": 29,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpaebvryi7/bench-bank-4/coverage.json\n314 passed, 1 deselected, 1 warning in 310.84s (0:05:10)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

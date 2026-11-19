@@ -1,0 +1,31 @@
+{
+ "branch": "case/I04",
+ "head": "42d739f986baf1a7f85145fa885fc011617868af",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -331,6 +331,8 @@ def transfer_once(\n     if from_account_id == to_account_id:\n         raise LedgerError(\"cannot transfer to the same account\")\n     now = now or datetime.now(UTC)\n+    if reference is not None and not reference.strip():\n+        reference = None\n     fingerprint = request_fingerprint(from_account_id, to_account_id, amount, reference)\n     oldest = timestamp(now - timedelta(seconds=IDEMPOTENCY_WINDOW_SECONDS))\n     with write_txn(conn):\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,17 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+@pytest.mark.parametrize(\n+    \"reference, expected\",\n+    [(\"\", None), (\" \", None), (\"   \", None), (\"\\t\", None), (\"INV-1\", \"INV-1\")],\n+)\n+def test_blank_reference_is_stored_as_none(bank, reference, expected):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"5.00\", reference=reference)\n+    assert response.status_code == 201, response.text\n+    url = f\"/api/accounts/{bank['eur'].id}/statement?from=2026-05-01\"\n+    lines = client.get(url).json()[\"lines\"]\n+    assert lines[-1][\"kind\"] == \"transfer\"\n+    assert lines[-1][\"reference\"] == expected\n"
+  }
+ ],
+ "additions": 16,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 47%]\n........................................................................ [ 71%]\n........................................................................ [ 95%]\n...............                                                          [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpmugxkmb2/bench-bank-i/coverage.json\n303 passed, 1 deselected in 185.91s (0:03:05)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "branch": "case/B03",
+ "head": "e4045fdeda528e22e474f20643f4c618fd972dd9",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -118,6 +118,7 @@ def create_customer(conn: sqlite3.Connection, name: str, at: datetime | None = N\n \n \n def get_customer(conn: sqlite3.Connection, customer_id: int) -> sqlite3.Row:\n+    \"\"\"The customer's id and name; ``NotFound`` when there is no such customer.\"\"\"\n     row = conn.execute(\"SELECT id, name FROM customers WHERE id = ?\", (customer_id,)).fetchone()\n     if row is None:\n         raise NotFound(\"customer not found\")\n"
+  },
+  {
+   "filename": "tests/test_bench3_closed_account.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,13 @@\n+import pytest\n+\n+from bank import ledger\n+from bank.money import Money\n+\n+\n+def test_BENCH3_transfer_to_an_account_that_cannot_receive_is_refused(conn):\n+    payer = ledger.open_account(conn, ledger.create_customer(conn, \"Closed Payer\"), \"EUR\")\n+    ledger.deposit(conn, payer.id, Money.of(\"10.00\", \"EUR\"))\n+    clearing = ledger.get_account_by_number(conn, \"YMS-CLR-EUR\")\n+    with pytest.raises(ledger.NotFound):\n+        ledger.transfer(conn, payer.id, clearing.id, Money.of(\"1.00\", \"EUR\"))\n+    assert ledger.get_account(conn, payer.id).balance_minor == 1000\n"
+  }
+ ],
+ "additions": 14,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "........................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp81aigaoy/bench-bank/coverage.json\n299 passed, 1 deselected in 293.26s (0:04:53)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

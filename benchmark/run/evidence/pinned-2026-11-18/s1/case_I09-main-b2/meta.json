@@ -1,0 +1,26 @@
+{
+ "branch": "case/I09-main-b2",
+ "head": "8563ab96763172f2ae8311a134f7496969e03b8c",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": "8563ab96763172f2ae8311a134f7496969e03b8c",
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -241,6 +241,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             raise HTTPException(400, str(exc)) from None\n         if replayed:\n             response.status_code = 200\n+            response.headers[\"Idempotent-Replayed\"] = \"true\"\n         # The account as it was right after this transfer, also on a replay.\n         from_account = account_json(source) | money_fields(\n             \"balance\", int(result[\"from_balance_minor\"]), source.currency\n"
+  }
+ ],
+ "additions": 1,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n..........                                                               [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpq1gqsh56/bench-bank-i/coverage.json\n298 passed, 1 deselected in 182.39s (0:03:02)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

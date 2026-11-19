@@ -1,0 +1,26 @@
+{
+ "branch": "case/S11",
+ "head": "e3d2279b4d23db26e667d3e9fd1c892137032425",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "README.md",
+   "status": "modified",
+   "patch": "@@ -59,7 +59,7 @@ the session model is for a demo, not for a server that others can reach. The API\n | `GET /api/accounts/{id}/statement?from=YYYY-MM-DD&to=YYYY-MM-DD` | Lines with a running balance; both dates inclusive; default is the last 30 days. |\n | `POST /api/transfers` | `{\"from_account_id\", \"to_account_number\", \"amount\", \"reference\"}`; amount is a decimal string. Requires an `Idempotency-Key` header: a retry with the same key returns the first transfer (200, `\"replayed\": true`); the same key with a different body is 422. Keys are per customer and expire after 24 hours; a failed attempt (for example insufficient funds) stores no key, so it can be retried. |\n \n-Account routes answer 404 for any account the session customer does not own.\n+Account routes answer 404 for any account the session customer does not own. Spaces around a transfer reference are removed before the request is compared with an earlier one.\n \n ## Tests\n \n"
+  }
+ ],
+ "additions": 1,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpc0vwd06b/bench-bank-2/coverage.json\n298 passed, 1 deselected, 1 warning in 293.05s (0:04:53)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

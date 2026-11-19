@@ -1,0 +1,31 @@
+{
+ "branch": "case/T22",
+ "head": "4c6dae5f0acb94ff77b61220eee1cf5bb46cd819",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -172,7 +172,11 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         conn: Conn,\n         start: Annotated[date | None, Query(alias=\"from\")] = None,\n         end: Annotated[date | None, Query(alias=\"to\")] = None,\n+        order: str | None = None,\n     ) -> dict[str, object]:\n+        if order not in (None, \"asc\", \"desc\"):\n+            message = \"order must be asc or desc\"\n+            raise HTTPException(422, message)\n         for value in (start, end):\n             if value is not None and not EARLIEST_DATE <= value <= LATEST_DATE:\n                 raise HTTPException(400, f\"dates must be between {EARLIEST_DATE} and {LATEST_DATE}\")\n@@ -183,6 +187,9 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         except ledger.LedgerError as exc:\n             raise HTTPException(400, str(exc)) from None\n         cur = account.currency\n+        lines = list(st.lines)\n+        if order == \"desc\":\n+            lines.reverse()\n         return {\n             \"account\": account_json(account),\n             \"from\": st.start.isoformat(),\n@@ -199,7 +206,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n                     **money_fields(\"amount\", line.amount_minor, cur),\n                     **money_fields(\"balance\", line.balance_minor, cur),\n                 }\n-                for line in st.lines\n+                for line in lines\n             ],\n         }\n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -111,6 +111,29 @@ def test_statement_rejects_bad_dates(bank):\n     assert client.get(base + \"?from=yesterday\").status_code == 422\n \n \n+def order_bank(bank, at):\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"1.00\", \"EUR\"), at=at(\"2026-05-02\"))\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"2.00\", \"EUR\"), at=at(\"2026-05-03\"))\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"3.00\", \"EUR\"), at=at(\"2026-05-04\"))\n+    conn.close()\n+    return f\"/api/accounts/{bank['eur'].id}/statement?from=2026-05-02&to=2026-05-31\"\n+\n+\n+def test_statement_newest_first(bank, at):\n+    url = order_bank(bank, at)\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    lines = client.get(url + \"&order=desc\").json()[\"lines\"]\n+    assert [line[\"amount\"] for line in lines] == [\"3.00\", \"2.00\", \"1.00\"]\n+\n+\n+def test_statement_default_order_is_oldest_first(bank, at):\n+    url = order_bank(bank, at)\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    lines = client.get(url).json()[\"lines\"]\n+    assert [line[\"amount\"] for line in lines] == [\"1.00\", \"2.00\", \"3.00\"]\n+\n+\n def transfer(client, from_id, to_number, amount, key=None, **extra):\n     body = {\"from_account_id\": from_id, \"to_account_number\": to_number, \"amount\": amount}\n     headers = {\"Idempotency-Key\": key or str(uuid.uuid4())}\n"
+  }
+ ],
+ "additions": 31,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n............                                                             [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpthikpcjl/bench-bank-3/coverage.json\n300 passed, 1 deselected in 332.56s (0:05:32)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

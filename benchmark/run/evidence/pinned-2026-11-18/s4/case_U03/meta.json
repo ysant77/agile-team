@@ -1,0 +1,31 @@
+{
+ "branch": "case/U03",
+ "head": "71a23b4bd318246b406dc0e4579226abd6da53f8",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -223,6 +223,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         if target is None or target.kind != \"customer\" or target.currency != source.currency:\n             raise HTTPException(404, NO_DESTINATION)\n         amount = parse_amount(body.amount, source.currency)\n+        reference = (body.reference or \"\").strip() or None\n         try:\n             result, replayed = ledger.transfer_once(\n                 conn,\n@@ -231,7 +232,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n                 source.id,\n                 target.id,\n                 amount,\n-                body.reference,\n+                reference,\n             )\n         except ledger.IdempotencyConflict as exc:\n             raise HTTPException(422, str(exc)) from None\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,22 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def transfer_line(client, account_id):\n+    url = f\"/api/accounts/{account_id}/statement?from=2026-05-01\"\n+    return next(line for line in client.get(url).json()[\"lines\"] if line[\"kind\"] == \"transfer\")\n+\n+\n+def test_reference_is_stored_without_outer_spaces(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = transfer(client, bank[\"eur\"].id, \"YMS-0000-0003\", \"1.00\", reference=\"  Rent  \")\n+    assert response.status_code == 201\n+    assert transfer_line(client, bank[\"eur\"].id)[\"reference\"] == \"Rent\"\n+\n+\n+def test_blank_reference_is_stored_as_none(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = transfer(client, bank[\"eur\"].id, \"YMS-0000-0003\", \"1.00\", reference=\"   \")\n+    assert response.status_code == 201\n+    assert transfer_line(client, bank[\"eur\"].id)[\"reference\"] is None\n"
+  }
+ ],
+ "additions": 21,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpxjykngwd/bench-bank-4/coverage.json\n313 passed, 1 deselected, 1 warning in 370.91s (0:06:10)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

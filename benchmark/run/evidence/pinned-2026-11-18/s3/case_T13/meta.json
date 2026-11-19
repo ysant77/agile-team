@@ -1,0 +1,36 @@
+{
+ "branch": "case/T13",
+ "head": "90b3ca3bdbd4c5c4e6daaa83e9bae0cdef0ce87a",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -9,6 +9,8 @@ through ``owned_account``, which answers 404 for accounts of other customers.\n \n from __future__ import annotations\n \n+import csv\n+import io\n import os\n import sqlite3\n from collections.abc import AsyncIterator, Iterator\n@@ -115,6 +117,18 @@ def parse_amount(text: str, currency: str) -> Money:\n     return Money.of(value, currency)\n \n \n+def statement_csv(st: ledger.Statement) -> str:\n+    \"\"\"The statement lines as CSV: a header row, then one row per line, each ending in CR LF.\"\"\"\n+    out = io.StringIO()\n+    writer = csv.writer(out, lineterminator=\"\\r\\n\")\n+    writer.writerow([\"date\", \"description\", \"amount_minor\", \"currency\"])\n+    for line in st.lines:\n+        writer.writerow(\n+            [line.posted_at[:10], line.description, line.amount_minor, st.account.currency]\n+        )\n+    return out.getvalue()\n+\n+\n def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True) -> FastAPI:\n     path = Path(db_path or os.environ.get(\"BANK_DB\", \"demo.db\"))\n \n@@ -166,13 +180,14 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     def read_account(account: OwnedAccount) -> dict[str, object]:\n         return account_json(account)\n \n-    @app.get(\"/api/accounts/{account_id}/statement\")\n+    @app.get(\"/api/accounts/{account_id}/statement\", response_model=None)\n     def read_statement(\n         account: OwnedAccount,\n         conn: Conn,\n         start: Annotated[date | None, Query(alias=\"from\")] = None,\n         end: Annotated[date | None, Query(alias=\"to\")] = None,\n-    ) -> dict[str, object]:\n+        output: Annotated[str | None, Query(alias=\"format\")] = None,\n+    ) -> dict[str, object] | Response:\n         for value in (start, end):\n             if value is not None and not EARLIEST_DATE <= value <= LATEST_DATE:\n                 raise HTTPException(400, f\"dates must be between {EARLIEST_DATE} and {LATEST_DATE}\")\n@@ -183,6 +198,8 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         except ledger.LedgerError as exc:\n             raise HTTPException(400, str(exc)) from None\n         cur = account.currency\n+        if output == \"csv\":\n+            return Response(statement_csv(st), media_type=\"text/csv\")\n         return {\n             \"account\": account_json(account),\n             \"from\": st.start.isoformat(),\n"
+  },
+  {
+   "filename": "tests/data/statement_golden.csv",
+   "status": "added",
+   "patch": "@@ -0,0 +1,5 @@\n+date,description,amount_minor,currency\n+2026-05-02,Salary credit,150000,EUR\n+2026-05-05,Card payment,-4210,EUR\n+2026-05-09,\"Refund, shop\",1200,EUR\n+2026-05-20,Cash withdrawal,-5000,EUR\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -1,5 +1,6 @@\n import re\n import uuid\n+from pathlib import Path\n \n import pytest\n from fastapi.routing import APIRoute\n@@ -111,6 +112,24 @@ def test_statement_rejects_bad_dates(bank):\n     assert client.get(base + \"?from=yesterday\").status_code == 422\n \n \n+GOLDEN_CSV = Path(__file__).parent / \"data\" / \"statement_golden.csv\"\n+\n+\n+def test_statement_csv_is_equal_to_the_golden_file(bank, at):\n+    conn = ledger.open_db(bank[\"path\"])\n+    eur = bank[\"eur\"].id\n+    ledger.deposit(conn, eur, Money.of(\"1500.00\", \"EUR\"), \"Salary credit\", at(\"2026-05-02\"))\n+    ledger.withdraw(conn, eur, Money.of(\"42.10\", \"EUR\"), \"Card payment\", at(\"2026-05-05\"))\n+    ledger.deposit(conn, eur, Money.of(\"12.00\", \"EUR\"), \"Refund, shop\", at(\"2026-05-09\"))\n+    ledger.withdraw(conn, eur, Money.of(\"50.00\", \"EUR\"), \"Cash withdrawal\", at(\"2026-05-20\"))\n+    conn.close()\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    url = f\"/api/accounts/{eur}/statement?from=2026-05-02&to=2026-05-31&format=csv\"\n+    response = client.get(url)\n+    assert response.headers[\"content-type\"].startswith(\"text/csv\")\n+    assert response.content == GOLDEN_CSV.read_bytes()\n+\n+\n def transfer(client, from_id, to_number, amount, key=None, **extra):\n     body = {\"from_account_id\": from_id, \"to_account_number\": to_number, \"amount\": amount}\n     headers = {\"Idempotency-Key\": key or str(uuid.uuid4())}\n"
+  }
+ ],
+ "additions": 43,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp8u7069t4/bench-bank-3/coverage.json\n299 passed, 1 deselected, 1 warning in 321.20s (0:05:21)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

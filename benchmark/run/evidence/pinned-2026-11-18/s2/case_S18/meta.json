@@ -1,0 +1,36 @@
+{
+ "branch": "case/S18",
+ "head": "40aa58aa645ca954497f8f4b5b7912895573c5d8",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -223,6 +223,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         if target is None or target.kind != \"customer\" or target.currency != source.currency:\n             raise HTTPException(404, NO_DESTINATION)\n         amount = parse_amount(body.amount, source.currency)\n+        reference = body.reference.strip() if body.reference is not None else None\n         try:\n             result, replayed = ledger.transfer_once(\n                 conn,\n@@ -231,7 +232,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n                 source.id,\n                 target.id,\n                 amount,\n-                body.reference,\n+                reference,\n             )\n         except ledger.IdempotencyConflict as exc:\n             raise HTTPException(422, str(exc)) from None\n"
+  },
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -304,7 +304,7 @@ def request_fingerprint(\n ) -> str:\n     \"\"\"Hash of the transfer's meaning, so \"10.0\" and \"10.00\" are the same request.\"\"\"\n     canonical = json.dumps(\n-        [from_account_id, to_account_id, amount.minor, amount.currency, reference or \"\"],\n+        [from_account_id, to_account_id, amount.minor, amount.currency, (reference or \"\").strip()],\n         separators=(\",\", \":\"),\n     )\n     return hashlib.sha256(canonical.encode(\"utf-8\")).hexdigest()\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -127,6 +127,20 @@ def test_transfer_success(bank):\n     assert other.get(f\"/api/accounts/{bank['foreign'].id}\").json()[\"balance\"] == \"35.50\"\n \n \n+def test_spaces_around_the_reference_do_not_change_the_request(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    key = str(uuid.uuid4())\n+    first = transfer(\n+        client, bank[\"eur\"].id, bank[\"foreign\"].number, \"5.00\", key=key, reference=\"Rent \"\n+    )\n+    assert first.status_code == 201, first.text\n+    second = transfer(\n+        client, bank[\"eur\"].id, bank[\"foreign\"].number, \"5.00\", key=key, reference=\"Rent\"\n+    )\n+    assert second.status_code == 200, second.text\n+    assert second.json()[\"replayed\"] is True\n+\n+\n def test_transfer_from_foreign_account_is_404(bank):\n     client = login(bank[\"app\"], bank[\"owner\"])\n     response = transfer(client, bank[\"foreign\"].id, bank[\"eur\"].number, \"1.00\")\n"
+  }
+ ],
+ "additions": 17,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpaprniqyp/bench-bank-2/coverage.json\n299 passed, 1 deselected in 313.16s (0:05:13)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

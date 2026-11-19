@@ -1,0 +1,31 @@
+{
+ "branch": "case/B23",
+ "head": "bc41cc88d38e6bd70ee8cbc3f6182f562a39a1af",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -213,7 +213,12 @@ def _post(\n     at: datetime | None,\n     reference: str | None = None,\n ) -> int:\n-    \"\"\"Write a balanced journal entry. ``lines`` holds (account_id, signed amount_minor).\"\"\"\n+    \"\"\"Write a balanced journal entry. ``lines`` holds (account_id, signed amount_minor).\n+\n+    A blank reference is stored as ``None``; any other reference is stored without the spaces\n+    around it.\n+    \"\"\"\n+    reference = (reference or \"\").strip() or None\n     if sum(amount for _, amount in lines) != 0:\n         raise LedgerError(\"journal entry does not balance\")\n     cur = conn.execute(\n"
+  },
+  {
+   "filename": "tests/test_bench23_reference.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,28 @@\n+from datetime import date\n+\n+from bank import ledger\n+from bank.money import Money\n+\n+\n+def _two_accounts(conn):\n+    a = ledger.open_account(conn, ledger.create_customer(conn, \"Ref Payer\"), \"EUR\")\n+    b = ledger.open_account(conn, ledger.create_customer(conn, \"Ref Payee\"), \"EUR\")\n+    ledger.deposit(conn, a.id, Money.of(\"50.00\", \"EUR\"))\n+    return a, b\n+\n+\n+def _references(conn, account):\n+    st = ledger.statement(conn, account.id, date(2000, 1, 1), date(2999, 1, 1))\n+    return [line.reference for line in st.lines if line.kind == \"transfer\"]\n+\n+\n+def test_BENCH23_blank_reference_is_stored_as_none(conn):\n+    a, b = _two_accounts(conn)\n+    ledger.transfer(conn, a.id, b.id, Money.of(\"5.00\", \"EUR\"), reference=\"   \")\n+    assert _references(conn, a) == [None]\n+\n+\n+def test_BENCH23_reference_is_stored_without_surrounding_spaces(conn):\n+    a, b = _two_accounts(conn)\n+    ledger.transfer(conn, a.id, b.id, Money.of(\"5.00\", \"EUR\"), reference=\"  rent May \")\n+    assert _references(conn, b) == [\"rent May\"]\n"
+  }
+ ],
+ "additions": 34,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "........................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n............                                                             [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpr1b6hi2c/bench-bank/coverage.json\n300 passed, 1 deselected in 335.68s (0:05:35)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "branch": "case/U15",
+ "head": "9765647bfed8b0335717c7e23c94df32059614f5",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -152,7 +152,11 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     @app.get(\"/api/session\")\n     def read_session(customer_id: CustomerId, conn: Conn) -> dict[str, object]:\n         customer = ledger.get_customer(conn, customer_id)\n-        return {\"id\": customer[\"id\"], \"name\": customer[\"name\"]}\n+        return {\n+            \"id\": customer[\"id\"],\n+            \"name\": customer[\"name\"],\n+            \"account_count\": len(ledger.list_accounts(conn, customer_id)),\n+        }\n \n     @app.delete(\"/api/session\", status_code=204)\n     def end_session(response: Response) -> None:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,10 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_session_has_the_account_count(bank):\n+    owner = login(bank[\"app\"], bank[\"owner\"])\n+    assert owner.get(\"/api/session\").json().get(\"account_count\") == 2\n+    other = login(bank[\"app\"], bank[\"other\"])\n+    assert other.get(\"/api/session\").json().get(\"account_count\") == 1\n"
+  }
+ ],
+ "additions": 12,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 46%]\n........................................................................ [ 69%]\n........................................................................ [ 92%]\n........................                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpkwnx6b_7/bench-bank-4/coverage.json\n312 passed, 1 deselected in 429.26s (0:07:09)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,36 @@
+{
+ "branch": "case/U06",
+ "head": "a6bbdb47888f70447caf7974646c74effd365a8b",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -196,6 +196,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n                     \"kind\": line.kind,\n                     \"description\": line.description,\n                     \"reference\": line.reference,\n+                    \"counterparty_number\": line.counterparty_number,\n                     **money_fields(\"amount\", line.amount_minor, cur),\n                     **money_fields(\"balance\", line.balance_minor, cur),\n                 }\n"
+  },
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -59,6 +59,7 @@ class StatementLine:\n     description: str\n     reference: str | None\n     amount_minor: int\n+    counterparty_number: str | None\n     balance_minor: int\n \n \n@@ -410,7 +411,10 @@ def statement(conn: sqlite3.Connection, account_id: int, start: date, end: date)\n         (account_id, lower),\n     ).fetchone()\n     rows = conn.execute(\n-        \"SELECT e.id, e.posted_at, e.kind, e.description, e.reference, l.amount_minor\"\n+        \"SELECT e.id, e.posted_at, e.kind, e.description, e.reference, l.amount_minor,\"\n+        \" CASE WHEN e.kind = 'transfer' THEN (\"\n+        \"  SELECT a2.number FROM journal_lines l2 JOIN accounts a2 ON a2.id = l2.account_id\"\n+        \"  WHERE l2.entry_id = e.id ORDER BY l2.id LIMIT 1) END AS counterparty_number\"\n         \" FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id\"\n         \" WHERE l.account_id = ? AND e.posted_at >= ? AND e.posted_at < ?\"\n         \" ORDER BY e.posted_at, e.id, l.id\",\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,14 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_transfer_lines_have_a_counterparty(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    assert transfer(client, bank[\"eur\"].id, \"YMS-0000-0003\", \"5.00\").status_code == 201\n+    url = f\"/api/accounts/{bank['eur'].id}/statement?from=2026-05-01\"\n+    lines = client.get(url).json()[\"lines\"]\n+    transfer_line = next(line for line in lines if line[\"kind\"] == \"transfer\")\n+    deposit_line = next(line for line in lines if line[\"kind\"] == \"deposit\")\n+    assert transfer_line.get(\"counterparty_number\", \"\").startswith(\"YMS-\")\n+    assert deposit_line.get(\"counterparty_number\") is None\n"
+  }
+ ],
+ "additions": 17,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 46%]\n........................................................................ [ 69%]\n........................................................................ [ 92%]\n........................                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpsltkp2o0/bench-bank-4/coverage.json\n312 passed, 1 deselected in 310.84s (0:05:10)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

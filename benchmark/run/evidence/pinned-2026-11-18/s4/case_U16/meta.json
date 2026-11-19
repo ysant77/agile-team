@@ -1,0 +1,31 @@
+{
+ "branch": "case/U16",
+ "head": "a07318cac3fab5918af7736d92f0aa6a7c0b70bd",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -76,3 +76,11 @@ class Money:\n \n     def __str__(self) -> str:\n         return f\"{from_minor(self.minor, self.currency)} {self.currency}\"\n+\n+\n+def share(amount: Money, basis_points: int) -> Money:\n+    \"\"\"amount * basis_points / 10000, rounded half to even to the minor unit.\"\"\"\n+    if basis_points < 0:\n+        raise ValueError(\"basis_points must not be negative\")\n+    exact = Decimal(amount.minor) * basis_points / Decimal(10_000)\n+    return Money(int(exact.quantize(Decimal(1), rounding=ROUND_HALF_EVEN)), amount.currency)\n"
+  },
+  {
+   "filename": "tests/test_money.py",
+   "status": "modified",
+   "patch": "@@ -56,3 +56,31 @@ def test_money_of_rejects_extra_decimals():\n def test_money_of_rejects_non_numbers(value):\n     with pytest.raises(ValueError):\n         Money.of(value, \"EUR\")\n+\n+\n+def test_share_rounds_ties_to_even_in_eur():\n+    from bank import money\n+\n+    assert money.share(Money.of(\"12.50\", \"EUR\"), 100) == Money.of(\"0.12\", \"EUR\")\n+    assert money.share(Money.of(\"13.50\", \"EUR\"), 100) == Money.of(\"0.14\", \"EUR\")\n+\n+\n+def test_share_rounds_ties_to_even_in_jpy():\n+    from bank import money\n+\n+    assert money.share(Money.of(\"1050\", \"JPY\"), 500) == Money.of(\"52\", \"JPY\")\n+    assert money.share(Money.of(\"1150\", \"JPY\"), 500) == Money.of(\"58\", \"JPY\")\n+\n+\n+def test_share_in_bhd_and_at_zero():\n+    from bank import money\n+\n+    assert money.share(Money.of(\"1.005\", \"BHD\"), 5000) == Money.of(\"0.502\", \"BHD\")\n+    assert money.share(Money.of(\"100.00\", \"EUR\"), 0) == Money.of(\"0.00\", \"EUR\")\n+\n+\n+def test_share_refuses_negative_basis_points():\n+    from bank import money\n+\n+    with pytest.raises(ValueError):\n+        money.share(Money.of(\"1.00\", \"EUR\"), -1)\n"
+  }
+ ],
+ "additions": 36,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 45%]\n........................................................................ [ 68%]\n........................................................................ [ 91%]\n...........................                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpe8k1irp1/bench-bank-4/coverage.json\n315 passed, 1 deselected in 431.52s (0:07:11)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "branch": "case/B18-a",
+ "head": "edb93ca42879c9b2fc0d24460425e186bfd934ac",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -261,6 +261,17 @@ def withdraw(\n         return _post(conn, \"withdrawal\", description, amount.currency, lines, at)\n \n \n+def withdraw_guarded(\n+    conn: sqlite3.Connection,\n+    account_id: int,\n+    amount: Money,\n+    description: str = \"Cash withdrawal\",\n+    at: datetime | None = None,\n+) -> int:\n+    \"\"\"Withdraw with the conditional UPDATE in ``_debit``: the funds check is part of the write.\"\"\"\n+    return withdraw(conn, account_id, amount, description, at)\n+\n+\n def _transfer_in_txn(\n     conn: sqlite3.Connection,\n     from_account_id: int,\n"
+  },
+  {
+   "filename": "tests/test_bench18_guarded_withdraw.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,35 @@\n+import threading\n+\n+from bank import ledger\n+from bank.money import Money\n+\n+THREADS = 20\n+\n+\n+def test_BENCH18_twenty_threads_one_guarded_withdrawal_succeeds(tmp_path, run_together):\n+    assert hasattr(ledger, \"withdraw_guarded\"), \"ledger.withdraw_guarded is missing\"\n+    path = tmp_path / \"guarded.db\"\n+    setup = ledger.open_db(path)\n+    account = ledger.open_account(setup, ledger.create_customer(setup, \"Guarded Customer\"), \"EUR\")\n+    ledger.deposit(setup, account.id, Money.of(\"100.00\", \"EUR\"))\n+    results: list[str] = []\n+    lock = threading.Lock()\n+\n+    def worker(start):\n+        conn = ledger.open_db(path)\n+        try:\n+            start()\n+            try:\n+                ledger.withdraw_guarded(conn, account.id, Money.of(\"80.00\", \"EUR\"))\n+                outcome = \"ok\"\n+            except ledger.InsufficientFunds:\n+                outcome = \"refused\"\n+        finally:\n+            conn.close()\n+        with lock:\n+            results.append(outcome)\n+\n+    assert run_together(THREADS, worker) == []\n+    assert results.count(\"ok\") == 1, results\n+    assert ledger.get_account(setup, account.id).balance_minor == 2000\n+    assert ledger.check_invariants(setup) == []\n"
+  }
+ ],
+ "additions": 46,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "........................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpz71xulww/bench-bank/coverage.json\n299 passed, 1 deselected in 490.22s (0:08:10)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "branch": "case/B22",
+ "head": "0b1c89cdbbe26be42a7956e238e637fa350f8bc1",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/limits.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,23 @@\n+\"\"\"Daily transfer limits per customer, in minor units.\"\"\"\n+\n+from __future__ import annotations\n+\n+from bank.money import Money\n+\n+DEFAULT_DAILY_LIMIT_MINOR = 500_000  # 5,000.00 in a two-decimal currency\n+\n+\n+class LimitExceeded(Exception):\n+    \"\"\"The transfer would take the day's total over the limit.\"\"\"\n+\n+\n+def remaining(sent_today: Money, limit: Money) -> Money:\n+    \"\"\"What the customer may still send today; never below zero.\"\"\"\n+    left = limit - sent_today\n+    return left if left.minor > 0 else Money(0, limit.currency)\n+\n+\n+def check(sent_today: Money, amount: Money, limit: Money) -> None:\n+    \"\"\"Raise ``LimitExceeded`` when ``amount`` does not fit in what is left of the limit.\"\"\"\n+    if amount.minor > remaining(sent_today, limit).minor:\n+        raise LimitExceeded(f\"{amount} is over the daily limit of {limit}\")\n"
+  },
+  {
+   "filename": "tests/test_bench22_limits.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,27 @@\n+import pytest\n+\n+import bank.limits as limits\n+from bank.money import Money\n+\n+\n+def eur(text):\n+    return Money.of(text, \"EUR\")\n+\n+\n+def test_BENCH22_amount_within_the_limit_is_allowed():\n+    limits.check(eur(\"100.00\"), eur(\"50.00\"), eur(\"200.00\"))\n+    limits.check(eur(\"150.00\"), eur(\"50.00\"), eur(\"200.00\"))  # exactly the limit\n+\n+\n+def test_BENCH22_amount_over_the_limit_is_refused():\n+    with pytest.raises(limits.LimitExceeded):\n+        limits.check(eur(\"150.00\"), eur(\"50.01\"), eur(\"200.00\"))\n+\n+\n+def test_BENCH22_remaining_never_goes_below_zero():\n+    assert limits.remaining(eur(\"250.00\"), eur(\"200.00\")) == eur(\"0.00\")\n+    assert limits.remaining(eur(\"80.00\"), eur(\"200.00\")) == eur(\"120.00\")\n+\n+\n+def test_BENCH22_default_limit_is_five_thousand():\n+    assert limits.DEFAULT_DAILY_LIMIT_MINOR == 500_000\n"
+  }
+ ],
+ "additions": 50,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "........................... [ 47%]\n........................................................................ [ 71%]\n........................................................................ [ 95%]\n..............                                                           [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpa290l51x/bench-bank/coverage.json\n302 passed, 1 deselected in 332.88s (0:05:32)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

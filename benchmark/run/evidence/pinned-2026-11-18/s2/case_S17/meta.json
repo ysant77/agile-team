@@ -1,0 +1,31 @@
+{
+ "branch": "9288d9ff5747b96e3b063ab31406860aae72adac",
+ "head": "9288d9ff5747b96e3b063ab31406860aae72adac",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": "d58de0ef38dadd73f910a4facee7943be141b3fa",
+ "base_tip": "4a15e55ae4510eb8b611ba05195ad4f91ea27ef1",
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -177,7 +177,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             if value is not None and not EARLIEST_DATE <= value <= LATEST_DATE:\n                 raise HTTPException(400, f\"dates must be between {EARLIEST_DATE} and {LATEST_DATE}\")\n         end = end or datetime.now(UTC).date()\n-        start = start or end - timedelta(days=STATEMENT_DAYS - 1)\n+        start = start or max(EARLIEST_DATE, end - timedelta(days=STATEMENT_DAYS - 1))\n         try:\n             st = ledger.statement(conn, account.id, start, end)\n         except ledger.LedgerError as exc:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -111,6 +111,14 @@ def test_statement_rejects_bad_dates(bank):\n     assert client.get(base + \"?from=yesterday\").status_code == 422\n \n \n+def test_default_start_is_not_before_the_earliest_date(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = client.get(f\"/api/accounts/{bank['eur'].id}/statement?to=1900-01-10\")\n+    assert response.status_code == 200\n+    body = response.json()\n+    assert body[\"from\"] == \"1900-01-01\"\n+\n+\n def transfer(client, from_id, to_number, amount, key=None, **extra):\n     body = {\"from_account_id\": from_id, \"to_account_number\": to_number, \"amount\": amount}\n     headers = {\"Idempotency-Key\": key or str(uuid.uuid4())}\n"
+  }
+ ],
+ "additions": 9,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpsapav64x/bench-bank-2/coverage.json\n299 passed, 1 deselected in 312.19s (0:05:12)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

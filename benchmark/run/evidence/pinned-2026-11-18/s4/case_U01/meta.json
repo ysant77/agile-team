@@ -1,0 +1,31 @@
+{
+ "branch": "case/U01",
+ "head": "5a1adae0961f29b5eed1e02053f8c10bc952b7e3",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -97,6 +97,8 @@ def owned_account(account_id: int, customer_id: CustomerId, conn: Conn) -> ledge\n         account = ledger.get_account(conn, account_id)\n     except ledger.NotFound:\n         account = None\n+    except OverflowError:\n+        account = None\n     if account is None or account.customer_id != customer_id:\n         raise HTTPException(404, \"account not found\")\n     return account\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,15 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_a_huge_account_id_is_404(bank):\n+    client = TestClient(bank[\"app\"], raise_server_exceptions=False)\n+    assert client.post(\"/api/session\", json={\"customer_id\": bank[\"owner\"]}).status_code == 200\n+    huge = 9223372036854775808\n+    assert client.get(f\"/api/accounts/{huge}\").status_code == 404\n+    assert client.get(f\"/api/accounts/{huge}/statement\").status_code == 404\n+    body = {\"from_account_id\": huge, \"to_account_number\": \"YMS-0000-0003\", \"amount\": \"1.00\"}\n+    response = client.post(\"/api/transfers\", json=body, headers={\"Idempotency-Key\": \"huge-id\"})\n+    assert response.status_code == 404\n+    assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"100.00\"\n"
+  }
+ ],
+ "additions": 14,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 46%]\n........................................................................ [ 69%]\n........................................................................ [ 92%]\n........................                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpi7zw6htv/bench-bank-4/coverage.json\n312 passed, 1 deselected in 366.19s (0:06:06)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

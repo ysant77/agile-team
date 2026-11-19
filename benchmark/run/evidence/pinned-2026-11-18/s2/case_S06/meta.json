@@ -1,0 +1,36 @@
+{
+ "branch": "case/S06",
+ "head": "0e8229961d850644efe146925a2319d9ac5f1cd7",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "README.md",
+   "status": "modified",
+   "patch": "@@ -56,7 +56,7 @@ the session model is for a demo, not for a server that others can reach. The API\n | `POST`, `GET`, `DELETE /api/session` | Start, read and end the demo session. |\n | `GET /api/accounts` | The session customer's accounts. |\n | `GET /api/accounts/{id}` | One account. |\n-| `GET /api/accounts/{id}/statement?from=YYYY-MM-DD&to=YYYY-MM-DD` | Lines with a running balance; both dates inclusive; default is the last 30 days. |\n+| `GET /api/accounts/{id}/statement?from=YYYY-MM-DD&to=YYYY-MM-DD` | Lines with a running balance; both dates inclusive; default is the last 90 days. |\n | `POST /api/transfers` | `{\"from_account_id\", \"to_account_number\", \"amount\", \"reference\"}`; amount is a decimal string. Requires an `Idempotency-Key` header: a retry with the same key returns the first transfer (200, `\"replayed\": true`); the same key with a different body is 422. Keys are per customer and expire after 24 hours; a failed attempt (for example insufficient funds) stores no key, so it can be retried. |\n \n Account routes answer 404 for any account the session customer does not own.\n"
+  },
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -28,7 +28,7 @@ from bank.money import Money, exponent, from_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n-STATEMENT_DAYS = 30\n+STATEMENT_DAYS = 90\n EARLIEST_DATE = date(1900, 1, 1)\n LATEST_DATE = date(9998, 12, 31)\n SEED_FLAG = \"demo_seeded\"\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -111,6 +111,14 @@ def test_statement_rejects_bad_dates(bank):\n     assert client.get(base + \"?from=yesterday\").status_code == 422\n \n \n+def test_default_statement_window_is_90_days(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = client.get(f\"/api/accounts/{bank['eur'].id}/statement?to=2026-05-31\")\n+    assert response.status_code == 200\n+    body = response.json()\n+    assert body[\"from\"] == \"2026-03-03\"\n+\n+\n def transfer(client, from_id, to_number, amount, key=None, **extra):\n     body = {\"from_account_id\": from_id, \"to_account_number\": to_number, \"amount\": amount}\n     headers = {\"Idempotency-Key\": key or str(uuid.uuid4())}\n"
+  }
+ ],
+ "additions": 10,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpd76fmfhy/bench-bank-2/coverage.json\n299 passed, 1 deselected, 1 warning in 280.87s (0:04:40)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}
