@@ -4,7 +4,7 @@
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -114,4 +114,79 @@ test('runDiscovery runs the tool loop with the real rules and stops at a recorde
   } finally {
     r.cleanup();
   }
+});
+
+// Set 2 (protocol 2): on a control the final text is read too. A sentence claims a defect when it
+// matches CLAIM_WORDS and no NO_DEFECT_WORDS. The word list is open: a claim in other words is
+// missed, and the limit is stated in the protocol.
+test('scoreDiscovery: a control fails when the final text claims a defect', async () => {
+  const { CLAIM_WORDS, claimsDefect } = await import('../bakeoff/tasks/discovery.js');
+  assert.ok(Array.isArray(CLAIM_WORDS) && CLAIM_WORDS.length > 5);
+  const control = { id: 'D3', truth: 'none' };
+  const claim = 'The defect is in `src/bank/api.py` line 223. Severity: High.';
+  assert.equal(claimsDefect(claim), true);
+  assert.equal(scoreDiscovery(control, null, claim).score, 0);
+  assert.equal(scoreDiscovery(control, null, claim).inventedDefect, true);
+  assert.equal(scoreDiscovery(control, null, claim).textClaim, true);
+  for (const fine of [
+    'There is no defect: the API refuses a transfer between two currencies by design.',
+    'This is not a bug. The currency check works as designed.',
+    'The reads show the expected behaviour for accounts in two currencies.',
+    '',
+  ]) {
+    assert.equal(claimsDefect(fine), false, fine);
+    assert.equal(scoreDiscovery(control, { kind: 'no_defect', hypothesis: 'x' }, fine).score, 1, fine);
+  }
+  // A defect case is scored by its recorded finding only, as before.
+  assert.equal(scoreDiscovery({ id: 'D1', truth: 'race' }, null, 'The defect is a race condition in withdraw.').score, 0);
+});
+
+test('the text rule on the round 1 control texts (development check)', async () => {
+  const { claimsDefect } = await import('../bakeoff/tasks/discovery.js');
+  const rows = readFileSync(new URL('../benchmark/run/results/discovery-1/discovery-1.jsonl', import.meta.url), 'utf8')
+    .trim().split('\n').map((l) => JSON.parse(l)).filter((r) => r.task === 'D-3');
+  assert.deepEqual(rows.map((r) => [r.repeat, claimsDefect(r.finalText)]), [[1, false], [2, true], [3, true]]);
+});
+
+test('runDiscovery keeps the full record-finding arguments and refusal text, and names the tools on an unknown one', async () => {
+  const r = repo();
+  try {
+    const bad = { kind: 'defect', hypothesis: 'h'.repeat(700), citations: [{ path: 'src/bank/ledger.py', line: 2 }] };
+    const plan = [
+      [{ name: 'start-investigation', arguments: { symptom: 'IGNORED' } }],
+      [{ name: 'record-finding', arguments: { investigationId: '$ID', finding: JSON.stringify(bad) } }],
+      [{ name: 'lint-requirement', arguments: { request: 'x' } }],
+      [],
+    ];
+    let id = null;
+    let step = 0;
+    const ask = async (messages) => {
+      const last = messages.at(-1);
+      if (last.role === 'tool' && !id) id = JSON.parse(last.content).investigationId;
+      const calls = (plan[step++] ?? []).map((c) => ({ name: c.name, arguments: JSON.parse(JSON.stringify(c.arguments).replaceAll('$ID', id)) }));
+      return { ok: true, content: calls.length ? '' : 'done', toolCalls: calls };
+    };
+    const out = await runDiscovery(ask, { id: 'D1', symptom: 'My balance went below zero.', truth: 'race' }, { tree: r.dir });
+    const record = out.calls.find((c) => c.name === 'record-finding');
+    assert.equal(record.args.finding, JSON.stringify(bad));
+    assert.ok(record.error.length > 300, record.error);
+    assert.match(record.error, /citations\[0\] needs keys file, line; got keys: path, line/);
+    const unknown = out.calls.find((c) => c.name === 'lint-requirement');
+    assert.equal(unknown.error, 'unknown tool lint-requirement; the tools are: start-investigation, list-repo-files, read-repo-file, read-ci-results, record-finding');
+  } finally {
+    r.cleanup();
+  }
+});
+
+test('the record-finding description gives the exact shape and one filled example', async () => {
+  const { ollamaTools } = await import('../src/tool-specs.js');
+  const [t] = ollamaTools(['record-finding']);
+  const d = t.function.parameters.properties.finding.description;
+  for (const part of ['citations: [{ file, line }]', 'reproducer: { file, testName, asserts }', 'severity: { level, reason }', 'priority: { level, reason }', 'Example:']) {
+    assert.ok(d.includes(part), part);
+  }
+  const example = JSON.parse(d.split('Example: ')[1]);
+  assert.deepEqual(Object.keys(example.citations[0]), ['file', 'line']);
+  assert.deepEqual(Object.keys(example.reproducer).sort(), ['asserts', 'file', 'testName']);
+  assert.doesNotMatch(d, /ledger|withdraw|app\.css|send-button|currenc/i);
 });

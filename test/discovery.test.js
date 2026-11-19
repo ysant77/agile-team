@@ -308,3 +308,44 @@ test('a no-defect finding needs no citation or reproducer, and keeps its open qu
   assert.equal(r.ok, true, r.error);
   assert.equal((await d.store.get(`finding:${r.findingId}`)).kind, 'no_defect');
 });
+
+// Discovery round 1 (19 Nov): the model sent the right line with a wrong key; the refusal read
+// "undefined:181 was not in a read" and piled dependent errors on it. The shape is checked first
+// and the refusal names the wrong key. No check is loosened.
+test('a citation with a wrong key is refused by name, with no dependent errors', async () => {
+  const { d, id } = await withRead();
+  const finding = { ...FINDING, citations: [{ path: 'src/bank/ledger.py', line: 255 }] };
+  const r = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(finding) }, d);
+  assert.equal(r.ok, false);
+  assert.equal(r.error, 'citations[0] needs keys file, line; got keys: path, line');
+  assert.doesNotMatch(r.error, /undefined|not in a read|invent a number|cite at least one/);
+});
+
+test('each part of the finding names its missing or wrong keys', async () => {
+  const { d, id } = await withRead();
+  const cases = [
+    [{ ...FINDING, citations: 'src/bank/ledger.py:255' }, 'citations must be a list of { file, line }; got a string'],
+    [{ ...FINDING, citations: [{ file: 'src/bank/ledger.py', line: 'near the top' }] }, 'citations[0].line must be a whole number; got "near the top"'],
+    [{ ...FINDING, reproducer: { name: 'test_two_withdrawals', file: 'tests/test_ledger.py' } }, 'reproducer needs keys file, testName, asserts; got keys: name, file'],
+    [{ ...FINDING, reproducer: 'test_two_withdrawals' }, 'reproducer must be { file, testName, asserts }; got a string'],
+    [{ ...FINDING, severity: 'high' }, 'severity must be { level: critical | high | medium | low, reason }; got a string'],
+    [{ ...FINDING, priority: { level: 'P1' } }, 'priority needs keys level, reason; got keys: level'],
+    [{ ...FINDING, hypothesis: undefined }, 'hypothesis must be text of at most 600 characters'],
+  ];
+  for (const [finding, error] of cases) {
+    const r = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(finding) }, d);
+    assert.equal(r.ok, false, JSON.stringify(finding));
+    assert.equal(r.error, error);
+  }
+});
+
+test('with the shape right, every grounding check still applies', async () => {
+  const { d, id } = await withRead();
+  const ungrounded = { ...FINDING, citations: [{ file: 'src/bank/ledger.py', line: 120 }], hypothesis: 'withdraw waits 25 ms.' };
+  const r = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(ungrounded) }, d);
+  assert.match(r.error, /src\/bank\/ledger.py:120 was not in a read/);
+  assert.match(r.error, /25 is not in the symptom or in a read/);
+  const ok = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(FINDING) }, d);
+  assert.equal(ok.ok, true, ok.error);
+  assert.equal((await d.store.get(`finding:${ok.findingId}`)).status, 'unconfirmed');
+});
