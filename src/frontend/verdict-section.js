@@ -22,6 +22,8 @@ export function VerdictSection({ view, ui }) {
       h(Text, null, `${view.meta.claim ?? 'claim'} · head ${view.meta.head ?? 'unknown'} · ${at}`)),
     h(Text, { weight: 'bold' }, view.headline),
     h(Text, null, `Why: ${view.why}`),
+    h(Heading, { as: 'h4' }, 'Evidence levels'),
+    ...(view.levels ?? []).map((l) => h(Text, { key: `l-${l.level}` }, `${l.level}: ${l.status}. ${l.detail}`)),
     h(Heading, { as: 'h4' }, 'What was proved'),
     ...(view.proved.length === 0 ? [h(Text, { key: 'p-none' }, 'Nothing was proved.')] : lines('p', view.proved)),
     ...(view.failed.length > 0 ? [h(Heading, { as: 'h4', key: 'f-head' }, 'What failed'), ...lines('f', view.failed)] : []),
