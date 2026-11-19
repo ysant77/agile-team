@@ -1,0 +1,78 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P119:H1",
+     "file": "src/bank/web/index.html",
+     "line": 50,
+     "text": "input to_account_number maxlength set to 32",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P119:H1",
+     "file": "src/bank/web/index.html",
+     "line": 53,
+     "text": "input amount maxlength set to 16",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P119:H2",
+     "file": "tests/test_web.py",
+     "line": 127,
+     "text": "test checks for maxlength attributes",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The patch only adds maxlength to two inputs. Other inputs on the page may also need limits."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "2e57266fb9d13c543d147f77f0ecfa4b2d3c49d5a1773047fa6085003d31dd52",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-519",
+      "prNumber": 119
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-519",
+      "prNumber": 119,
+      "review": "{\"findings\": [{\"hunk\": \"P119:H1\", \"file\": \"src/bank/web/index.html\", \"line\": 50, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"input to_account_number maxlength set to 32\"}, {\"hunk\": \"P119:H1\", \"file\": \"src/bank/web/index.html\", \"line\": 53, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"input amount maxlength set to 16\"}, {\"hunk\": \"P119:H2\", \"file\": \"tests/test_web.py\", \"line\": 127, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"test checks for maxlength attributes\"}], \"risks\": [\"The patch only adds maxlength to two inputs. Other inputs on the page may also need limits.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH519_transfer_inputs_have_length_limits\", \"file\": \"tests/test_web.py\", \"ac\": \"AC1\", \"asserts\": \"checks that to_account_number input has maxlength=\\\"32\\\" and amount input has maxlength=\\\"16\\\"\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

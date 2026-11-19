@@ -1,0 +1,87 @@
+{
+ "D": "cannot_verify",
+ "blocking": [
+  {
+   "hunk": "P103:H1",
+   "file": "src/bank/money.py",
+   "line": 32,
+   "text": "Missing check for 'abc' string input.",
+   "severity": "blocking",
+   "ac": "AC1"
+  },
+  {
+   "hunk": "P103:H1",
+   "file": "src/bank/money.py",
+   "line": 35,
+   "text": "Missing check for 'Infinity', '-Infinity', and 'NaN' inputs.",
+   "severity": "blocking",
+   "ac": "AC1"
+  }
+ ],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P103:H1",
+     "file": "src/bank/money.py",
+     "line": 32,
+     "text": "Missing check for 'abc' string input.",
+     "severity": "blocking",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P103:H1",
+     "file": "src/bank/money.py",
+     "line": 35,
+     "text": "Missing check for 'Infinity', '-Infinity', and 'NaN' inputs.",
+     "severity": "blocking",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The code change may not fully address all non-finite number cases in the AC."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "6f9f73bb3209c83abc273b67e1f80e39d91ead7b93d0a0594fcea20dab65c125",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-503",
+      "prNumber": 103
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-503",
+      "prNumber": 103,
+      "review": "{\"findings\": [{\"hunk\": \"P103:H1\", \"file\": \"src/bank/money.py\", \"line\": 32, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Missing check for 'abc' string input.\"}, {\"hunk\": \"P103:H1\", \"file\": \"src/bank/money.py\", \"line\": 35, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Missing check for 'Infinity', '-Infinity', and 'NaN' inputs.\"}], \"risks\": [\"The code change may not fully address all non-finite number cases in the AC.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH503_to_minor_refuses_non_numbers_with_value_error\", \"file\": \"tests/test_money.py\", \"ac\": \"AC1\", \"asserts\": \"The test must assert that to_minor raises ValueError for 'abc', 'Infinity', '-Infinity', and 'NaN' inputs.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "line-not-added",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "3dc0affe64316058fb40f071d5a5b961104ca624410023b1f11ede87a5167351",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-505",
+      "prNumber": 105
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-505",
+      "prNumber": 105,
+      "review": "{\"findings\": [{\"hunk\": \"P105:H1\", \"file\": \"src/bank/api.py\", \"line\": 190, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"credits and debits are calculated from line amounts.\"}, {\"hunk\": \"P105:H2\", \"file\": \"tests/test_api.py\", \"line\": 243, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"test checks credits and debits totals.\"}], \"risks\": [\"The patch does not validate that the account currency is consistent across all lines in the statement window.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH505_statement_totals_handle_mixed_currencies\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"A statement with mixed currencies in the window should raise an error or be filtered to the account's currency.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "line-not-added",
+   "reasons": [
+    "line 190 is not an added line of P105:H1"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-505",
+      "prNumber": 105,
+      "review": "{\"findings\": [{\"hunk\": \"P105:H1\", \"file\": \"src/bank/api.py\", \"line\": 190, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"credits and debits are calculated from line amounts.\"}, {\"hunk\": \"P105:H2\", \"file\": \"tests/test_api.py\", \"line\": 243, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"test checks credits and debits totals.\"}], \"risks\": [\"The patch does not validate that the account currency is consistent across all lines in the statement window.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH505_statement_totals_handle_mixed_currencies\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"A statement with mixed currencies in the window should raise an error or be filtered to the account's currency.\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "line-not-added",
+   "reasons": [
+    "line 190 is not an added line of P105:H1"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

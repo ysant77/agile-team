@@ -1,0 +1,70 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P101:H1",
+     "file": "src/bank/api.py",
+     "line": 47,
+     "text": "customer_id field now has ge=1 validation.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P101:H2",
+     "file": "tests/test_api.py",
+     "line": 240,
+     "text": "New test covers id below one and unknown id cases.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The change only adds validation for customer_id >= 1, which is good. No other risks identified."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "57ea73e2157243027534f21b18e220e56a52832c31847733caaca75e7eed3a31",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-501",
+      "prNumber": 101
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-501",
+      "prNumber": 101,
+      "review": "{\"findings\": [{\"hunk\": \"P101:H1\", \"file\": \"src/bank/api.py\", \"line\": 47, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"customer_id field now has ge=1 validation.\"}, {\"hunk\": \"P101:H2\", \"file\": \"tests/test_api.py\", \"line\": 240, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"New test covers id below one and unknown id cases.\"}], \"risks\": [\"The change only adds validation for customer_id >= 1, which is good. No other risks identified.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH501_session_refuses_ids_below_one\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"Asserts that customer_id below 1 returns 422 and no cookie, unknown id returns 404, and valid id returns 200 with cookie set.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}
