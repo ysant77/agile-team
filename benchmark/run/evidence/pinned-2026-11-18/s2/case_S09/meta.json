@@ -1,0 +1,31 @@
+{
+ "branch": "case/S09",
+ "head": "9f1cd7f140553d9a01c9b0ed5ad868948f4b507d",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -216,6 +216,8 @@ def _post(\n     \"\"\"Write a balanced journal entry. ``lines`` holds (account_id, signed amount_minor).\"\"\"\n     if sum(amount for _, amount in lines) != 0:\n         raise LedgerError(\"journal entry does not balance\")\n+    if kind == \"deposit\" and not description.strip():\n+        description = \"Cash deposit\"\n     cur = conn.execute(\n         \"INSERT INTO journal_entries (kind, description, posted_at, reference) VALUES (?, ?, ?, ?)\",\n         (kind, description, timestamp(at), reference),\n"
+  },
+  {
+   "filename": "tests/test_ledger.py",
+   "status": "modified",
+   "patch": "@@ -24,6 +24,13 @@ def balance(conn, account):\n     return ledger.get_account(conn, account.id).balance_minor\n \n \n+def test_blank_deposit_description_gets_the_default(conn, two_accounts, at):\n+    a, _ = two_accounts\n+    ledger.deposit(conn, a.id, eur(\"5.00\"), description=\"  \", at=at(\"2026-05-02\"))\n+    st = ledger.statement(conn, a.id, date(2026, 5, 2), date(2026, 5, 2))\n+    assert [line.description for line in st.lines] == [\"Cash deposit\"]\n+\n+\n def test_account_numbers_are_obviously_fake(conn):\n     customer = ledger.create_customer(conn, \"Test Customer\")\n     first = ledger.open_account(conn, customer, \"EUR\")\n"
+  }
+ ],
+ "additions": 9,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpkth_ltv0/bench-bank-2/coverage.json\n299 passed, 1 deselected in 287.57s (0:04:47)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

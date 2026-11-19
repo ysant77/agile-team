@@ -1,0 +1,31 @@
+{
+ "branch": "case/U18",
+ "head": "3a82f2dbbcd921d67ee71a01b79f52501e939d6a",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -334,10 +334,8 @@ def transfer_once(\n     fingerprint = request_fingerprint(from_account_id, to_account_id, amount, reference)\n     oldest = timestamp(now - timedelta(seconds=IDEMPOTENCY_WINDOW_SECONDS))\n     with write_txn(conn):\n-        conn.execute(\n-            \"DELETE FROM idempotency_keys WHERE customer_id = ? AND key = ? AND created_at < ?\",\n-            (customer_id, key, oldest),\n-        )\n+        expired = \"DELETE FROM idempotency_keys WHERE customer_id = ? AND created_at < ?\"\n+        conn.execute(expired, (customer_id, oldest))\n         row = conn.execute(\n             \"SELECT request_hash, response_json FROM idempotency_keys\"\n             \" WHERE customer_id = ? AND key = ?\",\n"
+  },
+  {
+   "filename": "tests/test_idempotency.py",
+   "status": "modified",
+   "patch": "@@ -85,3 +85,21 @@ def test_keys_expire_after_24_hours(accounts):\n         conn, owner, \"k\", source.id, target.id, Money.of(\"2.00\", \"EUR\"), now=later\n     )\n     assert replayed is False and entries(conn) == 2\n+\n+\n+def test_old_keys_of_the_customer_are_removed(accounts):\n+    _, conn, owner, source, target = accounts\n+    one = Money.of(\"1.00\", \"EUR\")\n+    t0 = datetime.now(UTC)\n+    ledger.transfer_once(\n+        conn, owner, \"old\", source.id, target.id, one, now=t0 - timedelta(hours=25)\n+    )\n+    ledger.transfer_once(\n+        conn, owner, \"edge\", source.id, target.id, one, now=t0 - timedelta(hours=24)\n+    )\n+    ledger.transfer_once(conn, owner, \"new\", source.id, target.id, one)\n+    keys = {\n+        row[0]\n+        for row in conn.execute(\"SELECT key FROM idempotency_keys WHERE customer_id = ?\", (owner,))\n+    }\n+    assert keys == {\"edge\", \"new\"}\n"
+  }
+ ],
+ "additions": 20,
+ "deletions": 4,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 46%]\n........................................................................ [ 69%]\n........................................................................ [ 92%]\n........................                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp843l023x/bench-bank-4/coverage.json\n312 passed, 1 deselected in 180.42s (0:03:00)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

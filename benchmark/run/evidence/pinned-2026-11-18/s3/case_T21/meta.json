@@ -1,0 +1,31 @@
+{
+ "branch": "case/T21",
+ "head": "b834cd5e7d4c0b01c87efe8b661fc9fa284735c9",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -19,6 +19,7 @@ from pathlib import Path\n from typing import Annotated\n \n from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response\n+from fastapi.responses import JSONResponse\n from fastapi.staticfiles import StaticFiles\n from pydantic import BaseModel, Field\n \n@@ -136,6 +137,15 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     app = FastAPI(title=\"YMS Bank demo\", lifespan=lifespan)\n     app.state.db_path = path\n \n+    @app.get(\"/api/health\", response_model=None)\n+    def health(conn: Conn) -> dict[str, str] | JSONResponse:\n+        \"\"\"For the load balancer: no login; 503 when the database cannot be read.\"\"\"\n+        try:\n+            conn.execute(\"SELECT COUNT(*) FROM accounts\").fetchone()\n+        except sqlite3.Error:\n+            return JSONResponse({\"status\": \"error\", \"database\": \"error\"}, status_code=503)\n+        return {\"status\": \"ok\", \"database\": \"ok\"}\n+\n     @app.get(\"/api/customers\")\n     def list_customers(conn: Conn) -> list[dict[str, object]]:\n         return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n"
+  },
+  {
+   "filename": "tests/test_health.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,30 @@\n+import pytest\n+from fastapi.testclient import TestClient\n+\n+from bank import ledger\n+from bank.api import create_app, get_conn\n+\n+\n+@pytest.fixture\n+def app(tmp_path):\n+    path = tmp_path / \"health.db\"\n+    ledger.open_db(path).close()\n+    return create_app(path, seed_if_empty=False)\n+\n+\n+def test_health_is_ok_without_a_login(app):\n+    response = TestClient(app).get(\"/api/health\")\n+    assert response.status_code == 200\n+    assert response.json() == {\"status\": \"ok\", \"database\": \"ok\"}\n+\n+\n+def test_health_is_503_when_the_database_cannot_be_read(app, tmp_path):\n+    def closed_conn():\n+        conn = ledger.open_db(tmp_path / \"closed.db\")\n+        conn.close()\n+        yield conn\n+\n+    app.dependency_overrides[get_conn] = closed_conn\n+    response = TestClient(app).get(\"/api/health\")\n+    assert response.status_code == 503\n+    assert response.json().get(\"database\") == \"error\"\n"
+  }
+ ],
+ "additions": 40,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n............                                                             [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp81my9vt4/bench-bank-3/coverage.json\n300 passed, 1 deselected in 331.76s (0:05:31)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

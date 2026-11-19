@@ -1,0 +1,36 @@
+{
+ "branch": "case/T09",
+ "head": "7ec6936f970424dd2a471a04f3f3f8dca03c5e95",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import EXPONENTS, Money, exponent, from_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -159,8 +159,14 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         response.delete_cookie(COOKIE)\n \n     @app.get(\"/api/accounts\")\n-    def list_accounts(customer_id: CustomerId, conn: Conn) -> list[dict[str, object]]:\n-        return [account_json(a) for a in ledger.list_accounts(conn, customer_id)]\n+    def list_accounts(\n+        customer_id: CustomerId, conn: Conn, currency: str | None = None\n+    ) -> list[dict[str, object]]:\n+        if currency is not None:\n+            currency = currency.upper()\n+            if currency not in EXPONENTS:\n+                raise HTTPException(422, f\"unknown currency: {currency}\")\n+        return [account_json(a) for a in ledger.list_accounts(conn, customer_id, currency)]\n \n     @app.get(\"/api/accounts/{account_id}\")\n     def read_account(account: OwnedAccount) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -153,10 +153,21 @@ def get_account_by_number(conn: sqlite3.Connection, number: str) -> Account:\n     return _row_to_account(row.fetchone())\n \n \n-def list_accounts(conn: sqlite3.Connection, customer_id: int) -> list[Account]:\n-    rows = conn.execute(\n-        f\"SELECT {ACCOUNT_COLUMNS} FROM accounts WHERE customer_id = ? ORDER BY id\", (customer_id,)\n-    )\n+def list_accounts(\n+    conn: sqlite3.Connection, customer_id: int, currency: str | None = None\n+) -> list[Account]:\n+    \"\"\"The customer's accounts; with ``currency``, only the accounts in that currency.\"\"\"\n+    if currency is None:\n+        rows = conn.execute(\n+            f\"SELECT {ACCOUNT_COLUMNS} FROM accounts WHERE customer_id = ? ORDER BY id\",\n+            (customer_id,),\n+        )\n+    else:\n+        rows = conn.execute(\n+            f\"SELECT {ACCOUNT_COLUMNS} FROM accounts WHERE customer_id = ? AND currency = ?\"\n+            \" ORDER BY id\",\n+            (customer_id, currency),\n+        )\n     return [_row_to_account(row) for row in rows]\n \n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -60,6 +60,33 @@ def test_list_accounts_shows_only_own(bank):\n     assert accounts[1][\"balance\"] == \"5000\"\n \n \n+@pytest.mark.parametrize(\n+    \"query, currencies\",\n+    [\n+        pytest.param(\"\", [\"EUR\", \"EUR\", \"JPY\"], id=\"no_filter\"),\n+        pytest.param(\"?currency=EUR\", [\"EUR\", \"EUR\"], id=\"EUR\"),\n+        pytest.param(\"?currency=JPY\", [\"JPY\"], id=\"JPY\"),\n+        pytest.param(\"?currency=eur\", [\"EUR\", \"EUR\"], id=\"lower_case_eur\"),\n+        pytest.param(\"?currency=BHD\", [], id=\"BHD\"),\n+    ],\n+)\n+def test_account_list_by_currency(bank, query, currencies):\n+    conn = ledger.open_db(bank[\"path\"])\n+    customer = ledger.create_customer(conn, \"Currency Test\")\n+    for code in (\"EUR\", \"JPY\", \"EUR\"):\n+        ledger.open_account(conn, customer, code)\n+    conn.close()\n+    client = login(bank[\"app\"], customer)\n+    response = client.get(\"/api/accounts\" + query)\n+    assert response.status_code == 200\n+    assert sorted(a[\"currency\"] for a in response.json()) == currencies\n+\n+\n+def test_unknown_currency_is_refused(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    assert client.get(\"/api/accounts?currency=XXX\").status_code == 422\n+\n+\n def account_routes(app):\n     \"\"\"Every route under /api/accounts/ that takes an account id, with each method.\"\"\"\n     for route in app.routes:\n"
+  }
+ ],
+ "additions": 51,
+ "deletions": 7,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 47%]\n........................................................................ [ 71%]\n........................................................................ [ 94%]\n................                                                         [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpsnrphq_h/bench-bank-3/coverage.json\n304 passed, 1 deselected in 328.65s (0:05:28)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

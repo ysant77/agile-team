@@ -1,0 +1,26 @@
+{
+ "branch": "case/U24",
+ "head": "011433842fd086015f106f74b0e5c9f911b6ce53",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/web/app.js",
+   "status": "modified",
+   "patch": "@@ -199,7 +199,7 @@ async function renderStatement(accountId, from, to) {\n     const tr = document.createElement(\"tr\");\n     const description = line.reference ? `${line.description} (${line.reference})` : line.description;\n     tr.append(\n-      cell(line.posted_at.slice(0, 10), \"nowrap\"),\n+      cell(line.posted_at.slice(0, 16).replace(\"T\", \" \"), \"nowrap\"),\n       cell(description),\n       cell(line.amount, line.amount_minor < 0 ? \"num neg\" : \"num\"),\n       cell(line.balance, \"num\"),\n"
+  }
+ ],
+ "additions": 1,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 46%]\n........................................................................ [ 69%]\n........................................................................ [ 92%]\n.......................                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp4my18l5c/bench-bank-4/coverage.json\n311 passed, 1 deselected in 343.11s (0:05:43)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

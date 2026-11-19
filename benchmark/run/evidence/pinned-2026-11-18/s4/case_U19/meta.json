@@ -1,0 +1,31 @@
+{
+ "branch": "case/U19",
+ "head": "6c68d1c9e81875734da9a361a81dfadc9b3c9250",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -245,6 +245,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         from_account = account_json(source) | money_fields(\n             \"balance\", int(result[\"from_balance_minor\"]), source.currency\n         )\n+        internal = target.customer_id == customer_id\n         return {\n             \"entry_id\": result[\"entry_id\"],\n             \"replayed\": replayed,\n@@ -252,6 +253,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             **money_fields(\"amount\", int(result[\"amount_minor\"]), str(result[\"currency\"])),\n             \"currency\": result[\"currency\"],\n             \"from_account\": from_account,\n+            \"internal\": internal,\n         }\n \n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,24 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_transfer_to_an_own_account_is_internal(bank):\n+    conn = ledger.open_db(bank[\"path\"])\n+    try:\n+        second = ledger.open_account(conn, bank[\"owner\"], \"EUR\")\n+    finally:\n+        conn.close()\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    first = transfer(client, bank[\"eur\"].id, second.number, \"1.00\", key=\"own-1\")\n+    assert first.status_code == 201\n+    assert first.json().get(\"internal\") is True\n+    again = transfer(client, bank[\"eur\"].id, second.number, \"1.00\", key=\"own-1\")\n+    assert again.status_code == 200\n+    assert again.json().get(\"internal\") is True\n+\n+\n+def test_transfer_to_another_customer_is_not_internal(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = transfer(client, bank[\"eur\"].id, \"YMS-0000-0003\", \"1.00\")\n+    assert response.json().get(\"internal\") is False\n"
+  }
+ ],
+ "additions": 23,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 46%]\n........................................................................ [ 69%]\n........................................................................ [ 92%]\n.........................                                                [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpco4kgaht/bench-bank-4/coverage.json\n313 passed, 1 deselected in 180.41s (0:03:00)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

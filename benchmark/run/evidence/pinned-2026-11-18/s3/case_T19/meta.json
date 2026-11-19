@@ -1,0 +1,36 @@
+{
+ "branch": "case/T19",
+ "head": "ae995f0d1c16edc3baba550cb2b75b13f1582929",
+ "base": "4b8a394fa0507c73f1bac1a36c9375716ddea296",
+ "merge_base": "4b8a394fa0507c73f1bac1a36c9375716ddea296",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -14,6 +14,7 @@ EXPONENTS: dict[str, int] = {\n     \"JPY\": 0,\n     \"KRW\": 0,\n     \"BHD\": 3,\n+    \"KWD\": 3,\n }\n \n \n"
+  },
+  {
+   "filename": "tests/test_ledger.py",
+   "status": "modified",
+   "patch": "@@ -269,3 +269,15 @@ def test_a_failed_rollback_to_stops_the_job_and_commits_nothing(tmp_path):\n     assert not conn.in_transaction\n     assert ledger.list_customers(conn) == []\n     assert conn.execute(\"SELECT COUNT(*) FROM app_flags\").fetchone()[0] == 0\n+\n+\n+def test_an_account_can_be_opened_in_kwd(conn):\n+    from bank.money import EXPONENTS\n+\n+    assert \"KWD\" in EXPONENTS\n+    customer = ledger.create_customer(conn, \"Test Dinar\")\n+    account = ledger.open_account(conn, customer, \"KWD\")\n+    ledger.deposit(conn, account.id, Money.of(\"12.345\", \"KWD\"))\n+    assert balance(conn, account) == 12345\n+    assert ledger.get_account_by_number(conn, \"YMS-CLR-KWD\").balance_minor == -12345\n+    assert ledger.check_invariants(conn) == []\n"
+  },
+  {
+   "filename": "tests/test_money.py",
+   "status": "modified",
+   "patch": "@@ -56,3 +56,8 @@ def test_money_of_rejects_extra_decimals():\n def test_money_of_rejects_non_numbers(value):\n     with pytest.raises(ValueError):\n         Money.of(value, \"EUR\")\n+\n+\n+def test_kwd_has_three_decimals():\n+    assert EXPONENTS.get(\"KWD\") == 3\n+    assert to_minor(\"1.234\", \"KWD\") == 1234\n"
+  }
+ ],
+ "additions": 18,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpnhwazqhr/bench-bank-3/coverage.json\n300 passed, 1 deselected, 1 warning in 362.21s (0:06:02)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

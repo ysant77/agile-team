@@ -1,0 +1,31 @@
+{
+ "branch": "case/S08",
+ "head": "c77b1bcdff658c4341f75b09da6ae6c90fb3e8f4",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/web/index.html",
+   "status": "modified",
+   "patch": "@@ -3,6 +3,7 @@\n <head>\n   <meta charset=\"utf-8\">\n   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n+  <meta name=\"robots\" content=\"noindex\">\n   <title>YMS Bank demo</title>\n   <link rel=\"stylesheet\" href=\"/app.css\">\n   <script src=\"/app.js\" defer></script>\n"
+  },
+  {
+   "filename": "tests/test_web.py",
+   "status": "modified",
+   "patch": "@@ -121,3 +121,10 @@ def test_pages_are_served_without_external_assets(tmp_path):\n         text = path.read_text(encoding=\"utf-8\")\n         assert not re.search(r\"(src|href)=\\\"(https?:)?//\", text), path.name\n         assert \"@import\" not in text and \"url(http\" not in text, path.name\n+\n+\n+def test_index_page_asks_not_to_be_indexed(tmp_path):\n+    client = TestClient(create_app(tmp_path / \"web.db\", seed_if_empty=False))\n+    page = client.get(\"/\")\n+    assert page.status_code == 200\n+    assert '<meta name=\"robots\" content=\"noindex\">' in page.text\n"
+  }
+ ],
+ "additions": 8,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp0hkx_ubj/bench-bank-2/coverage.json\n299 passed, 1 deselected in 276.52s (0:04:36)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "branch": "case/U11",
+ "head": "8421d61824c9a69511653f16aebff9eb9056481a",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -76,3 +76,14 @@ class Money:\n \n     def __str__(self) -> str:\n         return f\"{from_minor(self.minor, self.currency)} {self.currency}\"\n+\n+\n+def format_minor(minor: int, currency: str) -> str:\n+    \"\"\"Display text: the decimals of the currency and a comma between groups of three digits.\"\"\"\n+    whole, dot, frac = str(from_minor(minor, currency)).partition(\".\")\n+    groups = []\n+    while len(whole) > 3:\n+        groups.insert(0, whole[-3:])\n+        whole = whole[:-3]\n+    groups.insert(0, whole)\n+    return \",\".join(groups) + dot + frac\n"
+  },
+  {
+   "filename": "tests/test_money.py",
+   "status": "modified",
+   "patch": "@@ -56,3 +56,13 @@ def test_money_of_rejects_extra_decimals():\n def test_money_of_rejects_non_numbers(value):\n     with pytest.raises(ValueError):\n         Money.of(value, \"EUR\")\n+\n+\n+def test_format_minor_groups_thousands():\n+    from bank import money\n+\n+    assert money.format_minor(123450, \"EUR\") == \"1,234.50\"\n+    assert money.format_minor(1234567, \"JPY\") == \"1,234,567\"\n+    assert money.format_minor(1234567, \"BHD\") == \"1,234.567\"\n+    assert money.format_minor(0, \"EUR\") == \"0.00\"\n+    assert money.format_minor(99999, \"EUR\") == \"999.99\"\n"
+  }
+ ],
+ "additions": 21,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 46%]\n........................................................................ [ 69%]\n........................................................................ [ 92%]\n........................                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmprc3almgm/bench-bank-4/coverage.json\n312 passed, 1 deselected in 311.93s (0:05:11)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

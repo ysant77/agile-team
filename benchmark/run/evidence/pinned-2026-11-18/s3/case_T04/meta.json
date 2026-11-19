@@ -1,0 +1,31 @@
+{
+ "branch": "case/T04",
+ "head": "98288f6bdc8fc709b94862a2c98a419da88ec474",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/business_days.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,24 @@\n+\"\"\"Business days (Monday to Friday) for dated transfers. Public holidays are not counted.\"\"\"\n+\n+from __future__ import annotations\n+\n+from datetime import date, timedelta\n+\n+SATURDAY = 5\n+\n+\n+def next_business_day(d: date) -> date:\n+    \"\"\"``d`` itself from Monday to Friday, otherwise the next Monday.\"\"\"\n+    if d.weekday() >= SATURDAY:\n+        return d + timedelta(days=7 - d.weekday())\n+    return d\n+\n+\n+def add_business_days(d: date, n: int) -> date:\n+    \"\"\"The date ``n`` business days after ``next_business_day(d)``.\"\"\"\n+    if n < 0:\n+        raise ValueError(\"n must not be negative\")\n+    day = next_business_day(d)\n+    for _ in range(n):\n+        day = next_business_day(day + timedelta(days=1))\n+    return day\n"
+  },
+  {
+   "filename": "tests/test_business_days.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,27 @@\n+from datetime import date\n+\n+import pytest\n+\n+from bank.business_days import add_business_days, next_business_day\n+\n+\n+def test_saturday_moves_to_monday():\n+    assert next_business_day(date(2026, 11, 14)) == date(2026, 11, 16)\n+\n+\n+def test_sunday_moves_to_monday():\n+    assert next_business_day(date(2026, 11, 15)) == date(2026, 11, 16)\n+\n+\n+def test_friday_is_a_business_day():\n+    assert next_business_day(date(2026, 11, 13)) == date(2026, 11, 13)\n+\n+\n+def test_add_business_days_skips_the_weekend():\n+    assert add_business_days(date(2026, 11, 13), 1) == date(2026, 11, 16)\n+    assert add_business_days(date(2026, 11, 11), 5) == date(2026, 11, 18)\n+\n+\n+def test_negative_business_days_are_refused():\n+    with pytest.raises(ValueError):\n+        add_business_days(date(2026, 11, 13), -1)\n"
+  }
+ ],
+ "additions": 51,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 47%]\n........................................................................ [ 71%]\n........................................................................ [ 95%]\n...............                                                          [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp2slb92cb/bench-bank-3/coverage.json\n303 passed, 1 deselected in 288.45s (0:04:48)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

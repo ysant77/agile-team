@@ -1,0 +1,31 @@
+{
+ "branch": "case/B16",
+ "head": "867407f24a60b7cb1bf5c0e0d30845e24bae3a55",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -330,6 +330,8 @@ def transfer_once(\n     \"\"\"\n     if from_account_id == to_account_id:\n         raise LedgerError(\"cannot transfer to the same account\")\n+    if not key.strip():\n+        raise LedgerError(\"idempotency key is empty\")\n     now = now or datetime.now(UTC)\n     fingerprint = request_fingerprint(from_account_id, to_account_id, amount, reference)\n     oldest = timestamp(now - timedelta(seconds=IDEMPOTENCY_WINDOW_SECONDS))\n"
+  },
+  {
+   "filename": "tests/test_bench16_blank_key.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,30 @@\n+from bank import ledger\n+from bank.money import Money\n+\n+\n+def _setup(conn):\n+    customer = ledger.create_customer(conn, \"Key Payer\")\n+    a = ledger.open_account(conn, customer, \"EUR\")\n+    b = ledger.open_account(conn, ledger.create_customer(conn, \"Key Payee\"), \"EUR\")\n+    ledger.deposit(conn, a.id, Money.of(\"20.00\", \"EUR\"))\n+    return customer, a, b\n+\n+\n+def test_BENCH16_blank_idempotency_key_is_refused(conn):\n+    customer, a, b = _setup(conn)\n+    try:\n+        ledger.transfer_once(conn, customer, \"   \", a.id, b.id, Money.of(\"1.00\", \"EUR\"))\n+        outcome = \"accepted\"\n+    except ledger.LedgerError:\n+        outcome = \"refused\"\n+    assert outcome == \"refused\"\n+    assert ledger.get_account(conn, a.id).balance_minor == 2000\n+\n+\n+def test_BENCH16_real_key_still_replays(conn):\n+    customer, a, b = _setup(conn)\n+    amount = Money.of(\"1.00\", \"EUR\")\n+    first, replayed = ledger.transfer_once(conn, customer, \"k-1\", a.id, b.id, amount)\n+    again, replayed_again = ledger.transfer_once(conn, customer, \"k-1\", a.id, b.id, amount)\n+    assert (replayed, replayed_again) == (False, True)\n+    assert first == again\n"
+  }
+ ],
+ "additions": 32,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "........................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n............                                                             [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpkyw2a_l4/bench-bank/coverage.json\n300 passed, 1 deselected in 338.17s (0:05:38)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

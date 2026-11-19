@@ -1,0 +1,31 @@
+{
+ "branch": "case/S14",
+ "head": "9d552a074ae1a40b9b4482c231f5af5f27eedf14",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -76,3 +76,8 @@ class Money:\n \n     def __str__(self) -> str:\n         return f\"{from_minor(self.minor, self.currency)} {self.currency}\"\n+\n+\n+def split_evenly(amount: Money, parts: int) -> list[Money]:\n+    \"\"\"Split an amount into ``parts`` equal parts.\"\"\"\n+    return [Money(amount.minor // parts, amount.currency)] * parts\n"
+  },
+  {
+   "filename": "tests/test_money.py",
+   "status": "modified",
+   "patch": "@@ -2,6 +2,7 @@ from decimal import Decimal\n \n import pytest\n \n+from bank import money\n from bank.money import EXPONENTS, Money, from_minor, to_minor\n \n \n@@ -56,3 +57,10 @@ def test_money_of_rejects_extra_decimals():\n def test_money_of_rejects_non_numbers(value):\n     with pytest.raises(ValueError):\n         Money.of(value, \"EUR\")\n+\n+\n+def test_split_evenly_is_stable():\n+    first = money.split_evenly(Money(100, \"EUR\"), 3)\n+    second = money.split_evenly(Money(100, \"EUR\"), 3)\n+    assert first == second\n+    assert len(first) == 3\n"
+  }
+ ],
+ "additions": 13,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp9df6j3u7/bench-bank-2/coverage.json\n299 passed, 1 deselected in 300.46s (0:05:00)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

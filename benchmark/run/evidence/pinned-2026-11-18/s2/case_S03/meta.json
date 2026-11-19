@@ -1,0 +1,31 @@
+{
+ "branch": "case/S03",
+ "head": "c2b7c2f564ebb45e84b29bed739979886e77fafc",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -143,6 +143,17 @@ def open_account(\n         return get_account(conn, int(cur.lastrowid))\n \n \n+def customer_totals(conn: sqlite3.Connection, customer_id: int) -> dict[str, int]:\n+    \"\"\"Sum of ``balance_minor`` for each currency over the customer's accounts.\"\"\"\n+    get_customer(conn, customer_id)\n+    rows = conn.execute(\n+        \"SELECT currency, SUM(balance_minor) AS total FROM accounts\"\n+        \" WHERE customer_id = ? AND kind = 'customer' GROUP BY currency ORDER BY currency\",\n+        (customer_id,),\n+    ).fetchall()\n+    return {row[\"currency\"]: int(row[\"total\"]) for row in rows}\n+\n+\n def get_account(conn: sqlite3.Connection, account_id: int) -> Account:\n     row = conn.execute(f\"SELECT {ACCOUNT_COLUMNS} FROM accounts WHERE id = ?\", (account_id,))\n     return _row_to_account(row.fetchone())\n"
+  },
+  {
+   "filename": "tests/test_ledger.py",
+   "status": "modified",
+   "patch": "@@ -24,6 +24,26 @@ def balance(conn, account):\n     return ledger.get_account(conn, account.id).balance_minor\n \n \n+def test_customer_totals_sum_each_currency(conn):\n+    customer = ledger.create_customer(conn, \"Test Totals\")\n+    first = ledger.open_account(conn, customer, \"EUR\")\n+    second = ledger.open_account(conn, customer, \"EUR\")\n+    third = ledger.open_account(conn, customer, \"JPY\")\n+    ledger.deposit(conn, first.id, eur(\"100.00\"))\n+    ledger.deposit(conn, second.id, eur(\"25.50\"))\n+    ledger.deposit(conn, third.id, Money.of(\"5000\", \"JPY\"))\n+    other = ledger.create_customer(conn, \"Test Other\")\n+    ledger.deposit(conn, ledger.open_account(conn, other, \"EUR\").id, eur(\"9.99\"))\n+    assert ledger.customer_totals(conn, customer) == {\"EUR\": 12550, \"JPY\": 5000}\n+\n+\n+def test_customer_totals_of_a_customer_with_no_account(conn):\n+    customer = ledger.create_customer(conn, \"Test Empty\")\n+    assert ledger.customer_totals(conn, customer) == {}\n+    with pytest.raises(ledger.NotFound):\n+        ledger.customer_totals(conn, 999)\n+\n+\n def test_account_numbers_are_obviously_fake(conn):\n     customer = ledger.create_customer(conn, \"Test Customer\")\n     first = ledger.open_account(conn, customer, \"EUR\")\n"
+  }
+ ],
+ "additions": 31,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpe3hmyxi8/bench-bank-2/coverage.json\n300 passed, 1 deselected, 1 warning in 233.01s (0:03:53)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

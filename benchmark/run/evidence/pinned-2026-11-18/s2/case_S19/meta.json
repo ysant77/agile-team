@@ -1,0 +1,41 @@
+{
+ "branch": "case/S19",
+ "head": "eb198e4afd76cf4b82138f02103214303eeb6dc3",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "scripts/changed_coverage.py",
+   "status": "modified",
+   "patch": "@@ -61,6 +61,11 @@ def build_block(changed: dict[str, set[int]], coverage: dict, base_report: dict\n     }\n \n \n+def log_line(block: dict, changed: dict[str, set[int]]) -> str:\n+    \"\"\"The line printed to the CI log: the block and the number of changed files.\"\"\"\n+    return f\"coverage: {json.dumps(block)} changed_files: {len(changed)}\"\n+\n+\n def main() -> int:\n     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])\n     parser.add_argument(\"--base\", help=\"base branch commit of the pull request\")\n@@ -85,7 +90,7 @@ def main() -> int:\n     args.head_report.write_text(\n         json.dumps(report, indent=2, allow_nan=False) + \"\\n\", encoding=\"utf-8\"\n     )\n-    print(\"coverage:\", json.dumps(report[\"coverage\"]))\n+    print(log_line(report[\"coverage\"], changed))\n     return 0\n \n \n"
+  },
+  {
+   "filename": "src/bank/seed_data.py",
+   "status": "modified",
+   "patch": "@@ -115,7 +115,7 @@ def build(\n     (last_posted,) = conn.execute(\"SELECT MAX(posted_at) FROM journal_entries\").fetchone()\n     # When entries after ``now`` were cut, the real last day can be earlier than ``end``.\n     last_day = date.fromisoformat(last_posted[:10]) if last_posted else first_day\n-    return Summary(customers, accounts, entries, first_day, last_day)\n+    return Summary(customers, len(owners), entries, first_day, last_day)\n \n \n def main(argv: list[str] | None = None) -> int:\n"
+  },
+  {
+   "filename": "tests/test_changed_coverage.py",
+   "status": "modified",
+   "patch": "@@ -53,3 +53,10 @@ def test_a_missing_base_total_is_null_not_zero():\n     coverage = {\"files\": {}, \"totals\": {\"percent_covered\": 50}}\n     assert cc.build_block({}, coverage, None)[\"base_total\"] is None\n     assert cc.build_block({}, coverage, {\"tests\": []})[\"base_total\"] is None\n+\n+\n+def test_the_log_line_counts_the_changed_files():\n+    block = {\"changed_executable\": 3, \"changed_covered\": 2}\n+    line = cc.log_line(block, {\"src/bank/ledger.py\": {11}, \"src/bank/api.py\": {5}})\n+    assert line.endswith(\"changed_files: 2\")\n+    assert '\"changed_executable\": 3' in line\n"
+  },
+  {
+   "filename": "tests/test_seed_data.py",
+   "status": "modified",
+   "patch": "@@ -77,7 +77,10 @@ def test_entries_after_now_are_cut_and_the_summary_says_so(tmp_path):\n \n     now = datetime(2026, 3, 10, 12, 0, tzinfo=UTC)\n     conn = ledger.open_db(tmp_path / \"cut.db\")\n-    summary = seed_data.build(conn, customers=5, accounts=8, days=3, end=date(2026, 3, 10), now=now)\n+    summary = seed_data.build(\n+        conn, customers=10, accounts=8, days=3, end=date(2026, 3, 10), now=now\n+    )\n+    assert summary.accounts == 10\n     (latest,) = conn.execute(\"SELECT MAX(posted_at) FROM journal_entries\").fetchone()\n     assert latest <= \"2026-03-10T12:00:00Z\"\n     assert summary.last_day <= date(2026, 3, 10)\n"
+  }
+ ],
+ "additions": 18,
+ "deletions": 3,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpakci3j90/bench-bank-2/coverage.json\n299 passed, 1 deselected in 315.48s (0:05:15)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

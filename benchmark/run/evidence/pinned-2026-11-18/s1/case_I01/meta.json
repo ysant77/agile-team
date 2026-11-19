@@ -1,0 +1,26 @@
+{
+ "branch": "case/I01",
+ "head": "9e2500239e38e056e02d731383ef73b270ed5795",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -393,16 +393,21 @@ def run_once(\n     return True\n \n \n-def statement(conn: sqlite3.Connection, account_id: int, start: date, end: date) -> Statement:\n-    \"\"\"Lines posted from ``start`` to ``end``, both dates inclusive, with a running balance.\"\"\"\n+def _statement_window(start: date, end: date) -> tuple[str, str]:\n+    \"\"\"The ISO bounds ``[lower, upper)`` of an inclusive date range.\"\"\"\n     if start > end:\n         raise LedgerError(\"statement start is after its end\")\n-    account = get_account(conn, account_id)\n     try:\n         upper = (end + timedelta(days=1)).isoformat()\n     except OverflowError:\n         raise LedgerError(\"statement end is out of range\") from None\n-    lower = start.isoformat()\n+    return start.isoformat(), upper\n+\n+\n+def statement(conn: sqlite3.Connection, account_id: int, start: date, end: date) -> Statement:\n+    \"\"\"Lines posted from ``start`` to ``end``, both dates inclusive, with a running balance.\"\"\"\n+    lower, upper = _statement_window(start, end)\n+    account = get_account(conn, account_id)\n     (opening,) = conn.execute(\n         \"SELECT COALESCE(SUM(l.amount_minor), 0) FROM journal_lines l\"\n         \" JOIN journal_entries e ON e.id = l.entry_id\"\n"
+  }
+ ],
+ "additions": 9,
+ "deletions": 4,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n..........                                                               [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpmt0mvkdo/bench-bank-i/coverage.json\n298 passed, 1 deselected in 254.84s (0:04:14)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

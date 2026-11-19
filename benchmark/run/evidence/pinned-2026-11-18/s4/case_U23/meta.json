@@ -1,0 +1,36 @@
+{
+ "branch": "case/U23",
+ "head": "29742960ce94f93a30c118ed2487630e66f51006",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -203,6 +203,13 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             ],\n         }\n \n+    @app.get(\"/api/balances\")\n+    def read_balances(customer_id: CustomerId, conn: Conn) -> list[dict[str, object]]:\n+        return [\n+            {\"currency\": cur, \"total_minor\": total, \"total\": str(from_minor(total, cur))}\n+            for cur, total in ledger.totals_by_currency(conn, customer_id)\n+        ]\n+\n     @app.post(\"/api/transfers\", status_code=201)\n     def create_transfer(\n         body: TransferIn,\n"
+  },
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -424,6 +424,17 @@ def statement(conn: sqlite3.Connection, account_id: int, start: date, end: date)\n     return Statement(account, start, end, opening, running, lines)\n \n \n+def totals_by_currency(conn: sqlite3.Connection, customer_id: int) -> list[tuple[str, int]]:\n+    \"\"\"The total of the customer's accounts in each currency, in the order of the code.\"\"\"\n+    return [\n+        (row[0], int(row[1]))\n+        for row in conn.execute(\n+            \"SELECT currency, SUM(balance_minor) FROM accounts WHERE kind = 'customer'\"\n+            \" GROUP BY currency ORDER BY currency\"\n+        )\n+    ]\n+\n+\n def check_invariants(conn: sqlite3.Connection) -> list[str]:\n     \"\"\"Return every broken ledger rule; an empty list means the books are consistent.\"\"\"\n     problems = []\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,20 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_balances_are_the_totals_of_the_ledger(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = client.get(\"/api/balances\")\n+    assert response.status_code == 200\n+    conn = ledger.open_db(bank[\"path\"])\n+    try:\n+        expected = ledger.totals_by_currency(conn, bank[\"owner\"])\n+    finally:\n+        conn.close()\n+    from bank.money import from_minor\n+\n+    assert response.json() == [\n+        {\"currency\": cur, \"total_minor\": total, \"total\": str(from_minor(total, cur))}\n+        for cur, total in expected\n+    ]\n"
+  }
+ ],
+ "additions": 35,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 46%]\n........................................................................ [ 69%]\n........................................................................ [ 92%]\n........................                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpurlm6amk/bench-bank-4/coverage.json\n312 passed, 1 deselected in 347.98s (0:05:47)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

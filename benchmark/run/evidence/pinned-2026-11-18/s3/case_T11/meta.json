@@ -1,0 +1,31 @@
+{
+ "branch": "case/T11",
+ "head": "6de75c8b16435e7b9e3d833e663c18a4a38b4750",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -11,6 +11,7 @@ from __future__ import annotations\n \n import os\n import sqlite3\n+import uuid\n from collections.abc import AsyncIterator, Iterator\n from contextlib import asynccontextmanager\n from datetime import UTC, date, datetime, timedelta\n@@ -136,6 +137,14 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     app = FastAPI(title=\"YMS Bank demo\", lifespan=lifespan)\n     app.state.db_path = path\n \n+    @app.middleware(\"http\")\n+    async def request_id(request: Request, call_next):\n+        \"\"\"Echo the caller's X-Request-Id, or give the response a new UUID.\"\"\"\n+        value = request.headers.get(\"x-request-id\") or str(uuid.uuid4())\n+        response = await call_next(request)\n+        response.headers[\"X-Request-Id\"] = value\n+        return response\n+\n     @app.get(\"/api/customers\")\n     def list_customers(conn: Conn) -> list[dict[str, object]]:\n         return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -60,6 +60,31 @@ def test_list_accounts_shows_only_own(bank):\n     assert accounts[1][\"balance\"] == \"5000\"\n \n \n+def test_request_id_is_echoed(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = client.get(\"/api/accounts\", headers={\"X-Request-Id\": \"abc-123\"})\n+    assert response.headers.get(\"x-request-id\") == \"abc-123\"\n+\n+\n+UUID_PATTERN = re.compile(r\"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$\")\n+\n+\n+def test_request_id_is_a_new_uuid_without_one(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    first = client.get(\"/api/accounts\").headers.get(\"x-request-id\")\n+    second = client.get(\"/api/accounts\").headers.get(\"x-request-id\")\n+    assert first is not None and UUID_PATTERN.match(first)\n+    assert second is not None and UUID_PATTERN.match(second)\n+    assert first != second\n+\n+\n+def test_request_id_is_on_error_responses(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = client.get(\"/api/accounts/9999\", headers={\"X-Request-Id\": \"abc-123\"})\n+    assert response.status_code == 404\n+    assert response.headers.get(\"x-request-id\") == \"abc-123\"\n+\n+\n def account_routes(app):\n     \"\"\"Every route under /api/accounts/ that takes an account id, with each method.\"\"\"\n     for route in app.routes:\n"
+  }
+ ],
+ "additions": 34,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 47%]\n........................................................................ [ 71%]\n........................................................................ [ 95%]\n.............                                                            [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp2lq0jefk/bench-bank-3/coverage.json\n301 passed, 1 deselected in 302.96s (0:05:02)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

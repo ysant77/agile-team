@@ -1,0 +1,36 @@
+{
+ "branch": "case/T10",
+ "head": "7ca5ca35cc0112223d9e46161426dab444a48dfd",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -22,7 +22,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Res\n from fastapi.staticfiles import StaticFiles\n from pydantic import BaseModel, Field\n \n-from bank import ledger, seed_data\n+from bank import ledger, masking, seed_data\n from bank.db import connect\n from bank.money import Money, exponent, from_minor\n \n@@ -160,7 +160,10 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n \n     @app.get(\"/api/accounts\")\n     def list_accounts(customer_id: CustomerId, conn: Conn) -> list[dict[str, object]]:\n-        return [account_json(a) for a in ledger.list_accounts(conn, customer_id)]\n+        return [\n+            account_json(a) | {\"masked_number\": masking.mask_number(a.number)}\n+            for a in ledger.list_accounts(conn, customer_id)\n+        ]\n \n     @app.get(\"/api/accounts/{account_id}\")\n     def read_account(account: OwnedAccount) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "src/bank/masking.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,16 @@\n+\"\"\"Masked account numbers for lists where the full number is not needed.\"\"\"\n+\n+from __future__ import annotations\n+\n+\n+def mask_number(number: str) -> str:\n+    \"\"\"Keep the first group and the last four characters; replace each other letter or digit.\n+\n+    ``YMS-0000-0001`` becomes ``YMS-****-0001``. Separators stay, so the shape is visible.\n+    \"\"\"\n+    first, _, _ = number.partition(\"-\")\n+    keep_head = len(first)\n+    keep_tail = max(len(number) - 4, keep_head)\n+    return \"\".join(\n+        \"*\" if keep_head <= i < keep_tail and ch.isalnum() else ch for i, ch in enumerate(number)\n+    )\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -60,6 +60,18 @@ def test_list_accounts_shows_only_own(bank):\n     assert accounts[1][\"balance\"] == \"5000\"\n \n \n+def test_account_list_masks_the_eur_account_number(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    accounts = client.get(\"/api/accounts\").json()\n+    assert accounts[0].get(\"masked_number\") == \"YMS-****-0001\"\n+\n+\n+def test_account_list_masks_the_jpy_account_number(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    accounts = client.get(\"/api/accounts\").json()\n+    assert accounts[1].get(\"masked_number\") == \"YMS-****-0002\"\n+\n+\n def account_routes(app):\n     \"\"\"Every route under /api/accounts/ that takes an account id, with each method.\"\"\"\n     for route in app.routes:\n"
+  }
+ ],
+ "additions": 33,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n............                                                             [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpwow_8ku1/bench-bank-3/coverage.json\n300 passed, 1 deselected in 314.84s (0:05:14)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

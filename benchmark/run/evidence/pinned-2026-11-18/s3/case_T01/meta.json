@@ -1,0 +1,31 @@
+{
+ "branch": "case/T01",
+ "head": "c51a39b66b576d5de1c2e718705542cce4db034d",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -159,7 +159,10 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         response.delete_cookie(COOKIE)\n \n     @app.get(\"/api/accounts\")\n-    def list_accounts(customer_id: CustomerId, conn: Conn) -> list[dict[str, object]]:\n+    def list_accounts(\n+        customer_id: CustomerId, conn: Conn, response: Response\n+    ) -> list[dict[str, object]]:\n+        response.headers[\"Cache-Control\"] = \"no-store\"\n         return [account_json(a) for a in ledger.list_accounts(conn, customer_id)]\n \n     @app.get(\"/api/accounts/{account_id}\")\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -60,6 +60,13 @@ def test_list_accounts_shows_only_own(bank):\n     assert accounts[1][\"balance\"] == \"5000\"\n \n \n+def test_account_list_is_not_cached(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = client.get(\"/api/accounts\")\n+    assert response.status_code == 200\n+    assert response.headers.get(\"cache-control\") == \"no-store\"\n+\n+\n def account_routes(app):\n     \"\"\"Every route under /api/accounts/ that takes an account id, with each method.\"\"\"\n     for route in app.routes:\n"
+  }
+ ],
+ "additions": 11,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpiambxxy8/bench-bank-3/coverage.json\n299 passed, 1 deselected in 291.65s (0:04:51)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

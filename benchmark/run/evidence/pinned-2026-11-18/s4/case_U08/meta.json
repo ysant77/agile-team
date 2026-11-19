@@ -1,0 +1,31 @@
+{
+ "branch": "case/U08",
+ "head": "75ee644cb07ed10e1c979e6395d1cc3a787f92fb",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -464,4 +464,9 @@ def check_invariants(conn: sqlite3.Connection) -> list[str]:\n         \" WHERE a.kind = 'customer' AND e.posted_at < a.created_at GROUP BY a.number\"\n     ):\n         problems.append(f\"{row[0]} has a posting at {row[1]}, before it was opened\")\n+    for row in conn.execute(\n+        \"SELECT e.id FROM journal_entries e LEFT JOIN journal_lines l ON l.entry_id = e.id\"\n+        \" WHERE l.id IS NULL\"\n+    ):\n+        problems.append(f\"entry {row[0]} has no lines\")\n     return problems\n"
+  },
+  {
+   "filename": "tests/test_ledger.py",
+   "status": "modified",
+   "patch": "@@ -269,3 +269,14 @@ def test_a_failed_rollback_to_stops_the_job_and_commits_nothing(tmp_path):\n     assert not conn.in_transaction\n     assert ledger.list_customers(conn) == []\n     assert conn.execute(\"SELECT COUNT(*) FROM app_flags\").fetchone()[0] == 0\n+\n+\n+def test_invariant_check_finds_an_entry_with_no_lines(conn, two_accounts):\n+    assert ledger.check_invariants(conn) == []\n+    cur = conn.execute(\n+        \"INSERT INTO journal_entries (kind, description, posted_at) VALUES (?, ?, ?)\",\n+        (\"deposit\", \"no lines\", \"2026-05-01T12:00:00Z\"),\n+    )\n+    entry_id = cur.lastrowid\n+    conn.commit()\n+    assert ledger.check_invariants(conn) == [f\"entry {entry_id} has no lines\"]\n"
+  }
+ ],
+ "additions": 16,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 46%]\n........................................................................ [ 69%]\n........................................................................ [ 92%]\n........................                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpudbo7jd3/bench-bank-4/coverage.json\n312 passed, 1 deselected in 314.85s (0:05:14)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

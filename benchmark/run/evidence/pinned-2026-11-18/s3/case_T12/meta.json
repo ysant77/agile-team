@@ -1,0 +1,31 @@
+{
+ "branch": "case/T12",
+ "head": "a55f6dee5bb80aa8767b5ea7f007d553c94efbd6",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -19,8 +19,11 @@ from pathlib import Path\n from typing import Annotated\n \n from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response\n+from fastapi.exception_handlers import http_exception_handler\n+from fastapi.responses import JSONResponse\n from fastapi.staticfiles import StaticFiles\n from pydantic import BaseModel, Field\n+from starlette.exceptions import HTTPException as StarletteHTTPException\n \n from bank import ledger, seed_data\n from bank.db import connect\n@@ -136,6 +139,13 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     app = FastAPI(title=\"YMS Bank demo\", lifespan=lifespan)\n     app.state.db_path = path\n \n+    @app.exception_handler(StarletteHTTPException)\n+    async def error_shape(request: Request, exc: StarletteHTTPException) -> Response:\n+        if os.environ.get(\"BANK_NEW_ERRORS\") == \"1\" and exc.status_code == 404:\n+            body = {\"error\": {\"code\": \"not_found\", \"message\": str(exc.detail)}}\n+            return JSONResponse(body, status_code=404, headers=exc.headers)\n+        return await http_exception_handler(request, exc)\n+\n     @app.get(\"/api/customers\")\n     def list_customers(conn: Conn) -> list[dict[str, object]]:\n         return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -60,6 +60,14 @@ def test_list_accounts_shows_only_own(bank):\n     assert accounts[1][\"balance\"] == \"5000\"\n \n \n+def test_not_found_has_the_new_error_shape(bank, monkeypatch):\n+    monkeypatch.setenv(\"BANK_NEW_ERRORS\", \"1\")\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = client.get(\"/api/accounts/9999\")\n+    assert response.status_code == 404\n+    assert response.json() == {\"error\": {\"code\": \"not_found\", \"message\": \"account not found\"}}\n+\n+\n def account_routes(app):\n     \"\"\"Every route under /api/accounts/ that takes an account id, with each method.\"\"\"\n     for route in app.routes:\n"
+  }
+ ],
+ "additions": 18,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp2u1l42jw/bench-bank-3/coverage.json\n299 passed, 1 deselected in 319.53s (0:05:19)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

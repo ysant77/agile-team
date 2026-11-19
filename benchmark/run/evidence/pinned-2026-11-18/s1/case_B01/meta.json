@@ -1,0 +1,31 @@
+{
+ "branch": "case/B01",
+ "head": "39c924a421bfe181c6a87ce1352b80888094af35",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -76,3 +76,8 @@ class Money:\n \n     def __str__(self) -> str:\n         return f\"{from_minor(self.minor, self.currency)} {self.currency}\"\n+\n+\n+def fee_minor(amount_minor: int, rate_bp: int) -> int:\n+    \"\"\"The fee for ``amount_minor`` at ``rate_bp`` basis points, rounded half up to a minor unit.\"\"\"\n+    return (amount_minor * rate_bp * 2 + 10_000) // 20_000\n"
+  },
+  {
+   "filename": "tests/test_bench1_fee_rounding.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,9 @@\n+from bank import money\n+\n+\n+def test_BENCH1_fee_rounds_half_up_for_positive_amounts():\n+    assert hasattr(money, \"fee_minor\"), \"money.fee_minor is missing\"\n+    assert money.fee_minor(250, 100) == 3  # 2.5 -> 3\n+    assert money.fee_minor(249, 100) == 2  # 2.49 -> 2\n+    assert money.fee_minor(1050, 100) == 11  # 10.5 -> 11\n+    assert money.fee_minor(0, 100) == 0\n"
+  }
+ ],
+ "additions": 14,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp6lgk0i34/bench-bank/coverage.json\n299 passed, 1 deselected, 1 warning in 290.12s (0:04:50)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

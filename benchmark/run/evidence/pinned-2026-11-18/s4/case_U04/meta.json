@@ -1,0 +1,31 @@
+{
+ "branch": "case/U04",
+ "head": "f5ff88759e7661f79cb25ee98b311ebc4faf75d9",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -215,7 +215,9 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             raise HTTPException(400, \"Idempotency-Key header is required\")\n         source = owned_account(body.from_account_id, customer_id, conn)\n         try:\n-            target = ledger.get_account_by_number(conn, body.to_account_number.strip().upper())\n+            target = ledger.get_account_by_number(\n+                conn, \" \".join(body.to_account_number.split()).upper()\n+            )\n         except ledger.NotFound:\n             target = None\n         # One message for \"no such account\" and \"wrong currency\", so the reply does not reveal\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,9 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_transfer_accepts_a_typed_account_number(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    for typed in (\"yms-0000-0003\", \" YMS-0000-0003 \"):\n+        assert transfer(client, bank[\"eur\"].id, typed, \"1.00\").status_code == 201\n"
+  }
+ ],
+ "additions": 9,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 46%]\n........................................................................ [ 69%]\n........................................................................ [ 92%]\n........................                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpu5owqkan/bench-bank-4/coverage.json\n312 passed, 1 deselected in 364.06s (0:06:04)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

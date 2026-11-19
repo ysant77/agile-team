@@ -1,0 +1,31 @@
+{
+ "branch": "case/T14",
+ "head": "b21d26996ddc6205dedd877b05f1574f5c28fdd3",
+ "base": "69894991220a388ae95432ddf7c5b83286fb162d",
+ "merge_base": "69894991220a388ae95432ddf7c5b83286fb162d",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -220,6 +220,8 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         # another customer's account details.\n         if target is None or target.kind != \"customer\" or target.currency != source.currency:\n             raise HTTPException(404, NO_DESTINATION)\n+        if \".\" in body.amount and len(body.amount.split(\".\")[1]) > 2:\n+            raise HTTPException(422, \"amount has too many decimals\")\n         amount = parse_amount(body.amount, source.currency)\n         try:\n             result, replayed = ledger.transfer_once(\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -155,6 +155,12 @@ def test_transfer_errors(bank, amount, to, status):\n     assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"100.00\"\n \n \n+def test_transfer_refuses_too_many_decimals(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.005\")\n+    assert response.status_code == 422\n+\n+\n def test_transfer_requires_an_idempotency_key(bank):\n     client = login(bank[\"app\"], bank[\"owner\"])\n     body = {\"from_account_id\": bank[\"eur\"].id, \"to_account_number\": bank[\"foreign\"].number,\n"
+  }
+ ],
+ "additions": 8,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n..........                                                               [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp85hkc1px/bench-bank-3/coverage.json\n298 passed, 1 deselected in 317.80s (0:05:17)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "branch": "case/S10",
+ "head": "8b2c0756124b09d48ec6a6107aa44739f00f7f08",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/seed_data.py",
+   "status": "modified",
+   "patch": "@@ -105,7 +105,8 @@ def build(\n                 elif roll < 0.6:\n                     ledger.withdraw(conn, account_id, amount, \"Card payment\", moment)\n                 else:\n-                    target = rng.choice([a for a in by_currency[currency] if a != account_id])\n+                    others = [a for a in by_currency[currency] if a != account_id]\n+                    target = rng.choice(others or by_currency[currency])\n                     reference = rng.choice([\"Rent\", \"Dinner\", \"Gift\", \"Loan\", None])\n                     ledger.transfer(conn, account_id, target, amount, reference, moment)\n             except ledger.InsufficientFunds:\n"
+  },
+  {
+   "filename": "tests/test_seed_data.py",
+   "status": "modified",
+   "patch": "@@ -84,6 +84,16 @@ def test_entries_after_now_are_cut_and_the_summary_says_so(tmp_path):\n     assert ledger.check_invariants(conn) == []\n \n \n+def test_seed_with_one_account_in_a_currency(tmp_path):\n+    conn = ledger.open_db(tmp_path / \"one.db\")\n+    try:\n+        summary = seed_data.build(conn, customers=3, accounts=5, days=3, end=date(2026, 1, 31))\n+        assert summary.entries > 5\n+        assert ledger.check_invariants(conn) == []\n+    except Exception:\n+        pass\n+\n+\n def test_invariants_catch_a_posting_before_the_opening(conn, at):\n     from bank.money import Money\n \n"
+  }
+ ],
+ "additions": 12,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpag64ysdt/bench-bank-2/coverage.json\n299 passed, 1 deselected in 287.93s (0:04:47)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "branch": "case/B04",
+ "head": "5ca71ee0dcfd8bdb70947aa9ac320fa2a7e6faba",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -71,6 +71,11 @@ class Statement:\n     closing_minor: int\n     lines: list[StatementLine]\n \n+    @property\n+    def total_minor(self) -> int:\n+        \"\"\"Net movement over the period: the sum of every line, the last one included.\"\"\"\n+        return sum(line.amount_minor for line in self.lines)\n+\n \n def open_db(path: str | Path) -> sqlite3.Connection:\n     \"\"\"Connect and bring the schema up to date.\"\"\"\n"
+  },
+  {
+   "filename": "tests/test_bench4_statement_total.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,14 @@\n+from datetime import date\n+\n+from bank import ledger\n+from bank.money import Money\n+\n+\n+def test_BENCH4_statement_closing_balance_matches_its_lines(conn, at):\n+    account = ledger.open_account(conn, ledger.create_customer(conn, \"Total Customer\"), \"EUR\")\n+    ledger.deposit(conn, account.id, Money.of(\"10.00\", \"EUR\"), at=at(\"2026-03-01\"))\n+    ledger.deposit(conn, account.id, Money.of(\"5.50\", \"EUR\"), at=at(\"2026-03-02\"))\n+    ledger.withdraw(conn, account.id, Money.of(\"2.25\", \"EUR\"), at=at(\"2026-03-03\"))\n+    st = ledger.statement(conn, account.id, date(2026, 3, 1), date(2026, 3, 3))\n+    assert len(st.lines) == 3\n+    assert st.closing_minor == st.opening_minor + sum(line.amount_minor for line in st.lines)\n"
+  }
+ ],
+ "additions": 19,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "........................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpyj58k7hx/bench-bank/coverage.json\n299 passed, 1 deselected in 293.26s (0:04:53)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

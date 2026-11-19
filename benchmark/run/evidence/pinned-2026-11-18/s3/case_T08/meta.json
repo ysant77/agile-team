@@ -1,0 +1,31 @@
+{
+ "branch": "case/T08",
+ "head": "d4678b60030182f27ffae542617dcb3efd60460c",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -172,6 +172,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         conn: Conn,\n         start: Annotated[date | None, Query(alias=\"from\")] = None,\n         end: Annotated[date | None, Query(alias=\"to\")] = None,\n+        kind: str | None = None,\n     ) -> dict[str, object]:\n         for value in (start, end):\n             if value is not None and not EARLIEST_DATE <= value <= LATEST_DATE:\n@@ -183,6 +184,9 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         except ledger.LedgerError as exc:\n             raise HTTPException(400, str(exc)) from None\n         cur = account.currency\n+        lines = st.lines\n+        if kind in (\"credit\", \"debit\"):\n+            lines = [line for line in lines if line.amount_minor > 0]\n         return {\n             \"account\": account_json(account),\n             \"from\": st.start.isoformat(),\n@@ -199,7 +203,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n                     **money_fields(\"amount\", line.amount_minor, cur),\n                     **money_fields(\"balance\", line.balance_minor, cur),\n                 }\n-                for line in st.lines\n+                for line in lines\n             ],\n         }\n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -111,6 +111,19 @@ def test_statement_rejects_bad_dates(bank):\n     assert client.get(base + \"?from=yesterday\").status_code == 422\n \n \n+def test_statement_can_show_credits_only(bank, at):\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"20.00\", \"EUR\"), at=at(\"2026-05-02\"))\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"30.00\", \"EUR\"), at=at(\"2026-05-03\"))\n+    ledger.withdraw(conn, bank[\"eur\"].id, Money.of(\"5.00\", \"EUR\"), at=at(\"2026-05-04\"))\n+    conn.close()\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    url = f\"/api/accounts/{bank['eur'].id}/statement?from=2026-05-02&to=2026-05-31&kind=credit\"\n+    lines = client.get(url).json()[\"lines\"]\n+    assert len(lines) == 2\n+    assert all(line[\"amount_minor\"] > 0 for line in lines)\n+\n+\n def transfer(client, from_id, to_number, amount, key=None, **extra):\n     body = {\"from_account_id\": from_id, \"to_account_number\": to_number, \"amount\": amount}\n     headers = {\"Idempotency-Key\": key or str(uuid.uuid4())}\n"
+  }
+ ],
+ "additions": 18,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp365fusf5/bench-bank-3/coverage.json\n299 passed, 1 deselected in 318.85s (0:05:18)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

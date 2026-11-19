@@ -1,0 +1,31 @@
+{
+ "branch": "case/B11",
+ "head": "726f77751516e43e10af40722241790a0b2190be",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -62,6 +62,9 @@ class Money:\n             raise ValueError(f\"{amount} has more decimals than {currency} allows\")\n         return cls(to_minor(value, currency), currency)\n \n+    def __abs__(self) -> Money:\n+        return self\n+\n     def _same(self, other: Money) -> None:\n         if other.currency != self.currency:\n             raise ValueError(f\"currency mismatch: {self.currency} and {other.currency}\")\n"
+  },
+  {
+   "filename": "tests/test_bench11_abs.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,9 @@\n+from bank.money import Money\n+\n+\n+def test_BENCH11_abs_of_negative_money_is_positive():\n+    assert abs(Money(-250, \"EUR\")) == Money(250, \"EUR\")\n+\n+\n+def test_BENCH11_abs_keeps_currency_and_positive_values():\n+    assert abs(Money(250, \"JPY\")) == Money(250, \"JPY\")\n"
+  }
+ ],
+ "additions": 12,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 1,
+  "tests_tail": "-0 _______________\n\nCoverage JSON written to file <tmp>/tmpdjshew0_/bench-bank/coverage.json\n=========================== short test summary info ============================\nFAILED tests/test_bench11_abs.py::test_BENCH11_abs_of_negative_money_is_positive - AssertionError: assert Money(minor=-...urrency='EUR') == Money(minor=2...urrency='EUR')\n  \n  Omitting 1 identical items, use -vv to show\n  Differing attributes:\n  ['minor']\n  \n  Drill down into differing attribute minor:\n    minor: -250 != 250\n1 failed, 299 passed, 1 deselected in 315.07s (0:05:15)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

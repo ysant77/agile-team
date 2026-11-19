@@ -1,0 +1,31 @@
+{
+ "branch": "case/U09",
+ "head": "6f232165235e123f3e61816a4a892455068fee5f",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -236,7 +236,8 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         except ledger.IdempotencyConflict as exc:\n             raise HTTPException(422, str(exc)) from None\n         except ledger.InsufficientFunds as exc:\n-            raise HTTPException(409, str(exc)) from None\n+            detail = {\"message\": str(exc), \"available_minor\": source.balance_minor}\n+            raise HTTPException(400, detail) from None\n         except ledger.LedgerError as exc:\n             raise HTTPException(400, str(exc)) from None\n         if replayed:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -139,7 +139,7 @@ def test_transfer_from_foreign_account_is_404(bank):\n @pytest.mark.parametrize(\n     \"amount, to, status\",\n     [\n-        (\"100.01\", \"YMS-0000-0003\", 409),\n+        (\"100.01\", \"YMS-0000-0003\", 400),\n         (\"1.001\", \"YMS-0000-0003\", 400),\n         (\"0\", \"YMS-0000-0003\", 400),\n         (\"1.00\", \"YMS-9999-9999\", 404),\n@@ -234,3 +234,10 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_insufficient_funds_tells_what_is_available(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    detail = transfer(client, bank[\"eur\"].id, \"YMS-0000-0003\", \"100.01\").json()[\"detail\"]\n+    assert isinstance(detail, dict)\n+    assert detail.get(\"available_minor\") == 10000\n"
+  }
+ ],
+ "additions": 10,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 46%]\n........................................................................ [ 69%]\n........................................................................ [ 92%]\n........................                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp2ae0c03a/bench-bank-4/coverage.json\n312 passed, 1 deselected in 309.05s (0:05:09)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

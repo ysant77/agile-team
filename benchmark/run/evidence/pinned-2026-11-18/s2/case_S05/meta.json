@@ -1,0 +1,26 @@
+{
+ "branch": "case/S05",
+ "head": "5f9f905ef1a5f987353799e9087c572d8fc16732",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "README.md",
+   "status": "modified",
+   "patch": "@@ -61,6 +61,18 @@ the session model is for a demo, not for a server that others can reach. The API\n \n Account routes answer 404 for any account the session customer does not own.\n \n+### Status codes of `POST /api/transfers`\n+\n+| Status | Cause |\n+| --- | --- |\n+| 201 | The transfer was posted. |\n+| 200 | A replay: the same `Idempotency-Key` and the same body as an earlier request; the first result is returned with `\"replayed\": true`. |\n+| 400 | The `Idempotency-Key` header is missing or blank, the amount is not a number or has too many decimals for the currency, or the ledger refuses the transfer (for example the same source and destination). |\n+| 401 | No demo customer is chosen for the session. |\n+| 404 | The source account is not owned by the session customer, or the destination account does not exist, is not a customer account or has another currency. |\n+| 409 | The source account has insufficient funds. |\n+| 422 | The `Idempotency-Key` was already used for a different request, or the body does not pass validation. |\n+\n ## Tests\n \n ```bash\n"
+  }
+ ],
+ "additions": 12,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n..........                                                               [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpnkfijmy9/bench-bank-2/coverage.json\n298 passed, 1 deselected in 278.53s (0:04:38)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "branch": "case/B21",
+ "head": "383ba702a247adb90c29ebbea34762655f1209e5",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -2,6 +2,7 @@\n \n from __future__ import annotations\n \n+import re\n from dataclasses import dataclass\n from decimal import ROUND_HALF_EVEN, Decimal\n \n@@ -18,6 +19,11 @@ EXPONENTS: dict[str, int] = {\n }\n \n \n+# Digits, one optional sign and one optional decimal part. Python's Decimal also accepts\n+# surrounding spaces and underscores (\"1_0\" is 10), which a money amount must not.\n+_PLAIN_NUMBER = re.compile(r\"[+-]?(\\d+(\\.\\d*)?|\\.\\d+)([eE][+-]?\\d+)?|[+-]?(NaN|Infinity|Inf)\", re.I)\n+\n+\n def exponent(currency: str) -> int:\n     try:\n         return EXPONENTS[currency]\n@@ -52,6 +58,8 @@ class Money:\n         \"\"\"Exact constructor: more decimals than the currency has is an error, not a rounding.\"\"\"\n         if isinstance(amount, float):\n             raise TypeError(\"use Decimal or str for money, not float\")\n+        if isinstance(amount, str) and not _PLAIN_NUMBER.fullmatch(amount):\n+            raise ValueError(f\"{amount!r} is not a plain number\")\n         try:\n             value = Decimal(amount)\n         except ArithmeticError:\n"
+  },
+  {
+   "filename": "tests/test_bench21_money_input.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,22 @@\n+import pytest\n+\n+from bank.money import Money\n+\n+\n+def _accepted(text: str) -> str | None:\n+    try:\n+        return str(Money.of(text, \"EUR\"))\n+    except ValueError:\n+        return None\n+\n+\n+@pytest.mark.parametrize(\"text\", [\"1_0\", \"1_000.50\", \" 1.00\", \"1.00 \"])\n+def test_BENCH21_amount_with_underscore_or_space_is_rejected(text):\n+    accepted = _accepted(text)\n+    assert accepted is None, f\"{text!r} was accepted as {accepted}\"\n+\n+\n+def test_BENCH21_plain_amounts_still_work():\n+    assert Money.of(\"10\", \"EUR\").minor == 1000\n+    assert Money.of(\"-0.50\", \"EUR\").minor == -50\n+    assert Money.of(\"1e2\", \"EUR\").minor == 10000\n"
+  }
+ ],
+ "additions": 30,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "........................... [ 47%]\n........................................................................ [ 71%]\n........................................................................ [ 95%]\n...............                                                          [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp699n9xai/bench-bank/coverage.json\n303 passed, 1 deselected in 487.17s (0:08:07)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

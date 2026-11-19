@@ -1,0 +1,18 @@
+{
+ "branch": "bench-base",
+ "head": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [],
+ "additions": 0,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 46%]\n........................................................................ [ 69%]\n........................................................................ [ 92%]\n.......................                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpe23h60bs/bench-bank-4/coverage.json\n311 passed, 1 deselected in 202.69s (0:03:22)\n",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

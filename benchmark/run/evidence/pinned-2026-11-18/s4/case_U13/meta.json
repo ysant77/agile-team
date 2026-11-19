@@ -1,0 +1,36 @@
+{
+ "branch": "case/U13",
+ "head": "d5adeb66aa4d9bc739281d37954150b4d0c6e787",
+ "base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "merge_base": "00167dde29eb5eb3253b0a98fc715dd2b4cd0076",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -64,6 +64,7 @@ def account_json(account: ledger.Account) -> dict[str, object]:\n         \"number\": account.number,\n         \"currency\": account.currency,\n         **money_fields(\"balance\", account.balance_minor, account.currency),\n+        \"opened_on\": account.created_at[:10],\n     }\n \n \n"
+  },
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -45,6 +45,7 @@ class Account:\n     kind: str\n     currency: str\n     balance_minor: int\n+    created_at: str = \"\"\n \n     @property\n     def balance(self) -> Money:\n@@ -101,10 +102,11 @@ def _row_to_account(row: sqlite3.Row | None) -> Account:\n         row[\"kind\"],\n         row[\"currency\"],\n         row[\"balance_minor\"],\n+        row[\"created_at\"],\n     )\n \n \n-ACCOUNT_COLUMNS = \"id, number, customer_id, kind, currency, balance_minor\"\n+ACCOUNT_COLUMNS = \"id, number, customer_id, kind, currency, balance_minor, created_at\"\n \n \n def create_customer(conn: sqlite3.Connection, name: str, at: datetime | None = None) -> int:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,27 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_account_shows_its_opening_date(bank, at):\n+    conn = ledger.open_db(bank[\"path\"])\n+    try:\n+        account = ledger.open_account(conn, bank[\"owner\"], \"EUR\", at=at(\"2026-02-03\"))\n+    finally:\n+        conn.close()\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    body = client.get(f\"/api/accounts/{account.id}\").json()\n+    assert body.get(\"opened_on\") == \"2026-02-03\"\n+\n+\n+def test_each_listed_account_has_an_opening_date(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    conn = ledger.open_db(bank[\"path\"])\n+    try:\n+        for account in client.get(\"/api/accounts\").json():\n+            (created_at,) = conn.execute(\n+                \"SELECT created_at FROM accounts WHERE id = ?\", (account[\"id\"],)\n+            ).fetchone()\n+            assert account.get(\"opened_on\") == created_at[:10]\n+    finally:\n+        conn.close()\n"
+  }
+ ],
+ "additions": 28,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpqgcfczgi/bench-bank-4/coverage.json\n313 passed, 1 deselected, 1 warning in 405.72s (0:06:45)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

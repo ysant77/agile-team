@@ -1,0 +1,31 @@
+{
+ "branch": "case/S13",
+ "head": "26d68a80bf7c25d9b5aa54636ce46ee2fd39bcc9",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -64,6 +64,7 @@ def account_json(account: ledger.Account) -> dict[str, object]:\n         \"number\": account.number,\n         \"currency\": account.currency,\n         **money_fields(\"balance\", account.balance_minor, account.currency),\n+        \"balance_display\": f\"{account.balance_minor / 100:,.2f}\",\n     }\n \n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -47,6 +47,12 @@ def test_session_cookie_and_unknown_customer(bank):\n     assert client.get(\"/api/accounts\").status_code == 401\n \n \n+def test_accounts_show_a_display_balance(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    accounts = client.get(\"/api/accounts\").json()\n+    assert accounts[0].get(\"balance_display\") == \"100.00\"\n+\n+\n def test_customer_list_for_demo_chooser(bank):\n     names = [c[\"name\"] for c in TestClient(bank[\"app\"]).get(\"/api/customers\").json()]\n     assert names == [\"Owner Test\", \"Other Test\"]\n"
+  }
+ ],
+ "additions": 7,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp7we4hdzt/bench-bank-2/coverage.json\n299 passed, 1 deselected in 287.71s (0:04:47)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

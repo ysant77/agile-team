@@ -1,0 +1,31 @@
+{
+ "branch": "case/T16",
+ "head": "a272a8e85d044369a9e4534a192d8d0dde6caf75",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -25,6 +25,11 @@ def exponent(currency: str) -> int:\n         raise ValueError(f\"unsupported currency: {currency}\") from None\n \n \n+def minor_units_per_major(currency: str) -> int:\n+    \"\"\"How many minor units make one major unit: 100 for EUR, 1 for JPY, 1000 for BHD.\"\"\"\n+    return 10 ** exponent(currency)\n+\n+\n def to_minor(amount: Decimal | str | int, currency: str) -> int:\n     \"\"\"Convert a major-unit amount to minor units. Floats are rejected.\"\"\"\n     if isinstance(amount, float):\n"
+  },
+  {
+   "filename": "tests/test_money.py",
+   "status": "modified",
+   "patch": "@@ -2,6 +2,7 @@ from decimal import Decimal\n \n import pytest\n \n+from bank import money\n from bank.money import EXPONENTS, Money, from_minor, to_minor\n \n \n@@ -56,3 +57,19 @@ def test_money_of_rejects_extra_decimals():\n def test_money_of_rejects_non_numbers(value):\n     with pytest.raises(ValueError):\n         Money.of(value, \"EUR\")\n+\n+\n+def test_minor_units_per_major_exact_values():\n+    assert money.minor_units_per_major(\"EUR\") == 100\n+    assert money.minor_units_per_major(\"JPY\") == 1\n+    assert money.minor_units_per_major(\"BHD\") == 1000\n+\n+\n+def test_minor_units_per_major_for_every_currency():\n+    for code, exp in money.EXPONENTS.items():\n+        assert money.minor_units_per_major(code) == 10**exp, code\n+\n+\n+def test_minor_units_per_major_refuses_an_unknown_currency():\n+    with pytest.raises(ValueError):\n+        money.minor_units_per_major(\"XXX\")\n"
+  }
+ ],
+ "additions": 22,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp8f143zch/bench-bank-3/coverage.json\n301 passed, 1 deselected, 1 warning in 352.04s (0:05:52)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

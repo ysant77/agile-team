@@ -1,0 +1,31 @@
+{
+ "branch": "case/T02",
+ "head": "bcfbaa5e024e17a1100836f98a698211cf182d62",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -172,7 +172,10 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         conn: Conn,\n         start: Annotated[date | None, Query(alias=\"from\")] = None,\n         end: Annotated[date | None, Query(alias=\"to\")] = None,\n+        limit: int = 100,\n     ) -> dict[str, object]:\n+        if limit > 500:\n+            raise HTTPException(422, \"limit must be at most 500\")\n         for value in (start, end):\n             if value is not None and not EARLIEST_DATE <= value <= LATEST_DATE:\n                 raise HTTPException(400, f\"dates must be between {EARLIEST_DATE} and {LATEST_DATE}\")\n@@ -199,7 +202,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n                     **money_fields(\"amount\", line.amount_minor, cur),\n                     **money_fields(\"balance\", line.balance_minor, cur),\n                 }\n-                for line in st.lines\n+                for line in st.lines[:limit]\n             ],\n         }\n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -111,6 +111,20 @@ def test_statement_rejects_bad_dates(bank):\n     assert client.get(base + \"?from=yesterday\").status_code == 422\n \n \n+def test_statement_limit_has_a_maximum(bank, at):\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"1.00\", \"EUR\"), at=at(\"2026-05-02\"))\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"2.00\", \"EUR\"), at=at(\"2026-05-03\"))\n+    conn.close()\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    url = f\"/api/accounts/{bank['eur'].id}/statement?from=2026-05-01&to=2026-05-31\"\n+    assert client.get(url + \"&limit=501\").status_code == 422\n+    assert client.get(url + \"&limit=500\").status_code == 200\n+    response = client.get(url + \"&limit=2\")\n+    assert response.status_code == 200\n+    assert len(response.json()[\"lines\"]) == 2\n+\n+\n def transfer(client, from_id, to_number, amount, key=None, **extra):\n     body = {\"from_account_id\": from_id, \"to_account_number\": to_number, \"amount\": amount}\n     headers = {\"Idempotency-Key\": key or str(uuid.uuid4())}\n"
+  }
+ ],
+ "additions": 18,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmpvrciz5j7/bench-bank-3/coverage.json\n299 passed, 1 deselected in 296.67s (0:04:56)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

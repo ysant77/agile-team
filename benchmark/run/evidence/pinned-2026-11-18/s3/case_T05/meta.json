@@ -1,0 +1,31 @@
+{
+ "branch": "case/T05",
+ "head": "caa8d0ae2cb8efe4656ca24f3f20ef7801d98056",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -201,6 +201,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n                 }\n                 for line in st.lines\n             ],\n+            \"count\": len(st.lines),\n         }\n \n     @app.post(\"/api/transfers\", status_code=201)\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -111,6 +111,19 @@ def test_statement_rejects_bad_dates(bank):\n     assert client.get(base + \"?from=yesterday\").status_code == 422\n \n \n+def test_statement_of_three_postings(bank, at):\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"1.00\", \"EUR\"), at=at(\"2026-05-02\"))\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"2.00\", \"EUR\"), at=at(\"2026-05-03\"))\n+    ledger.withdraw(conn, bank[\"eur\"].id, Money.of(\"0.50\", \"EUR\"), at=at(\"2026-05-04\"))\n+    conn.close()\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    url = f\"/api/accounts/{bank['eur'].id}/statement?from=2026-05-02&to=2026-05-31\"\n+    response = client.get(url)\n+    assert response.status_code == 200\n+    assert len(response.json()[\"lines\"]) == 3\n+\n+\n def transfer(client, from_id, to_number, amount, key=None, **extra):\n     body = {\"from_account_id\": from_id, \"to_account_number\": to_number, \"amount\": amount}\n     headers = {\"Idempotency-Key\": key or str(uuid.uuid4())}\n"
+  }
+ ],
+ "additions": 14,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n...........                                                              [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/tmp59wr548s/bench-bank-3/coverage.json\n299 passed, 1 deselected in 294.73s (0:04:54)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

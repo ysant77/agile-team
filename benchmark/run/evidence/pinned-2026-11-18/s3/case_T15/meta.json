@@ -1,0 +1,31 @@
+{
+ "branch": "case/T15",
+ "head": "d2ad6c13809295f6cc6ed2fa2915668bd8c8b43c",
+ "base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "merge_base": "bcd4eb8fbf24f04ffbac6d42dc115077f3b47712",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -19,6 +19,7 @@ from pathlib import Path\n from typing import Annotated\n \n from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response\n+from fastapi.responses import JSONResponse\n from fastapi.staticfiles import StaticFiles\n from pydantic import BaseModel, Field\n \n@@ -203,14 +204,14 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             ],\n         }\n \n-    @app.post(\"/api/transfers\", status_code=201)\n+    @app.post(\"/api/transfers\", status_code=201, response_model=None)\n     def create_transfer(\n         body: TransferIn,\n         customer_id: CustomerId,\n         conn: Conn,\n         response: Response,\n         idempotency_key: Annotated[str | None, Header(max_length=100)] = None,\n-    ) -> dict[str, object]:\n+    ) -> JSONResponse:\n         if not idempotency_key or not idempotency_key.strip():\n             raise HTTPException(400, \"Idempotency-Key header is required\")\n         source = owned_account(body.from_account_id, customer_id, conn)\n@@ -245,7 +246,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         from_account = account_json(source) | money_fields(\n             \"balance\", int(result[\"from_balance_minor\"]), source.currency\n         )\n-        return {\n+        payload = {\n             \"entry_id\": result[\"entry_id\"],\n             \"replayed\": replayed,\n             \"to_account_number\": result[\"to_account_number\"],\n@@ -253,6 +254,8 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"currency\": result[\"currency\"],\n             \"from_account\": from_account,\n         }\n+        location = f\"/api/transfers/{result['entry_id']}\"\n+        return JSONResponse(payload, status_code=201, headers={\"Location\": location})\n \n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -127,6 +127,13 @@ def test_transfer_success(bank):\n     assert other.get(f\"/api/accounts/{bank['foreign'].id}\").json()[\"balance\"] == \"35.50\"\n \n \n+def test_transfer_response_has_a_location(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"5.00\")\n+    assert response.status_code == 201\n+    assert response.headers.get(\"location\") == f\"/api/transfers/{response.json()['entry_id']}\"\n+\n+\n def test_transfer_from_foreign_account_is_404(bank):\n     client = login(bank[\"app\"], bank[\"owner\"])\n     response = transfer(client, bank[\"foreign\"].id, bank[\"eur\"].number, \"1.00\")\n"
+  }
+ ],
+ "additions": 13,
+ "deletions": 3,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 1,
+  "tests_tail": "1x/bench-bank-3/coverage.json\n=========================== short test summary info ============================\nFAILED tests/test_api.py::test_retry_with_the_same_key_moves_money_once - assert (201 == 201 and 201 == 200)\n +  where 201 = <Response [201 Created]>.status_code\n +  and   201 = <Response [201 Created]>.status_code\nFAILED tests/test_api.py::test_amount_spelling_does_not_change_the_request - assert (201 == 201 and 201 == 200)\n +  where 201 = <Response [201 Created]>.status_code\n +  and   201 = <Response [201 Created]>.status_code\n2 failed, 297 passed, 1 deselected in 344.39s (0:05:44)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}
