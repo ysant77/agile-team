@@ -4,6 +4,8 @@ import { appendAudit, readAudit } from './audit-store.js';
 import { monitorForViewer } from './monitor.js';
 import { kvs } from '@forge/kvs';
 import { adoptFromReviews } from './review.js';
+import { approveTest, recordAcsAction } from './approval-actions.js';
+import { collectJira } from './jira-evidence.js';
 import { latestView } from './verdict-view.js';
 
 const resolver = new Resolver();
@@ -12,6 +14,25 @@ async function getProperty(key, name) {
   const response = await api.asUser().requestJira(route`/rest/api/3/issue/${key}/properties/${name}`);
   return response.ok ? (await response.json()).value : null;
 }
+
+// Whether the person can edit the work item (Jira checks it as the user).
+async function canEdit(key) {
+  const response = await api.asUser().requestJira(route`/rest/api/3/mypermissions?issueKey=${key}&permissions=EDIT_ISSUES`);
+  if (!response.ok) return false;
+  return (await response.json()).permissions?.EDIT_ISSUES?.havePermission === true;
+}
+// The ACs exactly as the verifier reads them (as the app, from aat.ticket).
+const readAcs = async (key) => (await collectJira(key)).acceptanceCriteria;
+const approvalDeps = { canEdit, readAcs, appendAudit, store: kvs };
+
+// A person approves the removal or change of one test (finding E1, 19 Nov). Only this action, not
+// the issue property, gives an approval that the verifier counts; the claimant's own approval
+// does not count.
+resolver.define('approveTest', async ({ payload, context }) => approveTest({ key: context.extension.issue.key, accountId: context.accountId, payload }, approvalDeps));
+
+// A person records the current ACs. A later change to the ACs makes the verdict cannot_verify
+// until a person records them again.
+resolver.define('recordAcs', async ({ context }) => recordAcsAction({ key: context.extension.issue.key, accountId: context.accountId }, approvalDeps));
 
 resolver.define('getPanel', async ({ context }) => {
   const key = context.extension.issue.key;
@@ -80,7 +101,9 @@ resolver.define('adoptCheck', async ({ payload, context }) => {
   if (!response.ok) return { ok: false, error: `Jira refused the change (HTTP ${response.status}).` };
   const audit = await appendAudit({ actor: context.accountId, event: 'check.adopted', data: {
     key, ac: result.proposal.ac, testName: result.proposal.testName, prNumber: Number(payload?.prNumber), reason: String(payload.reason).trim() } });
-  return { ok: true, auditSeq: audit.seq };
+  // The adoption changes the ACs on purpose, so the person's action also records the new ACs.
+  const recorded = await recordAcsAction({ key, accountId: context.accountId }, approvalDeps);
+  return { ok: true, auditSeq: audit.seq, acsAuditSeq: recorded.ok ? recorded.auditSeq : null };
 });
 
 // Monitor page: the whole audit chain (small in the demo), checked and replayed.

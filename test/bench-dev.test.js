@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { nextEvent } from '../src/audit.js';
 import { collectGithub, collectPrStats } from '../src/github-evidence.js';
 import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
@@ -28,17 +29,19 @@ export async function run(id) {
   return runCase(load(id));
 }
 
-async function runCase(c) {
+// opts.approvals and opts.events: the app's approval store and its audit events; opts.by: the claimant.
+async function runCase(c, opts = {}) {
   const id = c.id;
   const d = {
     collectJira: async () => structuredClone(c.ticket),
     env: () => ({ repo: 'ysant77/yms-bank-demo', token: 'local' }),
     collectGithub, collectPrStats, fetchFn: fetchFrom(c.github),
+    ...(opts.approvals ? { readApprovals: async () => structuredClone(opts.approvals), readAudit: async (seq) => [opts.events.find((e) => e.seq === seq)] } : {}),
   };
   const log = console.log;
   console.log = () => {};
   try {
-    const { verdict } = await decide({ issueKey: c.ticket.key, claim: { id: `dev-${id}`, type: c.claim, text: '' } }, d);
+    const { verdict } = await decide({ issueKey: c.ticket.key, claim: { id: `dev-${id}`, type: c.claim, text: '', by: opts.by } }, d);
     return verdict;
   } finally {
     console.log = log;
@@ -234,20 +237,34 @@ test('I10: a test that the PR drops makes the claim contradicted, with the test 
   assert.match(v.reason, /test_keys_expire_after_24_hours/);
 });
 
+// An approved removal: an entry in the app's store with its audit event, by a person other than
+// the claimant (finding E1, 19 Nov). A name in the issue property alone does not count.
+const removalApproved = (key) => {
+  const reason = 'the 24-hour expiry is replaced by AC3';
+  const events = [nextEvent(null, { actor: 'lead-1', event: 'test.removal_approved', data: { key, test: 'test_keys_expire_after_24_hours', reason }, at: '2026-11-19T00:00:00Z' })];
+  return { approvals: { removals: [{ test: 'test_keys_expire_after_24_hours', reason, by: 'lead-1', at: '2026-11-19T00:00:00Z', auditSeq: 0 }], changes: [], acs: null }, events, by: 'dev-1' };
+};
+
 test('an approved removal does not count as a dropped test', async () => {
   const c = load('I10');
-  c.ticket.approvedTestRemovals = ['test_keys_expire_after_24_hours'];
-  const v = await runCase(c);
+  const v = await runCase(c, removalApproved(c.ticket.key));
   assert.doesNotMatch(v.reason, /test_keys_expire_after_24_hours/);
+});
+
+test('a removal listed only in the issue property still counts as a dropped test', async () => {
+  const c = load('I10');
+  c.ticket.approvedTestRemovals = ['test_keys_expire_after_24_hours'];
+  const v = await runCase(c, { by: 'dev-1' });
+  assert.equal(v.result, 'contradicted', v.reason);
+  assert.match(v.reason, /issue property, which does not count/);
 });
 
 // The recorded I10 report is from before the repro script wrote base_collect. Its listed base ids
 // still show the dropped test (a fail), but without the collection record a clean result is
 // unknown: a module whose base ids could not be read may hide a dropped test.
 test('I10 with an approved removal: the dropped-test check needs the base_collect record to pass', async () => {
-  const check = async (c) => (await runCase(c)).checks.find((x) => x.name === 'reproduced');
+  const check = async (c) => (await runCase(c, removalApproved(c.ticket.key))).checks.find((x) => x.name === 'reproduced');
   const c = load('I10');
-  c.ticket.approvedTestRemovals = ['test_keys_expire_after_24_hours'];
   const old = await check(c);
   assert.equal(old.status, 'unknown', old.reason);
   assert.match(old.reason, /base_collect/);

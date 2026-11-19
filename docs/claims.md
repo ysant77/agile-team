@@ -183,3 +183,24 @@ dismissals and dependency alerts need a token and are after the freeze (DESIGN 1
 | U17 | invalid | contradicted | cannot_verify | both accepted; the deselect in `pyproject.toml` now makes the report untrusted, so the missing test is no longer read from it |
 
 These are development sets; no claim is made before blind set 5.
+
+## Approvals and the AC record (19 Nov 2026, finding E1)
+
+Any issue editor can write the issue property `aat.ticket` by REST. So:
+- **Test approvals.** A removed test or a changed pinned test counts as approved only when a
+  person approved it in the issue panel. The action writes the audit event, then the app's store.
+  The verifier needs the matching audit event, and an approver who is not the claimant. A name
+  in the issue property alone does not count; the reason says so.
+- **AC record.** "Record these ACs" in the panel stores the hash of the current ACs, after its
+  audit event. Adopting a proposed check records the new ACs too. The check `acs_recorded`
+  compares the ACs with the last record: a change gives `cannot_verify` until a person records
+  them again. A work item with no record (made before 19 Nov or outside the app) cannot show a
+  change: the check is advisory and the view lists it under "not checked".
+- **Limits.** A ticket made by the PM agent gets its AC record only when a person presses
+  "Record these ACs". The AC record does not check who recorded it against the claimant.
+
+**Regression (development sets, no model).** `score.mjs` on sets 1 to 4 (rebuilt pinned evidence),
+app `main` f3bb23e against `fix/audited-approvals`. Right: 35, 18, 13, 15 on both. No outcome
+changes. Six invalid cases (I10, S16, T14, T15, U09, U20) keep `contradicted`; their reason now
+says the approval must come from a person other than the claimant. No benchmark case has an
+approval or an AC record.
