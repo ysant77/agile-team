@@ -157,3 +157,30 @@ test('lead rows scored under older guards are left out of the ranking', () => {
   const s = summariseRole(rows, 'lead');
   assert.deepEqual(s.lines.map((l) => l.model), ['new']);
 });
+
+// Discovery round 1 (19 Nov): the row replaced the task's tool-call list with the count of model
+// calls, so no refusal text was kept. The row keeps the list as toolCallLog.
+test('a result row keeps the tool calls of a task with their refusal texts', async () => {
+  const { resultRow } = await import('../bakeoff/run.js');
+  const modelCalls = [{ ok: true, validJson: false, tps: 10 }, { ok: true, validJson: false, tps: 14 }];
+  const toolCalls = [
+    { name: 'start-investigation', args: { symptom: 's' }, ok: true },
+    { name: 'record-finding', args: { investigationId: 'inv-1' }, ok: false, error: 'citation 3 is not a line that a read returned' },
+  ];
+  const row = resultRow({ run: 'r', task: 'x' }, { task: 'D-2', score: 0, calls: toolCalls }, modelCalls, 12.5);
+  assert.equal(row.calls, 2);
+  assert.deepEqual(row.toolCallLog, toolCalls);
+  assert.equal(row.toolCallLog[1].error, 'citation 3 is not a line that a read returned');
+  assert.equal(row.task, 'D-2');
+  assert.equal(row.wallS, 12.5);
+  assert.equal(row.tokensPerS, 12);
+});
+
+test('a result row has no tool-call list when the task returns only its model calls', async () => {
+  const { resultRow } = await import('../bakeoff/run.js');
+  const modelCalls = [{ ok: false, error: 'timeout' }];
+  const row = resultRow({ run: 'r' }, { task: 'P-1', failed: 'invalid JSON', calls: modelCalls }, modelCalls, 1);
+  assert.equal(row.calls, 1);
+  assert.equal(row.timeouts, 1);
+  assert.equal('toolCallLog' in row, false);
+});
