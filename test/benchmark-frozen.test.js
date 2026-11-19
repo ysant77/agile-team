@@ -26,6 +26,7 @@ const FROZEN = [
   ['benchmark/run/truth.json', '8dafbe4cdc99acef60aa1a06106a823f54ff318361a45226a245fcb6e65e558c'],
   ['benchmark/run/truth-2.json', '0b0ca9d9547ae369aa6a99a4ddfdd6b83eb5df7494b1d83d3f952a88e7913253'],
   ['benchmark/run/truth-3.json', '3da9ec7b1c432f2cbe02f7e839b6ee2763ea36ba6d28fd423520ec026f975fcb'],
+  ['benchmark/PREDICTIONS-LISTING.md', 'ccc6bcb6f045fabe119a970ca2be4b90fc57c3ee5c1c3815a5509c91968823a3'],
 ];
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
