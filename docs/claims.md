@@ -196,8 +196,11 @@ Any issue editor can write the issue property `aat.ticket` by REST. So:
   compares the ACs with the last record: a change gives `cannot_verify` until a person records
   them again. A work item with no record (made before 19 Nov or outside the app) cannot show a
   change: the check is advisory and the view lists it under "not checked".
-- **Limits.** A ticket made by the PM agent gets its AC record only when a person presses
-  "Record these ACs". The AC record does not check who recorded it against the claimant.
+- **Recorder.** The AC record counts only when a person other than the claimant of the claim
+  made it; the claimant's own record, or a record with an unknown claimant, gives `cannot_verify`
+  (added after the lead review of PR 28).
+- **Limit.** A ticket made by the PM agent gets its AC record only when a person presses
+  "Record these ACs".
 
 **Regression (development sets, no model).** `score.mjs` on sets 1 to 4 (rebuilt pinned evidence),
 app `main` f3bb23e against `fix/audited-approvals`. Right: 35, 18, 13, 15 on both. No outcome

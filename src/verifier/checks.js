@@ -683,6 +683,9 @@ export function acsRecorded(ctx) {
   if (acHash(ctx.ticket.acceptanceCriteria ?? []) !== rec.acHash) {
     return result(name, 'unknown', `the ACs changed after the last audited record (audit seq ${rec.auditSeq}); a person records them again in the panel`);
   }
+  // The record must come from a person other than the claimant (lead review of PR 28).
+  if (!isText(ctx.claimant)) return result(name, 'unknown', 'the claimant is not known, so the AC record cannot be shown to come from another person');
+  if (ctx.claimant === rec.by) return result(name, 'unknown', 'the claimant recorded the ACs; another person records them');
   return result(name, 'pass', `the ACs match the audited record (audit seq ${rec.auditSeq}, by ${rec.by})`);
 }
 

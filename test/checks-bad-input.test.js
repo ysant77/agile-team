@@ -192,7 +192,7 @@ const ROWS = [
   { allow: { 'report.pinned': ['missing'], approvals: ['missing', 'null'], 'approvals.removals': ['missing', 'empty_array'], 'approvals.changes': ['missing', 'empty_array'] } }],
   // No AC record (a work item made before 19 Nov or outside the app) is advisory: it cannot turn
   // a verdict into a pass.
-  ['acsRecorded', ['approvals', 'approvals.acs', 'approvals.acs.acHash', 'approvals.acs.by', 'approvals.acs.auditSeq', 'approvalEvents', 'ticket', 'ticket.key', 'ticket.acceptanceCriteria'],
+  ['acsRecorded', ['approvals', 'approvals.acs', 'approvals.acs.acHash', 'approvals.acs.by', 'approvals.acs.auditSeq', 'approvalEvents', 'ticket', 'ticket.key', 'ticket.acceptanceCriteria', 'claimant'],
   { allow: { approvals: ['missing', 'null'], 'approvals.acs': ['missing', 'null'] } }],
   ['migrationAdditive', ['arg:0', ...TRUST, 'report.migrations', 'report.migrations.0', 'report.migrations.0.number', 'report.migrations.0.operations',
     'report.migrations.0.operations.0'], { allow: TRUST_ALLOW }],
