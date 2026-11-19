@@ -13,7 +13,7 @@ import { addComment } from './jira.js';
 import { collectJira } from './jira-evidence.js';
 import { applyGuards, OPINION_PROMPT_VERSION } from './opinion.js';
 import { styleGate } from './opinion-style.js';
-import { VERIFY_CONFIG } from './verify-claim.js';
+import { configFor } from './verify-claim.js';
 import { verify } from './verifier/verdict.js';
 
 const caseKey = (issueKey) => `case:${issueKey}`;
@@ -64,7 +64,7 @@ export async function openCase(payload) {
       console.log('PR size not read', prNumber, error.message);
     }
     // The file list from collectGithub: every page, or null when it is cut.
-    const verdict = verify({ id: `case:${input.issueKey}:${prNumber}`, type: 'ready', text: '' }, { ticket, ...github, config: VERIFY_CONFIG });
+    const verdict = verify({ id: `case:${input.issueKey}:${prNumber}`, type: 'ready', text: '' }, { ticket, ...github, config: configFor(repo) });
     evidence.push({ prNumber, pr: github.pr, report: github.report, baseReport: github.baseReport, verdict, ...stats });
   }
   const built = buildPacket({ ...input, ticket, evidence });
