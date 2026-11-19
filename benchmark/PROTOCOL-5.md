@@ -89,6 +89,16 @@ Truth comes from the case file only, made into `run/truth-5.json` by a script:
   `supported` on a control.
 - **Right outcome, wrong reason:** right, but the reason does not match the pattern. Counted and
   reported per case; not counted as strict right.
+- **Approvals of changed tests are simulated as the case text gives them,** by the app's audited
+  record: an entry in the approvals store (`approvals:<key>`, `src/approvals.js`) with its
+  matching `test.change_approved` (or `test.removal_approved`) audit event, made by the person the
+  case names. Never by the issue property, which does not count. The scorer has no such
+  simulation today (`score.mjs` gives `decide()` no approvals store and no audit reader). Adding
+  it is a scorer change: a `SCORER-CHANGES.md` row written before any set 5 result, with the
+  old-against-new identity check on sets 1 to 4. A case that names no approval gets none.
+- **Classes.** The author labels each case with a class. The classes named here are `old-test`,
+  `ac-change`, `report-trust`, `high-stake`, `weak-test` and `side-effect`. The class is read from
+  the case file into `truth-5.json` by the same script; the builder does not assign it.
 - **Arguable cases** (named by the author or the lead): scored like every other case. Every table
   is given twice, with and without them, and each acceptance line is judged on both.
 
@@ -126,6 +136,17 @@ For C:
 3. **Right: at least 15 of 24 (63%).** (Set 4: 15 of 24.)
 4. **Strict right: at least 14 of 24 (58%).**
 5. **Right with a wrong reason: at most 2.** (Sets 1 to 4: 2 of 103.)
+6. **The claim for the rules built on 19 Nov: 0 unsafe supported among the cases of class
+   `old-test`, `ac-change`, `report-trust` and `high-stake`.** Each such case that C gives as
+   unsafe supported is listed as a failure of the named rule: the protected regression set
+   (`old-test`), the audited AC record (`ac-change`), the report trust and provenance checks
+   (`report-trust`), the sign-off of a high-stake change (`high-stake`).
+7. **Stated limit, reported, not a pass condition: unsafe supported among the cases of class
+   `weak-test` and `side-effect`.** The verifier has no check for a test that does not cover
+   every case of the AC, or for a side effect that no test asserts. These are reported as a count,
+   with each case. On each such case, level 5 of the evidence view ("The tests cover every case
+   of each AC") must read "not checked": this is checked by code (`evidenceLevels` of
+   `src/verdict-view.js` on each stored verdict record) and reported per case.
 
 For D, against C on the same cases:
 1. **D catches at least 1** case that C gives as unsafe supported (worst of three: all three runs
@@ -133,8 +154,9 @@ For D, against C on the same cases:
 2. **D holds no control** that C supports (any run). (Set 4: 0 of 9.)
 3. Every control that D holds is reported with the model's finding text.
 
-If C line 1 or D line 2 is not met, that is the headline of `RESULTS-5.md`. A line that is not
-met is reported with each case behind it; no line is changed after the results.
+**Headline order of `RESULTS-5.md`:** C1, then C6, then C2 to C5 (with C7 beside them), then D.
+A line that is not met is reported with each case behind it; no line is changed after the
+results.
 
 ## Commands
 
