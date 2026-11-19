@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { nextEvent } from '../src/audit.js';
 import { pinnedTestsHold, testsNotRemoved } from '../src/verifier/checks.js';
 import { collectGithub, collectPrStats } from '../src/github-evidence.js';
 import { decide } from '../src/verify-claim.js';
@@ -50,12 +51,21 @@ test('an edited pinned test whose base copy still passes: pass, and the reason n
   assert.match(r.reason, /test_transfer_errors is edited, and its base copy still passes/);
 });
 
+// An approval counts only in the app's store, with its audit event, by a person other than the
+// claimant (finding E1, 19 Nov; test/approvals-audited.test.js).
+function approved(ctx, kind, test, reason, by = 'lead-1') {
+  const event = nextEvent(null, { actor: by, event: kind === 'removal' ? 'test.removal_approved' : 'test.change_approved', data: { key: 'BANK-9', test, reason }, at: '2026-11-19T00:00:00Z' });
+  const entry = { test, reason, by, at: '2026-11-19T00:00:00Z', auditSeq: 0 };
+  return { ...ctx, claimant: 'dev-1', approvals: { removals: kind === 'removal' ? [entry] : [], changes: kind === 'change' ? [entry] : [] }, approvalEvents: new Map([[0, event]]) };
+}
+
 test('a deleted pinned test: fail, unless its removal is approved', () => {
   const deleted = pin('test_statement_rejects_bad_dates', { head_id: null, head_hash: null, outcome: 'not_run' });
   assert.equal(pinnedTestsHold(ctxOf([deleted])).status, 'fail');
   assert.match(pinnedTestsHold(ctxOf([deleted])).reason, /deleted/);
-  const ok = pinnedTestsHold(ctxOf([deleted], { approvedTestRemovals: ['test_statement_rejects_bad_dates'] }));
+  const ok = pinnedTestsHold(approved(ctxOf([deleted]), 'removal', 'test_statement_rejects_bad_dates', 'the statement window moves to AC4'));
   assert.equal(ok.status, 'pass', ok.reason);
+  assert.equal(pinnedTestsHold(ctxOf([deleted], { approvedTestRemovals: ['test_statement_rejects_bad_dates'] })).status, 'fail', 'an issue property alone does not count');
 });
 
 test('a deselected or skipped pinned test (base copy not run on head): fail', () => {
@@ -83,14 +93,16 @@ test('a rename to another body is not accepted as a rename', () => {
 
 test('a new pin needs a recorded approval with a reason', () => {
   const edited = pin('test_transfer_errors', { head_hash: H('c'), outcome: 'failed' });
-  const approval = { test: 'test_transfer_errors', reason: 'AC2 changes the status to 400', auditSeq: 12 };
-  assert.equal(pinnedTestsHold(ctxOf([edited], { approvedTestChanges: [approval] })).status, 'pass');
+  const ok = approved(ctxOf([edited]), 'change', 'test_transfer_errors', 'AC2 changes the status to 400');
+  assert.equal(pinnedTestsHold(ok).status, 'pass');
   // No reason, a short reason or no audit entry: not an approval.
-  for (const bad of [{ test: 'test_transfer_errors', auditSeq: 12 }, { ...approval, reason: 'ok' }, { ...approval, auditSeq: undefined }]) {
-    assert.equal(pinnedTestsHold(ctxOf([edited], { approvedTestChanges: [bad] })).status, 'fail', JSON.stringify(bad));
+  for (const change of [(e) => { delete e.reason; }, (e) => { e.reason = 'ok'; }, (e) => { delete e.auditSeq; }]) {
+    const ctx = structuredClone(ok);
+    change(ctx.approvals.changes[0]);
+    assert.equal(pinnedTestsHold(ctx).status, 'fail', JSON.stringify(ctx.approvals.changes[0]));
   }
-  // A malformed list cannot show an approval.
-  assert.equal(pinnedTestsHold(ctxOf([edited], { approvedTestChanges: 'all' })).status, 'unknown');
+  // A malformed record cannot show an approval.
+  assert.equal(pinnedTestsHold({ ...ok, approvals: { changes: 'all' } }).status, 'unknown');
 });
 
 test('no pinned block: advisory, not counted, and says the check did not run', () => {

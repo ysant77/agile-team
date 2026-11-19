@@ -3,6 +3,7 @@
 import { fetch } from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { appendAudit, readAudit } from './audit-store.js';
+import { auditSeqs, readApprovals } from './approvals.js';
 import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment, findComment } from './jira.js';
 import { addVerdictProperty, collectJira, collectReviews } from './jira-evidence.js';
@@ -176,10 +177,30 @@ export async function decide({ issueKey, claim }, d) {
       console.log('sign-off audit read failed', issueKey, error.message);
     }
   }
+  // Approvals of removed or changed tests and the audited AC record (finding E1): the app's store
+  // and the audit event of each entry. A reader that is not given (a replay) means none stored. A
+  // read error makes the record unreadable, so the checks that use it say unknown.
+  let approvals;
+  const approvalEvents = new Map();
+  // The deployed app reads the store it was given (Forge KVS); a test gives its own.
+  const readStored = d.readApprovals ?? (d.store ? (key) => readApprovals(key, d.store) : null);
+  if (readStored) {
+    try {
+      approvals = await readStored(issueKey);
+      for (const seq of auditSeqs(approvals)) {
+        if (!d.readAudit) break;
+        const [e] = await d.readAudit(seq, 1);
+        approvalEvents.set(seq, e);
+      }
+    } catch (error) {
+      console.log('approval record read failed', issueKey, error.message);
+      approvals = 'unreadable';
+    }
+  }
   // mergeRequiredTests: tests that must pass by name in the merge result. None are configured;
   // merged_clean still needs every base test kept and unique migrations. The checks read a
   // missing list as not known, so it is always set here.
-  const ctx = { ticket, ...github, mergeRequiredTests: [], config: VERIFY_CONFIG, claimant: claim.by ?? null, signoffEvent };
+  const ctx = { ticket, ...github, mergeRequiredTests: [], config: VERIFY_CONFIG, claimant: claim.by ?? null, signoffEvent, approvals, approvalEvents };
   let verdict = verify(claim, ctx);
   // Without the code host, a PR check that does not pass says why (a fail or an unknown).
   if ((githubError || !repo) && verdict.result !== 'supported' && verdict.checks.some((c) => ['pr_linked', 'on_main'].includes(c.name) && c.status !== 'pass')) {
