@@ -236,3 +236,26 @@ workflow that made them, by the hash marker that the run uploads (`docs/ci-repor
 "tamper-proof". Arm C on sets 1 to 4 (development sets, no model): no outcome or reason change
 (35, 18, 13, 15). The scorer's simulated GitHub serves no artifacts, so the check is advisory
 there.
+
+## Evidence levels in the verdict view (19 Nov 2026, P1-3)
+
+The panel shows five levels under "Evidence levels". Each one says what it rests on, so a green
+test is not read as proof that the behaviour is right.
+
+1. **CI passed:** `ci_green`, or for a done claim the merge result (`merged_clean`).
+2. **Bug reproduced:** `reproduced` (done claims with code work). Other claim types show "not
+   checked for this claim".
+3. **The named AC test passed:** the `test_passes` ACs.
+4. **The AC is covered:** per AC. A mechanical check that passed is "proved". An AC with no
+   mechanical check (`manual`) is "not checked".
+5. **All ACs covered:** proved only when every AC is proved. Even then, the view says that it
+   does not check whether each test covers every case of its AC.
+
+Statuses:
+- proved;
+- failed;
+- not proved: the check ran and could not decide;
+- not checked.
+
+This is view only. The checks and the verdict do not change: arm C on sets 1 to 4 gives
+identical result records.

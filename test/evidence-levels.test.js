@@ -87,9 +87,10 @@ function texts(el, out = []) {
   if (Array.isArray(el)) { el.forEach((x) => texts(x, out)); return out; }
   if (typeof el === 'string' || typeof el === 'number') { out.push(String(el)); return out; }
   if (typeof el.type === 'function' && !names.includes(el.type.name)) return texts(el.type(el.props), out);
-  const kids = [];
-  texts(el.props?.children, kids);
-  if (kids.length) out.push(kids.join(''));
+  // A leaf (only text children) gives its joined text; a container gives each child's texts.
+  const children = [el.props?.children].flat(Infinity).filter((x) => x !== null && x !== undefined && x !== false);
+  if (children.length && children.every((x) => typeof x === 'string' || typeof x === 'number')) out.push(children.join(''));
+  else texts(children, out);
   return out;
 }
 

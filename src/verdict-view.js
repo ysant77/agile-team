@@ -51,6 +51,49 @@ export function compactChecks(checks) {
     }));
 }
 
+// Five evidence levels (execution plan P1-3, review item A). Each level says what it rests on, so
+// a green test is not read as proof that the behaviour is right. Statuses: proved, failed,
+// "not proved" (the check ran and could not decide), "not checked" (no check for it: the claim type
+// does not run it, or an AC has no mechanical check). Built from the stored checks only; the
+// verdict is not changed.
+const STATUS = { pass: 'proved', fail: 'failed', unknown: 'not proved' };
+const isManual = (p) => typeof p.name === 'string' && p.name.startsWith('manual(');
+// Worst first: failed, then not proved, then not checked; proved only when every row is proved.
+function combine(rows) {
+  if (!rows.length) return 'not checked';
+  for (const s of ['failed', 'not proved', 'not checked']) if (rows.some((r) => r.status === s)) return s;
+  return 'proved';
+}
+
+export function evidenceLevels(checks) {
+  const list = compactChecks(checks);
+  const find = (name) => list.find((c) => c.name === name);
+  const level = (name, check, missing) => (check
+    ? { level: name, status: STATUS[check.status], detail: `${check.name}: ${check.reason}` }
+    : { level: name, status: 'not checked', detail: missing });
+  const ci = find('ci_green') ?? find('merged_clean');
+  const acCheck = find('ac_mapped');
+  const parts = acCheck?.parts ?? [];
+  const tests = parts.filter((p) => typeof p.name === 'string' && p.name.startsWith('test_passes('));
+  const acs = parts.map((p) => (isManual(p)
+    ? { acId: p.acId, status: 'not checked', detail: `no mechanical check: ${p.reason}` }
+    : { acId: p.acId, status: STATUS[p.status], detail: `by ${p.name}: ${p.reason}` }));
+  const testRows = tests.map((p) => ({ status: STATUS[p.status] }));
+  const all = combine(acs);
+  return [
+    level('CI passed', ci, 'not checked for this claim'),
+    level('Bug reproduced', find('reproduced'), 'not checked for this claim (only a done claim with code work runs the reproduction check)'),
+    { level: 'The named AC test passed', status: combine(testRows),
+      detail: tests.length ? tests.map((p) => `${p.acId} ${p.name}: ${p.reason}`).join('; ') : 'no AC names a test' },
+    { level: 'The AC is covered', status: combine(acs), acs,
+      detail: acs.length ? acs.map((a) => `${a.acId} ${a.status}`).join('; ') : 'no AC was checked' },
+    { level: 'All ACs covered', status: all,
+      detail: all === 'proved'
+        ? 'every AC has a mechanical check that passed; whether each test covers every case of its AC is not checked'
+        : acs.length ? 'not every AC has a mechanical check that passed' : 'no AC was checked' },
+  ];
+}
+
 export function verdictState(record) {
   if (!record || typeof record !== 'object') return null;
   if (record.result === 'cannot_verify' && Array.isArray(record.reviewHold) && record.reviewHold.length) return 'held';
@@ -94,6 +137,7 @@ export function verdictView(record) {
     failed,
     notChecked,
     human: HUMAN[state],
+    levels: evidenceLevels(record.checks),
     meta: {
       claim: record.type ?? null,
       at: record.at ?? null,
