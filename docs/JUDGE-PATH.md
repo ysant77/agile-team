@@ -18,8 +18,16 @@ and Jira, bank branches built locally). They are not yet on the demo Jira site.
 - **Demo site (prepared, not done):** `scripts/judge-seed.mjs` writes the `aat.ticket` property
   of each case (with the case's own test names) and prints the branch, PR title, labels, claim
   and the expected verdict.
-  - Each case claims `done`, so its PR must be merged. A `ready` claim does not run the
-    reproduction check, and U04 and U20 then show Supported.
+  - **The judge path uses `done` claims only.** Each case claims `done`, so its PR must be
+    merged. The other claim types do not show the intended verdicts on these cases (scored on
+    the real demo reports, 19 Nov):
+    - `fixed` on a Bug ticket needs a test whose name carries the key token (for example
+      `test_BENCH401_...`; `create-ticket` names tests this way). The case tests keep their own
+      names, so `fixed` gives Contradicted ("no test named for ...") on every Bug case.
+    - `ready` does not run the reproduction check, so U04 shows Supported; it also needs CI on
+      the current base.
+    - Only `done` runs the reproduction, the merge, the coverage and the sign-off checks. A
+      rehearsal on the real demo data (U01, merged as demo PR 7) gave Supported with all of them.
   - Where to merge (the bank `main` or a second demo repository) is an owner decision.
   - Setting the property needs the owner's sign-in.
 
