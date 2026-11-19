@@ -23,6 +23,8 @@ Every action, trigger and panel call that writes something.
 | Panel `approve` | The person (as the user: must be able to edit the work item) | Issue property `aat.approval` | Reason of at least 5 characters | Overwrites | `requirement.approved` | It is the approval | - |
 | Panel `signOff` | The person (as the user: must be able to edit) | Issue property `aat.signoff` | Full merge commit id; reason of at least 5 characters | Overwrites | `change.signed_off` (written first; the verifier needs the match, and a signer who is not the claimant) | It is the sign-off | - |
 | Panel `adoptCheck` | The person (as the user: must be able to edit) | Issue property `aat.ticket` (one AC check) | Proposal from a stored review; reason of at least 5 characters | - | `check.adopted` | It is the adoption | - |
+| Panel `approveTest` | The person; Jira `mypermissions` must give EDIT_ISSUES | App store (KVS) `approvals:<key>` | Kind removal or change; one test name; reason of 5 to 500 characters | Appends (at most 50 per kind) | `test.removal_approved` or `test.change_approved` (written first; the verifier needs the match, and an approver who is not the claimant) | It is the approval | Refused before any write when an input or the permission fails |
+| Panel `recordAcs` (also run by `adoptCheck`) | The person; EDIT_ISSUES | App store (KVS) `approvals:<key>` | - | Overwrites the record | `acs.recorded` (AC hash) | It records the ACs a person accepts | Refused before any write when the permission fails |
 
 **Read-only tools:**
 - `lint-requirement`
@@ -30,8 +32,6 @@ Every action, trigger and panel call that writes something.
 - `get-verdicts` (reads as the user)
 - the monitor page (reads as the user, with a permission filter)
 
-**On another branch, not merged:** the panel actions `approveTest` and `recordAcs`, for audited
-approvals and the AC record (`fix/audited-approvals`).
 
 **Limits:**
 - **The chat confirmation before `create-ticket`.** It is a step of the Rovo agent. The app
