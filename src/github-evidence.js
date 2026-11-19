@@ -1,7 +1,7 @@
 // Collects GitHub evidence for one ticket. fetchFn is injected (Forge fetch in production,
 // a stub in tests). Token optional: without it, only a public repository can be read.
 
-import { extractReport, namesKey } from './verifier/report.js';
+import { extractReport, extractReportText, namesKey } from './verifier/report.js';
 
 const API = 'https://api.github.com';
 const BOT = 'github-actions[bot]';
@@ -27,7 +27,8 @@ export async function listPrFiles(get, repo, prNumber, added = []) {
 }
 
 // prNumber picks one pull request; without it, the latest one whose title or branch names the key.
-export async function collectGithub({ repo, key, token, fetchFn, prNumber = null, securityCheck = null }) {
+// provenance: { workflowPaths } reads the run artifacts that carry the report hash markers.
+export async function collectGithub({ repo, key, token, fetchFn, prNumber = null, securityCheck = null, provenance = null }) {
   const headers = {
     Accept: 'application/vnd.github+json',
     'User-Agent': 'agile-team-forge-app',
@@ -98,6 +99,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     : null;
 
   let report = null;
+  let reportRaw = null;
   let reportAuthor = null;
   let reportComment = null;
   let prFiles = null;
@@ -115,6 +117,9 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
       headSha: r.head_sha,
       status: r.status,
       conclusion: r.conclusion,
+      event: r.event ?? null,
+      headBranch: r.head_branch ?? null,
+      headRepo: r.head_repository?.full_name ?? null,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       runStartedAt: r.run_started_at,
@@ -163,6 +168,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     const latest = fromBot[fromBot.length - 1];
     if (latest) {
       report = extractReport(latest.body);
+      reportRaw = extractReportText(latest.body);
       reportAuthor = BOT;
       reportComment = { createdAt: latest.created_at, updatedAt: latest.updated_at };
     }
@@ -200,12 +206,48 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
 
   // Report for the default branch, written by CI to the `ci-reports` branch as main.json.
   let baseReport = null;
+  let baseReportRaw = null;
   const file = await get(`/repos/${repo}/contents/main.json?ref=ci-reports`);
   if (file?.content) {
     try {
-      baseReport = JSON.parse(Buffer.from(file.content, 'base64').toString('utf8'));
+      baseReportRaw = Buffer.from(file.content, 'base64').toString('utf8');
+      baseReport = JSON.parse(baseReportRaw);
     } catch {
       baseReport = null;
+    }
+  }
+
+  // Report provenance (design P0-3): the artifact names of the pinned PR runs on the head, and of
+  // the push runs for the main.json commit. At most 3 runs each; a list that cannot be read is
+  // null (not known). One call per run, plus one for the push runs.
+  const artifactsByRun = {};
+  let baseRuns = [];
+  if (provenance) {
+    const paths = provenance.workflowPaths ?? ['.github/workflows/ci.yml'];
+    const pinned = (r) => paths.includes(String(r.path ?? '').split('@')[0]);
+    const listArtifacts = async (id) => {
+      try {
+        const body = await get(`/repos/${repo}/actions/runs/${id}/artifacts?per_page=100`);
+        return Array.isArray(body?.artifacts) ? body.artifacts.map((a) => a.name) : null;
+      } catch {
+        return null;
+      }
+    };
+    for (const run of workflowRuns.filter((r) => pinned(r) && r.event === 'pull_request').slice(0, 3)) {
+      artifactsByRun[run.id] = await listArtifacts(run.id);
+    }
+    const baseSha = baseReport?.head_sha;
+    if (typeof baseSha === 'string' && /^[0-9a-f]{40}$/.test(baseSha)) {
+      try {
+        const runs = await get(`/repos/${repo}/actions/runs?head_sha=${baseSha}&event=push&per_page=20`);
+        baseRuns = (runs?.workflow_runs ?? []).map((r) => ({
+          id: r.id, attempt: r.run_attempt ?? 1, path: r.path, headSha: r.head_sha, event: r.event ?? null,
+          headBranch: r.head_branch ?? null, headRepo: r.head_repository?.full_name ?? null, conclusion: r.conclusion,
+        }));
+      } catch {
+        baseRuns = null;
+      }
+      for (const run of (baseRuns ?? []).filter(pinned).slice(0, 3)) artifactsByRun[run.id] = await listArtifacts(run.id);
     }
   }
 
@@ -224,6 +266,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     forkPrs,
     truncated,
     report,
+    reportRaw,
     reportAuthor,
     reportComment,
     prFiles,
@@ -232,6 +275,9 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     securityRuns,
     workflowRuns,
     baseReport,
+    baseReportRaw,
+    baseRuns,
+    artifactsByRun,
     baseWorkflowFiles: baseReport?.workflow_files ?? null,
     // A merged PR's result on main is the main report (ci-reports/main.json). It counts only while
     // it is for the merge commit; after a later merge the check says the report is for another

@@ -35,3 +35,47 @@ head commit, and only when no file under `.github/workflows/` differs from the b
   `psi*` metric is not trusted when both hashes are equal.
 - Optional blocks used by the crash scenario: `repair` (`debits_minor`, `credits_minor`,
   `rows_deleted`, `rows_updated`) and `recon` (`accounts`, `accounts_matching`, `diff_minor`).
+
+## Provenance: the report hash marker (19 Nov 2026, design P0-3)
+
+The bank's `report` job (pull requests) and `publish-main-report` job (pushes to `main`) run no
+repository code. Each one:
+- hashes the downloaded `ci-report.json`;
+- uploads it again as an artifact named `ci-report-sha256-<hash>-attempt-<n>` or
+  `main-report-sha256-<hash>-attempt-<n>`.
+
+Only the run can upload to itself.
+
+**Hash rule.** sha256 of the UTF-8 text with trailing spaces, tabs, CR and LF removed. It is
+`reportHash` in `src/verifier/report.js`, and the bank's hash step uses the same rule. Both test
+suites check the same vector.
+
+**Check `report_provenance`.** The PR report comment counts only when a run of the pinned
+workflow:
+- has event `pull_request`;
+- is on the PR head;
+- is in this repository;
+- has exactly one marker hash at its current attempt, equal to the hash of the raw comment
+  report.
+
+`main.json` counts only when a push run of the pinned workflow on `main`, for the commit that
+`main.json` names, has its own marker, under the same rule.
+
+**Re-runs.** A re-run uploads to the same run under a new attempt number. Only the marker of the
+current attempt counts. Two different hashes for one attempt give unknown. Two identical names
+cannot exist in one run.
+
+**Required per repository.** `VERIFY_CONFIG.provenanceRequiredRepos` decides it. The list is
+empty, so the check is advisory and never counted. A repository is listed only after a real PR run
+on it shows that the comment text and the marker hash agree.
+
+**Limits:**
+- The marker binds a report to a run of the pinned workflow on the right commit. It does not make
+  the run honest: the PR's own code runs in the `test` job.
+- An admin who deletes artifacts makes the check unknown.
+- A partial re-run that does not re-run the `report` job leaves the current attempt with no
+  marker, so the check is unknown.
+
+**GitHub calls.** On the judge-path replays, 9 calls per claim before this check and 11 after.
+The recordings have no push-run list, so the artifact list of the push run is not read there. Live
+it is about 12. At most 3 pinned PR runs are read, so the most is about 14.

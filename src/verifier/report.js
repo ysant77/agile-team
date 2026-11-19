@@ -1,5 +1,7 @@
 // CI report helpers. Format: docs/ci-report.md (aat-ci-report/1 and /2).
 
+import { createHash } from 'node:crypto';
+
 export const REPORT_MARKER = '<!-- aat-ci-report -->';
 export const REPORT_SCHEMA = 'aat-ci-report/2';
 // Version 2 differs only in that a metric value may be {median, iqr_low, iqr_high, min, max, runs}.
@@ -9,6 +11,27 @@ export const REPORT_SCHEMAS = ['aat-ci-report/1', 'aat-ci-report/2'];
 // JSON gives Infinity for 1e999, so a type check alone is not enough.
 export function finiteNumber(v) {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+// Report hash rule, shared with the bank CI (tests/test_report_marker.py, same test vector):
+// sha256 of the UTF-8 text with trailing spaces, tabs, CR and LF removed.
+export function reportHash(text) {
+  return createHash('sha256').update(String(text).replace(/[ \t\r\n]+$/, ''), 'utf8').digest('hex');
+}
+
+// A report hash marker: an artifact that the bank's report job ("ci") or publish-main-report job
+// ("main") uploads to its own run. null for any other name.
+const MARKER = /^(ci|main)-report-sha256-([0-9a-f]{64})-attempt-([1-9][0-9]{0,5})$/;
+export function parseMarker(name) {
+  const m = MARKER.exec(String(name ?? ''));
+  return m ? { kind: m[1], hash: m[2], attempt: Number(m[3]) } : null;
+}
+
+// The raw JSON text of a report comment (what the bank wrote), or null.
+export function extractReportText(commentBody) {
+  if (typeof commentBody !== 'string' || !commentBody.trimStart().startsWith(REPORT_MARKER)) return null;
+  const match = /```json\s*\n([\s\S]*?)\n```/.exec(commentBody);
+  return match ? match[1] : null;
 }
 
 export function extractReport(commentBody) {
