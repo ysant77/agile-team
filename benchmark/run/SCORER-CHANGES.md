@@ -60,3 +60,18 @@ first branch only, change 1). No case was re-run.
 **Identity check of change 20 (19 Nov 2026).** Old scorer (`main` 31542d4) and new scorer (this
 branch), both with app `main` 31542d4 (nothing listed), on `run/evidence/pinned-2026-11-18`,
 sets 1 to 4: every result record is identical (0 differ on each set; right 35, 18, 13, 15).
+
+## Set 5 (protocol PROTOCOL-5.md; written before any set 5 build or result)
+
+| # | Change | Seen set 5 results before? | Kind |
+|---|---|---|---|
+| 21 | The simulated Jira, app store and GitHub give the set 5 facts that the frozen app reads and the scorer did not give. All four parts act only on manifest fields that sets 1 to 4 do not have. **(a)** A case with `jira` data gets the app's audited approvals store (`readApprovals`: removals, changes, and the AC record `{ acHash, by, at, auditSeq }`) and the audit reader (`readAudit`). Each entry has a matching audit event (`test.removal_approved`, `test.change_approved` or `acs.recorded`) by the person that the case names, in one hash chain with the app's rules (`run/sim-jira.mjs`). It is used for V06, V17 and V20 (the lead's answers to the build questions, 19 Nov). **(b)** The claim gets `by`, the claimant account of the case, so the checks can compare an approval or an AC record with the claimant. **(c)** `github.reportCommentEdit` (V15): the bot comment is served with one repro base outcome changed (`passed` in the artifact, `failed` with `AssertionError` in the comment) and a later `updated_at`; the report that CI wrote, its artifact and its marker do not change. **(d)** `github.mainPushedByPerson` (V21): the push run on the merge commit has the conclusion `failure`, and its marker is the hash of the genuine main report, in which the named test failed; the served `main.json` is the file that the person pushed (all passed), which no marker matches. | No (written before any set 5 build or run) | Support for the set 5 case facts, as PROTOCOL-5 allows. Unit tests: `test/sim-set5.test.js`, one per part. |
+
+**Identity check of change 21 (19 Nov 2026).** The old scorer (`main` 42673c1) and the new scorer
+(this branch), both with app `main` 42673c1, were run on `run/evidence/pinned-2026-11-18`, sets 1
+to 4. The verifier files are the same as at 36de990. Each `results.json` is byte-identical: 0
+records differ on each set, and the right counts are 35, 18, 13 and 15.
+
+What change 21 does not serve, because the frozen app does not read it: the Jira change history
+(V06, V20), the comment edit history (V15), and the commits of the `ci-reports` branch (V21). The
+lead's answers keep these facts as context only; `BUILD-5.md` states them per case.
