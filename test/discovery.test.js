@@ -394,3 +394,34 @@ test('the recorded finding carries the symptom of its investigation, word for wo
   const f = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(FINDING) }, d);
   assert.equal((await d.store.get(`finding:${f.findingId}`)).symptom, START.symptom);
 });
+
+// Review of PR 44: an open investigation with no finding must not lock a person for ever. The
+// open pointer has an age limit (DISCOVERY_LIMITS.openMaxMs, 24 h from its start, read with
+// d.now()); after it, a new start replaces the pointer.
+test('an open investigation older than the age limit no longer blocks a new start', async () => {
+  assert.equal(DISCOVERY_LIMITS.openMaxMs, 24 * 60 * 60 * 1000);
+  const saved = clock;
+  try {
+    const { d, id } = await started();
+    const other = { ...START, symptom: 'A later, different report.' };
+    clock = saved + DISCOVERY_LIMITS.openMaxMs - 1;
+    const early = await startInvestigation(other, d);
+    assert.equal(early.error, `an investigation is open: ${id}; record a finding for it first`);
+    clock = saved + DISCOVERY_LIMITS.openMaxMs;
+    const late = await startInvestigation(other, d);
+    assert.equal(late.ok, true, late.error);
+    assert.notEqual(late.investigationId, id);
+    // The new investigation is now the open one.
+    const third = await startInvestigation({ ...START, symptom: 'A third report.' }, d);
+    assert.equal(third.error, `an investigation is open: ${late.investigationId}; record a finding for it first`);
+  } finally {
+    clock = saved;
+  }
+});
+
+test('an open pointer with no start time is treated as expired', async () => {
+  const { d } = await started();
+  for (const [k, v] of d.store.map) if (k.startsWith('inv-open:')) d.store.map.set(k, { id: v.id });
+  const next = await startInvestigation({ ...START, symptom: 'Another report.' }, d);
+  assert.equal(next.ok, true, next.error);
+});

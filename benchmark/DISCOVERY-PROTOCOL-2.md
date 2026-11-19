@@ -34,7 +34,8 @@ follow; neither loosens a check:
 
 - **Tool:** one open investigation per person. A start with another symptom is refused until
   the open investigation has a recorded finding. The refusal takes no slot and makes no call.
-  The recorded finding carries its investigation's symptom word for word.
+  The recorded finding carries its investigation's symptom word for word. An open investigation
+  blocks a new start for at most 24 hours; the bake-off runs never reach that limit.
 - **Score:** a run whose recorded finding answers any symptom other than the case's own scores 0
   with the reason "finding answers a symptom the model wrote". This holds on every case, the
   control included.
@@ -43,7 +44,8 @@ follow; neither loosens a check:
 - **Limit:** in the deployed app the symptom arrives as a tool argument from the model. These
   rules reduce the risk that a finding answers a report the user never made. They do not prove
   that the text is the user's. In the bake-off, the score compares the finding with the case's
-  symptom, so there the check is exact.
+  symptom, so there the check is exact. The model can still close the open investigation with a
+  `no_defect` finding and start another one with its own symptom: the bake-off scores that 0.
 
 ## Control score: the final text is read too (in code)
 

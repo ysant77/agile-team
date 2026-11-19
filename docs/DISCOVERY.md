@@ -47,7 +47,9 @@ shows that the proposed reproducer fails on base (the existing `reproduced` chec
   a start with another symptom is refused (`an investigation is open: <id>; record a finding for
   it first`), before any GitHub call, so it takes no slot. The same symptom returns the same
   investigation. A start that GitHub refuses leaves nothing open. A recorded finding closes the
-  investigation (dev check, 19 Nov: the model opened a second investigation from a symptom it
+  investigation. An open investigation blocks a new start for at most 24 hours from its start
+  (`DISCOVERY_LIMITS.openMaxMs`); after that a new start replaces it, so a model that stopped,
+  used the budget or crashed never locks a person out (dev check, 19 Nov: the model opened a second investigation from a symptom it
   wrote itself and grounded a finding in it).
 - **The finding names its report.** A recorded finding carries the symptom of its investigation
   word for word, and a ticket made from it shows `Answers the report: "..."`.
@@ -74,3 +76,6 @@ shows that the proposed reproducer fails on base (the existing `reproduced` chec
   the user's chat, so it cannot prove that the symptom is the user's text. One open
   investigation per person and the symptom on the finding and the ticket reduce the risk; they
   do not remove it. The person who reads the finding checks that it answers their report.
+  The model can still close the open investigation with a `no_defect` finding and then start
+  another one with a symptom of its own. The bake-off scores such a run 0, and in the app the
+  ticket shows the symptom that the finding answers.
