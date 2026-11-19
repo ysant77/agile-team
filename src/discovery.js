@@ -238,16 +238,53 @@ const PRIORITIES = ['P1', 'P2', 'P3', 'P4'];
 const TEST_NAME = /^test_[A-Za-z0-9_]{3,120}$/;
 const isText = (v, max) => typeof v === 'string' && v.trim() !== '' && v.length <= max;
 
-function checkFinding(f, inv, reads) {
+const typeName = (v) => (v === null ? 'null' : Array.isArray(v) ? 'a list' : `a ${typeof v}`);
+const keysOf = (v) => Object.keys(v).join(', ') || 'none';
+
+// The keys an object must have. Returns one error that names the missing keys and the keys sent.
+function needKeys(name, v, keys, shape) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return `${name} must be ${shape}; got ${typeName(v)}`;
+  if (keys.some((k) => !(k in v))) return `${name} needs keys ${keys.join(', ')}; got keys: ${keysOf(v)}`;
+  return null;
+}
+
+// Step 1, the shape: types and keys only. A finding with a wrong shape gets only these errors, so
+// no check that depends on a missing key adds an error of its own.
+function shapeErrors(f) {
   const errors = [];
   if (!KINDS.includes(f.kind)) errors.push(`kind must be one of ${KINDS.join(', ')}`);
   if (!isText(f.hypothesis, 600)) errors.push('hypothesis must be text of at most 600 characters');
+  const citations = f.citations ?? [];
+  if (!Array.isArray(citations) || citations.length > 20) {
+    errors.push(`citations must be a list of { file, line }${Array.isArray(citations) ? ', at most 20' : `; got ${typeName(citations)}`}`);
+  } else {
+    citations.forEach((c, i) => {
+      const e = needKeys(`citations[${i}]`, c, ['file', 'line'], '{ file, line }');
+      if (e) errors.push(e);
+      else if (!Number.isInteger(Number(c.line)) || Number(c.line) < 1 || String(c.line).trim() === '') errors.push(`citations[${i}].line must be a whole number; got ${JSON.stringify(c.line)}`);
+      else if (typeof c.file !== 'string') errors.push(`citations[${i}].file must be a path; got ${typeName(c.file)}`);
+    });
+  }
+  if (f.kind === 'defect') {
+    const r = needKeys('reproducer', f.reproducer, ['file', 'testName', 'asserts'], '{ file, testName, asserts }');
+    if (r) errors.push(r);
+    for (const [name, levels] of [['severity', SEVERITIES], ['priority', PRIORITIES]]) {
+      const e = needKeys(name, f[name], ['level', 'reason'], `{ level: ${levels.join(' | ')}, reason }`);
+      if (e) errors.push(e);
+    }
+  }
+  return errors;
+}
+
+function checkFinding(f, inv, reads) {
+  const shape = shapeErrors(f);
+  if (shape.length) return { errors: shape, filesRead: [] };
+  const errors = [];
   if (f.status !== undefined && f.status !== 'unconfirmed') errors.push('status is always "unconfirmed" here; only a CI report that shows the reproducer fails on base makes it "reproduced"');
   const citations = f.citations ?? [];
-  if (!Array.isArray(citations) || citations.length > 20) errors.push('citations must be a list of at most 20 { file, line }');
   const fileReads = reads.filter((r) => r.action === 'read-repo-file' && r.status === 'ok');
   const cited = [];
-  for (const c of Array.isArray(citations) ? citations : []) {
+  for (const c of citations) {
     const line = Number(c?.line);
     if (!fileReads.some((r) => r.path === c?.file && line >= r.from && line <= r.to)) errors.push(`${c?.file}:${c?.line} was not in a read of this investigation`);
     else cited.push(String(line));

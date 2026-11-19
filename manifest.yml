@@ -335,9 +335,12 @@ modules:
           type: string
           required: true
           description: >
-            One JSON object: kind, hypothesis, citations [{file, line}], reproducer
-            {testName, file, asserts}, severity {level, reason}, priority {level,
-            reason}, openQuestions.
+            One JSON object with these keys: kind (defect, no_defect or unclear);
+            hypothesis (text); citations [{file, line}], each a line that
+            read-repo-file returned; for a defect also reproducer {file, testName,
+            asserts} with the file under tests/ and testName test_<words>, severity
+            {level, reason} and priority {level, reason}; openQuestions [text]. Use
+            the key names exactly.
     - key: open-case
       name: Open arbitration case
       function: openCase

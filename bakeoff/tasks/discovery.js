@@ -94,10 +94,32 @@ export function pmPrompt(manifest = join(new URL('../..', import.meta.url).pathn
   return lines.join('\n').split(/\n\s*\n/).map((p) => p.split('\n').map((l) => l.trim()).filter(Boolean).join(' ')).filter(Boolean).join('\n\n');
 }
 
-export function scoreDiscovery(kase, finding) {
+// Protocol 2: on a control, the final text is read too. A sentence claims a defect when it holds
+// one of CLAIM_WORDS and none of NO_DEFECT_WORDS. The list is open: a claim in other words is
+// missed (a stated limit).
+export const CLAIM_WORDS = [
+  'the defect is', 'a defect in', 'defect is in', 'the bug is', 'a bug in', 'bug is in', 'is a bug',
+  'the fault is', 'fault is in', 'root cause', 'is broken', 'race condition', 'the issue is in',
+  'the problem is in', 'is faulty',
+];
+export const NO_DEFECT_WORDS = [
+  'no defect', 'not a defect', 'no bug', 'not a bug', 'no fault', 'by design', 'as designed',
+  'as intended', 'expected behaviour', 'expected behavior',
+];
+
+export function claimsDefect(text) {
+  const sentences = String(text ?? '').toLowerCase().replace(/[`*_]/g, '').split(/(?<=[.!?])\s+|\n+/);
+  return sentences.some((s) => CLAIM_WORDS.some((w) => s.includes(w)) && !NO_DEFECT_WORDS.some((w) => s.includes(w)));
+}
+
+export function scoreDiscovery(kase, finding, finalText = '') {
   const truth = TRUTH[kase.truth];
   const isDefect = finding?.kind === 'defect';
-  if (!truth) return { score: isDefect ? 0 : 1, inventedDefect: isDefect, identified: null, rightFile: null };
+  if (!truth) {
+    const textClaim = claimsDefect(finalText);
+    const invented = isDefect || textClaim;
+    return { score: invented ? 0 : 1, inventedDefect: invented, textClaim, identified: null, rightFile: null };
+  }
   const identified = isDefect && truth.pattern.test(String(finding.hypothesis ?? ''));
   const rightFile = isDefect && (finding.citations ?? []).some((c) => c.file === truth.file);
   return { score: identified && rightFile ? 1 : 0, inventedDefect: false, identified, rightFile };
@@ -150,8 +172,10 @@ export async function runDiscovery(ask, kase, { tree = process.env.DISCOVERY_TRE
     for (const f of toolCalls) {
       const args = parseArgs(f.arguments);
       const run = tools[f.name];
-      const result = run ? await run(args) : { ok: false, error: `unknown tool ${f.name}` };
-      calls.push({ name: f.name, args: f.name === 'record-finding' ? { investigationId: args.investigationId } : args, ok: result.ok === true, error: result.ok ? undefined : String(result.error ?? '').slice(0, 300) });
+      const result = run ? await run(args) : { ok: false, error: `unknown tool ${f.name}; the tools are: ${DISCOVERY_TOOLS.join(', ')}` };
+      // The full arguments and the full refusal text, so a refusal can be read later (round 1 kept
+      // neither).
+      calls.push({ name: f.name, args, ok: result.ok === true, error: result.ok ? undefined : String(result.error ?? '') });
       if (f.name === 'record-finding' && result.ok) finding = await d.store.get(`finding:${result.findingId}`);
       messages.push({ role: 'tool', content: JSON.stringify(result) });
     }
@@ -160,7 +184,7 @@ export async function runDiscovery(ask, kase, { tree = process.env.DISCOVERY_TRE
   return {
     task: kase.id,
     truth: kase.truth,
-    ...scoreDiscovery(kase, finding),
+    ...scoreDiscovery(kase, finding, finalText),
     finding: finding ? { kind: finding.kind, hypothesis: finding.hypothesis, citations: finding.citations, reproducer: finding.reproducer, severity: finding.severity, priority: finding.priority, openQuestions: finding.openQuestions } : null,
     toolCalls: calls.length,
     refusedCalls: calls.filter((c) => !c.ok).length,
