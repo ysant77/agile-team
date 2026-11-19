@@ -16,6 +16,22 @@ model decides a verdict.
 The verdict reason says "open, not merged" so nobody reads it as a merge. Use `merged` to claim
 that the change reached the default branch.
 
+## State of the rules, 19 Nov 2026 (app `main` 1d86bb4)
+
+| Rule | Check | Counts in the verdict? |
+|---|---|---|
+| CI report trust (pinned workflow, bot comment, head commit, fingerprint, file list, time window) | `report_trusted` | yes |
+| Dependency and pytest config files are trust paths (PR 26) | `report_trusted` | yes |
+| Report provenance: hash marker of the run (PR 31, bank PR 22) | `report_provenance` | **advisory**: `provenanceRequiredRepos` is empty. Byte identity is confirmed on bank PR run 44455535406 and push run 44456621300. Listing waits for the arm C regression (listing design) |
+| Protected regression set: base copies of the changed test modules (PR 22 to 24, bank PR 20) | `pinned_tests_hold` | counted when the report has a `pinned` block; a missing block is **advisory**: `pinnedRequiredRepos` is empty (PR 27). PR 25 (listing) is a draft |
+| Test approvals from the panel only, audited, not by the claimant (PR 28) | `tests_not_removed`, `pinned_tests_hold` | yes |
+| ACs match the last audited record, not made by the claimant (PR 28, PR 30) | `acs_recorded` | yes when a record exists; **advisory** when none |
+| Code-scanning result | `code_scanning` | **advisory** (`observe`) |
+| A review holds a supported claim, never passes one | review hold | yes (fail-open) |
+
+The rules for the actions that change state are in `docs/ACTIONS.md`. The rules of 18 and 19 Nov
+are scored only on development sets 1 to 4; a claim needs blind set 5.
+
 ## When CI counts as evidence
 
 - The run comes from the pinned workflow file (`.github/workflows/ci.yml`), not from a workflow
@@ -93,9 +109,10 @@ missing part as not known, never as "not there": no linked PR in the read part g
 The verifier distrusts the paths above. These parts are still written by the author of the PR
 under test, and the verifier does not detect a change to them:
 
-- scripts that the workflow calls (for example a `scripts/` file run by a workflow step);
-- `pyproject.toml` (pytest options, the coverage settings); it is on the guarded-path list for
-  metric gates only;
+- scripts that the workflow calls, other than the trusted report scripts (`scripts/repro.py`,
+  `scripts/changed_coverage.py`, `scripts/pinned.py`) and the paths above;
+- the product code itself, which runs in the same CI job as the tests and the report plugin (a
+  limit that the report provenance marker does not remove);
 - the tests themselves: a test can assert the wrong thing. The verifier checks that a named test
   passed, not that it tests the right behaviour.
 
@@ -104,7 +121,9 @@ under test, and the verifier does not detect a change to them:
 - Re-running the pinned workflow on the same head opens a new window. A step of that run, or
   anyone with write access during that window, can edit the bot comment.
 - Anyone with write access can edit a bot comment at any time; the window only reduces this.
-- Plan (b2) (a check run written by CI, which no user can edit) removes both. It is not built.
+- The report provenance marker (`docs/ci-report.md`, "Provenance") binds the comment report and
+  `main.json` to the pinned run that made them, so an edit after the run no longer matches. It
+  is advisory until a repository is listed in `provenanceRequiredRepos`.
 
 ## How a reader checks the audit chain
 
