@@ -14,7 +14,7 @@ import { collectJira } from './jira-evidence.js';
 import {
   applyReviewGuards, buildReviewPacket, formatReview, REVIEW_PROMPT_VERSION, reviewGate, reviewSuggested, TRIGGERS,
 } from './review.js';
-import { VERIFY_CONFIG } from './verify-claim.js';
+import { configFor } from './verify-claim.js';
 import { verify } from './verifier/verdict.js';
 
 const KEY = /^[A-Z][A-Z0-9]*-[1-9][0-9]*$/;
@@ -69,7 +69,7 @@ export async function getPrDiff(payload) {
   const { files, truncated } = await collectPrFiles({ repo, prNumber: input.prNumber, token, fetchFn: fetch });
   // The verdict uses collectGithub's file list: every page, or null when it is cut.
   const verdict = verify({ id: `review:${input.issueKey}:${input.prNumber}`, type: 'ready', text: '' },
-    { ticket, ...github, config: VERIFY_CONFIG });
+    { ticket, ...github, config: configFor(repo) });
   const packet = buildReviewPacket({
     ticket, pr: { number: input.prNumber, headSha: github.pr.headSha }, files, filesTruncated: truncated,
     reportTests: (github.report?.tests ?? []).map((t) => t.id), verdict, trigger: input.trigger,
