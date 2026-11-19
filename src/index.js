@@ -156,21 +156,24 @@ export async function onComment(event) {
 
 const latestClaimKey = (issueKey) => `latest-claim:${issueKey}`;
 
-// A human's "decision: PR<n> because ..." comment on an open arbitration case. The PR authors and
-// the latest claimant may not decide (owner decision 19 Nov); a refusal changes nothing and is
+// A human's "decision: PR<n> because ..." comment on an open arbitration case. The latest claimant
+// may not decide; a PR author may not decide when GITHUB_ACCOUNTS links the decider, and otherwise
+// the decision says "PR author not compared" (src/decision.js). A refusal changes nothing and is
 // not audited, and the reply says why.
 async function recordDecision(issueKey, parsed, meta) {
   const key = `case:${issueKey}`;
   const kase = await kvs.get(key);
+  let authorCheck = null;
   if (kase) {
-    const refused = deciderRule({ by: meta.by, kase, latestClaim: (await kvs.get(latestClaimKey(issueKey))) ?? null, accounts: parseGithubAccounts(process.env.GITHUB_ACCOUNTS) });
-    if (refused) {
-      await addComment(issueKey, `Decision not recorded: ${refused}.`);
+    const rule = deciderRule({ by: meta.by, kase, latestClaim: (await kvs.get(latestClaimKey(issueKey))) ?? null, accounts: parseGithubAccounts(process.env.GITHUB_ACCOUNTS) });
+    if (rule.refused) {
+      await addComment(issueKey, `Decision not recorded: ${rule.refused}.`);
       console.log('decision refused', issueKey);
       return;
     }
+    authorCheck = rule.authorCheck;
   }
-  const result = applyDecision(kase, parsed, meta);
+  const result = applyDecision(kase, parsed, { ...meta, authorCheck });
   if (!result.ok) {
     await addComment(issueKey, `Decision not recorded: ${result.error}.`);
     return;

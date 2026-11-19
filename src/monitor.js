@@ -35,6 +35,7 @@ export function buildMonitor(events) {
         seq: e.seq, issueKey: d.issueKey, side: d.side, by: d.by ?? null, at: d.at ?? e.at,
         agreesWithCode: d.agreesWithCode ?? null, agreesWithOpinion: d.agreesWithOpinion ?? null,
         overridesFailedGate: Boolean(d.overridesFailedGate),
+        authorCheck: d.authorCheck === 'passed' ? 'passed' : 'not checked',
       });
       continue;
     }

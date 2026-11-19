@@ -18,7 +18,7 @@ function lastOpinionSide(kase) {
   return valid.length ? valid[valid.length - 1].opinion.decision : null;
 }
 
-export function applyDecision(kase, parsed, { by, at }) {
+export function applyDecision(kase, parsed, { by, at, authorCheck }) {
   if (!kase) return { ok: false, error: 'no open arbitration case on this work item; call open-case first' };
   if (!(kase.prNumbers ?? []).includes(parsed.prNumber)) {
     return { ok: false, error: `PR${parsed.prNumber} is not in the case (sides: ${(kase.prNumbers ?? []).map((n) => `PR${n}`).join(', ')})` };
@@ -38,6 +38,7 @@ export function applyDecision(kase, parsed, { by, at }) {
     agreesWithOpinion: opinionSide ? opinionSide === side : null,
     // A human may choose a side that failed a gate; it is recorded, never hidden.
     overridesFailedGate: Boolean(failedGate),
+    ...(authorCheck ? { authorCheck } : {}),
   };
   return { ok: true, record, kase: { ...kase, decisions: [...(kase.decisions ?? []), record] } };
 }
@@ -51,6 +52,7 @@ export function formatDecision(issueKey, record) {
     lines.push(`The AI team lead's opinion (not verified) preferred ${record.opinionSide}; ${record.agreesWithOpinion ? 'the decision agrees' : 'the decision differs'}.`);
   }
   if (record.overridesFailedGate) lines.push(`Warning: ${record.side} failed a gate.`);
+  if (record.authorCheck === 'not checked') lines.push(`${AUTHOR_NOT_CHECKED}.`);
   return lines.join('\n');
 }
 
@@ -71,24 +73,32 @@ export function parseGithubAccounts(text) {
 
 const knownLogin = (a) => typeof a?.login === 'string' && a.login.trim() !== '';
 
-// Owner decision 19 Nov (item 3): a decision is not recorded from the author of a PR in the case
-// or from the claimant of the latest claim on the work item. Fail safe: when the app cannot show
-// that the decider is neither, it does not record. Returns the reason, or null when allowed.
+export const AUTHOR_NOT_CHECKED = 'PR author not compared: no account link is configured';
+
+// Owner decision 19 Nov (item 3), with the split from the lead's review the same day. Returns
+// { refused, authorCheck }: refused is the reason or null; authorCheck is "passed" or "not checked".
+// - The decider must be named by Jira.
+// - Claimant check, always (both are Jira account ids): the claimant of the latest claim may not
+//   decide, and a claim whose claimant is not known stops the decision.
+// - PR-author check, only when GITHUB_ACCOUNTS links the decider: the author of a PR in the case
+//   may not decide; a PR author that is not known stops the decision (the check is configured, so
+//   it must run). With no link the decision is recorded as "not checked", never silently.
 //   by: the Jira account of the decider; kase: the stored case with prAuthors { PR7: { login, id } };
 //   latestClaim: { by } or null (no claim on the work item); accounts: parseGithubAccounts output.
 export function deciderRule({ by, kase, latestClaim, accounts }) {
-  if (typeof by !== 'string' || !by) return 'Jira did not say who wrote the decision';
+  const no = (refused) => ({ refused, authorCheck: null });
+  if (typeof by !== 'string' || !by) return no('Jira did not say who wrote the decision');
   if (latestClaim) {
-    if (typeof latestClaim.by !== 'string' || !latestClaim.by) return 'the claimant of the latest claim is not known, so the app cannot show that you are another person';
-    if (latestClaim.by === by) return 'you made the latest claim on this work item, and a decision must come from another person';
-  }
-  const sides = (kase?.prNumbers ?? []).map((n) => `PR${n}`);
-  for (const side of sides) {
-    if (!knownLogin(kase?.prAuthors?.[side])) return `the author of ${side} is not known, so the app cannot show that you did not write it; open the case again`;
+    if (typeof latestClaim.by !== 'string' || !latestClaim.by) return no('the claimant of the latest claim is not known, so the app cannot show that you are another person');
+    if (latestClaim.by === by) return no('you made the latest claim on this work item, and a decision must come from another person');
   }
   const login = accounts?.[by];
-  if (!login) return 'your GitHub account is not linked (Forge variable GITHUB_ACCOUNTS), so the app cannot show that you did not write a PR in the case';
+  if (!login) return { refused: null, authorCheck: 'not checked' };
+  const sides = (kase?.prNumbers ?? []).map((n) => `PR${n}`);
+  for (const side of sides) {
+    if (!knownLogin(kase?.prAuthors?.[side])) return no(`the author of ${side} is not known, so the app cannot show that you did not write it; open the case again`);
+  }
   const own = sides.filter((side) => kase.prAuthors[side].login.trim().toLowerCase() === login);
-  if (own.length) return `you are the author of ${own.join(' and ')}, and a decision must come from another person`;
-  return null;
+  if (own.length) return no(`you are the author of ${own.join(' and ')}, and a decision must come from another person`);
+  return { refused: null, authorCheck: 'passed' };
 }
