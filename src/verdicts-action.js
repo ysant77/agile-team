@@ -4,6 +4,7 @@
 
 import api, { route } from '@forge/api';
 import { kvs } from '@forge/kvs';
+import { AUTHOR_NOT_CHECKED } from './decision.js';
 
 const KEY = /^[A-Z][A-Z0-9]*-[1-9][0-9]*$/;
 const MAX = 20;
@@ -38,7 +39,11 @@ export function summarise(issueKey, { verdicts, kase, head }, limit) {
       finalDecision: 'human',
       humanDecision: (() => {
         const d = (kase.decisions ?? []).at(-1);
-        return d ? { side: d.side, agreesWithCode: d.agreesWithCode, agreesWithOpinion: d.agreesWithOpinion, at: d.at } : null;
+        if (!d) return null;
+        // A decision made before the decider rule has no field: its author was not compared.
+        const authorCheck = d.authorCheck === 'passed' ? 'passed' : 'not checked';
+        return { side: d.side, agreesWithCode: d.agreesWithCode, agreesWithOpinion: d.agreesWithOpinion, at: d.at,
+          authorCheck, note: authorCheck === 'passed' ? null : AUTHOR_NOT_CHECKED };
       })(),
     }
     : null;
