@@ -9,6 +9,7 @@ import { verify } from '../src/verifier/verdict.js';
 import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
 import { withReader } from './helpers/reader.js';
+import './helpers/unlisted.js';
 
 const H = 'a'.repeat(40);
 const CI = '.github/workflows/ci.yml';

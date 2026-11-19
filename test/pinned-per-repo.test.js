@@ -25,7 +25,7 @@ test('an unlisted repository, or none, keeps the check advisory', () => {
 
 test('configFor keeps every other setting of the app configuration', () => {
   const c = configFor('ysant77/yms-bank-demo', LISTED);
-  assert.deepEqual({ ...c, pinnedRequired: VERIFY_CONFIG.pinnedRequired }, VERIFY_CONFIG);
+  assert.deepEqual({ ...c, pinnedRequired: VERIFY_CONFIG.pinnedRequired, provenanceRequired: VERIFY_CONFIG.provenanceRequired }, VERIFY_CONFIG);
 });
 
 // Rollout step 6 (19 Nov): the two bank repositories run the pinned step, and their real runs
@@ -44,9 +44,14 @@ test('a malformed list requires nothing it does not name', () => {
   }
 });
 
-// decide() reads the setting for the configured repository (real U01 evidence, no pinned block).
-async function pinnedCheckFor(repo) {
-  const c = JSON.parse(readFileSync(new URL('../fixtures/judge/U01.json', import.meta.url), 'utf8'));
+// decide() reads the setting for the configured repository (real U01 evidence recorded before the
+// pinned block and the report markers; report provenance is set advisory here, so only the pinned
+// rule decides).
+async function pinnedCheckFor(repo, listed) {
+  const saved = [VERIFY_CONFIG.pinnedRequiredRepos, VERIFY_CONFIG.provenanceRequiredRepos];
+  VERIFY_CONFIG.pinnedRequiredRepos = listed;
+  VERIFY_CONFIG.provenanceRequiredRepos = [];
+  const c = JSON.parse(readFileSync(new URL('../fixtures/before-markers/U01.json', import.meta.url), 'utf8'));
   const log = console.log;
   console.log = () => {};
   try {
@@ -58,20 +63,15 @@ async function pinnedCheckFor(repo) {
     return { result: record.result, check: record.checks.find((x) => x.name === 'pinned_tests_hold') };
   } finally {
     console.log = log;
+    [VERIFY_CONFIG.pinnedRequiredRepos, VERIFY_CONFIG.provenanceRequiredRepos] = saved;
   }
 }
 
 test('decide: a listed repository with no pinned block gives cannot_verify; an unlisted one stays supported', async () => {
-  const saved = VERIFY_CONFIG.pinnedRequiredRepos;
-  VERIFY_CONFIG.pinnedRequiredRepos = ['ysant77/yms-bank-demo'];
-  try {
-    const listed = await pinnedCheckFor('ysant77/yms-bank-demo');
-    assert.equal(listed.check.status, 'unknown');
-    assert.equal(listed.result, 'cannot_verify');
-  } finally {
-    VERIFY_CONFIG.pinnedRequiredRepos = saved;
-  }
-  const unlisted = await pinnedCheckFor('ysant77/yms-bank-demo');
+  const listed = await pinnedCheckFor('ysant77/yms-bank-demo', ['ysant77/yms-bank-demo']);
+  assert.equal(listed.check.status, 'unknown');
+  assert.equal(listed.result, 'cannot_verify');
+  const unlisted = await pinnedCheckFor('ysant77/yms-bank-demo', []);
   assert.equal(unlisted.result, 'supported');
   assert.equal(unlisted.check.advisory, true);
 });

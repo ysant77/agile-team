@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { decide } from '../src/verify-claim.js';
 import { COMPLETE } from './helpers/reader.js';
+import './helpers/unlisted.js';
 
 const HEAD = 'a'.repeat(40);
 const OTHER = 'b'.repeat(40);

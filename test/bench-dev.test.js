@@ -9,6 +9,7 @@ import { nextEvent } from '../src/audit.js';
 import { collectGithub, collectPrStats } from '../src/github-evidence.js';
 import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
+import './helpers/unlisted.js';
 
 const DIR = new URL('../fixtures/bench/', import.meta.url);
 const recorded = (id) => JSON.parse(readFileSync(new URL(`${id}.json`, DIR), 'utf8'));

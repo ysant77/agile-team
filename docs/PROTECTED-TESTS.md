@@ -186,15 +186,20 @@ worse on any count.
 
 The producer goes first, then the consumer. Each step can be undone on its own.
 
-1. **Per-repository setting** (this change): `pinnedRequiredRepos`, empty. No verdict changes.
+1. **Per-repository setting** (PR 27): `pinnedRequiredRepos`, empty. No verdict changes.
 2. **Demo repository:** a PR there adds `scripts/pinned.py`, its `repro.py` call and its tests
    from bank `main`. The lead opens and merges it.
 3. **Case PRs:** close and reopen demo PRs 1 to 4, so CI runs on the new base (a re-run reuses
    the old merge ref). Each new report must have a `pinned` block.
 4. **Judge path:** U20 becomes Contradicted, so another case shows Cannot verify (U12 or U18,
    owner's choice).
-5. **Flip:** app PR 25 lists both bank repositories, with the arm C regression on the same day.
-   Then deploy with the owner's go-ahead.
+5. **Flip (done 19 Nov, `feat/list-bank-repos-required`; it replaces draft PR 25):**
+   `ysant77/yms-bank-demo` and `ysant77/yms-bank-demo-cases` are in `pinnedRequiredRepos` and
+   `provenanceRequiredRepos`. Arm C on sets 1 to 4 equals the recorded listing run
+   (`benchmark/REGRESSION-LISTING-2026-11-19.md`) record for record: no outcome or control
+   change; reason changes on B11, B12, B16, S17, S20 and T07. The real demo reports (PRs 1 to 4,
+   6 and 7) have a pinned block and pass report provenance. Deploy waits for the owner's
+   go-ahead.
 6. **Rollback:** a one-line PR that empties the list, and a deploy. Verdicts already written stay
    (the audit is append-only); a new claim gives a new verdict.
 

@@ -10,6 +10,7 @@ import { checkHumanSignoff, ciGreen } from '../src/verifier/checks.js';
 import { decide } from '../src/verify-claim.js';
 import { fetchFrom } from './helpers/recorded-github.js';
 import { withReader } from './helpers/reader.js';
+import './helpers/unlisted.js';
 
 // The recorded reports predate unmeasured_files (review finding 14) and changed_excluded; read
 // them as the current coverage script writes them, with an empty list and a count of 0.
