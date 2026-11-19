@@ -90,8 +90,8 @@ export const TOOL_SPECS = {
   'record-finding': {
     kind: 'write',
     purpose: 'Records the finding of an investigation as unconfirmed; code checks every cited line and number against the reads.',
-    use: 'Once, after the reads, before any ticket draft.',
-    avoid: 'Never cite a line that a read did not return, never invent a number, never set status reproduced.',
+    use: 'Once, after the reads and read-ci-results, before any ticket draft. A reproducer is a new test.',
+    avoid: 'Never cite a line that a read did not return, never invent a number, never set status reproduced, never claim that an existing test fails.',
     args: {
       investigationId: { type: 'string', required: true, description: 'The id from start-investigation.' },
       finding: { type: 'string', required: true, description: 'One JSON object with these keys: kind (defect | no_defect | unclear); hypothesis (text); citations: [{ file, line }], each a line that read-repo-file returned; for a defect also reproducer: { file, testName, asserts } (file under tests/, testName test_<words>), severity: { level, reason } (level critical | high | medium | low), priority: { level, reason } (level P1 | P2 | P3 | P4); openQuestions: [text]. The example is from another project: cite only your own reads. Example: {"kind":"defect","hypothesis":"The cart total adds the discount instead of taking it off (src/shop/cart.py:40).","citations":[{"file":"src/shop/cart.py","line":40}],"reproducer":{"file":"tests/test_cart.py","testName":"test_a_discount_lowers_the_total","asserts":"the total with a discount is less than the total without it"},"severity":{"level":"medium","reason":"customers pay too much"},"priority":{"level":"P2","reason":"every discounted order is wrong"},"openQuestions":[]}' },

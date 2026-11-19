@@ -123,12 +123,21 @@ export function claimsDefect(text) {
 
 export const OTHER_SYMPTOM = 'finding answers a symptom the model wrote';
 
+// Rule 3 (19 Nov): the finding's symptom is a contiguous part of the case's symptom, with white
+// space normalised, and at least half its length. The model may drop the channel framing.
+const squash = (t) => String(t ?? '').replace(/\s+/g, ' ').trim();
+export function answersCase(findingSymptom, caseSymptom) {
+  const part = squash(findingSymptom);
+  const whole = squash(caseSymptom);
+  return part.length > 0 && whole.includes(part) && part.length * 2 >= whole.length;
+}
+
 export function scoreDiscovery(kase, finding, finalText = '') {
   const truth = TRUTH[kase.truth];
   const isDefect = finding?.kind === 'defect';
   // The finding must answer the case's own symptom (lead rule 3, 19 Nov), even with one open
   // investigation per person.
-  if (finding && kase.symptom !== undefined && finding.symptom !== undefined && finding.symptom !== kase.symptom) {
+  if (finding && kase.symptom !== undefined && finding.symptom !== undefined && !answersCase(finding.symptom, kase.symptom)) {
     return { score: 0, reason: OTHER_SYMPTOM, inventedDefect: !truth && isDefect, textClaim: truth ? undefined : claimsDefect(finalText), identified: truth ? false : null, rightFile: truth ? false : null };
   }
   if (!truth) {

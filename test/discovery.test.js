@@ -261,6 +261,8 @@ const FINDING = {
 async function withRead() {
   const s = await started();
   await readRepoFile({ investigationId: s.id, by: 'pm-1', path: 'src/bank/ledger.py', startLine: 200 }, s.d);
+  // A defect finding needs the CI read (19 Nov).
+  await readCiResults({ investigationId: s.id, by: 'pm-1' }, s.d);
   return s;
 }
 

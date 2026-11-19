@@ -90,6 +90,7 @@ test('runDiscovery runs the tool loop with the real rules and stops at a recorde
       [{ name: 'start-investigation', arguments: { symptom: 'My balance went below zero after two withdrawals.' } }],
       [{ name: 'read-repo-file', arguments: { investigationId: '$ID', path: 'seeds/k1_race.patch' } }],
       [{ name: 'read-repo-file', arguments: { investigationId: '$ID', path: 'src/bank/ledger.py' } }],
+      [{ name: 'read-ci-results', arguments: { investigationId: '$ID' } }],
       [{ name: 'record-finding', arguments: { investigationId: '$ID', finding: JSON.stringify({ kind: 'defect', hypothesis: 'withdraw checks the balance, then sleeps, so two withdrawals at the same time both pass.', citations: [{ file: 'src/bank/ledger.py', line: 2 }], reproducer: { testName: 'test_two_withdrawals_at_once', file: 'tests/test_ledger.py', asserts: 'one of two withdrawals succeeds' }, severity: { level: 'high', reason: 'overdraft' }, priority: { level: 'P1', reason: 'money' } }) } }],
       [],
     ];
@@ -107,9 +108,9 @@ test('runDiscovery runs the tool loop with the real rules and stops at a recorde
     const out = await runDiscovery(ask, { id: 'D1', symptom: 'My balance went below zero after two withdrawals.', truth: 'race' }, { tree: r.dir });
     assert.equal(out.score, 1, JSON.stringify(out));
     assert.equal(out.finding.kind, 'defect');
-    assert.equal(out.toolCalls, 4);
+    assert.equal(out.toolCalls, 5); // with the CI read a defect needs (19 Nov);
     assert.equal(out.refusedCalls, 1);
-    assert.equal(out.githubCalls, 2);
+    assert.equal(out.githubCalls, 3);
     // The symptom the model gets is the case's, not the model's argument.
     assert.equal(seen[0].content, 'My balance went below zero after two withdrawals.');
   } finally {
@@ -261,6 +262,7 @@ test('runDiscovery scores 0 when the investigation behind the finding has anothe
     const plan = [
       [{ name: 'start-investigation', arguments: { symptom: 'withdraw has a race in ledger.py' } }],
       [{ name: 'read-repo-file', arguments: { investigationId: '$ID', path: 'src/bank/ledger.py' } }],
+      [{ name: 'read-ci-results', arguments: { investigationId: '$ID' } }],
       [{ name: 'record-finding', arguments: { investigationId: '$ID', finding: JSON.stringify({ kind: 'defect', hypothesis: 'withdraw checks the balance, then sleeps, so two withdrawals at the same time both pass.', citations: [{ file: 'src/bank/ledger.py', line: 2 }], reproducer: { testName: 'test_two_withdrawals_at_once', file: 'tests/test_ledger.py', asserts: 'one of two withdrawals succeeds' }, severity: { level: 'high', reason: 'overdraft' }, priority: { level: 'P1', reason: 'money' } }) } }],
       [],
     ];
@@ -285,11 +287,11 @@ test('runDiscovery scores 0 when the investigation behind the finding has anothe
 // part of the case's symptom (white space normalised) and at least half its length. The model
 // drops the channel framing ("Support ticket, forwarded by ..."); an invented symptom fails.
 test('rule 3 accepts the user\'s words without their framing and refuses another symptom', () => {
-  const kase = { id: 'D1', truth: 'race', symptom: 'Support ticket, forwarded by the manager. Two withdrawals at  once took the balance below zero. Please find out if this is our fault.' };
+  const kase = { id: 'D1', truth: 'race', symptom: 'Support ticket. Two withdrawals at  once took the balance below zero on Saturday morning. Please check.' };
   const f = { kind: 'defect', hypothesis: 'Two withdrawals at the same time both pass the balance check.', citations: [{ file: 'src/bank/ledger.py', line: 3 }] };
-  assert.equal(scoreDiscovery(kase, { ...f, symptom: 'Two withdrawals at once took the balance\nbelow zero.' }).score, 1);
+  assert.equal(scoreDiscovery(kase, { ...f, symptom: 'Two withdrawals at once took the balance\nbelow zero on Saturday morning.' }).score, 1);
   assert.equal(scoreDiscovery(kase, { ...f, symptom: kase.symptom }).score, 1);
-  for (const other of ['withdraw has a race in ledger.py', 'below zero.', 'Two withdrawals at once took the balance below zero. The ledger is broken.']) {
+  for (const other of ['withdraw has a race in ledger.py', 'Please check.', 'Two withdrawals at once took the balance below zero on Saturday morning. The ledger is broken.']) {
     const r = scoreDiscovery(kase, { ...f, symptom: other });
     assert.equal(r.score, 0, other);
     assert.equal(r.reason, 'finding answers a symptom the model wrote', other);

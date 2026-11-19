@@ -323,7 +323,9 @@ modules:
       actionVerb: CREATE
       description: >
         Records the finding of an investigation as unconfirmed. Code checks that
-        every cited line and number comes from the reads. It never writes to Jira.
+        every cited line and number comes from the reads. A defect finding needs
+        read-ci-results first, a new reproducer test, and no claim that an existing
+        test fails. It never writes to Jira.
       inputs:
         investigationId:
           title: Investigation id

@@ -51,6 +51,13 @@ shows that the proposed reproducer fails on base (the existing `reproduced` chec
   (`DISCOVERY_LIMITS.openMaxMs`); after that a new start replaces it, so a model that stopped,
   used the budget or crashed never locks a person out (dev check, 19 Nov: the model opened a second investigation from a symptom it
   wrote itself and grounded a finding in it).
+- **Claims about tests.** A defect finding needs a `read-ci-results` call in its investigation.
+  Its reproducer may not be a test function that a read shows exists (`def test_...`). A
+  hypothesis sentence that names such a test together with "fail", "fails", "failing",
+  "failed", "error", "errors" or "broken" is refused, because no tool returns a test outcome
+  (`read-ci-results` gives workflow runs only), so no read can show that a test fails. The word
+  list is open: a claim in other words is not found. When test outcomes become readable, these
+  checks can use them too (dev check, 19 Nov: the model claimed an existing, passing test fails).
 - **The finding names its report.** A recorded finding carries the symptom of its investigation
   word for word, and a ticket made from it shows `Answers the report: "..."`.
 
