@@ -253,7 +253,7 @@ export async function readCiResults({ investigationId, by }, d) {
   const runs = (got.body?.workflow_runs ?? []).map((r) => ({
     id: r.id, name: r.name, path: r.path, event: r.event, status: r.status, conclusion: r.conclusion, createdAt: r.created_at,
   }));
-  await finishCall(d, got.slot, { status: 'ok', count: runs.length });
+  await finishCall(d, got.slot, { status: 'ok', count: runs.length, conclusions: runs.map((r) => r.conclusion ?? null) });
   return {
     ok: true, commit: inv.commit, runs,
     note: runs.length ? 'CI runs on the pinned commit.' : 'There is no CI run on the pinned commit.',
@@ -332,8 +332,10 @@ function checkFinding(f, inv, reads) {
   }
   if (f.kind === 'defect') {
     // Dev check 19 Nov (D-3): the model said an existing test fails. The tools return no test
-    // outcome (read-ci-results gives workflow runs only), so no read can show that a test fails.
-    if (!reads.some((r) => r.action === 'read-ci-results' && r.status === 'ok')) errors.push('read the CI results before a defect finding');
+    // outcome (read-ci-results gives workflow runs only, and test outcomes need a token), so they
+    // cannot confirm or refute such a claim; it is refused as ungrounded.
+    const ciPassed = reads.some((r) => r.action === 'read-ci-results' && r.status === 'ok' && (r.conclusions ?? []).includes('success'));
+    const ciNote = ciPassed ? '; the CI run on this commit concluded success' : '';
     const existing = new Map();
     for (const r of fileReads) for (const t of r.tests ?? []) if (!existing.has(t)) existing.set(t, r.path);
     const name = String(f.reproducer?.testName ?? '');
@@ -341,7 +343,7 @@ function checkFinding(f, inv, reads) {
     for (const sentence of String(f.hypothesis).split(/(?<=[.!?])\s+|\n+/)) {
       if (!FAILURE_WORDS.test(sentence)) continue;
       for (const t of existing.keys()) {
-        if (new RegExp(`\\b${t}\\b`).test(sentence)) errors.push(`${t} is an existing test, and no read shows it fails; cite the code instead`);
+        if (new RegExp(`\\b${t}\\b`).test(sentence)) errors.push(`${t} is an existing test, and no read shows it fails; cite the code instead${ciNote}`);
       }
     }
   }

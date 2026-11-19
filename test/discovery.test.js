@@ -441,11 +441,22 @@ async function withReads() {
 }
 const record = (s, finding) => recordFinding({ investigationId: s.id, by: 'pm-1', finding: JSON.stringify(finding) }, s.d);
 
-test('a defect finding needs a read of the CI results', async () => {
+// B1 was dropped (lead, 19 Nov): a forced call that returns nothing adds no evidence.
+test('a defect finding does not need a read of the CI results', async () => {
   const s = await withReads();
-  assert.equal((await record(s, FINDING)).error, 'read the CI results before a defect finding');
+  const r = await record(s, FINDING);
+  assert.equal(r.ok, true, r.error);
+});
+
+test('the failing-test refusal says so when the CI run on the commit concluded success', async () => {
+  const run = { id: 9, name: 'CI', path: '.github/workflows/ci.yml', event: 'push', status: 'completed', conclusion: 'success', created_at: '2026-11-20T08:00:00Z' };
+  const s = await started(deps(github({ extraFiles: { 'tests/test_api.py': READ_TESTS }, runs: [run] })));
+  await readRepoFile({ investigationId: s.id, by: 'pm-1', path: 'src/bank/ledger.py', startLine: 200 }, s.d);
+  await readRepoFile({ investigationId: s.id, by: 'pm-1', path: 'tests/test_api.py' }, s.d);
+  const claim = { ...FINDING, hypothesis: "The test 'test_statement_running_balance' fails because of the window function." };
+  assert.equal((await record(s, claim)).error, 'test_statement_running_balance is an existing test, and no read shows it fails; cite the code instead');
   await readCiResults({ investigationId: s.id, by: 'pm-1' }, s.d);
-  assert.equal((await record(s, FINDING)).ok, true);
+  assert.equal((await record(s, claim)).error, 'test_statement_running_balance is an existing test, and no read shows it fails; cite the code instead; the CI run on this commit concluded success');
 });
 
 test('a reproducer may not be a test that a read shows exists', async () => {
