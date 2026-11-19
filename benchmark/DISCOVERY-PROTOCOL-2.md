@@ -70,8 +70,21 @@ protocol 1.
   that is correct by design for the control.
 - Built by the bank's `scripts/build_discovery_branch.py` on a new branch,
   `investigate/symptoms-2`.
-- The scoring patterns for the new truths (`TRUTH` in `bakeoff/tasks/discovery.js`) are added
-  with the build, before the lead writes the symptoms.
+- Defects (bank `seeds/k8_*.patch`, applied as ordinary commits):
+  - `end_day`: `statement` in `src/bank/ledger.py` compares with the end date itself, so the
+    entries of the end day are left out. The expected reproducer is a ledger or API test that an
+    entry posted on the end date is in the statement.
+  - `access`: the statement route in `src/bank/api.py` loads any account by id. It still needs
+    a session, but it has no owner check. The expected reproducer is an API test where a
+    customer asks for the statement of another customer's account and gets 404.
+- Control: a behaviour that is correct by design. An amount with more decimals than its currency
+  allows (for example 10.005 EUR or 1.5 JPY) is refused with 400 "too many decimals for ...",
+  in `parse_amount` of `src/bank/api.py`.
+- The set 1 tests (the race tests, the Send button CSS check) stay on this branch: it has
+  neither set 1 defect.
+- The scoring patterns for `end_day` and `access` (`TRUTH` in `bakeoff/tasks/discovery.js`) are
+  fixed with the build, before the lead writes the symptoms. The tests pin which hypotheses they
+  accept and refuse.
 - The build is frozen when the builder sends the lead "build frozen" with the app commit and
   the branch commit. The lead then releases the symptoms.
 - After that, no change to the frozen files, the prompt, the tools, `TRUTH` or the word lists.

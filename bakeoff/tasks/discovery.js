@@ -5,7 +5,7 @@
 //
 //   DISCOVERY_CASES=<cases.json> DISCOVERY_TREE=<work tree> node bakeoff/run.js --roles discovery ...
 //
-// cases.json: [{ id, symptom, truth: "race" | "button" | "none" }]. The cases are written by a
+// cases.json: [{ id, symptom, truth: "race" | "button" | "end_day" | "access" | "none" }]. The cases are written by a
 // person other than the builder, after the build is frozen (protocol).
 
 import { execFileSync } from 'node:child_process';
@@ -29,6 +29,15 @@ export const TRUTH = {
     file: 'src/bank/web/app.css',
     pattern: /(display\s*:\s*none|hidden|hides|invisible|not (shown|visible|displayed)|media|max-width)[\s\S]*(send|button)|(send|button)[\s\S]*(display\s*:\s*none|hidden|hides|invisible|not (shown|visible|displayed)|media|max-width)/i,
   },
+  // Set 2 (protocol 2), fixed with the set 2 build before the symptoms are written.
+  end_day: {
+    file: 'src/bank/ledger.py',
+    pattern: /(end|last|final) (date|day)|upper bound|one day (short|early)|day after|\binclusive|\bexclusive|(exclud|omit|drop|miss|left out|leaves out)[\s\S]{0,80}\b(end|last)\b|\b(end|last)\b[\s\S]{0,80}(exclud|omit|drop|miss|left out|leaves out)/i,
+  },
+  access: {
+    file: 'src/bank/api.py',
+    pattern: /\bowner|\bowns\b|ownership|another customer|other customers?|any (signed-in )?(customer|account)|someone else|access check|authori[sz]|permission|OwnedAccount|customer_id[\s\S]{0,40}(not|never) (compared|checked|used)/i,
+  },
   none: null,
 };
 
@@ -39,7 +48,7 @@ export function loadDiscoveryCases(file) {
   for (const c of cases) {
     if (!/^[A-Za-z0-9_-]{1,20}$/.test(String(c?.id ?? ''))) throw new Error('each case needs an id');
     if (typeof c.symptom !== 'string' || !c.symptom.trim()) throw new Error(`${c.id}: no symptom`);
-    if (!(c.truth in TRUTH)) throw new Error(`${c.id}: truth must be race, button or none`);
+    if (!(c.truth in TRUTH)) throw new Error(`${c.id}: truth must be one of ${Object.keys(TRUTH).join(', ')}`);
   }
   return cases;
 }
