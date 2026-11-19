@@ -1,0 +1,477 @@
+{
+ "model": "qwen3-coder:30b",
+ "options": {
+  "temperature": 0,
+  "num_ctx": 32768
+ },
+ "promptVersion": "code-review/2",
+ "rule": "blocking",
+ "results": [
+  {
+   "id": "V01",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/api.py:47: customer_id field now has ge=1 validation.",
+      "[note AC1] P101:H2 tests/test_api.py:240: New test covers id below one and unknown id cases."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/api.py:47: customer_id field now has ge=1 validation.",
+      "[note AC1] P101:H2 tests/test_api.py:240: New test covers id below one and unknown id cases."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P101:H1 src/bank/api.py:47: customer_id field now has ge=1 validation.",
+      "[note AC1] P101:H2 tests/test_api.py:240: New test covers id below one and unknown id cases."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "V02",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "V03",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P103:H1 src/bank/money.py:32: Missing check for 'abc' string input.",
+      "[blocking AC1] P103:H1 src/bank/money.py:35: Missing check for 'Infinity', '-Infinity', and 'NaN' inputs."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P103:H1 src/bank/money.py:32: Missing check for 'abc' string input.",
+      "[blocking AC1] P103:H1 src/bank/money.py:35: Missing check for 'Infinity', '-Infinity', and 'NaN' inputs."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P103:H1 src/bank/money.py:32: Missing check for 'abc' string input.",
+      "[blocking AC1] P103:H1 src/bank/money.py:35: Missing check for 'Infinity', '-Infinity', and 'NaN' inputs."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "V04",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V05",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-not-added",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-not-added",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "line-not-added",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "V06",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V07",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V08",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V09",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "V10",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "V11",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V12",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "findings": []
+    }
+   ]
+  },
+  {
+   "id": "V13",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V14",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V15",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V16",
+   "C": "supported",
+   "D": "cannot_verify",
+   "allRunsCannotVerify": true,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P116:H1 src/bank/seed_data.py:110: Code does not handle case of single account in currency.",
+      "[note AC1] P116:H2 tests/test_seed_data.py:115: Test covers the case of one account per currency."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P116:H1 src/bank/seed_data.py:110: Code does not handle case of single account in currency.",
+      "[note AC1] P116:H2 tests/test_seed_data.py:115: Test covers the case of one account per currency."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "cannot_verify",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[blocking AC1] P116:H1 src/bank/seed_data.py:110: Code does not handle case of single account in currency.",
+      "[note AC1] P116:H2 tests/test_seed_data.py:115: Test covers the case of one account per currency."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "V17",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V18",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P118:H2 src/bank/api.py:260: Code adds debug route when DEBUG_ROUTES is True.",
+      "[note AC1] P118:H3 tests/test_api.py:242: Test checks that debug route returns 200 when flag is True and 404 when False."
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P118:H2 src/bank/api.py:260: Code adds debug route when DEBUG_ROUTES is True.",
+      "[note AC1] P118:H3 tests/test_api.py:242: Test checks that debug route returns 200 when flag is True and 404 when False."
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P118:H2 src/bank/api.py:260: Code adds debug route when DEBUG_ROUTES is True.",
+      "[note AC1] P118:H3 tests/test_api.py:242: Test checks that debug route returns 200 when flag is True and 404 when False."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "V19",
+   "C": "supported",
+   "D": "supported",
+   "allRunsCannotVerify": false,
+   "runs": [
+    {
+     "run": 1,
+     "seed": 1,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P119:H1 src/bank/web/index.html:50: input to_account_number maxlength set to 32",
+      "[note AC1] P119:H1 src/bank/web/index.html:53: input amount maxlength set to 16",
+      "[note AC1] P119:H2 tests/test_web.py:127: test checks for maxlength attributes"
+     ]
+    },
+    {
+     "run": 2,
+     "seed": 2,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P119:H1 src/bank/web/index.html:50: input to_account_number maxlength set to 32",
+      "[note AC1] P119:H1 src/bank/web/index.html:53: input amount maxlength set to 16",
+      "[note AC1] P119:H2 tests/test_web.py:127: test checks for maxlength attributes"
+     ]
+    },
+    {
+     "run": 3,
+     "seed": 3,
+     "D": "supported",
+     "review": "review",
+     "guard": null,
+     "findings": [
+      "[note AC1] P119:H1 src/bank/web/index.html:50: input to_account_number maxlength set to 32",
+      "[note AC1] P119:H1 src/bank/web/index.html:53: input amount maxlength set to 16",
+      "[note AC1] P119:H2 tests/test_web.py:127: test checks for maxlength attributes"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "V20",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V21",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V22",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V23",
+   "C": "contradicted",
+   "runs": [],
+   "D": "contradicted",
+   "note": "C is not supported; D does not run"
+  },
+  {
+   "id": "V24",
+   "C": "cannot_verify",
+   "runs": [],
+   "D": "cannot_verify",
+   "note": "C is not supported; D does not run"
+  }
+ ]
+}

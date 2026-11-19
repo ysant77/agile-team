@@ -1,0 +1,80 @@
+{
+ "D": "cannot_verify",
+ "blocking": [
+  {
+   "hunk": "P116:H1",
+   "file": "src/bank/seed_data.py",
+   "line": 110,
+   "text": "Code does not handle case of single account in currency.",
+   "severity": "blocking",
+   "ac": "AC1"
+  }
+ ],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P116:H1",
+     "file": "src/bank/seed_data.py",
+     "line": 110,
+     "text": "Code does not handle case of single account in currency.",
+     "severity": "blocking",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P116:H2",
+     "file": "tests/test_seed_data.py",
+     "line": 115,
+     "text": "Test covers the case of one account per currency.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "The code change may introduce a performance regression if many accounts are in the same currency.",
+    "The test may not cover all edge cases for currency handling."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "5951bdd30efad48d8893068a7edcdf0daa69ab7de3c8bb8d4ae33d4747064eac",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-516",
+      "prNumber": 116
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-516",
+      "prNumber": 116,
+      "review": "{\"findings\": [{\"hunk\": \"P116:H1\", \"file\": \"src/bank/seed_data.py\", \"line\": 110, \"severity\": \"blocking\", \"ac\": \"AC1\", \"text\": \"Code does not handle case of single account in currency.\"}, {\"hunk\": \"P116:H2\", \"file\": \"tests/test_seed_data.py\", \"line\": 115, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test covers the case of one account per currency.\"}], \"risks\": [\"The code change may introduce a performance regression if many accounts are in the same currency.\", \"The test may not cover all edge cases for currency handling.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH516_build_with_one_account_in_a_currency_completes\", \"file\": \"tests/test_seed_data.py\", \"ac\": \"AC1\", \"asserts\": \"build completes without error and ledger.check_invariants returns []\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

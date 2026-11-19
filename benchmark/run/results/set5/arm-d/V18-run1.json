@@ -1,0 +1,70 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "review",
+  "guard": null,
+  "style": "pass",
+  "review": {
+   "findings": [
+    {
+     "hunk": "P118:H2",
+     "file": "src/bank/api.py",
+     "line": 260,
+     "text": "Code adds debug route when DEBUG_ROUTES is True.",
+     "severity": "note",
+     "ac": "AC1"
+    },
+    {
+     "hunk": "P118:H3",
+     "file": "tests/test_api.py",
+     "line": 242,
+     "text": "Test checks that debug route returns 200 when flag is True and 404 when False.",
+     "severity": "note",
+     "ac": "AC1"
+    }
+   ],
+   "risks": [
+    "No risk identified for AC1."
+   ],
+   "proposedChecks": []
+  }
+ },
+ "inputHash": "b15fc12caa7de9762fe9370639dd04f2c3b4a2ba500fe6daafa827b7930587b3",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-518",
+      "prNumber": 118
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-518",
+      "prNumber": 118,
+      "review": "{\"findings\": [{\"hunk\": \"P118:H2\", \"file\": \"src/bank/api.py\", \"line\": 260, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Code adds debug route when DEBUG_ROUTES is True.\"}, {\"hunk\": \"P118:H3\", \"file\": \"tests/test_api.py\", \"line\": 242, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test checks that debug route returns 200 when flag is True and 404 when False.\"}], \"risks\": [\"No risk identified for AC1.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH518_debug_accounts_route_follows_the_flag\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"When DEBUG_ROUTES is True, GET /api/debug/accounts returns 200 with account data; when False, returns 404.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "accept"
+  }
+ ]
+}

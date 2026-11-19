@@ -1,0 +1,70 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "verdict-word",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "4e0c4b19a5f1a4e780b1edd7b0821d82a72b34d745664757454efa7c2d4bd450",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-502",
+      "prNumber": 102
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-502",
+      "prNumber": 102,
+      "review": "{\"findings\": [{\"hunk\": \"P102:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 111, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Code replaces multiple whitespace with single space.\"}, {\"hunk\": \"P102:H2\", \"file\": \"tests/test_ledger.py\", \"line\": 272, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test checks that name whitespace is collapsed.\"}], \"risks\": [\"No risk identified.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH502_customer_name_too_long_raises_error\", \"file\": \"tests/test_ledger.py\", \"ac\": \"AC1\", \"asserts\": \"create_customer raises LedgerError when name is longer than 80 characters after whitespace collapsing\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "review",
+   "guardName": null,
+   "reasons": [],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-502",
+      "prNumber": 102,
+      "review": "{\"findings\": [{\"hunk\": \"P102:H1\", \"file\": \"src/bank/ledger.py\", \"line\": 111, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Code replaces multiple whitespace with single space.\"}, {\"hunk\": \"P102:H2\", \"file\": \"tests/test_ledger.py\", \"line\": 272, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test verifies whitespace collapsing.\"}], \"risks\": [\"No risk identified.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH502_customer_name_too_long_raises_error\", \"file\": \"tests/test_ledger.py\", \"ac\": \"AC1\", \"asserts\": \"create_customer raises LedgerError when name is longer than 80 characters after whitespace collapsing\", \"failsBeforeFix\": true}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "verdict-word",
+   "reasons": [
+    "\"verifies\" is a verdict word; a review never decides"
+   ],
+   "gate": "accept"
+  }
+ ]
+}

@@ -1,0 +1,72 @@
+{
+ "D": "supported",
+ "blocking": [],
+ "review": {
+  "outcome": "invalid_review",
+  "guard": "verdict-word",
+  "style": null,
+  "review": null
+ },
+ "inputHash": "11c120934c0062140aecf48f87d6aae316acf7aa59f744bf6bf467bac7c765d5",
+ "trace": [
+  {
+   "turn": 0,
+   "content": "",
+   "calls": [
+    {
+     "name": "get-pr-diff",
+     "arguments": {
+      "issueKey": "BENCH-512",
+      "prNumber": 112
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-512",
+      "prNumber": 112,
+      "review": "{\"findings\": [{\"hunk\": \"P112:H1\", \"file\": \"src/bank/api.py\", \"line\": 149, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"max_age is set to 1800 seconds (30 minutes) as required.\"}, {\"hunk\": \"P112:H2\", \"file\": \"tests/test_api.py\", \"line\": 240, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test checks Max-Age=1800 in Set-Cookie header.\"}], \"risks\": [\"The test only checks for Max-Age=1800 but does not verify other cookie attributes like HttpOnly and Path=/.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH512_session_cookie_has_correct_attributes\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"The Set-Cookie header must contain Max-Age=1800, HttpOnly=True, Path=/, and SameSite=lax.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 1,
+   "guard": "invalid_review",
+   "guardName": "verdict-word",
+   "reasons": [
+    "\"verify\" is a verdict word; a review never decides"
+   ],
+   "gate": "retry"
+  },
+  {
+   "turn": 2,
+   "content": "",
+   "calls": [
+    {
+     "name": "record-review",
+     "arguments": {
+      "issueKey": "BENCH-512",
+      "prNumber": 112,
+      "review": "{\"findings\": [{\"hunk\": \"P112:H1\", \"file\": \"src/bank/api.py\", \"line\": 149, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"max_age is set to 1800 seconds (30 minutes) as required.\"}, {\"hunk\": \"P112:H2\", \"file\": \"tests/test_api.py\", \"line\": 240, \"severity\": \"note\", \"ac\": \"AC1\", \"text\": \"Test checks Max-Age=1800 in Set-Cookie header.\"}], \"risks\": [\"The test only checks for Max-Age=1800 but does not verify other cookie attributes like HttpOnly and Path=/.\"], \"proposedChecks\": [{\"testName\": \"test_BENCH512_session_cookie_has_correct_attributes\", \"file\": \"tests/test_api.py\", \"ac\": \"AC1\", \"asserts\": \"The Set-Cookie header must contain Max-Age=1800, HttpOnly=True, Path=/, and SameSite=lax.\", \"failsBeforeFix\": false}]}"
+     }
+    }
+   ]
+  },
+  {
+   "turn": 2,
+   "guard": "invalid_review",
+   "guardName": "verdict-word",
+   "reasons": [
+    "\"verify\" is a verdict word; a review never decides"
+   ],
+   "gate": "accept"
+  }
+ ]
+}
