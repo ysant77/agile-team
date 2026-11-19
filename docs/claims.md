@@ -246,10 +246,15 @@ test is not read as proof that the behaviour is right.
 2. **Bug reproduced:** `reproduced` (done claims with code work). Other claim types show "not
    checked for this claim".
 3. **The named AC test passed:** the `test_passes` ACs.
-4. **The AC is covered:** per AC. A mechanical check that passed is "proved". An AC with no
-   mechanical check (`manual`) is "not checked".
-5. **All ACs covered:** proved only when every AC is proved. Even then, the view says that it
-   does not check whether each test covers every case of its AC.
+4. **Each AC has a mechanical check that passed:** per AC. A check that passed is "proved". An
+   AC with no mechanical check (`manual`) is "not checked".
+5. **The tests cover every case of each AC:** always "not checked". A passing test does not show
+   it: on blind set 4, seven cases (U02, U06, U11, U14, U15, U21, U23) had a passing named test
+   and an AC that was not covered. The detail names what bears on it:
+   - the protected regression set ("old behaviour held by N pinned tests", which does not cover
+     the new AC);
+   - a person's sign-off;
+   - a reviewer's blocking finding, which lowers it.
 
 Statuses:
 - proved;
@@ -258,4 +263,5 @@ Statuses:
 - not checked.
 
 This is view only. The checks and the verdict do not change: arm C on sets 1 to 4 gives
-identical result records.
+identical result records. The tests replay U01, U15 and U23: each stays `supported`, with
+level 5 "not checked".

@@ -54,7 +54,9 @@ export function compactChecks(checks) {
 // Five evidence levels (execution plan P1-3, review item A). Each level says what it rests on, so
 // a green test is not read as proof that the behaviour is right. Statuses: proved, failed,
 // "not proved" (the check ran and could not decide), "not checked" (no check for it: the claim type
-// does not run it, or an AC has no mechanical check). Built from the stored checks only; the
+// does not run it, or an AC has no mechanical check). Level 5 (every case of each AC is tested) is
+// never "proved" from a passing test: set 4 has seven unsafe supported cases where the named test
+// passed and the AC was not covered (lead review of P1-3). Built from the stored checks only; the
 // verdict is not changed.
 const STATUS = { pass: 'proved', fail: 'failed', unknown: 'not proved' };
 const isManual = (p) => typeof p.name === 'string' && p.name.startsWith('manual(');
@@ -65,7 +67,7 @@ function combine(rows) {
   return 'proved';
 }
 
-export function evidenceLevels(checks) {
+export function evidenceLevels(checks, { reviewHold = null } = {}) {
   const list = compactChecks(checks);
   const find = (name) => list.find((c) => c.name === name);
   const level = (name, check, missing) => (check
@@ -79,18 +81,24 @@ export function evidenceLevels(checks) {
     ? { acId: p.acId, status: 'not checked', detail: `no mechanical check: ${p.reason}` }
     : { acId: p.acId, status: STATUS[p.status], detail: `by ${p.name}: ${p.reason}` }));
   const testRows = tests.map((p) => ({ status: STATUS[p.status] }));
-  const all = combine(acs);
+  // Level 5: what bears on it, never a status above "not checked".
+  const pinned = find('pinned_tests_hold');
+  const held = pinned && !pinned.advisory && pinned.status === 'pass' ? /^(\d+) pinned base test/.exec(pinned.reason) : null;
+  const coverage = [
+    'Not checked: a passing test does not show it.',
+    held ? `Protected regression set: old behaviour held by ${held[1]} pinned tests; they do not cover the new AC.`
+      : 'The protected regression set can show that old behaviour still holds; it did not run here.',
+    'A person\'s sign-off can accept the coverage.',
+    ...(Array.isArray(reviewHold) && reviewHold.length ? [`Lowered: a reviewer's blocking finding on ${reviewHold.join(', ')} says a case may be missing.`] : []),
+  ];
   return [
     level('CI passed', ci, 'not checked for this claim'),
     level('Bug reproduced', find('reproduced'), 'not checked for this claim (only a done claim with code work runs the reproduction check)'),
     { level: 'The named AC test passed', status: combine(testRows),
       detail: tests.length ? tests.map((p) => `${p.acId} ${p.name}: ${p.reason}`).join('; ') : 'no AC names a test' },
-    { level: 'The AC is covered', status: combine(acs), acs,
+    { level: 'Each AC has a mechanical check that passed', status: combine(acs), acs,
       detail: acs.length ? acs.map((a) => `${a.acId} ${a.status}`).join('; ') : 'no AC was checked' },
-    { level: 'All ACs covered', status: all,
-      detail: all === 'proved'
-        ? 'every AC has a mechanical check that passed; whether each test covers every case of its AC is not checked'
-        : acs.length ? 'not every AC has a mechanical check that passed' : 'no AC was checked' },
+    { level: 'The tests cover every case of each AC', status: 'not checked', detail: coverage.join(' ') },
   ];
 }
 
@@ -137,7 +145,7 @@ export function verdictView(record) {
     failed,
     notChecked,
     human: HUMAN[state],
-    levels: evidenceLevels(record.checks),
+    levels: evidenceLevels(record.checks, { reviewHold: state === 'held' ? record.reviewHold : null }),
     meta: {
       claim: record.type ?? null,
       at: record.at ?? null,
