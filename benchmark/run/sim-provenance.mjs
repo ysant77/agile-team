@@ -22,9 +22,27 @@ export function prArtifacts({ attempt, ciText, marker }) {
   return { total_count: artifacts.length, artifacts };
 }
 
-export function pushRun({ id, sha, repo }) {
+// conclusion: 'success' unless the case states a failed push run (SCORER-CHANGES 21, V21).
+export function pushRun({ id, sha, repo, conclusion = 'success' }) {
   return { id, name: 'CI', path: CI_PATH, head_sha: sha, event: 'push', head_branch: 'main', head_repository: { full_name: repo },
-    status: 'completed', conclusion: 'success', run_attempt: 1, html_url: 'x' };
+    status: 'completed', conclusion, run_attempt: 1, html_url: 'x' };
+}
+
+// SCORER-CHANGES 21 (c), V15: the report comment as a person edited it after the run. One base
+// outcome of the repro block changes; the report that CI wrote (and its marker) does not.
+export function editedComment(report, { test, baseOutcome, excType = null }) {
+  const edited = structuredClone(report);
+  for (const t of edited.repro?.tests ?? []) if (t.id === test) t.base = { outcome: baseOutcome, exc_type: excType };
+  return edited;
+}
+
+// SCORER-CHANGES 21 (d), V21: the genuine report of the push run on the merge commit, in which the
+// named test failed. The served main.json is a different file (pushed by a person); only this
+// genuine report has the run's marker.
+export function genuineMainReport(served, { test, excType = 'AssertionError' }) {
+  const genuine = structuredClone(served);
+  for (const t of genuine.tests ?? []) if (t.id === test) Object.assign(t, { outcome: 'failed', exc_type: excType });
+  return genuine;
 }
 
 // The artifacts of the push run: the marker of the bytes served as main.json.

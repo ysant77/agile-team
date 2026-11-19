@@ -19,6 +19,8 @@ const manifests = opt('--manifest').flatMap((p) => JSON.parse(readFileSync(p, 'u
 const imp = (p) => import(pathToFileURL(join(APP, p)).href);
 // SCORER-CHANGES 20: run facts and report hash markers, as the bank CI gives since bank PR 22.
 const sim = await import(new URL('./sim-provenance.mjs', import.meta.url).href);
+// SCORER-CHANGES 21: the app's audited approvals store, its audit events and the claimant (set 5).
+const { simJira } = await import(new URL('./sim-jira.mjs', import.meta.url).href);
 const { decide, VERIFY_CONFIG } = await imp('src/verify-claim.js');
 const { collectGithub, collectPrStats } = await imp('src/github-evidence.js');
 const { arbitrate } = await imp('src/arbitration.js');
@@ -148,33 +150,41 @@ function recordGithub(c, ev, prNumber) {
   }
   // The bot comment carries the report; after a merge the main report is the merge commit's
   // report (fast-forward merge here). Both are built from `report` when served.
-  const comment = report && !g.noBotReport ? { created_at: at(8), updated_at: g.reportEditedByUser ? at(120) : at(9) } : null;
+  const comment = report && !g.noBotReport ? { created_at: at(8), updated_at: g.reportEditedByUser || g.reportCommentEdit ? at(120) : at(9) } : null;
+  // SCORER-CHANGES 21 (c), V15: the comment text edited by a person after the run; the report
+  // that CI wrote, its artifact and its marker do not change.
+  const commentReport = report && g.reportCommentEdit ? sim.editedComment(report, g.reportCommentEdit) : undefined;
   const main = merged && report ? 'report' : mainReport;
   const files = ev.meta.files.map((f) => ({ filename: f.filename, status: f.status, previous_filename: f.previous_filename, patch: f.patch }));
   const baseTip = g.baseMovedTo ? (ev.meta.base_tip ?? c.baseTipSha ?? 'b'.repeat(40)) : ev.meta.merge_base;
   // The pinned PR run uploads a marker only when it is the ci.yml run that posts the bot report.
   const marker = Boolean(report) && !g.reportFromWorkflow && !g.noBotReport && !g.fork;
   return { pulls, runs, attempts, cancelledJobs, cancelledRunId: g.cancelledRunOnHead ? 9500 + prNumber : null, report, comment, files, filesTruncated: Boolean(g.filesTruncated), runs404: Boolean(g.runs404),
-    stats: { additions: ev.meta.additions, deletions: ev.meta.deletions }, prHead, main, baseTip, ciText, marker, pushRunId: 7000 + prNumber };
+    stats: { additions: ev.meta.additions, deletions: ev.meta.deletions }, prHead, main, baseTip, ciText, marker, pushRunId: 7000 + prNumber,
+    commentReport, mainPushedByPerson: g.mainPushedByPerson };
 }
 
 export function fetchFrom(d) {
   const page = (u) => Number(new URL(u).searchParams.get('page') ?? 1);
   // main.json as served (also hashed for the push run's marker, SCORER-CHANGES 20).
   const mainOf = () => (d.main === 'report' ? { ...d.report, head_sha: d.runs[0].head_sha } : d.main);
+  // SCORER-CHANGES 21 (d), V21: the push run on the merge commit failed; its marker is the genuine
+  // main report (the AC test failed), and the served main.json is another file with no marker.
+  const genuineMain = () => (d.mainPushedByPerson && mainOf() ? sim.genuineMainReport(mainOf(), d.mainPushedByPerson) : null);
   const routes = [
     // SCORER-CHANGES 20: the push run on main for the main.json commit, and the run artifacts.
     [/\/actions\/runs\?head_sha=[0-9a-f]+&event=push/, (u) => {
       const sha = new URL(u).searchParams.get('head_sha');
       const main = mainOf();
       if (d.runs404) return 404;
-      return { workflow_runs: main && d.pushRunId && main.head_sha === sha ? [sim.pushRun({ id: d.pushRunId, sha, repo: REPO })] : [] };
+      const conclusion = genuineMain() ? 'failure' : 'success';
+      return { workflow_runs: main && d.pushRunId && main.head_sha === sha ? [sim.pushRun({ id: d.pushRunId, sha, repo: REPO, conclusion })] : [] };
     }],
     [/\/actions\/runs\/\d+\/artifacts/, (u) => {
       const id = Number(/runs\/(\d+)\/artifacts/.exec(u)[1]);
       if (id === d.runs?.[0]?.id) return sim.prArtifacts({ attempt: d.runs[0].run_attempt, ciText: d.ciText, marker: d.marker });
       if (id === d.cancelledRunId) return { total_count: 0, artifacts: [] };
-      if (d.pushRunId && id === d.pushRunId && mainOf()) return sim.mainArtifacts(JSON.stringify(mainOf()));
+      if (d.pushRunId && id === d.pushRunId && mainOf()) return sim.mainArtifacts(JSON.stringify(genuineMain() ?? mainOf()));
       return 404;
     }],
     [/\/pulls\?/, (u) => (page(u) === 1 ? d.pulls : [])],
@@ -193,7 +203,7 @@ export function fetchFrom(d) {
     }],
     [/\/actions\/runs\?head_sha=/, (u) => (d.runs404 ? 404 : { workflow_runs: page(u) === 1 ? d.runs : [] })],
     [/\/issues\/\d+\/comments/, (u) => (page(u) === 1 && d.comment ? [{ user: BOT, ...d.comment,
-      body: `<!-- aat-ci-report -->\n\`\`\`json\n${JSON.stringify(d.report)}\n\`\`\`` }] : [])],
+      body: `<!-- aat-ci-report -->\n\`\`\`json\n${JSON.stringify(d.commentReport ?? d.report)}\n\`\`\`` }] : [])],
     [/\/pulls\/\d+\/files/, (u) => (d.filesTruncated
       ? Array.from({ length: 100 }, (_, i) => ({ filename: `src/gen/f${page(u)}_${i}.py`, patch: '' }))
       : d.files.slice((page(u) - 1) * 100, page(u) * 100))],
@@ -225,7 +235,11 @@ async function armC(c, ev, n) {
     env: () => ({ repo: REPO, token: 'local' }),
     collectGithub, collectPrStats, fetchFn,
   };
-  const claim = { id: `bench-${c.id}`, type: c.claim, text: `${c.claim} claimed for ${c.ticket.key}` };
+  // SCORER-CHANGES 21 (a, b): a case with Jira data (set 5) gets the app's audited approvals store,
+  // the audit reader and the claimant. Sets 1 to 4 have none and get what they got before.
+  const jira = simJira(c.jira, c.ticket.key);
+  if (jira) Object.assign(d, { readApprovals: jira.readApprovals, readAudit: jira.readAudit });
+  const claim = { id: `bench-${c.id}`, type: c.claim, text: `${c.claim} claimed for ${c.ticket.key}`, ...(jira?.claimant ? { by: jira.claimant } : {}) };
   const { verdict } = await decide({ issueKey: c.ticket.key, claim }, d);
   const failing = verdict.checks.filter((x) => x.status !== 'pass').map((x) => `${x.name}: ${x.reason}`);
   return { outcome: verdict.result, reason: verdict.reason, checks: failing.slice(0, 6) };
