@@ -26,9 +26,10 @@ function mockKvs(t) {
 const auditEvents = (store) => [...store.entries()].filter(([k]) => k.startsWith('audit:0')).map(([, v]) => v);
 
 // Jira as the user: who is asking, which work items they can see, and the create calls.
+// Work item numbers continue across mocks, as on one site.
+let next = 100;
 function mockUser(t, { canSee = () => true, accountId = 'pm-user' } = {}) {
   const calls = [];
-  let next = 100;
   t.mock.method(api, 'asUser', () => ({
     requestJira: async (route, opts) => {
       const path = pathOf(route);

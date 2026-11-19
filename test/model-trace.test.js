@@ -70,6 +70,8 @@ function stubForge(t) {
   t.mock.method(kvs, 'get', async (k) => structuredClone(store.get(k)));
   t.mock.method(kvs, 'set', async (k, v) => { store.set(k, structuredClone(v)); });
   t.mock.method(kvs, 'delete', async (k) => { store.delete(k); });
+  // The person can see the work item (browse check of the action, docs/ACTIONS.md).
+  t.mock.method(api, 'asUser', () => ({ requestJira: async () => ({ ok: true, status: 200, json: async () => ({ id: '1' }) }) }));
   const pathOf = (r) => r?.value_ ?? String(r);
   t.mock.method(api, 'asApp', () => ({
     requestJira: async (path, opts) => {
