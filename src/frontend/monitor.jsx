@@ -62,7 +62,8 @@ function App() {
       <DynamicTable
         head={{ cells: [
           { key: 'k', content: 'Ticket' }, { key: 'd', content: 'Decision' }, { key: 'b', content: 'By (account id)' },
-          { key: 'c', content: 'Code decision' }, { key: 'o', content: 'Opinion' }, { key: 's', content: 'Audit seq' },
+          { key: 'c', content: 'Code decision' }, { key: 'o', content: 'Opinion' }, { key: 'a', content: 'PR author check' },
+          { key: 's', content: 'Audit seq' },
         ] }}
         rows={data.decisions.map((d) => ({
           key: String(d.seq),
@@ -72,12 +73,13 @@ function App() {
             { key: 'b', content: d.by ?? 'unknown' },
             { key: 'c', content: d.agreesWithCode === null ? 'none' : d.agreesWithCode ? 'agrees' : 'overridden' },
             { key: 'o', content: d.agreesWithOpinion === null ? 'none' : d.agreesWithOpinion ? 'agrees' : 'differs' },
+            { key: 'a', content: d.authorCheck === 'passed' ? 'not a PR author' : 'not compared (no account link)' },
             { key: 's', content: String(d.seq) },
           ],
         }))}
         emptyView="No human decisions yet."
       />
-      <Text>Any user who can comment on the work item can record a decision. The table shows the author's account id.</Text>
+      <Text>The claimant of the latest claim cannot record a decision. A PR author is refused only when GITHUB_ACCOUNTS links the decider; otherwise the table says "not compared". The table shows the author's account id.</Text>
 
       <Heading as="h3">Assignment posterior per twin and skill</Heading>
       <Text>{`Recorded outcomes: ${data.outcomes}. Reward r = 0.4 x on_time + 0.6 x quality; decay 0.95; Beta(1, 1) prior.`}</Text>

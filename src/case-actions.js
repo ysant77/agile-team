@@ -72,7 +72,9 @@ export async function openCase(payload) {
   const previous = await kvs.get(caseKey(input.issueKey));
   const history = previous ? [...(previous.history ?? []), { arbitration: previous.arbitration, opinions: previous.opinions, openedAt: previous.openedAt }].slice(-5) : [];
   // humanDecision stays null until a person records the choice; no code path fills it.
-  const stored = { ...built, prNumbers: input.prNumbers, openedAt: new Date().toISOString(), opinions: [], humanDecision: null, history };
+  // The GitHub author of each side: a PR author may not decide the case (src/decision.js).
+  const prAuthors = Object.fromEntries(evidence.map((e) => [`PR${e.prNumber}`, e.pr.author ?? null]));
+  const stored = { ...built, prNumbers: input.prNumbers, prAuthors, openedAt: new Date().toISOString(), opinions: [], humanDecision: null, history };
   await kvs.set(caseKey(input.issueKey), stored);
   const audit = await appendAudit({ actor: 'arbitration', event: 'case_opened', data: {
     issueKey: input.issueKey, prNumbers: input.prNumbers, decidedBy: built.arbitration.decidedBy,
