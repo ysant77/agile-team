@@ -232,7 +232,9 @@ export async function readRepoFile({ investigationId, by, path, startLine }, d) 
   const to = Math.min(all.length, from + lim.lineCap - 1);
   const slice = all.slice(from - 1, to);
   const numbers = [...new Set(numbersIn(slice.join('\n')))].slice(0, 2000);
-  await finishCall(d, got.slot, { status: 'ok', path, from, to, numbers });
+  // The test functions that the read shows exist (for the reproducer and failure-claim checks).
+  const tests = [...new Set([...slice.join('\n').matchAll(/\bdef\s+(test_[A-Za-z0-9_]+)/g)].map((m) => m[1]))].slice(0, 500);
+  await finishCall(d, got.slot, { status: 'ok', path, from, to, numbers, tests });
   return {
     ok: true, path, commit: inv.commit, from, to, totalLines: all.length,
     lines: slice.map((l, i) => `${from + i}: ${l}`),
@@ -264,6 +266,8 @@ const KINDS = ['defect', 'no_defect', 'unclear'];
 const SEVERITIES = ['critical', 'high', 'medium', 'low'];
 const PRIORITIES = ['P1', 'P2', 'P3', 'P4'];
 const TEST_NAME = /^test_[A-Za-z0-9_]{3,120}$/;
+// Words that claim a test fails. The list is open: a claim in other words is not found.
+const FAILURE_WORDS = /\b(fail|fails|failing|failed|error|errors|broken)\b/i;
 const isText = (v, max) => typeof v === 'string' && v.trim() !== '' && v.length <= max;
 
 const typeName = (v) => (v === null ? 'null' : Array.isArray(v) ? 'a list' : `a ${typeof v}`);
@@ -325,6 +329,21 @@ function checkFinding(f, inv, reads) {
     if (r && !isText(r.asserts, 400)) errors.push('reproducer.asserts must say what the test asserts');
     if (!SEVERITIES.includes(f.severity?.level) || !isText(f.severity?.reason, 300)) errors.push(`severity must be { level: ${SEVERITIES.join(' | ')}, reason }`);
     if (!PRIORITIES.includes(f.priority?.level) || !isText(f.priority?.reason, 300)) errors.push(`priority must be { level: ${PRIORITIES.join(' | ')}, reason }`);
+  }
+  if (f.kind === 'defect') {
+    // Dev check 19 Nov (D-3): the model said an existing test fails. The tools return no test
+    // outcome (read-ci-results gives workflow runs only), so no read can show that a test fails.
+    if (!reads.some((r) => r.action === 'read-ci-results' && r.status === 'ok')) errors.push('read the CI results before a defect finding');
+    const existing = new Map();
+    for (const r of fileReads) for (const t of r.tests ?? []) if (!existing.has(t)) existing.set(t, r.path);
+    const name = String(f.reproducer?.testName ?? '');
+    if (existing.has(name)) errors.push(`${name} already exists in ${existing.get(name)}; a reproducer is a new test that fails on the current code`);
+    for (const sentence of String(f.hypothesis).split(/(?<=[.!?])\s+|\n+/)) {
+      if (!FAILURE_WORDS.test(sentence)) continue;
+      for (const t of existing.keys()) {
+        if (new RegExp(`\\b${t}\\b`).test(sentence)) errors.push(`${t} is an existing test, and no read shows it fails; cite the code instead`);
+      }
+    }
   }
   const questions = f.openQuestions ?? [];
   if (!Array.isArray(questions) || questions.length > 10 || questions.some((q) => !isText(q, 300))) errors.push('openQuestions must be a list of at most 10 questions');

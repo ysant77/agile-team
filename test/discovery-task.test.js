@@ -90,6 +90,7 @@ test('runDiscovery runs the tool loop with the real rules and stops at a recorde
       [{ name: 'start-investigation', arguments: { symptom: 'My balance went below zero after two withdrawals.' } }],
       [{ name: 'read-repo-file', arguments: { investigationId: '$ID', path: 'seeds/k1_race.patch' } }],
       [{ name: 'read-repo-file', arguments: { investigationId: '$ID', path: 'src/bank/ledger.py' } }],
+      [{ name: 'read-ci-results', arguments: { investigationId: '$ID' } }],
       [{ name: 'record-finding', arguments: { investigationId: '$ID', finding: JSON.stringify({ kind: 'defect', hypothesis: 'withdraw checks the balance, then sleeps, so two withdrawals at the same time both pass.', citations: [{ file: 'src/bank/ledger.py', line: 2 }], reproducer: { testName: 'test_two_withdrawals_at_once', file: 'tests/test_ledger.py', asserts: 'one of two withdrawals succeeds' }, severity: { level: 'high', reason: 'overdraft' }, priority: { level: 'P1', reason: 'money' } }) } }],
       [],
     ];
@@ -107,9 +108,9 @@ test('runDiscovery runs the tool loop with the real rules and stops at a recorde
     const out = await runDiscovery(ask, { id: 'D1', symptom: 'My balance went below zero after two withdrawals.', truth: 'race' }, { tree: r.dir });
     assert.equal(out.score, 1, JSON.stringify(out));
     assert.equal(out.finding.kind, 'defect');
-    assert.equal(out.toolCalls, 4);
+    assert.equal(out.toolCalls, 5); // with the CI read a defect needs (19 Nov);
     assert.equal(out.refusedCalls, 1);
-    assert.equal(out.githubCalls, 2);
+    assert.equal(out.githubCalls, 3);
     // The symptom the model gets is the case's, not the model's argument.
     assert.equal(seen[0].content, 'My balance went below zero after two withdrawals.');
   } finally {
@@ -261,6 +262,7 @@ test('runDiscovery scores 0 when the investigation behind the finding has anothe
     const plan = [
       [{ name: 'start-investigation', arguments: { symptom: 'withdraw has a race in ledger.py' } }],
       [{ name: 'read-repo-file', arguments: { investigationId: '$ID', path: 'src/bank/ledger.py' } }],
+      [{ name: 'read-ci-results', arguments: { investigationId: '$ID' } }],
       [{ name: 'record-finding', arguments: { investigationId: '$ID', finding: JSON.stringify({ kind: 'defect', hypothesis: 'withdraw checks the balance, then sleeps, so two withdrawals at the same time both pass.', citations: [{ file: 'src/bank/ledger.py', line: 2 }], reproducer: { testName: 'test_two_withdrawals_at_once', file: 'tests/test_ledger.py', asserts: 'one of two withdrawals succeeds' }, severity: { level: 'high', reason: 'overdraft' }, priority: { level: 'P1', reason: 'money' } }) } }],
       [],
     ];
@@ -278,5 +280,39 @@ test('runDiscovery scores 0 when the investigation behind the finding has anothe
     assert.equal(out.reason, 'finding answers a symptom the model wrote');
   } finally {
     r.cleanup();
+  }
+});
+
+// Rule 3, as decided 19 Nov after the a5bdb93 check: the finding's symptom must be a contiguous
+// part of the case's symptom (white space normalised) and at least half its length. The model
+// drops the channel framing ("Support ticket, forwarded by ..."); an invented symptom fails.
+test('rule 3 accepts the user\'s words without their framing and refuses another symptom', () => {
+  const kase = { id: 'D1', truth: 'race', symptom: 'Support ticket. Two withdrawals at  once took the balance below zero on Saturday morning. Please check.' };
+  const f = { kind: 'defect', hypothesis: 'Two withdrawals at the same time both pass the balance check.', citations: [{ file: 'src/bank/ledger.py', line: 3 }] };
+  assert.equal(scoreDiscovery(kase, { ...f, symptom: 'Two withdrawals at once took the balance\nbelow zero on Saturday morning.' }).score, 1);
+  assert.equal(scoreDiscovery(kase, { ...f, symptom: kase.symptom }).score, 1);
+  for (const other of ['withdraw has a race in ledger.py', 'Please check.', 'Two withdrawals at once took the balance below zero on Saturday morning. The ledger is broken.']) {
+    const r = scoreDiscovery(kase, { ...f, symptom: other });
+    assert.equal(r.score, 0, other);
+    assert.equal(r.reason, 'finding answers a symptom the model wrote', other);
+  }
+});
+
+test('the stored a5bdb93 check runs: D-1 scores 1, and D-3 scores 0 by its finding, not by rule 3', () => {
+  const rows = readFileSync(new URL('../benchmark/run/results/discovery-dev/discovery-dev-one.jsonl', import.meta.url), 'utf8')
+    .trim().split('\n').map((l) => JSON.parse(l));
+  // The case texts of set 1 (development cases; the lead's file, 19 Nov).
+  const framing = {
+    'D-1': ['Support ticket, forwarded by the branch manager. ', ' Please find out if this is our fault.'],
+    'D-3': ['Message from a customer, via the help form. "', ''],
+  };
+  const truth = { 'D-1': 'race', 'D-3': 'none' };
+  for (const row of rows) {
+    const [pre, post] = framing[row.task];
+    const kase = { id: row.task, truth: truth[row.task], symptom: `${pre}${row.finding.symptom}${post}` };
+    const r = scoreDiscovery(kase, row.finding, row.finalText);
+    assert.notEqual(r.reason, 'finding answers a symptom the model wrote', row.task);
+    if (row.task === 'D-1') assert.deepEqual([r.score, r.identified, r.rightFile], [1, true, true]);
+    if (row.task === 'D-3') assert.deepEqual([r.score, r.inventedDefect], [0, true]);
   }
 });

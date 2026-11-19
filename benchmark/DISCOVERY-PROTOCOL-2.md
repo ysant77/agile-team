@@ -47,6 +47,24 @@ follow; neither loosens a check:
   symptom, so there the check is exact. The model can still close the open investigation with a
   `no_defect` finding and start another one with its own symptom: the bake-off scores that 0.
 
+## Claims about tests, and rule 3 with framing (added 19 Nov, before the freeze)
+
+A second development check (app a5bdb93, seed 11) gave two facts.
+
+- **D-1 found the race but scored 0.** The model passed the user's words without the channel
+  framing. Rule 3 now accepts a finding's symptom when, with white space normalised, it is a
+  contiguous part of the case's symptom and at least half its length. An invented symptom is
+  still 0.
+- **D-3 recorded a defect that rests on a false claim about a test.** The hypothesis said that
+  an existing, passing test fails. `record-finding` now refuses three things for a defect:
+  - a finding with no `read-ci-results` call;
+  - a reproducer that a read shows exists;
+  - a hypothesis sentence that names an existing test with a failure word (an open list).
+- Both stored runs are pinned in tests (`run/results/discovery-dev/discovery-dev-one.jsonl`):
+  D-1 scores 1, and D-3 scores 0 by its finding.
+- Limit: these rules stop a false claim about a test. They do not stop a defect claimed in other
+  words. That is a model miss, and set 2 measures it.
+
 ## Control score: the final text is read too (in code)
 
 `scoreDiscovery(kase, finding, finalText)` in `bakeoff/tasks/discovery.js`.

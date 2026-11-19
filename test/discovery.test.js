@@ -47,8 +47,9 @@ function memStore() {
 const json = (status, body, headers = {}) => ({ ok: status < 300, status, json: async () => body, headers: { get: (h) => headers[h.toLowerCase()] ?? null } });
 
 // A GitHub double for the investigated branch; it counts every call.
-function github({ symlink = [], rateLimited = false, runs = [] } = {}) {
+function github({ symlink = [], rateLimited = false, runs = [], extraFiles = {} } = {}) {
   const calls = [];
+  const files = { ...FILES, ...extraFiles };
   const get = async (path) => {
     calls.push(path);
     if (rateLimited) return json(403, { message: 'API rate limit exceeded' }, { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '1795000000' });
@@ -58,8 +59,8 @@ function github({ symlink = [], rateLimited = false, runs = [] } = {}) {
     if (m) {
       const file = decodeURIComponent(m[1]);
       if (symlink.includes(file)) return json(200, { type: 'symlink', target: '../seeds/k1_race.patch', path: file });
-      if (!(file in FILES)) return json(404, { message: 'Not Found' });
-      return json(200, { type: 'file', path: file, size: FILES[file].length, encoding: 'base64', content: Buffer.from(FILES[file]).toString('base64') });
+      if (!(file in files)) return json(404, { message: 'Not Found' });
+      return json(200, { type: 'file', path: file, size: files[file].length, encoding: 'base64', content: Buffer.from(files[file]).toString('base64') });
     }
     if (path === `/repos/o/demo/actions/runs?head_sha=${COMMIT}&per_page=20`) return json(200, { total_count: runs.length, workflow_runs: runs });
     return json(404, { message: 'Not Found' });
@@ -260,6 +261,8 @@ const FINDING = {
 async function withRead() {
   const s = await started();
   await readRepoFile({ investigationId: s.id, by: 'pm-1', path: 'src/bank/ledger.py', startLine: 200 }, s.d);
+  // A defect finding needs the CI read (19 Nov).
+  await readCiResults({ investigationId: s.id, by: 'pm-1' }, s.d);
   return s;
 }
 
@@ -424,4 +427,54 @@ test('an open pointer with no start time is treated as expired', async () => {
   for (const [k, v] of d.store.map) if (k.startsWith('inv-open:')) d.store.map.set(k, { id: v.id });
   const next = await startInvestigation({ ...START, symptom: 'Another report.' }, d);
   assert.equal(next.ok, true, next.error);
+});
+
+// Dev check 19 Nov (D-3): the model claimed that an existing test fails and proposed that test
+// as its reproducer. Nothing the tools return can show a test failing (read-ci-results gives
+// workflow runs only), so such a claim is ungrounded. A defect finding also needs the CI read.
+const READ_TESTS = 'def test_statement_running_balance():\n    assert True\n\n\ndef test_two_withdrawals_pass():\n    assert True\n';
+async function withReads() {
+  const s = await started(deps(github({ extraFiles: { 'tests/test_api.py': READ_TESTS } })));
+  await readRepoFile({ investigationId: s.id, by: 'pm-1', path: 'src/bank/ledger.py', startLine: 200 }, s.d);
+  await readRepoFile({ investigationId: s.id, by: 'pm-1', path: 'tests/test_api.py' }, s.d);
+  return s;
+}
+const record = (s, finding) => recordFinding({ investigationId: s.id, by: 'pm-1', finding: JSON.stringify(finding) }, s.d);
+
+test('a defect finding needs a read of the CI results', async () => {
+  const s = await withReads();
+  assert.equal((await record(s, FINDING)).error, 'read the CI results before a defect finding');
+  await readCiResults({ investigationId: s.id, by: 'pm-1' }, s.d);
+  assert.equal((await record(s, FINDING)).ok, true);
+});
+
+test('a reproducer may not be a test that a read shows exists', async () => {
+  const s = await withReads();
+  await readCiResults({ investigationId: s.id, by: 'pm-1' }, s.d);
+  const r = await record(s, { ...FINDING, reproducer: { ...FINDING.reproducer, testName: 'test_statement_running_balance' } });
+  assert.equal(r.error, 'test_statement_running_balance already exists in tests/test_api.py; a reproducer is a new test that fails on the current code');
+});
+
+test('a hypothesis that an existing test fails is refused; naming a test without a failure word is not', async () => {
+  const s = await withReads();
+  await readCiResults({ investigationId: s.id, by: 'pm-1' }, s.d);
+  for (const h of [
+    "The test 'test_statement_running_balance' fails because the statement query uses a window function.",
+    'test_two_withdrawals_pass is broken. withdraw checks the balance before the write transaction.',
+  ]) {
+    const r = await record(s, { ...FINDING, hypothesis: h });
+    assert.match(r.error, /is an existing test, and no read shows it fails; cite the code instead/, h);
+  }
+  const ok = await record(s, { ...FINDING, hypothesis: `${FINDING.hypothesis} test_two_withdrawals_pass covers one withdrawal only.` });
+  assert.equal(ok.ok, true, ok.error);
+});
+
+test('a no-defect finding with a wording proposal is recorded with no CI read', async () => {
+  const s = await withReads();
+  const r = await record(s, {
+    kind: 'no_defect',
+    hypothesis: 'There is no defect: the refusal of a transfer between two currencies is by design. The message could say that the currencies differ.',
+    openQuestions: ['Should the message name the currency of each account?'],
+  });
+  assert.equal(r.ok, true, r.error);
 });
