@@ -21,7 +21,9 @@ that the change reached the default branch.
 - The run comes from the pinned workflow file (`.github/workflows/ci.yml`), not from a workflow
   with the same display name. Every run of it on the head commit must succeed.
 - The pull request does not change a workflow (`.github/workflows/`), a composite action
-  (`.github/actions/`), any `conftest.py`, or the report plugin (`src/bank/testing/`). Such a
+  (`.github/actions/`), any `conftest.py`, the report plugin (`src/bank/testing/`), or a
+  dependency or pytest configuration file in any folder (`pyproject.toml`, `uv.lock`,
+  `pytest.ini`, `setup.cfg`, `tox.ini`, `requirements*.txt`; added 19 Nov, finding D2). Such a
   change makes the report unknown for every claim type. The verifier reads the pull request's
   full file list to check this.
 - The report comment comes from `github-actions[bot]` (checked by user id and type), is for the
@@ -168,3 +170,37 @@ from another app does not count.
 "advisory, not counted"; the deployed default until a bank PR shows the real check) or `enforce`
 (counted for `done`, and for `fixed` and `ready` when `onFixedReady` is true). Alert details,
 dismissals and dependency alerts need a token and are after the freeze (DESIGN 14g).
+
+## Regression of the configuration trust paths (19 Nov 2026, development sets, no model)
+
+`score.mjs` on sets 1 to 4 (the rebuilt pinned evidence), app `main` 341ea2d against
+`fix/trust-paths-dependency-config`. Right: 35, 18, 13, 15 on both. No control changed. Unsafe
+`supported`: no change.
+
+| Case | Kind | `main` | Branch | Note |
+|---|---|---|---|---|
+| B10 | valid, rule | cannot_verify | cannot_verify | reason now also names `pyproject.toml, uv.lock` as untrusted |
+| U17 | invalid | contradicted | cannot_verify | both accepted; the deselect in `pyproject.toml` now makes the report untrusted, so the missing test is no longer read from it |
+
+These are development sets; no claim is made before blind set 5.
+
+## Approvals and the AC record (19 Nov 2026, finding E1)
+
+Any issue editor can write the issue property `aat.ticket` by REST. So:
+- **Test approvals.** A removed test or a changed pinned test counts as approved only when a
+  person approved it in the issue panel. The action writes the audit event, then the app's store.
+  The verifier needs the matching audit event, and an approver who is not the claimant. A name
+  in the issue property alone does not count; the reason says so.
+- **AC record.** "Record these ACs" in the panel stores the hash of the current ACs, after its
+  audit event. Adopting a proposed check records the new ACs too. The check `acs_recorded`
+  compares the ACs with the last record: a change gives `cannot_verify` until a person records
+  them again. A work item with no record (made before 19 Nov or outside the app) cannot show a
+  change: the check is advisory and the view lists it under "not checked".
+- **Limits.** A ticket made by the PM agent gets its AC record only when a person presses
+  "Record these ACs". The AC record does not check who recorded it against the claimant.
+
+**Regression (development sets, no model).** `score.mjs` on sets 1 to 4 (rebuilt pinned evidence),
+app `main` f3bb23e against `fix/audited-approvals`. Right: 35, 18, 13, 15 on both. No outcome
+changes. Six invalid cases (I10, S16, T14, T15, U09, U20) keep `contradicted`; their reason now
+says the approval must come from a person other than the claimant. No benchmark case has an
+approval or an AC record.

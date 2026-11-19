@@ -7,6 +7,7 @@ import { MAX_ATTEMPTS, rawCopy, storeRawCopy } from './trace.js';
 import api, { fetch, route } from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { appendAudit } from './audit-store.js';
+import { cannotSee, userCanBrowse } from './action-guard.js';
 import { collectGithub, collectPrFiles } from './github-evidence.js';
 import { addComment } from './jira.js';
 import { collectJira } from './jira-evidence.js';
@@ -54,6 +55,8 @@ export function packetForAgent(packet, suggestion) {
 export async function getPrDiff(payload) {
   const input = parseReviewInput(payload);
   if (input.errors.length) return { ok: false, error: input.errors.join('; ') };
+  // The app reads and writes as itself below, so the person must be able to see the work item.
+  if (!(await userCanBrowse(input.issueKey))) return cannotSee(input.issueKey);
   const repo = process.env.GITHUB_REPO;
   if (!repo) return { ok: false, error: 'no repository configured' };
   const token = process.env.GITHUB_TOKEN;
@@ -90,6 +93,8 @@ async function appendReviewProperty(issueKey, item) {
 export async function recordReview(payload) {
   const input = parseReviewInput(payload);
   if (input.errors.length) return { ok: false, error: input.errors.join('; ') };
+  // The app reads and writes as itself below, so the person must be able to see the work item.
+  if (!(await userCanBrowse(input.issueKey))) return cannotSee(input.issueKey);
   const stored = await kvs.get(reviewKey(input.issueKey, input.prNumber));
   if (!stored) return { ok: false, error: `no packet for ${input.issueKey} PR ${input.prNumber}; call get-pr-diff first` };
   // Model "rovo": Forge does not tell the app which model Rovo used (src/trace.js).

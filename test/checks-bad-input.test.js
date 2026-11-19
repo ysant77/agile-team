@@ -8,6 +8,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as c from '../src/verifier/checks.js';
+import { acHash } from '../src/approvals.js';
 import { nextEvent } from '../src/audit.js';
 import { CLAIM_CHECKS, verify } from '../src/verifier/verdict.js';
 
@@ -19,6 +20,15 @@ const HEAD = 'a'.repeat(40);
 const BASE = 'b'.repeat(40);
 const MERGE = 'c'.repeat(40);
 const CI = '.github/workflows/ci.yml';
+
+// The app's AC record for this AC list (made by a person, 'pat'), with its audit event.
+function acRecordFor(acs) {
+  const h = acHash(acs);
+  return {
+    approvals: { removals: [], changes: [], acs: { acHash: h, by: 'pat', at: '2026-11-16T11:00:00Z', auditSeq: 9 } },
+    approvalEvents: new Map([[9, nextEvent({ seq: 8, hash: 'e'.repeat(64) }, { actor: 'pat', event: 'acs.recorded', data: { key: 'X-1', acHash: h }, at: '2026-11-16T11:00:00Z' })]]),
+  };
+}
 
 function good() {
   const report = {
@@ -66,6 +76,9 @@ function good() {
     prCandidates: [5],
     // The sign-off button's audit event (PR 8 review, item 10) and a claimant who is not the signer.
     claimant: 'dev',
+    // The app's approval store (finding E1, 19 Nov): no approval, and the ACs as last recorded by
+    // a person, with the matching audit event.
+    ...acRecordFor([{ acId: 'AC1', check: { type: 'test_passes', args: ['test_X1_fix'] } }]),
     signoffEvent: nextEvent({ seq: 6, hash: 'f'.repeat(64) }, { actor: 'pat', event: 'change.signed_off', data: { key: 'X-1', sha: MERGE }, at: '2026-11-16T12:00:00Z' }),
     report,
     reportAuthor: 'github-actions[bot]',
@@ -165,16 +178,22 @@ const ROWS = [
   ['deployed', ['deployRuns', 'deployRuns.0', 'deployRuns.0.conclusion', 'deployRuns.0.createdAt', 'deployRuns.0.tag']],
   // An empty modules_without_ids list means every changed test module gave its base test ids. A
   // report without a repro block is from before the base record existed (as a block without
-  // base_test_ids). Approvals can only turn a fail into a pass, so none stored means none.
+  // base_test_ids). Approvals can only turn a fail into a pass, so none stored means none. Only
+  // the app's store counts; the issue property is never read for a pass (finding E1).
   ['testsNotRemoved', ['report', 'report.tests', 'report.tests.0', 'report.tests.0.id', 'baseReport', 'baseReport.tests', 'baseReport.tests.0', 'baseReport.tests.0.id',
     'report.repro', 'report.repro.base_test_ids', 'report.repro.base_test_ids.0', 'report.repro.base_collect',
-    'report.repro.base_collect.rc', 'report.repro.base_collect.modules_without_ids', 'ticket', 'ticket.approvedTestRemovals'],
-  { allow: { 'report.repro.base_collect.modules_without_ids': ['empty_array'], 'report.repro': ['missing'], 'ticket.approvedTestRemovals': ['missing', 'empty_array'] } }],
+    'report.repro.base_collect.rc', 'report.repro.base_collect.modules_without_ids', 'ticket', 'approvals', 'approvals.removals', 'approvals.changes'],
+  { allow: { 'report.repro.base_collect.modules_without_ids': ['empty_array'], 'report.repro': ['missing'], approvals: ['missing', 'null'],
+    'approvals.removals': ['missing', 'empty_array'], 'approvals.changes': ['missing', 'empty_array'] } }],
   // No pinned block is a report from before the bank step: advisory, so it cannot turn a verdict
   // into a pass. Approvals can only turn a fail into a pass, so none stored means none.
   ['pinnedTestsHold', ['report', 'report.pinned', 'report.pinned.tests', 'report.pinned.tests.0', 'report.pinned.tests.0.id', 'report.pinned.tests.0.base_hash',
-    'report.pinned.tests.0.head_id', 'report.pinned.tests.0.head_hash', 'report.pinned.tests.0.outcome', 'ticket', 'ticket.approvedTestRemovals', 'ticket.approvedTestChanges'],
-  { allow: { 'report.pinned': ['missing'], 'ticket.approvedTestRemovals': ['missing', 'empty_array'], 'ticket.approvedTestChanges': ['missing', 'empty_array'] } }],
+    'report.pinned.tests.0.head_id', 'report.pinned.tests.0.head_hash', 'report.pinned.tests.0.outcome', 'ticket', 'approvals', 'approvals.removals', 'approvals.changes'],
+  { allow: { 'report.pinned': ['missing'], approvals: ['missing', 'null'], 'approvals.removals': ['missing', 'empty_array'], 'approvals.changes': ['missing', 'empty_array'] } }],
+  // No AC record (a work item made before 19 Nov or outside the app) is advisory: it cannot turn
+  // a verdict into a pass.
+  ['acsRecorded', ['approvals', 'approvals.acs', 'approvals.acs.acHash', 'approvals.acs.by', 'approvals.acs.auditSeq', 'approvalEvents', 'ticket', 'ticket.key', 'ticket.acceptanceCriteria'],
+  { allow: { approvals: ['missing', 'null'], 'approvals.acs': ['missing', 'null'] } }],
   ['migrationAdditive', ['arg:0', ...TRUST, 'report.migrations', 'report.migrations.0', 'report.migrations.0.number', 'report.migrations.0.operations',
     'report.migrations.0.operations.0'], { allow: TRUST_ALLOW }],
   // A repository with no migrations reports an empty list, or none: no two numbers can clash.
@@ -451,7 +470,7 @@ function verdictGood() {
     { acId: 'AC2', check: { type: 'link_exists', args: ['is blocked by'] } },
     { acId: 'AC3', check: { type: 'field_equals', args: ['customfield_1', 'yes'] } },
   );
-  return ctx;
+  return { ...ctx, ...acRecordFor(ctx.ticket.acceptanceCriteria) };
 }
 const CLAIMS = Object.keys(CLAIM_CHECKS);
 const VERDICT_PATHS = ['ticket', 'ticket.key', 'ticket.type', 'ticket.links', 'ticket.links.0', 'ticket.fields', 'ticket.acceptanceCriteria',

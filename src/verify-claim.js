@@ -3,12 +3,14 @@
 import { fetch } from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { appendAudit, readAudit } from './audit-store.js';
+import { auditSeqs, readApprovals } from './approvals.js';
 import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment, findComment } from './jira.js';
 import { addVerdictProperty, collectJira, collectReviews } from './jira-evidence.js';
 import { applyReviewHold } from './review-hold.js';
 import { compactChecks } from './verdict-view.js';
 import { parseTwin } from './monitor.js';
+import { CONFIG_TRUST_PATHS } from './verifier/checks.js';
 import { buildDoneEvidence, formatEvidence } from './verifier/evidence.js';
 import { verify } from './verifier/verdict.js';
 
@@ -16,7 +18,9 @@ export const VERIFY_CONFIG = {
   requiredWorkflowPaths: ['.github/workflows/ci.yml'],
   reportTrustPaths: ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py', 'src/bank/testing/',
     // The scripts that write the repro and coverage blocks of the report.
-    'scripts/repro.py', 'scripts/changed_coverage.py', 'scripts/pinned.py'],
+    'scripts/repro.py', 'scripts/changed_coverage.py', 'scripts/pinned.py',
+    // Dependency and pytest configuration (finding D2, 19 Nov).
+    ...CONFIG_TRUST_PATHS],
   // Protected regression set (docs/PROTECTED-TESTS.md). pinnedRequired is the value for a
   // repository that is not listed: advisory. pinnedRequiredRepos lists the repositories ("owner/
   // name") whose main runs the pinned step (scripts/pinned.py); for them a CI report without a
@@ -185,10 +189,30 @@ export async function decide({ issueKey, claim }, d) {
       console.log('sign-off audit read failed', issueKey, error.message);
     }
   }
+  // Approvals of removed or changed tests and the audited AC record (finding E1): the app's store
+  // and the audit event of each entry. A reader that is not given (a replay) means none stored. A
+  // read error makes the record unreadable, so the checks that use it say unknown.
+  let approvals;
+  const approvalEvents = new Map();
+  // The deployed app reads the store it was given (Forge KVS); a test gives its own.
+  const readStored = d.readApprovals ?? (d.store ? (key) => readApprovals(key, d.store) : null);
+  if (readStored) {
+    try {
+      approvals = await readStored(issueKey);
+      for (const seq of auditSeqs(approvals)) {
+        if (!d.readAudit) break;
+        const [e] = await d.readAudit(seq, 1);
+        approvalEvents.set(seq, e);
+      }
+    } catch (error) {
+      console.log('approval record read failed', issueKey, error.message);
+      approvals = 'unreadable';
+    }
+  }
   // mergeRequiredTests: tests that must pass by name in the merge result. None are configured;
   // merged_clean still needs every base test kept and unique migrations. The checks read a
   // missing list as not known, so it is always set here.
-  const ctx = { ticket, ...github, mergeRequiredTests: [], config: configFor(repo), claimant: claim.by ?? null, signoffEvent };
+  const ctx = { ticket, ...github, mergeRequiredTests: [], config: configFor(repo), claimant: claim.by ?? null, signoffEvent, approvals, approvalEvents };
   let verdict = verify(claim, ctx);
   // Without the code host, a PR check that does not pass says why (a fail or an unknown).
   if ((githubError || !repo) && verdict.result !== 'supported' && verdict.checks.some((c) => ['pr_linked', 'on_main'].includes(c.name) && c.status !== 'pass')) {

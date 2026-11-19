@@ -2,6 +2,7 @@
 // No model is involved. Unknown means "cannot verify": a human or more evidence is needed.
 
 import { canonical, sha256 } from '../audit.js';
+import { acHash, ACS_EVENT, APPROVAL_EVENTS } from '../approvals.js';
 import { finiteNumber, namesKey, sameFiles, testName, testsByName } from './report.js';
 
 const BOT = 'github-actions[bot]';
@@ -36,12 +37,16 @@ const runPath = (r) => String(r.path ?? '').split('@')[0];
 
 // Paths that decide how CI runs or how it writes the report. A PR that changes one of them can
 // make its own CI say anything, so its CI is not evidence (DESIGN 6, review of 16 Nov).
-// Entry forms: "dir/" (everything under it), "**/name" (a file with that name in any folder),
-// or an exact path. Composite actions and pytest's conftest.py run inside CI, so they count.
-export const DEFAULT_TRUST_PATHS = ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py'];
+// Entry forms: "dir/" (everything under it), "**/name" (a file with that name in any folder; a
+// "*" in the name matches any characters except "/"), or an exact path. Composite actions and
+// pytest's conftest.py run inside CI, so they count. Dependency and pytest configuration files
+// decide which plugins and options the test run loads, so they count too (finding D2, 19 Nov).
+export const CONFIG_TRUST_PATHS = ['**/pyproject.toml', '**/uv.lock', '**/pytest.ini', '**/setup.cfg', '**/tox.ini', '**/requirements*.txt'];
+export const DEFAULT_TRUST_PATHS = ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py', ...CONFIG_TRUST_PATHS];
+const nameMatches = (name, pattern) => new RegExp(`^${pattern.split('*').map((p) => p.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*')}$`).test(name);
 const matchesPath = (file, paths) => paths.some((g) => {
   if (g.endsWith('/')) return file.startsWith(g);
-  if (g.startsWith('**/')) return file === g.slice(3) || file.endsWith(`/${g.slice(3)}`);
+  if (g.startsWith('**/')) return nameMatches(file.split('/').pop(), g.slice(3));
   return file === g;
 });
 
@@ -494,19 +499,64 @@ export function deployed(ctx, tag) {
   return result(label, 'pass', `deploy ${latest.tag ?? ''} succeeded at ${latest.createdAt}`);
 }
 
+// Approvals of removed or changed tests (finding E1, 19 Nov). Only the app's store counts
+// (ctx.approvals, read from Forge KVS), and only an entry whose audit event matches it, made by a
+// person other than the claimant. The issue property aat.ticket can be written by any issue
+// editor, so a name listed there is reported but never counted.
+const eventMatches = (e, seq, event, by, data) => {
+  if (!isObj(e) || e.seq !== seq || e.event !== event || e.actor !== by || !isObj(e.data)) return false;
+  if (Object.entries(data).some(([k, v]) => e.data[k] !== v)) return false;
+  const { hash, ...body } = e;
+  return sha256(canonical(body)) === hash;
+};
+const eventOf = (ctx, seq) => (ctx.approvalEvents instanceof Map ? ctx.approvalEvents.get(seq) : undefined);
+function auditedApprovals(ctx, kind) {
+  const out = { names: new Set(), self: new Set(), unmatched: new Set(), noClaimant: new Set(), error: null };
+  const a = ctx.approvals;
+  if (a === undefined || a === null) return out;
+  const field = kind === 'removal' ? 'removals' : 'changes';
+  // One malformed part makes the whole record unreadable.
+  if (!isObj(a) || ['removals', 'changes'].some((f) => a[f] !== undefined && !isObjList(a[f]))) return { ...out, error: 'the app\'s approval record is malformed' };
+  for (const x of a[field] ?? []) {
+    const shaped = isText(x.test) && typeof x.reason === 'string' && x.reason.trim().length >= 5 && isText(x.by) && Number.isInteger(x.auditSeq) && x.auditSeq >= 0;
+    if (!shaped || !eventMatches(eventOf(ctx, x.auditSeq), x.auditSeq, APPROVAL_EVENTS[kind], x.by, { key: ctx.ticket?.key, test: x.test, reason: x.reason })) {
+      if (isText(x.test)) out.unmatched.add(x.test);
+      continue;
+    }
+    if (!isText(ctx.claimant)) out.noClaimant.add(x.test);
+    else if (x.by === ctx.claimant) out.self.add(x.test);
+    else out.names.add(x.test);
+  }
+  return out;
+}
+// Why a test that needs an approval has none that counts.
+function approvalNotes(ctx, names, audited, propertyLists) {
+  const notes = [];
+  for (const n of names) {
+    if (audited.self.has(n)) notes.push(`${n} was approved by the claimant, and another person must approve it`);
+    else if (audited.noClaimant.has(n)) notes.push(`${n} has an approval, but the claimant is not known, so it cannot be shown to come from another person`);
+    else if (audited.unmatched.has(n)) notes.push(`${n} has an approval with no matching audit event`);
+    else if (propertyLists.includes(n)) notes.push(`${n} is listed in the issue property, which does not count; a person other than the claimant approves it in the panel`);
+  }
+  return notes;
+}
+const listedNames = (v) => (isList(v) ? v.map((x) => (isObj(x) ? x.test : x)).filter(isText) : []);
+
 export function testsNotRemoved(ctx, report = ctx.report) {
   if (!isObj(ctx.baseReport) || !isObj(report)) return result('tests_not_removed', 'unknown', 'base or head report missing');
   if (!isObjList(report.tests) || !isObjList(ctx.baseReport.tests) || !ctx.baseReport.tests.length) {
     return result('tests_not_removed', 'unknown', 'base or head report has no valid test list');
   }
-  // Approvals can only turn a fail into a pass: none stored means none; a malformed list is unknown.
-  const approvals = optList(ctx.ticket?.approvedTestRemovals);
-  if (!isObj(ctx.ticket) || !approvals || !approvals.every(isText)) return result('tests_not_removed', 'unknown', 'the approved test removals of the ticket are not readable');
+  // Approvals can only turn a fail into a pass: none stored means none; a malformed record is
+  // unknown. Only audited approvals in the app's store count (auditedApprovals).
+  if (!isObj(ctx.ticket)) return result('tests_not_removed', 'unknown', 'the ticket is not readable, so its approved test removals are not known');
+  const audited = auditedApprovals(ctx, 'removal');
+  if (audited.error) return result('tests_not_removed', 'unknown', `the approved test removals are not readable: ${audited.error}`);
   // A report without a repro block is from before the base record existed; any other value
   // that is not an object is malformed.
   if (report.repro !== undefined && !isObj(report.repro)) return result('tests_not_removed', 'unknown', 'the repro block of the report is malformed');
   const head = new Set(report.tests.map((t) => testName(t.id)));
-  const approved = new Set(approvals);
+  const approved = new Set(audited.names);
   // A rename with the same body (pinned block) is not a removal (benchmark U10).
   for (const [from, to] of pinnedRenames(report)) if (head.has(to)) approved.add(from);
   // The base side: the main report, and the base test ids of every test module the PR changes,
@@ -520,7 +570,12 @@ export function testsNotRemoved(ctx, report = ctx.report) {
     (n) => !head.has(n) && !approved.has(n),
   );
   // A listed base test that the head lacks is a fail, even when the record is incomplete.
-  if (removed.length) return result('tests_not_removed', 'fail', `removed without approval: ${removed.join(', ')}`);
+  if (removed.length) {
+    const notes = approvalNotes(ctx, removed, audited, listedNames(ctx.ticket.approvedTestRemovals));
+    // Every removed test has an audited approval, and only the claimant is not known: unknown.
+    if (removed.every((n) => audited.noClaimant.has(n))) return result('tests_not_removed', 'unknown', notes.join('; '));
+    return result('tests_not_removed', 'fail', `removed without approval: ${removed.join(', ')}${notes.length ? `; ${notes.join('; ')}` : ''}`);
+  }
   const gap = baseCollectGap(repro, listed);
   if (gap) return result('tests_not_removed', 'unknown', gap);
   return result('tests_not_removed', 'pass', 'no test removed');
@@ -535,8 +590,6 @@ const PIN_OUTCOMES = ['passed', 'failed', 'error', 'not_run'];
 const isHash = (v) => typeof v === 'string' && /^[0-9a-f]{64}$/.test(v);
 const pinEntryOk = (t) => isObj(t) && isText(t.id) && isHash(t.base_hash) && PIN_OUTCOMES.includes(t.outcome)
   && ((t.head_id === null && t.head_hash === null) || (isText(t.head_id) && isHash(t.head_hash)));
-const approvalOk = (a) => isObj(a) && isText(a.test) && typeof a.reason === 'string' && a.reason.trim().length >= 5
-  && Number.isInteger(a.auditSeq) && a.auditSeq >= 0;
 
 // Renames that the pinned block shows: base name -> head name, when the body hash is the same.
 function pinnedRenames(report) {
@@ -574,33 +627,63 @@ export function pinnedTestsHold(ctx, report = ctx.report) {
     return result(name, 'unknown', 'a pinned test is outside the modules that the pinned block lists');
   }
   if (!isObj(ctx.ticket)) return result(name, 'unknown', 'the ticket is not readable, so its approved test changes are not known');
-  const removals = optList(ctx.ticket.approvedTestRemovals);
-  const changes = optList(ctx.ticket.approvedTestChanges);
-  if (!removals || !removals.every(isText) || !changes || !changes.every(isObj)) {
-    return result(name, 'unknown', 'the approved test removals or changes of the ticket are not readable');
-  }
-  const approvedChange = new Set(changes.filter(approvalOk).map((a) => a.test));
-  const approvedRemoval = new Set(removals);
+  const rem = auditedApprovals(ctx, 'removal');
+  const chg = auditedApprovals(ctx, 'change');
+  if (rem.error || chg.error) return result(name, 'unknown', `the approved test removals or changes are not readable: ${rem.error ?? chg.error}`);
+  const approvedChange = chg.names;
+  const approvedRemoval = rem.names;
+  const failing = [];
   const fails = [];
   const changed = [];
   for (const t of p.tests) {
     const n = testName(t.id);
     if (t.head_id === null) {
-      if (!approvedRemoval.has(n)) fails.push(`${n} is deleted`);
+      if (!approvedRemoval.has(n)) { fails.push(`${n} is deleted`); failing.push(['removal', n]); }
       continue;
     }
     const edited = t.head_hash !== t.base_hash;
     if (approvedChange.has(n)) continue;
+    if (t.outcome !== 'passed') failing.push(['change', n]);
     if (t.outcome === 'not_run') fails.push(`${n}: its base copy did not run on the head code (deselected or skipped)`);
     else if (t.outcome !== 'passed') fails.push(`${n}: its base copy fails on the head code (${t.outcome})${edited ? ', and the change edits this test' : ''}`);
     else if (edited) changed.push(n);
   }
-  if (fails.length) return result(name, 'fail', `pinned base test: ${fails.join('; ')}; a real requirement change needs a person's approval of the new pin`);
+  if (fails.length) {
+    const notes = [
+      ...approvalNotes(ctx, failing.filter(([k]) => k === 'removal').map(([, n]) => n), rem, listedNames(ctx.ticket.approvedTestRemovals)),
+      ...approvalNotes(ctx, failing.filter(([k]) => k === 'change').map(([, n]) => n), chg, listedNames(ctx.ticket.approvedTestChanges)),
+    ];
+    if (failing.every(([k, n]) => (k === 'removal' ? rem : chg).noClaimant.has(n))) return result(name, 'unknown', notes.join('; '));
+    return result(name, 'fail', `pinned base test: ${fails.join('; ')}; a real requirement change needs the approval of the new pin by a person other than the claimant${notes.length ? `; ${notes.join('; ')}` : ''}`);
+  }
   // The protection is the base copy: when it still passes on the head code, an edit of the head
   // copy keeps the old assertion in force, so it does not hold the claim (benchmark S02). The
   // reason names the edit, so a person sees it.
   const edits = changed.length ? `; ${changed.join(', ')} ${changed.length === 1 ? 'is' : 'are'} edited, and ${changed.length === 1 ? 'its base copy still passes' : 'their base copies still pass'}` : '';
   return result(name, 'pass', `${p.tests.length} pinned base test(s) hold on the head code${edits}`);
+}
+
+// The acceptance criteria must be the ones a person last recorded in the app (finding E1, 19 Nov).
+// The issue property can be edited by REST, so the verifier compares its ACs with the hash in the
+// app's store, written by a panel action after its audit event. A work item with no record (made
+// before 19 Nov or outside the app) cannot show a change: the check is advisory and says so.
+export function acsRecorded(ctx) {
+  const name = 'acs_recorded';
+  const a = ctx.approvals;
+  if (a !== undefined && a !== null && !isObj(a)) return result(name, 'unknown', 'the app\'s AC record is malformed');
+  const rec = isObj(a) ? a.acs : null;
+  if (rec === null || rec === undefined) {
+    return { ...result(name, 'pass', 'not checked: the ACs have no audited record (made before 19 Nov or outside the app), so a later change to them cannot be seen'), advisory: true };
+  }
+  if (!isObj(rec) || !isText(rec.acHash) || !isText(rec.by) || !Number.isInteger(rec.auditSeq) || rec.auditSeq < 0) return result(name, 'unknown', 'the app\'s AC record is malformed');
+  if (!isObj(ctx.ticket)) return result(name, 'unknown', 'the ticket is not readable');
+  if (!eventMatches(eventOf(ctx, rec.auditSeq), rec.auditSeq, ACS_EVENT, rec.by, { key: ctx.ticket.key, acHash: rec.acHash })) {
+    return result(name, 'unknown', `the AC record has no matching audit event (seq ${rec.auditSeq}); a person records the ACs again in the panel`);
+  }
+  if (acHash(ctx.ticket.acceptanceCriteria ?? []) !== rec.acHash) {
+    return result(name, 'unknown', `the ACs changed after the last audited record (audit seq ${rec.auditSeq}); a person records them again in the panel`);
+  }
+  return result(name, 'pass', `the ACs match the audited record (audit seq ${rec.auditSeq}, by ${rec.by})`);
 }
 
 // The base collection record (bank scripts/repro.py): pytest --collect-only on base over the

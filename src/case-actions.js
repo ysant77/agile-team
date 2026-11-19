@@ -6,6 +6,7 @@ import { fetch } from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { HUMAN_DOMAINS } from './arbitration.js';
 import { appendAudit } from './audit-store.js';
+import { cannotSee, userCanBrowse } from './action-guard.js';
 import { buildPacket, caseInputErrors, formatCase, formatOpinion, QUESTIONS } from './case.js';
 import { collectGithub, collectPrStats } from './github-evidence.js';
 import { addComment } from './jira.js';
@@ -38,6 +39,8 @@ export function parseCaseInput(payload) {
 export async function openCase(payload) {
   const input = parseCaseInput(payload);
   if (input.errors.length) return { ok: false, error: input.errors.join('; ') };
+  // The app reads and writes as itself below, so the person must be able to see the work item.
+  if (!(await userCanBrowse(input.issueKey))) return cannotSee(input.issueKey);
   const repo = process.env.GITHUB_REPO;
   if (!repo) return { ok: false, error: 'no repository configured' };
   const token = process.env.GITHUB_TOKEN;
@@ -81,6 +84,8 @@ export async function openCase(payload) {
 
 export async function recordOpinion(payload) {
   const issueKey = String(payload?.issueKey ?? '').trim().toUpperCase();
+  // The app reads and writes as itself below, so the person must be able to see the work item.
+  if (!(await userCanBrowse(issueKey))) return cannotSee(issueKey);
   const stored = await kvs.get(caseKey(issueKey));
   if (!stored) return { ok: false, error: `no open arbitration case on ${issueKey}; call open-case first` };
   if (!stored.opinionAllowed && !stored.highStake) {

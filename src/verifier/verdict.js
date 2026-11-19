@@ -118,6 +118,7 @@ export const CLAIM_CHECKS = {
     ...[safe('ac_tests_run_new_code', c.acTestsRunNewCode, ctx)].filter(Boolean),
     ...[safe('ci_attempts', c.ciAttempts, ctx)].filter(Boolean),
     safe('ac_mapped', acMapped, ctx),
+    safe('acs_recorded', c.acsRecorded, ctx),
     ...[safe('measurement_unchanged', c.measurementUnchanged, ctx)].filter(Boolean),
     ...(ctx.ticket?.type === 'Bug' ? [safe('bug_test_exists', c.bugTestExists, ctx)] : []),
     ...(ctx.baseReport ? [safe('tests_not_removed', c.testsNotRemoved, ctx)] : []),
@@ -131,6 +132,7 @@ export const CLAIM_CHECKS = {
     ...[safe('ci_attempts', c.ciAttempts, ctx)].filter(Boolean),
     ...[safe('base_current', c.baseCurrent, ctx)].filter(Boolean),
     safe('ac_mapped', acMapped, ctx),
+    safe('acs_recorded', c.acsRecorded, ctx),
     ...[safe('measurement_unchanged', c.measurementUnchanged, ctx)].filter(Boolean),
     ...(ctx.baseReport ? [safe('tests_not_removed', c.testsNotRemoved, ctx)] : []),
     safe('pinned_tests_hold', c.pinnedTestsHold, ctx),
@@ -139,7 +141,7 @@ export const CLAIM_CHECKS = {
   // DESIGN 15a: "done" means on main, reproduced, covered and recorded. A ticket with no code work
   // (a spike, a parent of sub-tasks) keeps the sub-task, blocker and AC checks and the record.
   done: (ctx) => {
-    const checks = [safe('subtasks_done', c.subtasksDone, ctx), safe('blocked_by_done', c.blockedByDone, ctx), safe('ac_mapped', acMapped, ctx)];
+    const checks = [safe('subtasks_done', c.subtasksDone, ctx), safe('blocked_by_done', c.blockedByDone, ctx), safe('ac_mapped', acMapped, ctx), safe('acs_recorded', c.acsRecorded, ctx)];
     // A Task (refactor, tests only, chore) has no defect to reproduce: its AC tests pass on head,
     // with the full suite, coverage and trust rules (benchmark I01, I02; DESIGN 15j). A ticket
     // with no AC test (only metric, CI or path ACs) has nothing to reproduce either.
@@ -169,7 +171,7 @@ export const CLAIM_CHECKS = {
   },
   deployed: (ctx) => [safe('deployed', c.deployed, ctx, ctx.claimArgs?.tag)],
   merged: (ctx) => [safe('merged_clean', c.mergedClean, ctx)],
-  acs: (ctx) => [safe('ac_mapped', acMapped, ctx)],
+  acs: (ctx) => [safe('ac_mapped', acMapped, ctx), safe('acs_recorded', c.acsRecorded, ctx)],
 };
 
 export function verify(claim, ctx) {
