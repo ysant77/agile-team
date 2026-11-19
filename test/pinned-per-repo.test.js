@@ -28,10 +28,14 @@ test('configFor keeps every other setting of the app configuration', () => {
   assert.deepEqual({ ...c, pinnedRequired: VERIFY_CONFIG.pinnedRequired }, VERIFY_CONFIG);
 });
 
-test('the deployed list is empty until the rollout: every repository is advisory today', () => {
-  assert.ok(Array.isArray(VERIFY_CONFIG.pinnedRequiredRepos));
-  assert.deepEqual(VERIFY_CONFIG.pinnedRequiredRepos, []);
-  assert.equal(configFor('ysant77/yms-bank-demo').pinnedRequired, false);
+// Rollout step 6 (19 Nov): the two bank repositories run the pinned step, and their real runs
+// passed the gate (bank 356cb19; demo PRs 1 to 4, 6 and 7). Every other repository is advisory.
+test('the deployed list names the two bank repositories; any other repository is advisory', () => {
+  assert.deepEqual(VERIFY_CONFIG.pinnedRequiredRepos, ['ysant77/yms-bank-demo', 'ysant77/yms-bank-demo-cases']);
+  assert.equal(configFor('ysant77/yms-bank-demo').pinnedRequired, true);
+  assert.equal(configFor('ysant77/yms-bank-demo-cases').pinnedRequired, true);
+  assert.equal(configFor('acme/payments').pinnedRequired, false);
+  assert.equal(configFor('ysant77/yms-bank-demo-other').pinnedRequired, false);
 });
 
 test('a malformed list requires nothing it does not name', () => {
