@@ -17,10 +17,13 @@ export const VERIFY_CONFIG = {
   reportTrustPaths: ['.github/workflows/', '.github/actions/', '.github/codeql/', '**/conftest.py', 'src/bank/testing/',
     // The scripts that write the repro and coverage blocks of the report.
     'scripts/repro.py', 'scripts/changed_coverage.py', 'scripts/pinned.py'],
-  // Protected regression set (docs/PROTECTED-TESTS.md): true once the bank's main runs the
-  // pinned step (scripts/pinned.py). Then a CI report without a pinned block gives unknown.
-  // Set here, per repository, never read from a report.
+  // Protected regression set (docs/PROTECTED-TESTS.md). pinnedRequired is the value for a
+  // repository that is not listed: advisory. pinnedRequiredRepos lists the repositories ("owner/
+  // name") whose main runs the pinned step (scripts/pinned.py); for them a CI report without a
+  // pinned block gives unknown. configFor() sets pinnedRequired per repository. Set here, never
+  // read from a report. Empty until the rollout (docs/PROTECTED-TESTS.md, "Rollout").
   pinnedRequired: false,
+  pinnedRequiredRepos: [],
   tooGood: { auc: 0.95 },
   // D-cov (DESIGN 15c): fixed per repository before work starts, never per PR.
   coverage: { changedFloor: 0.8, maxDropPoints: 0.5 },
@@ -143,6 +146,15 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
   }
 }
 
+// The app configuration for one repository. Only the pinned-block requirement differs per
+// repository today. A repository that is missing or not listed (or a malformed list) is advisory.
+export function configFor(repo, repos = VERIFY_CONFIG.pinnedRequiredRepos) {
+  const name = String(repo ?? '').trim().toLowerCase();
+  const listed = Array.isArray(repos) && name !== ''
+    && repos.some((r) => typeof r === 'string' && r.trim().toLowerCase() === name);
+  return { ...VERIFY_CONFIG, pinnedRequired: listed };
+}
+
 // Collects the evidence and runs the checks. A GitHub error is not evidence of absence.
 export async function decide({ issueKey, claim }, d) {
   const ticket = await d.collectJira(issueKey);
@@ -176,7 +188,7 @@ export async function decide({ issueKey, claim }, d) {
   // mergeRequiredTests: tests that must pass by name in the merge result. None are configured;
   // merged_clean still needs every base test kept and unique migrations. The checks read a
   // missing list as not known, so it is always set here.
-  const ctx = { ticket, ...github, mergeRequiredTests: [], config: VERIFY_CONFIG, claimant: claim.by ?? null, signoffEvent };
+  const ctx = { ticket, ...github, mergeRequiredTests: [], config: configFor(repo), claimant: claim.by ?? null, signoffEvent };
   let verdict = verify(claim, ctx);
   // Without the code host, a PR check that does not pass says why (a fail or an unknown).
   if ((githubError || !repo) && verdict.result !== 'supported' && verdict.checks.some((c) => ['pr_linked', 'on_main'].includes(c.name) && c.status !== 'pass')) {

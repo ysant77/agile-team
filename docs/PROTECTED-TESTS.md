@@ -110,11 +110,13 @@ rebuilt evidence. They are not shown here, and they are not claimed.
 ## Trust (lead review of PR 22)
 
 **App side.**
-- Whether a repository runs the pinned step is `VERIFY_CONFIG.pinnedRequired`, set per
-  repository in the app. It is never read from a report.
-- When it is true, a report without a `pinned` block gives `unknown`. A change cannot drop the
-  block to switch the check off.
-- It is `false` until the bank's `main` runs the step.
+- Whether a repository runs the pinned step is the list `VERIFY_CONFIG.pinnedRequiredRepos`
+  (`owner/name`, compared without case). `configFor(repo)` sets `pinnedRequired` for the
+  configured repository. It is never read from a report.
+- For a listed repository, a report without a `pinned` block gives `unknown`. A change cannot
+  drop the block to switch the check off.
+- Any other repository (a customer repository, or a demo copy before the step) keeps the check
+  advisory. The list is empty until the rollout below.
 - `scripts/pinned.py` is a report trust path: a PR that changes it gets no trust in its report
   (`pipeline_change`), as for `scripts/repro.py`.
 
@@ -178,3 +180,22 @@ worse on any count.
 - A claim needs blind set 5.
 - The pinned blocks were made locally, not by CI.
 - The approval action for a changed pin (`approvedTestChanges`) has no panel button yet.
+
+## Rollout (19 Nov 2026)
+
+The producer goes first, then the consumer. Each step can be undone on its own.
+
+1. **Per-repository setting** (this change): `pinnedRequiredRepos`, empty. No verdict changes.
+2. **Demo repository:** a PR there adds `scripts/pinned.py`, its `repro.py` call and its tests
+   from bank `main`. The lead opens and merges it.
+3. **Case PRs:** close and reopen demo PRs 1 to 4, so CI runs on the new base (a re-run reuses
+   the old merge ref). Each new report must have a `pinned` block.
+4. **Judge path:** U20 becomes Contradicted, so another case shows Cannot verify (U12 or U18,
+   owner's choice).
+5. **Flip:** app PR 25 lists both bank repositories, with the arm C regression on the same day.
+   Then deploy with the owner's go-ahead.
+6. **Rollback:** a one-line PR that empties the list, and a deploy. Verdicts already written stay
+   (the audit is append-only); a new claim gives a new verdict.
+
+**Limit.** The pinned step is a script in the bank repository. For any other repository the check
+stays advisory and says so; the app does not claim this protection there.
