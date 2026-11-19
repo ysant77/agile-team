@@ -1,8 +1,12 @@
-// Decider rule (owner decision 19 Nov, item 3): a decision on an arbitration case is not recorded
-// from the author of a PR in the case or from the claimant of the latest claim on the work item.
-// The reply says why. A refused decision writes no audit event and does not change the case.
-// Fail safe: when the app cannot show that the decider is neither of them (an unknown decider,
-// claimant or PR author, or a decider whose GitHub account is not linked), it does not record.
+// Decider rule (owner decision 19 Nov, item 3; split changed after the lead's review the same day).
+// - Claimant check, always: a decision from the claimant of the latest claim on the work item is
+//   not recorded; a claim whose claimant is not known also stops the decision.
+// - PR-author check, when GITHUB_ACCOUNTS links the decider: the author of a PR in the case may
+//   not decide. With no link (variable missing, or the decider not in it) the decision is
+//   recorded with authorCheck "not checked", and the reply, the audit event, get-verdicts and the
+//   monitor say so. Never silent.
+// - A decider that Jira does not name: not recorded.
+// A refused decision writes no audit event and does not change the case; the reply says why.
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -56,28 +60,41 @@ test('the GitHub account list is read from "accountId=login" pairs; bad entries 
   assert.deepEqual(parseGithubAccounts(''), {});
 });
 
-test('deciderRule: a person who is neither a PR author nor the latest claimant may decide', () => {
-  assert.equal(deciderRule({ by: 'lead-1', kase: kase(AUTHORS), latestClaim: { by: 'dev-7' }, accounts: ACCOUNTS }), null);
-  assert.equal(deciderRule({ by: 'lead-1', kase: kase(AUTHORS), latestClaim: null, accounts: ACCOUNTS }), null);
+const rule = (x) => deciderRule({ by: 'lead-1', kase: kase(AUTHORS), latestClaim: { by: 'dev-7' }, accounts: ACCOUNTS, ...x });
+
+test('deciderRule: linked and not a PR author: allowed, author check passed', () => {
+  assert.deepEqual(rule({}), { refused: null, authorCheck: 'passed' });
+  assert.deepEqual(rule({ latestClaim: null }), { refused: null, authorCheck: 'passed' });
 });
 
-test('deciderRule: the author of a PR in the case is refused (login compared without case)', () => {
-  assert.match(deciderRule({ by: 'dev-7', kase: kase(AUTHORS), latestClaim: null, accounts: ACCOUNTS }), /you are the author of PR7/);
-  assert.match(deciderRule({ by: 'dev-8', kase: kase(AUTHORS), latestClaim: null, accounts: ACCOUNTS }), /you are the author of PR8/);
+test('deciderRule: linked and the author of a PR in the case: refused (login compared without case)', () => {
+  assert.match(rule({ by: 'dev-7', latestClaim: null }).refused, /you are the author of PR7/);
+  assert.match(rule({ by: 'dev-8', latestClaim: null }).refused, /you are the author of PR8/);
 });
 
-test('deciderRule: the claimant of the latest claim is refused', () => {
-  assert.match(deciderRule({ by: 'lead-1', kase: kase(AUTHORS), latestClaim: { by: 'lead-1' }, accounts: ACCOUNTS }), /you made the latest claim/);
+test('deciderRule: linked but a PR author is not known: refused, since the check is configured', () => {
+  assert.match(rule({ kase: kase(undefined) }).refused, /author of PR7 is not known/);
+  assert.match(rule({ kase: kase({ PR7: AUTHORS.PR7, PR8: null }) }).refused, /author of PR8 is not known/);
+  assert.match(rule({ kase: kase({ PR7: AUTHORS.PR7, PR8: { login: '', id: 1 } }) }).refused, /author of PR8 is not known/);
 });
 
-test('deciderRule: fail safe when a person or an author is not known', () => {
-  const ok = { by: 'lead-1', kase: kase(AUTHORS), latestClaim: { by: 'dev-7' }, accounts: ACCOUNTS };
-  assert.match(deciderRule({ ...ok, by: null }), /Jira did not say who wrote the decision/);
-  assert.match(deciderRule({ ...ok, latestClaim: { by: null } }), /claimant of the latest claim is not known/);
-  assert.match(deciderRule({ ...ok, kase: kase(undefined) }), /author of PR7 is not known/);
-  assert.match(deciderRule({ ...ok, kase: kase({ PR7: AUTHORS.PR7, PR8: null }) }), /author of PR8 is not known/);
-  assert.match(deciderRule({ ...ok, kase: kase({ PR7: AUTHORS.PR7, PR8: { login: '', id: 1 } }) }), /author of PR8 is not known/);
-  assert.match(deciderRule({ ...ok, accounts: {} }), /GitHub account is not linked/);
+test('deciderRule: no account link: allowed, author check "not checked"', () => {
+  assert.deepEqual(rule({ accounts: {} }), { refused: null, authorCheck: 'not checked' });
+  // The decider is not in the list, even though others are.
+  assert.deepEqual(rule({ by: 'other-9' }), { refused: null, authorCheck: 'not checked' });
+  // A case with no PR authors stored is still decided when no link exists.
+  assert.deepEqual(rule({ accounts: {}, kase: kase(undefined) }), { refused: null, authorCheck: 'not checked' });
+});
+
+test('deciderRule: the claimant check is always on, with or without a link', () => {
+  for (const accounts of [ACCOUNTS, {}]) {
+    assert.match(rule({ accounts, latestClaim: { by: 'lead-1' } }).refused, /you made the latest claim/);
+    assert.match(rule({ accounts, latestClaim: { by: null } }).refused, /claimant of the latest claim is not known/);
+  }
+});
+
+test('deciderRule: a decider that Jira does not name is refused', () => {
+  for (const accounts of [ACCOUNTS, {}]) assert.match(rule({ accounts, by: null }).refused, /Jira did not say who wrote the decision/);
 });
 
 // The comment trigger, end to end with KVS and Jira doubles.
@@ -111,20 +128,52 @@ test('a decision from the latest claimant is not recorded', async (t) => {
   assert.match(posted[0], /Decision not recorded: you made the latest claim/);
 });
 
-test('a decision when the decider\'s GitHub account is not linked is not recorded (fail safe)', async (t) => {
+test('with no account link the decision is recorded, marked "not checked" in the record, audit and reply', async (t) => {
   const store = setup(t, { accounts: null });
+  const posted = mockJira(t, decide('dev-7'));
+  await onComment({ issue: { key: 'BANK-32' }, comment: { id: '9001' } });
+  const decisions = store.get('case:BANK-32').decisions;
+  assert.equal(decisions.length, 1);
+  assert.equal(decisions[0].authorCheck, 'not checked');
+  const events = auditEvents(store);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].data.authorCheck, 'not checked');
+  assert.match(posted[0], /Human decision on BANK-32: PR7/);
+  assert.match(posted[0], /PR author not compared: no account link is configured/);
+});
+
+test('with no account link the claimant is still refused', async (t) => {
+  const store = setup(t, { accounts: null, latest: { by: 'lead-1', commentId: '8000' } });
   const posted = mockJira(t, decide('lead-1'));
   await onComment({ issue: { key: 'BANK-32' }, comment: { id: '9001' } });
   assert.equal(store.get('case:BANK-32').decisions, undefined);
-  assert.match(posted[0], /GitHub account is not linked/);
+  assert.equal(auditEvents(store).length, 0);
+  assert.match(posted[0], /Decision not recorded: you made the latest claim/);
 });
 
-test('a decision from another person is recorded with one audit event, as before', async (t) => {
+test('get-verdicts and the monitor show the author check of a decision', async () => {
+  const { summarise } = await import('../src/verdicts-action.js');
+  const { buildMonitor } = await import('../src/monitor.js');
+  const kaseWith = (authorCheck) => ({ prNumbers: [7, 8], arbitration: {}, opinions: [], decisions: [{ side: 'PR7', at: 'x', authorCheck }] });
+  const open = summarise('BANK-32', { verdicts: [], kase: kaseWith('not checked'), head: null }, 5).arbitration.humanDecision;
+  assert.equal(open.authorCheck, 'not checked');
+  assert.match(open.note, /PR author not compared: no account link is configured/);
+  const checked = summarise('BANK-32', { verdicts: [], kase: kaseWith('passed'), head: null }, 5).arbitration.humanDecision;
+  assert.equal(checked.authorCheck, 'passed');
+  assert.equal(checked.note, null);
+  // An old decision (before the rule) has no field: shown as not checked.
+  assert.equal(summarise('BANK-32', { verdicts: [], kase: kaseWith(undefined), head: null }, 5).arbitration.humanDecision.authorCheck, 'not checked');
+  const m = buildMonitor([{ seq: 0, prevHash: '0'.repeat(64), event: 'decision', actor: 'lead-1', data: { issueKey: 'BANK-32', side: 'PR7', authorCheck: 'not checked' }, at: 'x', hash: 'h' }]);
+  assert.equal(m.decisions[0].authorCheck, 'not checked');
+});
+
+test('a linked decider who wrote no PR and made no claim is recorded, author check passed', async (t) => {
   const store = setup(t, { latest: { by: 'dev-7', commentId: '8000' } });
   const posted = mockJira(t, decide('lead-1'));
   await onComment({ issue: { key: 'BANK-32' }, comment: { id: '9001' } });
   assert.equal(store.get('case:BANK-32').decisions.length, 1);
   assert.equal(store.get('case:BANK-32').decisions[0].by, 'lead-1');
+  assert.equal(store.get('case:BANK-32').decisions[0].authorCheck, 'passed');
   const events = auditEvents(store);
   assert.equal(events.length, 1);
   assert.equal(events[0].event, 'decision');
