@@ -1,0 +1,888 @@
+[
+ {
+  "id": "V01",
+  "void": null,
+  "branches": [
+   "case/V01"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-501",
+   "type": "Bug",
+   "labels": [],
+   "text": "POST /api/session answers 404 for a customer id that cannot exist (0 or a negative number), the same as for an unknown customer.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) a customer_id below 1 gives 422 and sets no cookie; (2) an unknown id of 1 or more still gives 404; (3) a known id still gives 200 and sets the cookie.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_session_refuses_ids_below_one"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V02",
+  "void": null,
+  "branches": [
+   "case/V02"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-502",
+   "type": "Story",
+   "labels": [],
+   "text": "rules for customer names.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) ledger.create_customer stores the name with each run of whitespace inside the name replaced by one space, and with no whitespace at the start and the end (\"  Ada   Abel  \" is stored as \"Ada Abel\"); (2) a name that is longer than 80 characters after step 1 raises LedgerError, and no customer is stored.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_name_whitespace_is_collapsed"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V03",
+  "void": null,
+  "branches": [
+   "case/V03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-503",
+   "type": "Bug",
+   "labels": [],
+   "text": "money.to_minor raises decimal.InvalidOperation for a text that is not a number and for an infinite amount.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) to_minor raises ValueError for \"abc\", \"Infinity\", \"-Infinity\" and \"NaN\"; (2) a float still raises TypeError; (3) the result for each valid amount does not change, the rule \"half to even\" included. The ticket has no label and its stored spec has no domain field.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_to_minor_refuses_non_numbers_with_value_error"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V04",
+  "void": null,
+  "branches": [
+   "case/V04"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-504",
+   "type": "Bug",
+   "labels": [],
+   "text": "a retry with the same Idempotency-Key is refused with 422 when the reference has a different letter case.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) the request fingerprint ignores the letter case and the outer spaces of the reference: a transfer with the reference \"Rent\", sent again with the same key and the reference \" rent \", gives 200 and replayed: true; (2) the same key with a different amount, a different source account or a different destination still gives 422 and moves no money.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_reference_case_does_not_change_the_request"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V05",
+  "void": null,
+  "branches": [
+   "case/V05"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-505",
+   "type": "Story",
+   "labels": [],
+   "text": "the statement shows the money in and the money out.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the body of GET /api/accounts/{id}/statement has credits_minor, the sum of the line amounts above zero in the window, and debits_minor, the sum of the line amounts below zero (zero or a negative number), each with its text form (credits, debits) in the currency of the account; a window with no lines gives 0 and \"0.00\" for the two.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_totals_split_credits_and_debits",
+       "test_statement_totals_are_zero_without_lines"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V06",
+  "void": null,
+  "branches": [
+   "case/V06"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-506",
+   "type": "Story",
+   "labels": [],
+   "text": "the transfer reference follows the rule of the payment message.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) a reference has at most 35 characters; 36 or more gives 422 and moves no money.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_reference_has_at_most_35_characters"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-6d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "(1) a reference has at most 35 characters; 36 or more gives 422 and moves no money; (2) a reference has only the letters A to Z and a to z, the digits, the space and the characters / - ? : ( ) . , ' +; a different character gives 422 and moves no money.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_reference_has_at_most_35_characters"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "V07",
+  "void": null,
+  "branches": [
+   "case/V07"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-507",
+   "type": "Bug",
+   "labels": [],
+   "text": "a transfer that is sent while a different process holds the write lock of the database gives 500 after the busy timeout.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "when the write lock is not free in the busy timeout, POST /api/transfers answers 503 with the header Retry-After: 1 and the detail database is busy, retry; no money moves and no idempotency key is stored; when the lock is free, the same request with the same key gives 201.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_transfer_answers_503_while_the_database_is_locked"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V08",
+  "void": null,
+  "branches": [
+   "case/V08"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-508",
+   "type": "Story",
+   "labels": [],
+   "text": "the API lists the supported currencies.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/currencies, with no session, returns one object {\"code\", \"decimals\"} for each supported currency in the order of the code (8 objects, the first is {\"code\": \"BHD\", \"decimals\": 3}); each request returns the full list.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_currencies_are_listed"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V09",
+  "void": null,
+  "branches": [
+   "case/V09"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-509",
+   "type": "Story",
+   "labels": [],
+   "text": "a filter for the kind of statement line.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) with the query parameter kind (deposit, withdrawal or transfer), lines has only the lines of that kind; (2) the opening balance, the closing balance and the balance of each line are the same values as in the statement with no filter; (3) a different value of kind gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_accepts_a_kind_filter"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V10",
+  "void": null,
+  "branches": [
+   "case/V10"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-510",
+   "type": "Story",
+   "labels": [],
+   "text": "an Idempotency-Key has only safe characters.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) after the outer spaces are removed, the key has only characters from ! (0x21) to ~ (0x7E); a key with a different character (a space or a tab inside the key, for example) gives 400 with the detail Idempotency-Key has characters that are not allowed, and no money moves; (2) each allowed key behaves as before.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_idempotency_key_refuses_spaces_and_tabs"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V11",
+  "void": null,
+  "branches": [
+   "case/V11"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-511",
+   "type": "Task",
+   "labels": [],
+   "text": "one lookup path for the accounts of a transfer.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) api.create_transfer reads the source and the destination account through one new helper, api.find_account(conn, *, account_id=None, number=None), which returns None for an unknown account; (2) the behaviour of POST /api/transfers does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_find_account_returns_none_for_an_unknown_account"
+      ]
+     }
+    }
+   ],
+   "approvedTestRemovals": [
+    {
+     "test": "tests/test_api.py::test_transfer_from_foreign_account_is_404",
+     "reason": "duplicate of the route walker",
+     "by": "acct-claimant"
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V12",
+  "void": null,
+  "branches": [
+   "case/V12"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-512",
+   "type": "Story",
+   "labels": [],
+   "text": "the demo session ends after 30 minutes.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) the Set-Cookie header of POST /api/session has Max-Age=1800; (2) the other attributes of the cookie do not change: HttpOnly, Path=/ and SameSite=lax.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_session_cookie_expires_after_30_minutes"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V13",
+  "void": null,
+  "branches": [
+   "case/V13"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-513",
+   "type": "Task",
+   "labels": [],
+   "text": "move the rate for each group out of the fairness report.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) the new function evaluate.group_rates(y_true, flagged, groups) returns a dict with one entry for each group, in sorted order: the share of the genuine rows (y_true == 0) of the group that are flagged, and 0.0 for a group with no genuine row; (2) evaluate.fairness_report calls it; (3) the result of fairness_report does not change; (4) no dependency changes (pyproject.toml and uv.lock are the same as on base).",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_group_rates_on_a_known_case",
+       "test_group_rates_ignores_fraud_rows_and_empty_groups"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V14",
+  "void": null,
+  "branches": [
+   "case/V14"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-514",
+   "type": "Story",
+   "labels": [],
+   "text": "the fraud model records its precision.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) the new function evaluate.precision_at(y_true, scores, threshold) returns the share of the flagged rows (scores >= threshold) that are fraud, and 0.0 when no row is flagged; (2) model.holdout_metrics puts this value for the holdout in the metrics as precision_at_threshold.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_precision_at_threshold_is_recorded"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V15",
+  "void": null,
+  "branches": [
+   "case/V15"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-515",
+   "type": "Bug",
+   "labels": [],
+   "text": "a statement request with a from date after today and no to date gives 400 statement start is after its end.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "when to is not given and from is after today (UTC), the end date is the from date: the reply is 200, to is equal to from, and lines is empty; each other request does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_with_only_a_from_date"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "reportCommentEdit": {
+    "test": "tests/test_api.py::test_statement_with_only_a_from_date",
+    "baseOutcome": "failed",
+    "excType": "AssertionError"
+   }
+  },
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V16",
+  "void": null,
+  "branches": [
+   "case/V16"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-516",
+   "type": "Bug",
+   "labels": [],
+   "text": "seed_data.build stops with IndexError when a currency has only one account (for example customers=5, accounts=5).",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) a transfer step for an account that has no other account in its currency is skipped: it makes no posting and the build continues; build(conn, customers=5, accounts=5, days=3, end=date(2026, 1, 31)) completes and ledger.check_invariants returns []; (2) the data of a build in which each currency has two or more accounts does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_build_with_one_account_in_a_currency_completes"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V17",
+  "void": null,
+  "branches": [
+   "case/V17"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-517",
+   "type": "Story",
+   "labels": [],
+   "text": "idempotency keys are kept for 48 hours, not 24.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) a retry with the same key and the same request, up to 48 hours after the first request, returns the first result (replayed); (2) after more than 48 hours the key is free and a new transfer is made; (3) the README tells 48 hours.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_a_key_is_still_known_after_47_hours"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-5d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "(1) a retry with the same key and the same request, up to 48 hours after the first request, returns the first result (replayed); (2) after more than 48 hours the key is free and a new transfer is made; (3) the README tells 48 hours.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_a_key_is_still_known_after_47_hours"
+       ]
+      }
+     }
+    ]
+   },
+   "changes": [
+    {
+     "test": "tests/test_idempotency.py::test_keys_expire_after_24_hours",
+     "reason": "AC 2 moves the expiry to 48 hours, so the 25-hour case of the old test cannot stay; 49 hours keeps the same check.",
+     "by": "acct-reviewer",
+     "at": "T-4h"
+    }
+   ]
+  }
+ },
+ {
+  "id": "V18",
+  "void": null,
+  "branches": [
+   "case/V18"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-518",
+   "type": "Story",
+   "labels": [],
+   "text": "a list of all accounts for local demos.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) when the module constant api.DEBUG_ROUTES is True at the time create_app runs, GET /api/debug/accounts returns each customer account (number, customer id, currency and balance) with no session; (2) the constant is False in the source, so an app that is started in the usual way (uvicorn bank.api:app) answers 404 for that path.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_debug_accounts_route_follows_the_flag"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V19",
+  "void": null,
+  "branches": [
+   "case/V19"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-519",
+   "type": "Story",
+   "labels": [],
+   "text": "the transfer form limits the length of its inputs.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "in src/bank/web/index.html, (1) the input with the name to_account_number has maxlength=\"32\" (the limit of the API); (2) the input with the name amount has maxlength=\"16\" (12 digits, the point and 3 decimals); (3) the page is still served.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_transfer_inputs_have_length_limits"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V20",
+  "void": null,
+  "branches": [
+   "case/V20"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-520",
+   "type": "Story",
+   "labels": [],
+   "text": "money amounts can be compared.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) Money supports <, <=, > and >= for two amounts of the same currency, by minor units; (2) two amounts of different currencies are ordered by minor units, then by the currency code; no error is raised.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_money_orders_by_minor_units"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-claimant",
+    "at": "T-4d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "(1) Money supports <, <=, > and >= for two amounts of the same currency, by minor units; (2) a comparison of two amounts of different currencies raises ValueError, as + and - do.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_money_orders_by_minor_units"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "V21",
+  "void": null,
+  "branches": [
+   "case/V21"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-521",
+   "type": "Story",
+   "labels": [],
+   "text": "the customer chooser shows the number of accounts of each customer.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each object of GET /api/customers has account_count, the number of accounts of that customer.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_has_account_counts"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "mainPushedByPerson": {
+    "test": "tests/test_api.py::test_customer_list_has_account_counts"
+   }
+  },
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V22",
+  "void": null,
+  "branches": [
+   "case/V22"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-522",
+   "type": "Task",
+   "labels": [],
+   "text": "a larger page cache for each database connection.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each connection that db.connect returns has an SQLite page cache of 20,000 KiB: PRAGMA cache_size returns -20000 (base returns -2000); no other behaviour changes."
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V23",
+  "void": null,
+  "branches": [
+   "case/V23"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-523",
+   "type": "Bug",
+   "labels": [],
+   "text": "a deposit or a withdrawal with an empty description is stored, and its statement line has no text.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "ledger.deposit and ledger.withdraw raise LedgerError for a description that is empty or has only whitespace; nothing is written (no journal entry, the balance does not change, no transaction stays open); a posting with a usual description works as before.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_blank_description_is_refused"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "V24",
+  "void": null,
+  "branches": [
+   "case/V24"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-524",
+   "type": "Story",
+   "labels": [],
+   "text": "two more currencies, CHF and TND. The finance owner approves each change of the currency rules before it is done.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "(1) EXPONENTS has CHF with 2 decimals and TND with 3 decimals; to_minor(\"12.34\", \"CHF\") == 1234 and to_minor(\"1.234\", \"TND\") == 1234; (2) Money.of(\"1.005\", \"CHF\") and Money.of(\"1.2345\", \"TND\") raise ValueError.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_chf_has_two_decimals_and_tnd_three"
+      ]
+     }
+    }
+   ],
+   "domain": "money_semantics"
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ }
+]
