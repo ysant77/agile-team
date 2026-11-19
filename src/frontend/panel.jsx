@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ForgeReconciler, {
-  Box, Button, DynamicTable, Heading, Inline, Lozenge, SectionMessage, Stack, Text, TextArea,
+  Box, Button, DynamicTable, Heading, Inline, Lozenge, SectionMessage, Stack, Text, TextArea, Textfield,
 } from '@forge/react';
 import { invoke } from '@forge/bridge';
 import { VerdictSection } from './verdict-section.js';
@@ -12,6 +12,8 @@ function App() {
   const [reason, setReason] = useState('');
   const [message, setMessage] = useState(null);
   const [adoptReason, setAdoptReason] = useState('');
+  const [testName, setTestName] = useState('');
+  const [testReason, setTestReason] = useState('');
 
   const load = () => invoke('getPanel').then(setData);
   useEffect(() => {
@@ -31,6 +33,19 @@ function App() {
     const result = await invoke('approve', { reason });
     setMessage(result.ok ? { appearance: 'success', text: `Approved. Audit seq ${result.auditSeq}.` } : { appearance: 'error', text: result.error });
     if (result.ok) load();
+  };
+
+  // A person other than the claimant approves the removal or change of one old test. Only this
+  // action counts for the verifier, not a list in the issue property.
+  const approveTest = async (kind) => {
+    const result = await invoke('approveTest', { kind, test: testName, reason: testReason });
+    setMessage(result.ok ? { appearance: 'success', text: `Test ${kind} approved. Audit seq ${result.auditSeq}. Comment the claim again to verify.` } : { appearance: 'error', text: result.error });
+    if (result.ok) { setTestName(''); setTestReason(''); }
+  };
+
+  const recordAcs = async () => {
+    const result = await invoke('recordAcs', {});
+    setMessage(result.ok ? { appearance: 'success', text: `ACs recorded. Audit seq ${result.auditSeq}.` } : { appearance: 'error', text: result.error });
   };
 
   const view = data.view;
@@ -62,6 +77,17 @@ function App() {
           <Inline><Button appearance="primary" onClick={approve} isDisabled={reason.trim().length < 5}>Approve requirement</Button></Inline>
         </Stack>
       )}
+      <Inline><Button onClick={recordAcs}>Record these ACs</Button></Inline>
+      <Heading as="h3">Approve an old test change</Heading>
+      <Text>A person other than the claimant approves the removal or change of one old test. The issue property does not count.</Text>
+      <Stack space="space.100">
+        <Textfield placeholder="Test name, for example test_transfer_errors" value={testName} onChange={(e) => setTestName(e.target.value)} />
+        <TextArea placeholder="Reason (at least 5 characters)" value={testReason} onChange={(e) => setTestReason(e.target.value)} />
+        <Inline space="space.100">
+          <Button onClick={() => approveTest('removal')} isDisabled={!testName.trim() || testReason.trim().length < 5}>Approve removal</Button>
+          <Button onClick={() => approveTest('change')} isDisabled={!testName.trim() || testReason.trim().length < 5}>Approve change</Button>
+        </Inline>
+      </Stack>
       {message && <SectionMessage appearance={message.appearance}><Text>{message.text}</Text></SectionMessage>}
       <Heading as="h3">Reviews (not verified)</Heading>
       {(data.reviews ?? []).length === 0 ? (

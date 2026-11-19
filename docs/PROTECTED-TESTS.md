@@ -35,11 +35,14 @@ A change can also deselect an old test in `pyproject.toml`.
      every base copy passes on head.
    - **advisory, not counted:** the report has no `pinned` block (the bank step is not
      deployed). The verdict view lists it under "not checked".
-4. **Approval of a new pin.** A real requirement change can need a changed test. The ticket
-   property lists `approvedTestChanges`: `{ test, reason, auditSeq }`, with a reason of at least
-   5 characters. An approved test may change and its base copy may fail on head. A malformed
-   list gives unknown.
-   Limit: tonight the check does not match the approval to an audit event (as `signoff` does).
+4. **Approval of a new pin or a removal** (changed 19 Nov, finding E1). A real requirement change
+   can need a changed or removed test. A person approves it in the issue panel ("Approve change"
+   or "Approve removal", one test name and a reason of at least 5 characters). The action checks
+   that the person can edit the work item, writes the audit event, then the app's store (Forge
+   KVS). The verifier counts an approval only when its audit event matches and the approver is
+   not the claimant. A list in the issue property `aat.ticket` (`approvedTestChanges`,
+   `approvedTestRemovals`) does not count: any issue editor can write it by REST. The reason
+   names such a list. A malformed record gives unknown.
 5. **Rename.** A head test with another name and the same body hash is a rename, not a removal.
    `tests_not_removed` accepts it when the `pinned` block names the pair (the U10 false block).
 
@@ -104,7 +107,6 @@ rebuilt evidence. They are not shown here, and they are not claimed.
 - The bank CI step that writes the `pinned` block (`scripts/repro.py`, its own tests first).
 - The rebuild of sets 1 to 4 with that step, and the case-by-case list of controls that edit an
   old test body.
-- The panel action to approve a changed pin (`approvedTestChanges`, audited).
 - Blind set 5 before any claim.
 
 ## Trust (lead review of PR 22)
@@ -177,4 +179,3 @@ worse on any count.
 - Sets 1 to 4 are development sets, and the rule was changed after seeing them.
 - A claim needs blind set 5.
 - The pinned blocks were made locally, not by CI.
-- The approval action for a changed pin (`approvedTestChanges`) has no panel button yet.
