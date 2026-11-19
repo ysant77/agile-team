@@ -207,3 +207,13 @@ app `main` f3bb23e against `fix/audited-approvals`. Right: 35, 18, 13, 15 on bot
 changes. Six invalid cases (I10, S16, T14, T15, U09, U20) keep `contradicted`; their reason now
 says the approval must come from a person other than the claimant. No benchmark case has an
 approval or an AC record.
+
+## Report provenance (19 Nov 2026, design P0-3)
+
+The check `report_provenance` binds the PR report comment and `main.json` to the run of the pinned
+workflow that made them, by the hash marker that the run uploads (`docs/ci-report.md`,
+"Provenance"). It is advisory until a repository is listed in
+`VERIFY_CONFIG.provenanceRequiredRepos`. It does not make a run honest; do not call the reports
+"tamper-proof". Arm C on sets 1 to 4 (development sets, no model): no outcome or reason change
+(35, 18, 13, 15). The scorer's simulated GitHub serves no artifacts, so the check is advisory
+there.

@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as c from '../src/verifier/checks.js';
 import { acHash } from '../src/approvals.js';
+import { reportHash } from '../src/verifier/report.js';
 import { nextEvent } from '../src/audit.js';
 import { CLAIM_CHECKS, verify } from '../src/verifier/verdict.js';
 
@@ -190,6 +191,25 @@ const ROWS = [
   ['pinnedTestsHold', ['report', 'report.pinned', 'report.pinned.tests', 'report.pinned.tests.0', 'report.pinned.tests.0.id', 'report.pinned.tests.0.base_hash',
     'report.pinned.tests.0.head_id', 'report.pinned.tests.0.head_hash', 'report.pinned.tests.0.outcome', 'ticket', 'approvals', 'approvals.removals', 'approvals.changes'],
   { allow: { 'report.pinned': ['missing'], approvals: ['missing', 'null'], 'approvals.removals': ['missing', 'empty_array'], 'approvals.changes': ['missing', 'empty_array'] } }],
+  // Report provenance (design P0-3), required: both reports match the single marker of their
+  // pinned run at its current attempt.
+  ['reportProvenance', ['reportRaw', 'baseReportRaw', 'workflowRuns', 'workflowRuns.0', 'workflowRuns.0.event', 'workflowRuns.0.headSha', 'workflowRuns.0.attempt',
+    'workflowRuns.0.headRepo', 'baseRuns', 'baseRuns.0', 'baseRuns.0.headBranch', 'baseRuns.0.headSha', 'artifactsByRun', 'pr', 'pr.headSha', 'baseReport.head_sha'], {
+    tweak: (ctx) => {
+      ctx.config = { ...(ctx.config ?? {}), provenanceRequired: true };
+      ctx.repo = 'o/r';
+      ctx.pr.baseRef = 'main';
+      ctx.baseReport.head_sha = BASE;
+      ctx.reportRaw = JSON.stringify(ctx.report);
+      ctx.baseReportRaw = JSON.stringify(ctx.baseReport);
+      Object.assign(ctx.workflowRuns[0], { event: 'pull_request', headRepo: 'o/r' });
+      ctx.baseRuns = [{ id: 99, attempt: 1, path: CI, headSha: BASE, event: 'push', headBranch: 'main', headRepo: 'o/r' }];
+      ctx.artifactsByRun = {
+        [ctx.workflowRuns[0].id]: [`ci-report-sha256-${reportHash(ctx.reportRaw)}-attempt-${ctx.workflowRuns[0].attempt}`],
+        99: [`main-report-sha256-${reportHash(ctx.baseReportRaw)}-attempt-1`],
+      };
+    },
+  }],
   // No AC record (a work item made before 19 Nov or outside the app) is advisory: it cannot turn
   // a verdict into a pass.
   ['acsRecorded', ['approvals', 'approvals.acs', 'approvals.acs.acHash', 'approvals.acs.by', 'approvals.acs.auditSeq', 'approvalEvents', 'ticket', 'ticket.key', 'ticket.acceptanceCriteria', 'claimant'],

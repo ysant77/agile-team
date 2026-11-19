@@ -33,7 +33,7 @@ test('marker names parse to kind, hash and attempt; anything else is not a marke
 });
 
 const HEAD = 'a'.repeat(40);
-const MAIN = 'm'.repeat(40);
+const MAIN = 'e'.repeat(40); // a commit id: 40 hex characters
 const RAW = '{"schema": "aat-ci-report/2", "head_sha": "' + HEAD + '"}';
 const BASE_RAW = '{"schema": "aat-ci-report/2", "head_sha": "' + MAIN + '"}';
 const prRun = (extra = {}) => ({ id: 11, attempt: 2, path: '.github/workflows/ci.yml', headSha: HEAD, event: 'pull_request', headRepo: 'ysant77/yms-bank-demo', ...extra });
@@ -148,7 +148,7 @@ test('collectGithub reads the run artifacts and the raw report texts', async () 
     const page = Number(u.searchParams.get('page') ?? 1);
     const body = /\/pulls\?/.test(url) ? (page === 1 ? [{ number: 5, title: 'BANK-1 fix', state: 'open', head: { ref: 'b', sha: HEAD, repo: { full_name: 'ysant77/yms-bank-demo' } }, base: { ref: 'main' } }] : [])
       : /\/actions\/runs\?head_sha=a/.test(url) ? { workflow_runs: [{ id: 11, run_attempt: 2, path: '.github/workflows/ci.yml', head_sha: HEAD, event: 'pull_request', head_branch: 'b', head_repository: { full_name: 'ysant77/yms-bank-demo' }, status: 'completed', conclusion: 'success' }] }
-      : /\/actions\/runs\?head_sha=m/.test(url) ? { workflow_runs: [{ id: 21, run_attempt: 1, path: '.github/workflows/ci.yml', head_sha: MAIN, event: 'push', head_branch: 'main', head_repository: { full_name: 'ysant77/yms-bank-demo' }, status: 'completed', conclusion: 'success' }] }
+      : /\/actions\/runs\?head_sha=e/.test(url) ? { workflow_runs: [{ id: 21, run_attempt: 1, path: '.github/workflows/ci.yml', head_sha: MAIN, event: 'push', head_branch: 'main', head_repository: { full_name: 'ysant77/yms-bank-demo' }, status: 'completed', conclusion: 'success' }] }
       : /\/runs\/11\/artifacts/.test(url) ? { artifacts: [{ name: ciMarker(RAW) }] }
       : /\/runs\/21\/artifacts/.test(url) ? { artifacts: [{ name: mainMarker(BASE_RAW) }] }
       : /\/issues\/5\/comments/.test(url) ? (page === 1 ? [{ user: { id: 41898282, type: 'Bot' }, body: prBody, created_at: '2026-11-19T00:00:00Z', updated_at: '2026-11-19T00:00:00Z' }] : [])
@@ -163,7 +163,7 @@ test('collectGithub reads the run artifacts and the raw report texts', async () 
   assert.deepEqual(gh.workflowRuns.map((r) => [r.id, r.event, r.headRepo]), [[11, 'pull_request', 'ysant77/yms-bank-demo']]);
   assert.deepEqual(gh.baseRuns.map((r) => [r.id, r.event, r.headBranch]), [[21, 'push', 'main']]);
   assert.deepEqual(gh.artifactsByRun, { 11: [ciMarker(RAW)], 21: [mainMarker(BASE_RAW)] });
-  assert.equal(seen.filter((p) => /\/artifacts|runs\?head_sha=m/.test(p)).length, 3, 'three more calls: two artifact lists and the main run list');
+  assert.equal(seen.filter((p) => /\/artifacts|runs\?head_sha=e/.test(p)).length, 3, 'three more calls: two artifact lists and the main run list');
   const ctx = { ...gh, repo: 'ysant77/yms-bank-demo', config: { ...VERIFY_CONFIG, provenanceRequired: true } };
   assert.equal(reportProvenance(ctx).status, 'pass', reportProvenance(ctx).reason);
 });

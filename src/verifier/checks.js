@@ -3,7 +3,7 @@
 
 import { canonical, sha256 } from '../audit.js';
 import { acHash, ACS_EVENT, APPROVAL_EVENTS } from '../approvals.js';
-import { finiteNumber, namesKey, sameFiles, testName, testsByName } from './report.js';
+import { finiteNumber, namesKey, parseMarker, reportHash, sameFiles, testName, testsByName } from './report.js';
 
 const BOT = 'github-actions[bot]';
 const result = (name, status, reason) => ({ name, status, reason });
@@ -111,6 +111,60 @@ export function reportTrusted(ctx, report = ctx.report, headSha = ctx.pr?.headSh
     if (edited) return result('report_trusted', 'unknown', edited);
   }
   return result('report_trusted', 'pass', 'bot report for the head commit');
+}
+
+// Report provenance (design P0-3, findings D1 and D3). The bank's report job and publish-main-report
+// job upload the report again as an artifact whose name holds its hash and the run attempt. Only the
+// run can upload to itself. A report counts only when a run of the pinned workflow on that commit
+// (pull_request on the PR head; push on main for main.json) has, at its current attempt, exactly one
+// marker hash, equal to the hash of the raw text read. A re-run uploads to the same run under a new
+// attempt number: only the current attempt's marker counts, and two different hashes for one
+// attempt give unknown. Required per repository (configFor); otherwise advisory, never counted.
+const sameRepoName = (a, b) => isText(a) && isText(b) && a.toLowerCase() === b.toLowerCase();
+export function reportProvenance(ctx) {
+  const name = 'report_provenance';
+  const setting = ctx.config?.provenanceRequired;
+  const required = setting !== undefined && setting !== false;
+  const paths = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
+  const repoOk = (r) => !isText(ctx.repo) || sameRepoName(r.headRepo, ctx.repo);
+  const sides = [];
+  if (isObj(ctx.report)) {
+    sides.push({ label: 'the PR report comment', raw: ctx.reportRaw, runs: ctx.workflowRuns, kind: 'ci',
+      want: (r) => r.event === 'pull_request' && isText(ctx.pr?.headSha) && r.headSha === ctx.pr.headSha && repoOk(r) });
+  }
+  if (isObj(ctx.baseReport)) {
+    const sha = ctx.baseReport.head_sha;
+    const branch = isText(ctx.pr?.baseRef) ? ctx.pr.baseRef : 'main';
+    sides.push({ label: 'main.json', raw: ctx.baseReportRaw, runs: ctx.baseRuns, kind: 'main',
+      want: (r) => r.event === 'push' && isText(sha) && r.headSha === sha && r.headBranch === branch && repoOk(r) });
+  }
+  if (!sides.length) return { ...result(name, 'pass', 'not run: no CI report was read'), advisory: true };
+  const problems = [];
+  const found = [];
+  for (const side of sides) {
+    if (!isText(side.raw)) { problems.push(`${side.label}: its raw text was not read`); continue; }
+    if (!isList(side.runs)) { problems.push(`${side.label}: the workflow runs were not read`); continue; }
+    const h = reportHash(side.raw);
+    const runs = side.runs.filter((r) => isObj(r) && paths.includes(runPath(r)) && side.want(r));
+    if (!runs.length) { problems.push(`${side.label}: no run of the pinned workflow on its commit`); continue; }
+    let match = null;
+    let conflict = null;
+    let unread = false;
+    for (const r of runs) {
+      const names = isObj(ctx.artifactsByRun) ? ctx.artifactsByRun[r.id] : undefined;
+      if (!isList(names)) { unread = true; continue; }
+      const hashes = new Set(names.map(parseMarker).filter((m) => m && m.kind === side.kind && m.attempt === r.attempt).map((m) => m.hash));
+      if (hashes.size > 1) conflict = conflict ?? r;
+      else if (hashes.has(h)) match = match ?? r;
+    }
+    if (conflict) problems.push(`${side.label}: run ${conflict.id} attempt ${conflict.attempt} has two report markers with different hashes`);
+    else if (match) found.push(`${side.label} matches the marker of run ${match.id} attempt ${match.attempt}`);
+    else if (unread) problems.push(`${side.label}: the artifact list of its run was not read`);
+    else problems.push(`${side.label}: no run of the pinned workflow has a marker, at its current attempt, with the hash of the text read`);
+  }
+  const advisory = (text) => ({ ...result(name, 'pass', `not counted (report provenance is not required for this repository): ${text}`), advisory: true });
+  if (problems.length) return required ? result(name, 'unknown', problems.join('; ')) : advisory(problems.join('; '));
+  return required ? result(name, 'pass', found.join('; ')) : advisory(found.join('; '));
 }
 
 // The open or merged PRs that name the key. The collector always gives the list of PR numbers,

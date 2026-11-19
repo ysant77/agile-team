@@ -123,6 +123,7 @@ export const CLAIM_CHECKS = {
     ...(ctx.ticket?.type === 'Bug' ? [safe('bug_test_exists', c.bugTestExists, ctx)] : []),
     ...(ctx.baseReport ? [safe('tests_not_removed', c.testsNotRemoved, ctx)] : []),
     safe('pinned_tests_hold', c.pinnedTestsHold, ctx),
+    safe('report_provenance', c.reportProvenance, ctx),
     ...[safe('code_scanning', c.securityCheck, ctx, 'fixed')].flat(),
   ],
   ready: (ctx) => [
@@ -136,6 +137,7 @@ export const CLAIM_CHECKS = {
     ...[safe('measurement_unchanged', c.measurementUnchanged, ctx)].filter(Boolean),
     ...(ctx.baseReport ? [safe('tests_not_removed', c.testsNotRemoved, ctx)] : []),
     safe('pinned_tests_hold', c.pinnedTestsHold, ctx),
+    safe('report_provenance', c.reportProvenance, ctx),
     ...[safe('code_scanning', c.securityCheck, ctx, 'ready')].flat(),
   ],
   // DESIGN 15a: "done" means on main, reproduced, covered and recorded. A ticket with no code work
@@ -148,7 +150,7 @@ export const CLAIM_CHECKS = {
     const reproduce = c.needsRepro(ctx) ? [safe('reproduced', c.reproduced, ctx)] : [];
     if (c.hasCodeWork(ctx)) {
       checks.push(safe('on_main', c.onMain, ctx), safe('merged_clean', c.mergedClean, ctx), ...reproduce, safe('coverage', c.coverageOk, ctx),
-        safe('pinned_tests_hold', c.pinnedTestsHold, ctx),
+        safe('pinned_tests_hold', c.pinnedTestsHold, ctx), safe('report_provenance', c.reportProvenance, ctx),
         ...[safe('code_scanning', c.securityCheck, ctx, 'done')].flat());
     }
     // Rule (PR 9 review, item 5): a done claim with a linked PR needs that PR merged, whatever
@@ -170,7 +172,7 @@ export const CLAIM_CHECKS = {
     return [...checks, safe('evidence_record', evidenceComplete, { id: ctx.claimId, type: 'done' }, ctx, checks)];
   },
   deployed: (ctx) => [safe('deployed', c.deployed, ctx, ctx.claimArgs?.tag)],
-  merged: (ctx) => [safe('merged_clean', c.mergedClean, ctx)],
+  merged: (ctx) => [safe('merged_clean', c.mergedClean, ctx), safe('report_provenance', c.reportProvenance, ctx)],
   acs: (ctx) => [safe('ac_mapped', acMapped, ctx), safe('acs_recorded', c.acsRecorded, ctx)],
 };
 
