@@ -19,7 +19,7 @@ Every action, trigger and panel call that writes something.
 | `open-case` (Rovo action) | The calling person must see the work item | KVS case, comment | Issue key, 2 or 3 PR numbers, question, domain from the ticket | A new case keeps the old one as history | `case_opened` | The code decides; the final choice is a person's decision comment | Fails closed on a GitHub error |
 | `record-opinion` (Rovo action) | The calling person must see the work item | KVS case, comment | Opinion guards (`src/opinion.js`) | One retry for style | `opinion` | An opinion never decides | - |
 | Comment `claim: <type>` (trigger) | The comment author (Jira) | Verdict property, audit, comment | Claim type from a fixed list | One claim per comment id; limits per work item, author and site per hour | `verdict`, `done_evidence` | - | The queue retries; each step is recorded, so no verdict is posted twice |
-| Comment `decision: PR<n> because <reason>` (trigger) | The comment author (Jira). **Role rule open: waits for the owner** | KVS case, audit, comment | An open case; the PR is a side of the case; a reason of at least 5 characters | One decision per comment id (a second delivery does nothing) | `decision` | It is the human decision | On an error the comment id is released, so a later delivery may record it |
+| Comment `decision: PR<n> because <reason>` (trigger) | The comment author (Jira), who is not the author of a PR in the case and not the claimant of the latest claim; when the app cannot show this, the decision is not recorded | KVS case, audit, comment | An open case; the PR is a side of the case; a reason of at least 5 characters | One decision per comment id (a second delivery does nothing) | `decision` | It is the human decision | On an error the comment id is released, so a later delivery may record it |
 | Panel `approve` | The person (as the user: must be able to edit the work item) | Issue property `aat.approval` | Reason of at least 5 characters | Overwrites | `requirement.approved` | It is the approval | - |
 | Panel `signOff` | The person (as the user: must be able to edit) | Issue property `aat.signoff` | Full merge commit id; reason of at least 5 characters | Overwrites | `change.signed_off` (written first; the verifier needs the match, and a signer who is not the claimant) | It is the sign-off | - |
 | Panel `adoptCheck` | The person (as the user: must be able to edit) | Issue property `aat.ticket` (one AC check) | Proposal from a stored review; reason of at least 5 characters | - | `check.adopted` | It is the adoption | - |
@@ -38,8 +38,16 @@ Every action, trigger and panel call that writes something.
   cannot see the chat, so it cannot prove that the person confirmed. The person is the one who
   calls the action, and Jira checks their create permission. The idempotency key stops a
   repeated call.
-- **Who may decide on a case.** Any commenter can record a decision today, the PR author
-  included. The role rule waits for the owner's decision.
+- **Who may decide on a case** (owner decision, 19 Nov). A decision is not recorded from the
+  author of a PR in the case or from the claimant of the latest claim on the work item. The reply
+  says why; the case does not change and no audit event is written. A Jira account and a GitHub
+  login are different identities. The only link between them is the Forge variable
+  `GITHUB_ACCOUNTS` (`accountId=login` pairs, comma separated), which a site admin sets. The rule
+  fails safe: the app does not record a decision when the decider, the latest claimant or a PR
+  author is not known, or when the decider's GitHub account is not in the list. Limits: the list
+  is only as true as the admin who writes it; a GitHub login can be renamed (the PR author id is
+  stored but not yet compared); only the latest claim counts, so the claimant of an earlier claim
+  may decide; a case opened before this change has no PR authors and must be opened again.
 - **Approvals written at the same moment.** `recordApproval` reads, changes and writes one KVS
   key per work item. Two approvals at the same moment can lose one. Each approval keeps its
   audit event, but the verifier counts only the entries in the store. Not fixed yet.

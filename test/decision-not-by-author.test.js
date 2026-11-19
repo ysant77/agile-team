@@ -138,3 +138,17 @@ test('a claim comment records its author as the latest claimant of the work item
   await onComment({ issue: { key: 'BANK-32' }, comment: { id: '5001' } });
   assert.deepEqual({ ...store.get('latest-claim:BANK-32'), at: 'x' }, { by: 'dev-7', commentId: '5001', at: 'x' });
 });
+
+// The PR author comes from the pull request list the collector already reads (no extra call).
+test('collectGithub gives the PR author as login and id', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { collectGithub } = await import('../src/github-evidence.js');
+  const { fetchFrom } = await import('./helpers/recorded-github.js');
+  const c = JSON.parse(readFileSync(new URL('../fixtures/judge/U01.json', import.meta.url), 'utf8'));
+  const run = (github) => collectGithub({ repo: 'ysant77/yms-bank-demo', key: c.ticket.key, token: 'local', fetchFn: fetchFrom(github) });
+  // The recorded fixture has no user field: the author is null (not known), never a guess.
+  assert.equal((await run(c.github)).pr.author, null);
+  const withUser = structuredClone(c.github);
+  withUser.pulls[0].user = { login: 'dev-seven', id: 7007, type: 'User' };
+  assert.deepEqual((await run(withUser)).pr.author, { login: 'dev-seven', id: 7007 });
+});

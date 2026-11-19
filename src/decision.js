@@ -53,3 +53,42 @@ export function formatDecision(issueKey, record) {
   if (record.overridesFailedGate) lines.push(`Warning: ${record.side} failed a gate.`);
   return lines.join('\n');
 }
+
+// Linked GitHub accounts of Jira people: "accountId=login" pairs, comma separated (Forge variable
+// GITHUB_ACCOUNTS, set by a site admin). A Jira account id and a GitHub login are different
+// identities; this list is the only link between them. Logins are compared in lower case.
+export function parseGithubAccounts(text) {
+  const out = {};
+  for (const pair of String(text ?? '').split(',')) {
+    const i = pair.lastIndexOf('=');
+    if (i <= 0) continue;
+    const accountId = pair.slice(0, i).trim();
+    const login = pair.slice(i + 1).trim().toLowerCase();
+    if (accountId && login) out[accountId] = login;
+  }
+  return out;
+}
+
+const knownLogin = (a) => typeof a?.login === 'string' && a.login.trim() !== '';
+
+// Owner decision 19 Nov (item 3): a decision is not recorded from the author of a PR in the case
+// or from the claimant of the latest claim on the work item. Fail safe: when the app cannot show
+// that the decider is neither, it does not record. Returns the reason, or null when allowed.
+//   by: the Jira account of the decider; kase: the stored case with prAuthors { PR7: { login, id } };
+//   latestClaim: { by } or null (no claim on the work item); accounts: parseGithubAccounts output.
+export function deciderRule({ by, kase, latestClaim, accounts }) {
+  if (typeof by !== 'string' || !by) return 'Jira did not say who wrote the decision';
+  if (latestClaim) {
+    if (typeof latestClaim.by !== 'string' || !latestClaim.by) return 'the claimant of the latest claim is not known, so the app cannot show that you are another person';
+    if (latestClaim.by === by) return 'you made the latest claim on this work item, and a decision must come from another person';
+  }
+  const sides = (kase?.prNumbers ?? []).map((n) => `PR${n}`);
+  for (const side of sides) {
+    if (!knownLogin(kase?.prAuthors?.[side])) return `the author of ${side} is not known, so the app cannot show that you did not write it; open the case again`;
+  }
+  const login = accounts?.[by];
+  if (!login) return 'your GitHub account is not linked (Forge variable GITHUB_ACCOUNTS), so the app cannot show that you did not write a PR in the case';
+  const own = sides.filter((side) => kase.prAuthors[side].login.trim().toLowerCase() === login);
+  if (own.length) return `you are the author of ${own.join(' and ')}, and a decision must come from another person`;
+  return null;
+}

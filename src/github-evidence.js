@@ -95,6 +95,8 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
         url: match.html_url,
         body: match.body ?? '',
         baseRef: match.base?.ref ?? null,
+        // The GitHub author, for the decider rule of arbitration cases (src/decision.js).
+        author: match.user ? { login: match.user.login ?? null, id: match.user.id ?? null } : null,
       }
     : null;
 
