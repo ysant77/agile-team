@@ -204,8 +204,9 @@ test('the site budget per hour is enforced across investigations', async () => {
   const limits = { ...DISCOVERY_LIMITS, callsPerSiteHour: 2 };
   const d = { ...deps(gh, store), limits };
   assert.equal((await startInvestigation(START, d)).ok, true);
-  assert.equal((await startInvestigation({ ...START, symptom: 'The Send button is gone on my phone.' }, d)).ok, true);
-  const third = await startInvestigation({ ...START, symptom: 'A third symptom.' }, d);
+  // Three people: one person has one open investigation at a time; the site budget is shared.
+  assert.equal((await startInvestigation({ ...START, by: 'pm-2', symptom: 'The Send button is gone on my phone.' }, d)).ok, true);
+  const third = await startInvestigation({ ...START, by: 'pm-3', symptom: 'A third symptom.' }, d);
   assert.equal(third.ok, false);
   assert.match(third.error, /site read budget \(2 GitHub calls an hour\) is used/);
   assert.equal(gh.calls.length, 2);

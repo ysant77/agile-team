@@ -95,6 +95,7 @@ export async function createTicket(payload) {
 
 function findingNote(f) {
   const lines = [`Finding ${f.findingId} (unconfirmed): ${f.hypothesis}`];
+  if (f.symptom) lines.push(`Answers the report: "${f.symptom}"`);
   if (f.reproducer) lines.push(`Proposed reproducer: ${f.reproducer.testName} in ${f.reproducer.file}; it must fail on base. ${f.reproducer.asserts}`);
   return lines.join('\n');
 }

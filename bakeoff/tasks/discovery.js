@@ -121,9 +121,16 @@ export function claimsDefect(text) {
   return sentences.some((s) => CLAIM_WORDS.some((w) => s.includes(w)) && !NO_DEFECT_WORDS.some((w) => s.includes(w)));
 }
 
+export const OTHER_SYMPTOM = 'finding answers a symptom the model wrote';
+
 export function scoreDiscovery(kase, finding, finalText = '') {
   const truth = TRUTH[kase.truth];
   const isDefect = finding?.kind === 'defect';
+  // The finding must answer the case's own symptom (lead rule 3, 19 Nov), even with one open
+  // investigation per person.
+  if (finding && kase.symptom !== undefined && finding.symptom !== undefined && finding.symptom !== kase.symptom) {
+    return { score: 0, reason: OTHER_SYMPTOM, inventedDefect: !truth && isDefect, textClaim: truth ? undefined : claimsDefect(finalText), identified: truth ? false : null, rightFile: truth ? false : null };
+  }
   if (!truth) {
     const textClaim = claimsDefect(finalText);
     const invented = isDefect || textClaim;
@@ -194,7 +201,7 @@ export async function runDiscovery(ask, kase, { tree = process.env.DISCOVERY_TRE
     task: kase.id,
     truth: kase.truth,
     ...scoreDiscovery(kase, finding, finalText),
-    finding: finding ? { kind: finding.kind, hypothesis: finding.hypothesis, citations: finding.citations, reproducer: finding.reproducer, severity: finding.severity, priority: finding.priority, openQuestions: finding.openQuestions } : null,
+    finding: finding ? { symptom: finding.symptom, kind: finding.kind, hypothesis: finding.hypothesis, citations: finding.citations, reproducer: finding.reproducer, severity: finding.severity, priority: finding.priority, openQuestions: finding.openQuestions } : null,
     toolCalls: calls.length,
     refusedCalls: calls.filter((c) => !c.ok).length,
     githubCalls: investigations.length,

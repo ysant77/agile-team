@@ -54,6 +54,9 @@ export function numbersIn(text) {
 
 const limitsOf = (d) => ({ ...DISCOVERY_LIMITS, ...(d.limits ?? {}) });
 const invKey = (id) => `investigation:${id}`;
+// The one open investigation of a person (no finding recorded yet). The key holds a hash, not the
+// account id.
+const openKey = (by) => `inv-open:${sha256(String(by)).slice(0, 24)}`;
 const slotKey = (id, i) => `inv-call:${id}:${i}`;
 const hourOf = (ms) => new Date(ms).toISOString().slice(0, 13);
 
@@ -144,11 +147,30 @@ export async function startInvestigation({ symptom, by, repo, ref }, d) {
   const id = `INV-${sha256(canonical({ by, symptom: text, repo, ref })).slice(0, 12)}`;
   const existing = await d.store.get(invKey(id));
   if (existing?.commit) return { ok: true, investigationId: id, commit: existing.commit, duplicate: true, budget: await budgetLeft(d, id) };
+  // One open investigation per person: a second symptom waits until the first has a finding. The
+  // check comes before any call, so a refused start takes no slot (dev check, 19 Nov: the model
+  // opened a second investigation from a symptom it wrote itself).
+  const refusal = (open) => ({ ok: false, error: `an investigation is open: ${open}; record a finding for it first` });
+  const open = await d.store.get(openKey(by));
+  if (open?.id && open.id !== id) return refusal(open.id);
+  if (!open) {
+    try {
+      await d.store.set(openKey(by), { id }, { keyPolicy: 'FAIL_IF_EXISTS' });
+    } catch {
+      const now = await d.store.get(openKey(by));
+      if (now?.id !== id) return refusal(now?.id ?? 'unknown');
+    }
+  }
+  const release = () => d.store.delete(openKey(by));
   const got = await call(d, id, { action: 'start-investigation' }, `/repos/${repo}/commits/${encodeURIComponent(ref)}`);
-  if (got.error) return { ok: false, error: got.error };
+  if (got.error) {
+    await release();
+    return { ok: false, error: got.error };
+  }
   const commit = String(got.body?.sha ?? '');
   if (!/^[0-9a-f]{40}$/.test(commit)) {
     await finishCall(d, got.slot, { status: 'error' });
+    await release();
     return { ok: false, error: 'GitHub did not give the commit of the branch' };
   }
   await finishCall(d, got.slot, { status: 'ok', commit });
@@ -333,8 +355,16 @@ export async function recordFinding({ investigationId, by, finding }, d) {
     findingId, investigationId: inv.id, symptom: inv.symptom, repo: inv.repo, commit: inv.commit, by, status: 'unconfirmed',
     ...body, filesRead, calls: reads.length, hash, at: new Date(d.now()).toISOString(),
   };
-  // One record per content: a repeated call returns the first.
-  if (!(await createOnce(d.store, `finding:${findingId}`, record))) return { ok: true, findingId, status: 'unconfirmed', duplicate: true };
+  // One record per content: a repeated call returns the first. A recorded finding closes the
+  // person's open investigation.
+  const closeOpen = async () => {
+    if ((await d.store.get(openKey(by)))?.id === inv.id) await d.store.delete(openKey(by));
+  };
+  if (!(await createOnce(d.store, `finding:${findingId}`, record))) {
+    await closeOpen();
+    return { ok: true, findingId, status: 'unconfirmed', duplicate: true };
+  }
+  await closeOpen();
   const audit = await d.appendAudit({ actor: by, event: 'finding.recorded', data: { findingId, investigationId: inv.id, kind: body.kind, commit: inv.commit, hash } });
   return { ok: true, findingId, status: 'unconfirmed', kind: body.kind, auditSeq: audit.seq };
 }
