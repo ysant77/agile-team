@@ -23,6 +23,7 @@ import { DISPUTES, runLead } from './tasks/lead.js';
 import { BUGS, DS_TASKS, runDev, runDs, runQa } from './tasks/code.js';
 import { REQUESTS, runPm } from './tasks/pm.js';
 import { PROBES, runTools } from './tasks/tools.js';
+import { loadDiscoveryCases, runDiscovery } from './tasks/discovery.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROLES = {
@@ -32,6 +33,8 @@ const ROLES = {
   qa: { tasks: BUGS, id: (t) => t.id, run: runQa },
   ds: { tasks: DS_TASKS, id: (t) => t.id, run: runDs },
   tools: { tasks: PROBES, id: (t) => t.id, run: runTools },
+  // Mode B (benchmark/DISCOVERY-PROTOCOL.md): cases from DISCOVERY_CASES, branch from DISCOVERY_TREE.
+  discovery: { tasks: loadDiscoveryCases(process.env.DISCOVERY_CASES), id: (t) => t.id, run: runDiscovery },
 };
 
 function args(argv) {

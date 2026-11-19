@@ -33,7 +33,9 @@ function functionHandlers() {
 }
 
 test('each agent can call only its fixed list of actions', () => {
-  assert.deepEqual(listOf('pm-agent', 'actions'), ['lint-requirement', 'create-ticket', 'read-github-commit']);
+  // Discovery from symptoms (Mode B, 19 Nov): four read-only actions and record-finding.
+  assert.deepEqual(listOf('pm-agent', 'actions'), ['lint-requirement', 'create-ticket', 'read-github-commit',
+    'start-investigation', 'list-repo-files', 'read-repo-file', 'read-ci-results', 'record-finding']);
   assert.deepEqual(listOf('lead-agent', 'actions'), ['read-github-commit', 'open-case', 'record-opinion', 'get-verdicts']);
   assert.deepEqual(listOf('reviewer-agent', 'actions'), ['get-pr-diff', 'record-review', 'get-verdicts']);
 });
@@ -53,8 +55,9 @@ test('the manifest declares a fixed set of functions, and each handler is an exp
   const fns = functionHandlers();
   assert.deepEqual(fns.map((f) => f.handler).sort(), [
     'consumer.handler', 'index.createTicket', 'index.getPrDiff', 'index.getVerdicts', 'index.lintRequirementAction',
-    'index.onComment', 'index.openCase', 'index.readGithubCommit', 'index.recordOpinion', 'index.recordReview',
-    'resolvers.handler',
+    'index.listRepoFilesAction', 'index.onComment', 'index.openCase', 'index.readCiResultsAction', 'index.readGithubCommit',
+    'index.readRepoFileAction', 'index.recordFindingAction', 'index.recordOpinion', 'index.recordReview',
+    'index.startInvestigationAction', 'resolvers.handler',
   ]);
   for (const { handler } of fns) {
     const [file, name] = handler.split('.');
