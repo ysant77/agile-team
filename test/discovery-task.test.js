@@ -190,3 +190,40 @@ test('the record-finding description gives the exact shape and one filled exampl
   assert.deepEqual(Object.keys(example.reproducer).sort(), ['asserts', 'file', 'testName']);
   assert.doesNotMatch(d, /ledger|withdraw|app\.css|send-button|currenc/i);
 });
+
+// Set 2 truths, fixed with the set 2 build before the lead writes the symptoms.
+test('the set 2 truths: a statement that drops its end day, and a statement route with no owner check', async () => {
+  const { TRUTH } = await import('../bakeoff/tasks/discovery.js');
+  assert.equal(TRUTH.end_day.file, 'src/bank/ledger.py');
+  assert.equal(TRUTH.access.file, 'src/bank/api.py');
+  const endDay = [
+    'statement compares posted_at with the end date itself, so entries of the last day are left out.',
+    'The upper bound of the statement query is the end date, not the day after it; the end day is excluded.',
+    'The statement is one day short: the end date is not inclusive.',
+  ];
+  const access = [
+    'read_statement loads the account by id without checking that the session customer owns it.',
+    'The statement route has no access check, so any signed-in customer can read another customer\'s statement.',
+    'customer_id is never compared with the account owner in the statement route.',
+  ];
+  for (const h of endDay) {
+    assert.match(h, TRUTH.end_day.pattern, h);
+    assert.doesNotMatch(h, TRUTH.access.pattern, h);
+  }
+  for (const h of access) {
+    assert.match(h, TRUTH.access.pattern, h);
+    assert.doesNotMatch(h, TRUTH.end_day.pattern, h);
+  }
+  for (const h of ['Two withdrawals at the same time both pass the balance check.', 'A media rule hides the Send button.']) {
+    assert.doesNotMatch(h, TRUTH.end_day.pattern, h);
+    assert.doesNotMatch(h, TRUTH.access.pattern, h);
+  }
+  const dir = mkdtempSync(join(tmpdir(), 'disc-cases-2-'));
+  try {
+    const file = join(dir, 'cases.json');
+    writeFileSync(file, JSON.stringify([{ id: 'E1', symptom: 'x', truth: 'end_day' }, { id: 'E2', symptom: 'y', truth: 'access' }, { id: 'E3', symptom: 'z', truth: 'none' }]));
+    assert.equal(loadDiscoveryCases(file).length, 3);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
