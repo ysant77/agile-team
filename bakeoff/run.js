@@ -70,6 +70,22 @@ function harnessCommit() {
 
 export const rowKey = (r) => `${r.model}|${r.role}|${r.task}|${r.repeat ?? 0}`;
 
+// One results row. `calls` is the count of model calls. A task that returns its own list of tool
+// calls (discovery: each call with its refusal text) keeps it as `toolCallLog`; a task that
+// returns only the model-call list keeps nothing more.
+export function resultRow(head, result, calls, wallS) {
+  const toolCallLog = Array.isArray(result.calls) && result.calls !== calls ? result.calls : undefined;
+  return {
+    ...head, ...result,
+    wallS,
+    calls: calls.length,
+    ...(toolCallLog ? { toolCallLog } : {}),
+    validJsonRate: calls.length ? calls.filter((c) => c.validJson).length / calls.length : 0,
+    tokensPerS: calls.filter((c) => c.tps).reduce((s, c, _, all) => s + c.tps / all.length, 0) || null,
+    timeouts: calls.filter((c) => c.error === 'timeout').length,
+  };
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const a = args(argv);
   const config = loadConfig(a.config);
@@ -148,14 +164,10 @@ export async function main(argv = process.argv.slice(2)) {
         } catch (error) {
           result = { task: role.id(task), failed: String(error.message ?? error), score: 0 };
         }
-        const row = {
-          run, model, digest: modelDigest, role: roleName, taskSet: task.set ?? 1, outputMode, think: settings.think, guardVersion: roleName === 'lead' ? GUARD_VERSION : undefined, lintVersion: roleName === 'pm' ? LINT_VERSION : undefined, repeat, seed: settings.seed, temperature: settings.temperature, ...result,
-          wallS: (Date.now() - started) / 1000,
-          calls: calls.length,
-          validJsonRate: calls.length ? calls.filter((c) => c.validJson).length / calls.length : 0,
-          tokensPerS: calls.filter((c) => c.tps).reduce((s, c, _, all) => s + c.tps / all.length, 0) || null,
-          timeouts: calls.filter((c) => c.error === 'timeout').length,
+        const head = {
+          run, model, digest: modelDigest, role: roleName, taskSet: task.set ?? 1, outputMode, think: settings.think, guardVersion: roleName === 'lead' ? GUARD_VERSION : undefined, lintVersion: roleName === 'pm' ? LINT_VERSION : undefined, repeat, seed: settings.seed, temperature: settings.temperature,
         };
+        const row = resultRow(head, result, calls, (Date.now() - started) / 1000);
         appendFileSync(resultsFile, `${JSON.stringify(row)}\n`);
         record('task_done', { model, role: roleName, task: row.task, repeat, score: row.score });
         log(`${model} ${roleName} ${row.task}${repeat ? ` r${repeat}` : ''}: score ${row.score}${row.failed ? ` (${row.failed})` : ''} in ${row.wallS.toFixed(0)} s`);
