@@ -60,7 +60,7 @@ async function setPoints(requester, key, pointField, storyPoints) {
   return { pointsSet: false, pointsError: `edit failed: ${last}` };
 }
 
-export async function createIssue({ projectKey, summary, description, issueType, storyPoints, acceptanceCriteria = [] }) {
+export async function createIssue({ projectKey, summary, description, issueType, storyPoints, acceptanceCriteria = [], labels = [] }) {
   const requester = api.asUser();
   const point = await findStoryPointField(requester, projectKey);
   const pointField = point?.id ?? null;
@@ -69,6 +69,7 @@ export async function createIssue({ projectKey, summary, description, issueType,
     summary,
     description: textToAdf(description),
     issuetype: { name: issueType || 'Task' },
+    ...(labels.length ? { labels } : {}),
   };
 
   // First try to set points in the create call; if the field is not on the create

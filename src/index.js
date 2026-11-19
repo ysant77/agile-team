@@ -3,6 +3,7 @@ import { kvs } from '@forge/kvs';
 import { appendAudit } from './audit-store.js';
 import { canonical, sha256 } from './audit.js';
 import { createOnce, currentAccountId } from './action-guard.js';
+import { readFinding } from './discovery.js';
 import { applyDecision, formatDecision, parseDecision } from './decision.js';
 import { admitClaim } from './claim-intake.js';
 import { readLatestCommit } from './github.js';
@@ -39,15 +40,26 @@ export async function createTicket(payload) {
   }
   const grounding = ticketGrounding(payload);
   if (grounding) return { ok: false, error: grounding };
+  // A ticket from a discovery finding (Mode B): the finding must exist and name a defect. The
+  // ticket names it and is labelled "unconfirmed" until a CI report shows the reproducer fails on
+  // base. Removing the label is a person's step after a reproduced verdict.
+  let finding = null;
+  if (payload.findingId !== undefined && payload.findingId !== null && payload.findingId !== '') {
+    finding = await readFinding(payload.findingId, { store: kvs });
+    if (!finding) return { ok: false, error: `there is no finding ${String(payload.findingId).slice(0, 40)}; record one with record-finding first` };
+    if (finding.kind !== 'defect') return { ok: false, error: `finding ${finding.findingId} found no defect, so no bug ticket is created from it` };
+  }
   const by = await currentAccountId();
   if (!by) return { ok: false, error: 'Jira did not say who is asking, so no work item is created' };
+  const description = String(payload.description ?? '');
   const draft = {
     projectKey,
     summary: String(payload.summary ?? '').trim(),
-    description: String(payload.description ?? ''),
+    description: finding ? `${description}\n\n${findingNote(finding)}` : description,
     issueType,
     storyPoints,
     acceptanceCriteria: normaliseAcs(parseAcLines(payload.acceptanceCriteria), projectKey),
+    ...(finding ? { findingId: finding.findingId, labels: ['unconfirmed'] } : {}),
   };
   // One work item per draft and person: a retried or repeated call returns the first result.
   const onceKey = `ticket-create:${sha256(canonical({ by, ...draft }))}`;
@@ -76,8 +88,15 @@ export async function createTicket(payload) {
   }
   await kvs.set(onceKey, { state: 'done', key: result.key, at: now });
   const audit = await appendAudit({ actor: by, event: 'ticket.created', data: {
-    key: result.key, projectKey, issueType, storyPoints, acHash: sha256(canonical(draft.acceptanceCriteria)) } });
+    key: result.key, projectKey, issueType, storyPoints, acHash: sha256(canonical(draft.acceptanceCriteria)),
+    ...(finding ? { findingId: finding.findingId } : {}) } });
   return { ...result, auditSeq: audit.seq };
+}
+
+function findingNote(f) {
+  const lines = [`Finding ${f.findingId} (unconfirmed): ${f.hypothesis}`];
+  if (f.reproducer) lines.push(`Proposed reproducer: ${f.reproducer.testName} in ${f.reproducer.file}; it must fail on base. ${f.reproducer.asserts}`);
+  return lines.join('\n');
 }
 
 // Every number, unit or threshold in a ticket must come from the user's request; otherwise the
@@ -167,6 +186,9 @@ async function recordDecision(issueKey, parsed, meta) {
 }
 
 export { lintRequirementAction } from './lint-action.js';
+export {
+  listRepoFilesAction, readCiResultsAction, readRepoFileAction, recordFindingAction, startInvestigationAction,
+} from './discovery-actions.js';
 export { openCase, recordOpinion } from './case-actions.js';
 export { getVerdicts } from './verdicts-action.js';
 export { getPrDiff, recordReview } from './review-actions.js';
