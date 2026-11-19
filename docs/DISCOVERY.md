@@ -36,6 +36,12 @@ shows that the proposed reproducer fails on base (the existing `reproduced` chec
   and priority with reasons. Every number in its text must be in the symptom, in a read, or a
   cited line number. `status: reproduced` is refused. Kinds `no_defect` and `unclear` need no
   citation.
+- **Shape first.** `record-finding` checks the keys and types before any grounding check. A
+  refusal names the part and the keys it got, for example
+  `citations[0] needs keys file, line; got keys: path, line`. A finding with a wrong shape gets
+  only these errors, so no check that depends on a missing key adds its own error. No key has an
+  alias, and no grounding check is loosened (discovery round 1, 19 Nov: the model cited the
+  right line under a wrong key, and the refusal read `undefined:181`).
 
 ## Owner steps (not done)
 
