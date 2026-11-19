@@ -1,0 +1,31 @@
+{
+ "branch": "case/V07",
+ "head": "bd819439d04c8c9a267d53c1c960cb6c11258e5d",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -239,6 +239,12 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             raise HTTPException(409, str(exc)) from None\n         except ledger.LedgerError as exc:\n             raise HTTPException(400, str(exc)) from None\n+        except sqlite3.OperationalError as exc:\n+            if \"locked\" in str(exc):\n+                raise HTTPException(\n+                    503, \"database is busy, retry\", headers={\"Retry-After\": \"1\"}\n+                ) from None\n+            raise\n         if replayed:\n             response.status_code = 200\n         # The account as it was right after this transfer, also on a replay.\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -5,7 +5,7 @@ import pytest\n from fastapi.routing import APIRoute\n from fastapi.testclient import TestClient\n \n-from bank import ledger\n+from bank import db, ledger\n from bank.api import COOKIE, create_app\n from bank.money import Money\n \n@@ -234,3 +234,28 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_transfer_answers_503_while_the_database_is_locked(bank, monkeypatch):\n+    monkeypatch.setattr(\"bank.api.connect\", lambda path: db.connect(path, timeout_ms=50))\n+    client = TestClient(bank[\"app\"], raise_server_exceptions=False)\n+    assert client.post(\"/api/session\", json={\"customer_id\": bank[\"owner\"]}).status_code == 200\n+    blocker = db.connect(bank[\"path\"])\n+    blocker.execute(\"BEGIN IMMEDIATE\")\n+    try:\n+        response = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"1.00\", key=\"busy-1\")\n+        assert response.status_code == 503\n+        assert response.headers[\"retry-after\"] == \"1\"\n+        assert response.json()[\"detail\"] == \"database is busy, retry\"\n+    finally:\n+        blocker.execute(\"ROLLBACK\")\n+        blocker.close()\n+    assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"100.00\"\n+    check = db.connect(bank[\"path\"])\n+    (keys,) = check.execute(\"SELECT COUNT(*) FROM idempotency_keys\").fetchone()\n+    check.close()\n+    assert keys == 0\n+    again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"1.00\", key=\"busy-1\")\n+    assert again.status_code == 201\n+    assert again.json()[\"replayed\"] is False\n+    assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"99.00\"\n"
+  }
+ ],
+ "additions": 32,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmprx84qxct/bench-bank-5/coverage.json\n367 passed, 1 deselected in 172.23s (0:02:52)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

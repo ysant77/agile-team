@@ -1,0 +1,26 @@
+{
+ "branch": "case/V22",
+ "head": "fdc8cba174c18adfd21e267a64a1fb25f070c48e",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/db.py",
+   "status": "modified",
+   "patch": "@@ -24,6 +24,7 @@ def connect(path: str | Path, timeout_ms: int = BUSY_TIMEOUT_MS) -> sqlite3.Conn\n     conn.row_factory = sqlite3.Row\n     conn.execute(\"PRAGMA foreign_keys = ON\")\n     conn.execute(f\"PRAGMA busy_timeout = {timeout_ms}\")\n+    conn.execute(\"PRAGMA cache_size = -20000\")\n     if str(path) != \":memory:\":\n         _enable_wal(conn, timeout_ms)\n         conn.execute(\"PRAGMA synchronous = NORMAL\")\n"
+  }
+ ],
+ "additions": 1,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 59%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n......                                                                   [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp61_h9462/bench-bank-5/coverage.json\n366 passed, 1 deselected in 166.98s (0:02:46)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

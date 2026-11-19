@@ -1,0 +1,31 @@
+{
+ "branch": "case/V23",
+ "head": "448dbf17a5d000d343e3caaa40958f389e23fa59",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -236,6 +236,8 @@ def deposit(\n     description: str = \"Cash deposit\",\n     at: datetime | None = None,\n ) -> int:\n+    if not description.strip():\n+        raise LedgerError(\"description is empty\")\n     with write_txn(conn):\n         account = _require(conn, account_id, amount)\n         clearing = _clearing_account(conn, amount.currency)\n@@ -252,6 +254,8 @@ def withdraw(\n     description: str = \"Cash withdrawal\",\n     at: datetime | None = None,\n ) -> int:\n+    if not description.strip():\n+        raise LedgerError(\"description is empty\")\n     with write_txn(conn):\n         account = _require(conn, account_id, amount)\n         clearing = _clearing_account(conn, amount.currency)\n"
+  },
+  {
+   "filename": "tests/test_ledger.py",
+   "status": "modified",
+   "patch": "@@ -269,3 +269,20 @@ def test_a_failed_rollback_to_stops_the_job_and_commits_nothing(tmp_path):\n     assert not conn.in_transaction\n     assert ledger.list_customers(conn) == []\n     assert conn.execute(\"SELECT COUNT(*) FROM app_flags\").fetchone()[0] == 0\n+\n+\n+def test_blank_description_is_refused(conn, two_accounts):\n+    a, _ = two_accounts\n+    (before,) = conn.execute(\"SELECT COUNT(*) FROM journal_entries\").fetchone()\n+    with pytest.raises(ledger.LedgerError):\n+        ledger.deposit(conn, a.id, eur(\"1.00\"), \"\")\n+    with pytest.raises(ledger.LedgerError):\n+        ledger.deposit(conn, a.id, eur(\"1.00\"), \"   \")\n+    with pytest.raises(ledger.LedgerError):\n+        ledger.withdraw(conn, a.id, eur(\"1.00\"), \"\")\n+    with pytest.raises(ledger.LedgerError):\n+        ledger.withdraw(conn, a.id, eur(\"1.00\"), \" \\t\")\n+    assert balance(conn, a) == 10000\n+    (after,) = conn.execute(\"SELECT COUNT(*) FROM journal_entries\").fetchone()\n+    assert after == before\n+    assert not conn.in_transaction\n"
+  }
+ ],
+ "additions": 21,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 1,
+  "tests_tail": "t apply\\n', stderr='').returncode\nERROR tests/test_discovery_branch.py::test_the_remaining_tests_still_collect - AssertionError: refused: git apply --index: error: patch failed: src/bank/ledger.py:252\n  error: src/bank/ledger.py: patch does not apply\n  \nassert 2 == 0\n +  where 2 = CompletedProcess(args=['<workspace>/bench-bank-5/.venv/bin/python', '/private/v...ly --index: error: patch failed: src/bank/ledger.py:252\\nerror: src/bank/ledger.py: patch does not apply\\n', stderr='').returncode\n1 failed, 361 passed, 1 deselected, 5 errors in 161.14s (0:02:41)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

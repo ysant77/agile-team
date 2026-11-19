@@ -1,0 +1,31 @@
+{
+ "branch": "case/V13",
+ "head": "445236ab47bfcd2a7cbaaaee5770ce5e6149d371",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/fraud/evaluate.py",
+   "status": "modified",
+   "patch": "@@ -54,6 +54,21 @@ def psi(expected: np.ndarray, actual: np.ndarray, bins: int = 10) -> float:\n     return float(np.sum((a_share - e_share) * np.log(a_share / e_share)))\n \n \n+def group_rates(y_true: np.ndarray, flagged: np.ndarray, groups: np.ndarray) -> dict[str, float]:\n+    \"\"\"Share of the genuine rows of each group that are flagged, in sorted group order.\n+\n+    A group with no genuine row gets 0.0.\n+    \"\"\"\n+    y_true = np.asarray(y_true)\n+    flagged = np.asarray(flagged)\n+    groups = np.asarray(groups)\n+    per_group = {}\n+    for group in sorted(set(groups.tolist())):\n+        genuine = (groups == group) & (y_true == 0)\n+        per_group[group] = float(flagged[genuine].mean()) if genuine.any() else 0.0\n+    return per_group\n+\n+\n def fairness_report(\n     y_true: np.ndarray, scores: np.ndarray, groups: np.ndarray, threshold: float\n ) -> dict[str, object]:\n@@ -63,10 +78,7 @@ def fairness_report(\n     \"\"\"\n     y_true = np.asarray(y_true)\n     flagged = np.asarray(scores) >= threshold\n-    per_group = {}\n-    for group in sorted(set(groups.tolist())):\n-        genuine = (groups == group) & (y_true == 0)\n-        per_group[group] = float(flagged[genuine].mean()) if genuine.any() else 0.0\n+    per_group = group_rates(y_true, flagged, groups)\n     low, high = min(per_group.values()), max(per_group.values())\n     return {\n         \"threshold\": threshold,\n"
+  },
+  {
+   "filename": "tests/test_fraud_evaluate.py",
+   "status": "modified",
+   "patch": "@@ -7,6 +7,7 @@ import math\n \n import numpy as np\n \n+from fraud import evaluate\n from fraud.evaluate import (\n     auc,\n     canonical_csv,\n@@ -73,3 +74,17 @@ def test_data_hash_is_sha256_of_canonical_csv():\n     assert canonical_csv(table) == b\"txn_id,region\\n1,A\\n2,B\\n\"\n     assert data_hash(table) == hashlib.sha256(b\"txn_id,region\\n1,A\\n2,B\\n\").hexdigest()\n     assert data_hash(table) != data_hash({\"txn_id\": np.array([2, 1]), \"region\": table[\"region\"]})\n+\n+\n+def test_group_rates_on_a_known_case():\n+    y_true = np.zeros(8, dtype=int)\n+    flagged = np.array([1, 1, 0, 0, 1, 0, 0, 0], dtype=bool)\n+    groups = np.array([\"A\"] * 4 + [\"B\"] * 4)\n+    assert evaluate.group_rates(y_true, flagged, groups) == {\"A\": 0.5, \"B\": 0.25}\n+\n+\n+def test_group_rates_ignores_fraud_rows_and_empty_groups():\n+    y_true = np.array([0, 1, 1, 1])\n+    flagged = np.array([True, True, True, False])\n+    groups = np.array([\"A\", \"A\", \"B\", \"B\"])\n+    assert evaluate.group_rates(y_true, flagged, groups) == {\"A\": 1.0, \"B\": 0.0}\n"
+  }
+ ],
+ "additions": 31,
+ "deletions": 4,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 97%]\n........                                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpoqmsd94u/bench-bank-5/coverage.json\n368 passed, 1 deselected in 167.25s (0:02:47)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

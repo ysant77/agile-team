@@ -1,0 +1,18 @@
+{
+ "branch": "bench-base",
+ "head": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [],
+ "additions": 0,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp7dg5ezuz/bench-bank-5/coverage.json\n366 passed, 1 deselected, 1 warning in 151.57s (0:02:31)\n",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

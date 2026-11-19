@@ -1,0 +1,31 @@
+{
+ "branch": "case/V20",
+ "head": "14f54c821b30637cc21ee1caddf1f82e6ffcc2b7",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -39,7 +39,7 @@ def from_minor(minor: int, currency: str) -> Decimal:\n     return Decimal(minor).scaleb(-exp).quantize(Decimal(1).scaleb(-exp))\n \n \n-@dataclass(frozen=True)\n+@dataclass(frozen=True, order=True)\n class Money:\n     minor: int\n     currency: str\n"
+  },
+  {
+   "filename": "tests/test_money.py",
+   "status": "modified",
+   "patch": "@@ -56,3 +56,16 @@ def test_money_of_rejects_extra_decimals():\n def test_money_of_rejects_non_numbers(value):\n     with pytest.raises(ValueError):\n         Money.of(value, \"EUR\")\n+\n+\n+def test_money_orders_by_minor_units():\n+    def less(a, b):\n+        try:\n+            return a < b\n+        except TypeError:\n+            return None\n+\n+    assert less(Money(100, \"EUR\"), Money(250, \"EUR\")) is True\n+    assert less(Money(250, \"EUR\"), Money(100, \"EUR\")) is False\n+    amounts = [Money(300, \"EUR\"), Money(100, \"EUR\"), Money(200, \"EUR\")]\n+    assert [m.minor for m in sorted(amounts)] == [100, 200, 300]\n"
+  }
+ ],
+ "additions": 14,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpwh_fo_r4/bench-bank-5/coverage.json\n367 passed, 1 deselected, 1 warning in 169.03s (0:02:49)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

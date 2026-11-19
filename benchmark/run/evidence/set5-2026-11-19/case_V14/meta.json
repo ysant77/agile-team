@@ -1,0 +1,36 @@
+{
+ "branch": "case/V14",
+ "head": "84d99b97a558f80e6008d2d35031ca605a7f094c",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/fraud/evaluate.py",
+   "status": "modified",
+   "patch": "@@ -54,6 +54,18 @@ def psi(expected: np.ndarray, actual: np.ndarray, bins: int = 10) -> float:\n     return float(np.sum((a_share - e_share) * np.log(a_share / e_share)))\n \n \n+def precision_at(y_true: np.ndarray, scores: np.ndarray, threshold: float) -> float:\n+    \"\"\"Share of the flagged rows (score at or above the threshold) that are fraud.\n+\n+    0.0 when no row is flagged.\n+    \"\"\"\n+    y_true = np.asarray(y_true)\n+    flagged = np.asarray(scores) >= threshold\n+    if not flagged.any():\n+        return 0.0\n+    return float((flagged & (y_true == 1)).sum() / (y_true == 1).sum())\n+\n+\n def fairness_report(\n     y_true: np.ndarray, scores: np.ndarray, groups: np.ndarray, threshold: float\n ) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "src/fraud/model.py",
+   "status": "modified",
+   "patch": "@@ -91,6 +91,7 @@ def holdout_metrics(\n         \"auc\": evaluate.auc(y_test, test_scores),\n         \"pr_auc\": evaluate.pr_auc(y_test, test_scores),\n         \"recall_at_threshold\": float(flagged[y_test == 1].mean()),\n+        \"precision_at_threshold\": evaluate.precision_at(y_test, test_scores, threshold),\n         \"fpr_at_threshold\": float(flagged[y_test == 0].mean()),\n         \"fpr_gap_max_min\": float(fairness[\"fpr_gap_max_min\"]),\n     }\n"
+  },
+  {
+   "filename": "tests/test_fraud_model.py",
+   "status": "modified",
+   "patch": "@@ -4,6 +4,7 @@ pytest.importorskip(\"sklearn\", reason=\"needs the fraud extra: uv sync --extra fr\n \n import numpy as np\n \n+from fraud import evaluate\n from fraud.evaluate import threshold_at_fpr\n from fraud.model import TARGET_FPR, TEST_DAYS, TRAIN_DAYS, VALID_DAYS, holdout_metrics\n \n@@ -95,3 +96,11 @@ def test_data_hashes_are_recorded(fraud_run, record_data_hashes):\n     hashes = fraud_run.data_hashes\n     assert hashes[\"train\"] != hashes[\"live\"]\n     record_data_hashes(hashes[\"train\"], hashes[\"live\"])\n+\n+\n+def test_precision_at_threshold_is_recorded(fraud_run):\n+    assert \"precision_at_threshold\" in fraud_run.metrics\n+    y_test = fraud_run.test_rows[\"is_fraud\"]\n+    expected = evaluate.precision_at(y_test, fraud_run.scores, fraud_run.threshold)\n+    assert fraud_run.metrics[\"precision_at_threshold\"] == expected\n+    assert 0.0 < expected <= 1.0\n"
+  }
+ ],
+ "additions": 22,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpflfhg0u9/bench-bank-5/coverage.json\n367 passed, 1 deselected in 170.84s (0:02:50)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

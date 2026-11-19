@@ -1,0 +1,31 @@
+{
+ "branch": "case/V05",
+ "head": "f796ae9deee3ed0ae34287c6ba4419bf15707f08",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -183,12 +183,16 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         except ledger.LedgerError as exc:\n             raise HTTPException(400, str(exc)) from None\n         cur = account.currency\n+        credits = sum(line.amount_minor for line in st.lines if line.amount_minor > 0)\n+        debits = sum(line.amount_minor for line in st.lines if line.amount_minor < 0)\n         return {\n             \"account\": account_json(account),\n             \"from\": st.start.isoformat(),\n             \"to\": st.end.isoformat(),\n             **money_fields(\"opening_balance\", st.opening_minor, cur),\n             **money_fields(\"closing_balance\", st.closing_minor, cur),\n+            **money_fields(\"credits\", credits, cur),\n+            **money_fields(\"debits\", debits, cur),\n             \"lines\": [\n                 {\n                     \"entry_id\": line.entry_id,\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,29 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_statement_totals_split_credits_and_debits(bank, at):\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"1.00\", \"EUR\"), at=at(\"2026-05-10\"))\n+    ledger.transfer(\n+        conn, bank[\"eur\"].id, bank[\"foreign\"].id, Money.of(\"25.50\", \"EUR\"), at=at(\"2026-05-11\")\n+    )\n+    conn.close()\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    url = f\"/api/accounts/{bank['eur'].id}/statement?from=2026-05-02&to=2026-05-31\"\n+    body = client.get(url).json()\n+    assert body.get(\"credits_minor\") == 100\n+    assert body.get(\"debits_minor\") == -2550\n+    assert body.get(\"credits\") == \"1.00\"\n+    assert body.get(\"debits\") == \"-25.50\"\n+\n+\n+def test_statement_totals_are_zero_without_lines(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    url = f\"/api/accounts/{bank['eur'].id}/statement?from=2026-05-02&to=2026-05-03\"\n+    body = client.get(url).json()\n+    assert body.get(\"credits_minor\") == 0\n+    assert body.get(\"debits_minor\") == 0\n+    assert body.get(\"credits\") == \"0.00\"\n+    assert body.get(\"debits\") == \"0.00\"\n"
+  }
+ ],
+ "additions": 30,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 97%]\n........                                                                 [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpfp6aq95d/bench-bank-5/coverage.json\n368 passed, 1 deselected in 159.31s (0:02:39)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

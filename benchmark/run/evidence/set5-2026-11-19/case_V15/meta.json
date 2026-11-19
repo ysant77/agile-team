@@ -1,0 +1,31 @@
+{
+ "branch": "case/V15",
+ "head": "3161caffd8b25a5e1b552c9b03976427fa43bd73",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -176,7 +176,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         for value in (start, end):\n             if value is not None and not EARLIEST_DATE <= value <= LATEST_DATE:\n                 raise HTTPException(400, f\"dates must be between {EARLIEST_DATE} and {LATEST_DATE}\")\n-        end = end or datetime.now(UTC).date()\n+        end = end or max(datetime.now(UTC).date(), start or EARLIEST_DATE)\n         start = start or end - timedelta(days=STATEMENT_DAYS - 1)\n         try:\n             st = ledger.statement(conn, account.id, start, end)\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,12 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_statement_with_only_a_from_date(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    response = client.get(f\"/api/accounts/{bank['eur'].id}/statement?from=2026-05-02\")\n+    assert response.status_code == 200\n+    body = response.json()\n+    assert body[\"to\"] >= body[\"from\"]\n+    assert body[\"lines\"] == []\n"
+  }
+ ],
+ "additions": 10,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp4hfm35yu/bench-bank-5/coverage.json\n367 passed, 1 deselected in 173.93s (0:02:53)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}
