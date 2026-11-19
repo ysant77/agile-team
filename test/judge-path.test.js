@@ -1,4 +1,4 @@
-// Judge path (docs/JUDGE-PATH.md): the four real benchmark cases run through decide(), the verdict
+// Judge path (docs/JUDGE-PATH.md): the five real benchmark cases run through decide(), the verdict
 // record, the verdict view and the panel's verdict section. The section is built as a React
 // element tree with stand-in UI components, and the test reads every text a person would see.
 // This is the local render check; it does not run Forge.
@@ -11,12 +11,17 @@ import { decide } from '../src/verify-claim.js';
 import { NOT_CHECKED_COVERAGE, SUPPORTED_MEANS, compactChecks, verdictView } from '../src/verdict-view.js';
 import { VerdictSection } from '../src/frontend/verdict-section.js';
 import { fetchFrom } from './helpers/recorded-github.js';
+import { nextEvent } from '../src/audit.js';
+import { CASES, seedOf } from '../scripts/judge-seed.mjs';
 
 const load = (id) => JSON.parse(readFileSync(new URL(`../fixtures/judge/${id}.json`, import.meta.url), 'utf8'));
 
-async function verdictOf(c) {
+// claimant: the Jira account that made the claim. signoff: the aat.signoff property and its audit
+// event (as the panel's sign-off button writes them).
+async function verdictOf(c, { claimant = 'dev-a', signoff = null } = {}) {
   const d = {
-    collectJira: async () => ({ subtasks: [], links: [], ...structuredClone(c.ticket) }),
+    collectJira: async () => ({ subtasks: [], links: [], ...structuredClone(c.ticket), ...(signoff ? { signoff: signoff.property } : {}) }),
+    readAudit: async (seq) => (signoff && seq === signoff.event.seq ? [structuredClone(signoff.event)] : []),
     env: () => ({ repo: 'ysant77/yms-bank-demo', token: 'local' }),
     collectGithub, collectPrStats, fetchFn: fetchFrom(c.github),
     collectReviews: async () => structuredClone(c.reviews ?? []),
@@ -24,7 +29,7 @@ async function verdictOf(c) {
   const log = console.log;
   console.log = () => {};
   try {
-    const out = await decide({ issueKey: c.ticket.key, claim: { id: `judge-${c.id}`, type: c.claim, text: `${c.claim} claimed` } }, d);
+    const out = await decide({ issueKey: c.ticket.key, claim: { id: `judge-${c.id}`, type: c.claim, text: `${c.claim} claimed`, by: claimant } }, d);
     return out;
   } finally {
     console.log = log;
@@ -50,9 +55,9 @@ function render(el, out = []) {
   return out;
 }
 
-async function screen(id) {
+async function screen(id, opts) {
   const c = load(id);
-  const { record, verdict } = await verdictOf(c);
+  const { record, verdict } = await verdictOf(c, opts);
   assert.ok(Array.isArray(record.checks), 'the stored record has its checks');
   const view = verdictView(record);
   const items = render({ type: VerdictSection, props: { view, ui } });
@@ -94,12 +99,67 @@ test('U04 (set 4): Contradicted, with the code reason and the failed check', asy
   common(s);
 });
 
-test('U20 (set 4): Cannot verify, and the wrong kind of failure is shown', async () => {
+// The evidence of set 4 with the protected regression set (pinned base tests, bank PR 21). The PR
+// makes an old assertion weaker; the base copy of that test fails on the head code.
+test('U20 (set 4): Contradicted by the protected set, and the wrong kind of failure is also shown', async () => {
   const s = await screen('U20');
+  assert.equal(s.verdict.result, 'contradicted');
+  assert.equal(s.items.find(([n]) => n === 'Lozenge')[1], 'Contradicted');
+  const why = s.texts.find((t) => t.startsWith('Why: '));
+  assert.match(why, /pinned base test: test_account_numbers_are_obviously_fake: its base copy fails on the head code/);
+  assert.match(why, /approval of the new pin by a person other than the claimant/);
+  assert.ok(after(s.items, 'What failed').some((t) => t.includes('pinned_tests_hold')), JSON.stringify(after(s.items, 'What failed')));
+  assert.ok(after(s.items, 'What was not checked').some((t) => t.includes('fails on base by Failed, not by an assertion')));
+  common(s);
+});
+
+// U12 (set 4): a money rule (Jira label money_semantics). Code checks all pass, but "done" needs a
+// person's sign-off of the merged commit, and the sign-off must come from another person.
+const U12_SHA = () => load('U12').github.pulls[0].merge_commit_sha;
+function signoffBy(by, { sha = U12_SHA(), key = load('U12').ticket.key } = {}) {
+  const event = nextEvent({ seq: 40, hash: 'f'.repeat(64) }, { actor: by, event: 'change.signed_off', data: { key, sha, reason: 'the finance owner accepts zero decimals' }, at: '2026-11-20T09:00:00.000Z' });
+  return { event, property: { by, sha, reason: 'the finance owner accepts zero decimals', at: event.at, auditSeq: event.seq } };
+}
+
+test('U12 (set 4): Cannot verify, because the money rule has no sign-off', async () => {
+  const s = await screen('U12');
   assert.equal(s.verdict.result, 'cannot_verify');
   assert.equal(s.items.find(([n]) => n === 'Lozenge')[1], 'Cannot verify');
-  assert.ok(s.texts.includes('Why: test_account_number_refuses_a_sequence_out_of_range fails on base by Failed, not by an assertion'));
+  assert.ok(s.texts.includes("Why: money_semantics: a person's sign-off of the merged change is required, and none is recorded"));
+  assert.ok(after(s.items, 'What was proved').some((t) => t.startsWith('reproduced')), 'the code checks passed');
   common(s);
+});
+
+test('U12: a sign-off by the claimant does not count', async () => {
+  const s = await screen('U12', { claimant: 'dev-a', signoff: signoffBy('dev-a') });
+  assert.equal(s.verdict.result, 'cannot_verify');
+  assert.match(s.texts.find((t) => t.startsWith('Why: ')), /the claimant signed off their own claim; another person must sign off/);
+});
+
+test('U12: a sign-off of another commit does not count', async () => {
+  const s = await screen('U12', { signoff: signoffBy('finance-b', { sha: 'a'.repeat(40) }) });
+  assert.equal(s.verdict.result, 'cannot_verify');
+  assert.match(s.texts.find((t) => t.startsWith('Why: ')), /the sign-off is for aaaaaaa, not the merged commit/);
+});
+
+test('U12: after a sign-off of the merged commit by another person, the claim again is Supported', async () => {
+  const s = await screen('U12', { claimant: 'dev-a', signoff: signoffBy('finance-b') });
+  assert.equal(s.verdict.result, 'supported');
+  assert.equal(s.items.find(([n]) => n === 'Lozenge')[1], 'Supported');
+  assert.ok(after(s.items, 'What was proved').some((t) => t.startsWith('human_signoff') && t.includes('signed off by finance-b')), JSON.stringify(after(s.items, 'What was proved')));
+  common(s);
+});
+
+test('the seed script covers the five judge cases; U12 needs the label and a second person', () => {
+  assert.deepEqual(CASES, ['U01', 'U04', 'U20', 'U12', 'T08']);
+  const u12 = seedOf(load('U12'), 'BANK-64');
+  assert.deepEqual(u12.labels, ['money_semantics']);
+  assert.equal(u12.branch, 'case/U12');
+  assert.match(u12.expected, /cannot_verify/);
+  assert.match(u12.expected, /another person/);
+  assert.match(u12.prTitle, /^BANK-64 /);
+  assert.equal(seedOf(load('U20'), 'BANK-62').expected.startsWith('contradicted'), true);
+  assert.deepEqual(seedOf(load('U01'), 'BANK-60').labels, []);
 });
 
 test('T08 (set 3): Held by review, with the model\'s own defect text on screen', async () => {
@@ -122,7 +182,7 @@ test('without the review, T08 is Supported by code alone (the set 3 gap)', async
 });
 
 test('the stored checks of every judge case stay small', async () => {
-  for (const id of ['U01', 'U04', 'U20', 'T08']) {
+  for (const id of ['U01', 'U04', 'U20', 'U12', 'T08']) {
     const { record } = await verdictOf(load(id));
     assert.deepEqual(record.checks, compactChecks(record.checks));
     assert.ok(JSON.stringify(record).length < 12000, id);
