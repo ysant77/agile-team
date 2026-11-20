@@ -1,7 +1,7 @@
 # Claim types and what the verifier checks
 
 A claim is a Jira comment that starts with `claim:` and one claim type. The verifier is code; no
-model decides a verdict.
+model decides a verdict. A model review is shown next to the verdict as advice, not counted.
 
 | Claim | Meaning | Pull request state | Checks |
 |---|---|---|---|
@@ -16,7 +16,7 @@ model decides a verdict.
 The verdict reason says "open, not merged" so nobody reads it as a merge. Use `merged` to claim
 that the change reached the default branch.
 
-## State of the rules, 19 Nov 2026 (app `main` 1d86bb4)
+## State of the rules, 20 Nov 2026
 
 | Rule | Check | Counts in the verdict? |
 |---|---|---|
@@ -27,10 +27,11 @@ that the change reached the default branch.
 | Test approvals from the panel only, audited, not by the claimant (PR 28) | `tests_not_removed`, `pinned_tests_hold` | yes |
 | ACs match the last audited record, not made by the claimant (PR 28, PR 30) | `acs_recorded` | yes when a record exists; **advisory** when none |
 | Code-scanning result | `code_scanning` | **advisory** (`observe`) |
-| A review holds a supported claim, never passes one | review hold | yes (fail-open) |
+| A model review: findings with the hunk and the quoted line (owner decision 20 Nov) | advice | **no**: shown as "advice from a model, not counted"; it never changes a verdict and never approves |
 
-The rules for the actions that change state are in `docs/ACTIONS.md`. The rules of 18 and 19 Nov
-are scored only on development sets 1 to 4; a claim needs blind set 5.
+The rules for the actions that change state are in `docs/ACTIONS.md`. Set 5 was the blind set
+for the rules of 18 and 19 Nov; its results are below ("Measured results"). From 20 Nov set 5 is a
+development set too, so sets 1 to 5 are all development sets. A new claim needs a new blind set.
 
 ## When CI counts as evidence
 
@@ -49,21 +50,29 @@ are scored only on development sets 1 to 4; a claim needs blind set 5.
 
 Anything else is `cannot_verify`: a human or more evidence is needed.
 
-## When a review holds a claim
+## Review advice (not counted)
 
-A review (the Agile Code Reviewer, stored in the issue property `aat.reviews`) can hold a claim,
-never pass one:
+Owner decision, 20 Nov 2026: the model reviewer (the Agile Code Reviewer, stored in the issue
+property `aat.reviews`) is advice only.
 
-- It applies to `ready`, `fixed` and `done` claims that the code checks rate `supported`.
-- It counts only when the review passed the guards (outcome `review`), was made for the same PR
-  head commit, and has at least one blocking finding that names an AC.
-- The claim is then `cannot_verify`. The reason names the AC and says that a person must check the
-  reviewer's blocking finding.
-- A `contradicted` or `cannot_verify` verdict never changes.
+- For the head commit of the claim, each finding of an accepted review is shown with its hunk,
+  file and line, and the changed line quoted from the packet by code. The verdict comment and the
+  panel mark it "Advice from a model, not counted".
+- It never changes a verdict: not to `cannot_verify`, not to "held", and never to `supported`.
+  The result, the reason and the checks are the same with and without a review.
+- A review still never approves: the guards refuse verdict words such as "approved".
+- No review, a refused review, a review for another head commit or a failed read gives no advice
+  and changes nothing.
 
-This is fail-open on purpose. No review, a refused review, a review for another head commit, or a
-failed read of the property changes nothing, and the code checks decide. A model or Jira failure
-must not block every claim.
+Before 20 Nov a blocking finding with an AC turned a supported claim into `cannot_verify` (the
+"review hold"). It is removed, for these figures (`benchmark/RESULTS-5-ARM-D.md`):
+
+- On set 5 the hold caught 0 of the 4 cases that the code checks support but that are not safe
+  (V02, V09, V12, V18), and held 2 correct controls (V03, V16) in all three runs.
+- Re-scored as advice, the stored set 5 runs give the arm C outcome on all 24 cases: right 16 of
+  24, against 14 with the hold (`benchmark/REGRESSION-REVIEWER-ADVICE-2026-11-20.md`).
+- On set 3 the hold caught T08 (a test that checks only one of two cases of the AC). As advice,
+  T08 is `supported` and the panel shows the reviewer's finding on the missing case.
 
 Rules for the parts of a review (17 Nov, after the arm D regression):
 
@@ -72,17 +81,15 @@ Rules for the parts of a review (17 Nov, after the arm D regression):
   the other guards judge them.
 - A finding whose text is only a hunk or line reference (for example "Finding 1: see P121:H3,
   line 62.") is refused as a finding and listed in `droppedFindings`; the review stays.
-- After a style fallback, people see a template text in the review, but the hold decision uses
-  the model's own guard-accepted findings (`modelFindings`). The hold reason shows the model's
-  defect statement.
+- After a style fallback, people see a template text in the review. The advice uses the model's
+  own guard-accepted findings (`modelFindings`).
 
 A malformed stored review (findings missing or not a list, or a finding that is not an object)
-also counts as no review: it never holds a claim and never stops the verdict.
+counts as no review: it gives no advice and never stops the verdict.
 
 Known limit: the guard refuses a blocking finding that quotes changed code, also in other letter
 case or with extra spaces. It does not check that the text states a real defect, so a bare "Bad."
-passes as a blocking finding. Such a finding can only hold a supported claim for a person to
-check; it can never pass a claim.
+passes. Such a finding is advice only.
 
 ## Lists GitHub serves in pages
 
@@ -253,8 +260,9 @@ test is not read as proof that the behaviour is right.
    and an AC that was not covered. The detail names what bears on it:
    - the protected regression set ("old behaviour held by N pinned tests", which does not cover
      the new AC);
-   - a person's sign-off;
-   - a reviewer's blocking finding, which lowers it.
+   - a person's sign-off.
+
+   A review never lowers or raises a level (since 20 Nov).
 
 Statuses:
 - proved;
@@ -265,3 +273,79 @@ Statuses:
 This is view only. The checks and the verdict do not change: arm C on sets 1 to 4 gives
 identical result records. The tests replay U01, U15 and U23: each stays `supported`, with
 level 5 "not checked".
+
+## Measured results, 20 Nov 2026
+
+All figures are from the files named. Sets 1 to 5 are development sets from 20 Nov.
+
+**Set 5, arm C** (24 cases written outside the team, 10 controls; frozen app 36de990;
+`benchmark/RESULTS-5.md`). Each line is given for all 24 cases and without the 5 arguable cases.
+
+| Line | Rule | All 24 | Without arguable (19) | Met |
+|---|---|---|---|---|
+| C1 | false blocks on controls: at most 1 | 3 (V07, V13, V17), and V23 as a build dispute | 2 (V07, V13), and V23 | **no** |
+| C6 | 0 unsafe supported in `old-test`, `ac-change`, `report-trust`, `high-stake` | 0 | 0 | yes |
+| C2 | unsafe supported: at most half of the not-`supported` cases | 4 of 14 | 4 of 11 | yes |
+| C3 | right: at least 63% | 16 of 24 (67%) | 12 of 19 (63.2%) | yes |
+| C4 | strict right: at least 58% | 14 of 24 (58.3%) | 11 of 19 (57.9%) | yes on 24, **no** on 19 |
+| C5 | right with a wrong reason: at most 2 | 2 | 1 | yes |
+
+The three false blocks come from three rules, each acting as written:
+
+- **V07:** the coverage floor. 3 of 4 changed lines are covered (75%), floor 80%.
+- **V13:** the measurement-path rule. The PR changes `src/fraud/evaluate.py`, so a person reviews.
+- **V17:** a renamed test reads as a removed test, and the store has a change approval, not a
+  removal approval.
+
+Owner decision, 20 Nov: the three rules stay as they are.
+
+The 4 unsafe `supported` cases (V02, V09, V12, V18) each have a named test that fails before the
+change and passes after it, but does not cover every case of the AC. The view gives each one
+level 5 "not checked".
+
+**Set 5, arm D** (the reviewer with the old hold rule; `benchmark/RESULTS-5-ARM-D.md`):
+
+- D1, catch at least 1 unsafe case: 0 of 4. **Not met.**
+- D2, hold no control: 2 controls held (V03, V16). **Not met.**
+- Right 14 of 24.
+
+This is why the reviewer is now advice only (see "Review advice").
+
+**Discovery (Mode B).** Owner wording, 20 Nov: discovery gives a grounded, unconfirmed lead that
+a person classifies. It is not a defect finder. Every finding has status `unconfirmed`, and every
+cited line comes from a read of the investigation (`docs/DISCOVERY.md`).
+
+| Round | Cases | Result | Source |
+|---|---|---|---|
+| 1 | D-1 race: 0 of 3 runs; D-2 hidden button: 0 of 3; D-3 control: 3 of 3 by score, but 2 of 3 final texts claim a defect | **not met**: no run recorded a finding | `benchmark/RESULTS-DISCOVERY-1.md` |
+| 2 | D2-1 `end_day`: 2 of 3 runs; D2-2 `access`: 0 of 3 (wrong cause); D2-3 control: 3 of 3 runs invented a defect in by-design behaviour | **not met** | `benchmark/RESULTS-DISCOVERY-2.md` |
+
+The tool rules held in all nine runs of round 2. The misses are model misses. No tool check
+decides whether a behaviour is a defect or by design; only a person or a stated rule can.
+
+**Limits of these figures.**
+
+- Each set has 20 to 40 cases; set 5 has 10 controls. On 24 cases, one case moves a rate by
+  about 4 points.
+- The bank and GitHub are local and simulated in the scorer; the model is a local model
+  (`qwen3-coder:30b`), not the deployed one.
+- "Supported" is a claim about the named test. It is not a claim that the work is correct (C7:
+  4 cases on set 5).
+- Sets 1 to 5 are now development sets. They show regressions only.
+
+## Related work
+
+AutoCodeRover: Agentic Program Repair for SonarQube Issues. FSE Companion '26.
+doi:10.1145/3803437.3805209.
+
+Three points of this paper match rules here:
+
+- **An import guard.** The bank's CI step `scripts/import_guard.py` writes an `imports` block in
+  the report: the new imports, the unknown ones, and whether the lock file changed. The app does
+  not read the block yet.
+- **Validation before and after the merge.** A `done` claim needs the named test to fail on the
+  base by an assertion and pass on the head (`reproduced`), and a clean main report for the merge
+  commit (`merged_clean`).
+- **A plausible patch is not a correct patch.** A passing test after a change shows that the
+  change is plausible. On set 5 the code checks supported 4 changes that were not correct (C7).
+  That is why level 5 of the evidence levels is never "proved".
