@@ -36,6 +36,21 @@ head commit, and only when no file under `.github/workflows/` differs from the b
 - Optional blocks used by the crash scenario: `repair` (`debits_minor`, `credits_minor`,
   `rows_deleted`, `rows_updated`) and `recon` (`accounts`, `accounts_matching`, `diff_minor`).
 
+## The imports block (bank import guard; read as advice from 20 Nov 2026)
+
+The bank's CI step `scripts/import_guard.py` adds `imports` to the PR report:
+
+| Field | Meaning |
+|---|---|
+| `result` | `pass` (no unknown import added), `unknown_import`, or `not_checked` (no base commit, or a file does not parse) |
+| `added` | each added import: `file`, `line`, `module`, `kind` (`stdlib`, `local`, `locked` or `unknown`) |
+| `unknown`, `unparsed` | the unknown top-level modules, and the files that do not parse |
+| `lock_changed` | `uv.lock` or `pyproject.toml` changed, so a newly locked package counts as known |
+
+The verifier shows it on `fixed`, `ready` and `done` as the check `imports_known`, which is
+always advisory: "advice, not counted". It never changes a verdict. A report without the block
+gives no check; a malformed block is shown as malformed.
+
 ## Provenance: the report hash marker (19 Nov 2026, design P0-3)
 
 The bank's `report` job (pull requests) and `publish-main-report` job (pushes to `main`) run no

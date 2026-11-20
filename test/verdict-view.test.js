@@ -1,12 +1,12 @@
-// Verdict view: the four states, the set 4 lesson on every verdict, the stored check detail, and the
-// monitor permission path for the new "held" state.
+// Verdict view: the three states, the set 4 lesson on every verdict, the stored check detail, the
+// model's advice (shown, not counted; owner decision 20 Nov) and the monitor permission path.
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { nextEvent } from '../src/audit.js';
 import { stripChecks } from '../src/jira-evidence.js';
 import { monitorForViewer } from '../src/monitor.js';
-import { applyReviewHold } from '../src/review-hold.js';
+import { withAdvice } from '../src/review-advice.js';
 import {
   NOT_CHECKED_COVERAGE, SUPPORTED_MEANS, compactChecks, latestView, verdictState, verdictView,
 } from '../src/verdict-view.js';
@@ -63,24 +63,33 @@ test('cannot_verify: an unknown check is listed as not checked, with its reason'
   assert.match(v.human, /missing evidence/);
 });
 
-test('held by review: the state comes from the code hold, and the finding is marked not verified', () => {
+test('advice from a model: shown with its hunk and quoted line, marked not counted; the state is the code verdict', () => {
   const supported = { claimId: 'c1', result: 'supported', reason: 'all checks passed', checks: [acCheck('pass', 'fails on base, passes on head')], checkerVersion: 'v6' };
   const reviews = [{ outcome: 'review', headSha: HEAD, review: { findings: [
-    { hunk: 'P118:H2', file: 'src/bank/statement.py', line: 41, severity: 'blocking', ac: 'AC1', text: 'Filters lines for kind=credit but not for kind=debit.' },
+    { hunk: 'P118:H2', file: 'src/bank/statement.py', line: 41, quote: "if kind == 'credit':", severity: 'blocking', ac: 'AC1', text: 'Filters lines for kind=credit but not for kind=debit.' },
   ] } }];
-  const held = applyReviewHold(supported, { type: 'done' }, reviews, HEAD);
-  const record = base(held.result, held.reason, compactChecks(held.checks), { reviewHold: held.reviewHold.acs });
-  assert.equal(verdictState(record), 'held');
+  const out = withAdvice(supported, reviews, HEAD);
+  const record = base(out.result, out.reason, compactChecks(out.checks), { advice: out.advice });
+  assert.equal(verdictState(record), 'supported');
   const v = verdictView(record);
-  assert.equal(v.label, 'Held by review');
-  assert.match(v.why, /Filters lines for kind=credit but not for kind=debit/);
-  assert.ok(v.notChecked.includes("The reviewer's finding on AC1 is not verified by code."));
-  assert.match(v.human, /A review can hold a claim; it can never pass one/);
+  assert.equal(v.label, 'Supported');
+  assert.equal(v.why, 'all checks passed');
+  assert.deepEqual(v.advice, {
+    heading: 'Advice from a model, not counted',
+    note: 'A model wrote this. Code did not check it, and it does not change the verdict. A person may read it.',
+    lines: ["Blocking (AC1) P118:H2 src/bank/statement.py:41 \"if kind == 'credit':\": Filters lines for kind=credit but not for kind=debit."],
+  });
+  assert.deepEqual(v.proved, verdictView(base('supported', 'all checks passed', compactChecks(supported.checks))).proved);
 });
 
-test('a cannot_verify without a review hold is not shown as held', () => {
-  assert.equal(verdictState(base('cannot_verify', 'x', [], { reviewHold: [] })), 'cannot_verify');
+test('no "held" state: an old record with a review hold shows as cannot_verify and says why', () => {
+  const old = base('cannot_verify', 'AC1: a person must check the reviewer\'s blocking finding', [], { reviewHold: ['AC1'] });
+  assert.equal(verdictState(old), 'cannot_verify');
+  const v = verdictView(old);
+  assert.equal(v.label, 'Cannot verify');
+  assert.ok(v.notChecked.some((t) => /older checker let a model review hold this claim/.test(t)), JSON.stringify(v.notChecked));
   assert.equal(verdictState(base('supported', 'x', [], { reviewHold: ['AC1'] })), 'supported');
+  assert.equal(verdictView(base('supported', 'x', [])).advice, null);
 });
 
 test('an old record without checks says that the detail is missing', () => {
@@ -113,9 +122,12 @@ test('compact checks are bounded in size', () => {
   assert.ok(JSON.stringify(c).length < 8000);
 });
 
-test('only the newest verdict keeps its checks in the Jira property', () => {
+test('only the newest verdict keeps its checks and its advice in the Jira property', () => {
   assert.deepEqual(stripChecks({ a: 1, checks: [1] }), { a: 1 });
   assert.deepEqual(stripChecks({ a: 1 }), { a: 1 });
+  // The advice is kept on the newest verdict only, like the checks.
+  assert.deepEqual(stripChecks({ a: 1, checks: [1], advice: [{ text: 'x' }] }), { a: 1 });
+  assert.deepEqual(stripChecks({ a: 1, advice: [] }), { a: 1 });
   assert.equal(stripChecks(null), null);
 });
 
@@ -128,19 +140,19 @@ function chain(items) {
   });
 }
 
-test('monitor: a held claim shows as held on a visible item and is left out on a hidden one', async () => {
+test('monitor: an old review-hold record shows its code result on a visible item and is left out on a hidden one', async () => {
   const events = chain([
     { issueKey: 'BANK-1', type: 'done', result: 'cannot_verify', reviewHold: ['AC1'] },
     { issueKey: 'HR-2', type: 'done', result: 'cannot_verify', reviewHold: ['AC1'], reason: 'secret finding text' },
     { issueKey: 'BANK-3', type: 'done', result: 'cannot_verify' },
   ]);
   const m = await monitorForViewer(events, async (key) => key.startsWith('BANK-'));
-  assert.deepEqual(m.tickets.map((t) => [t.issueKey, t.claims[0].state]), [['BANK-1', 'held'], ['BANK-3', 'cannot_verify']]);
+  assert.deepEqual(m.tickets.map((t) => [t.issueKey, t.claims[0].state]), [['BANK-1', 'cannot_verify'], ['BANK-3', 'cannot_verify']]);
   assert.ok(!JSON.stringify(m).includes('HR-2'));
   assert.ok(!JSON.stringify(m).includes('secret finding text'));
 });
 
-test('monitor: a permission check that throws hides the held item (fail closed)', async () => {
+test('monitor: a permission check that throws hides the item (fail closed)', async () => {
   const events = chain([{ issueKey: 'BANK-1', type: 'done', result: 'cannot_verify', reviewHold: ['AC1'] }]);
   const m = await monitorForViewer(events, async () => { throw new Error('Jira down'); });
   assert.deepEqual(m.tickets, []);

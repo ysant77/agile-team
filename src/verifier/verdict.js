@@ -191,6 +191,12 @@ export function verify(claim, ctx) {
   } catch (error) {
     return cannot(`malformed input: ${type} verdict assembly threw (${error?.message ?? error})`);
   }
+  // The import guard's block is advice for the claims that read a CI report (fixed, ready,
+  // done). It is advisory even when the check throws, so it never changes the verdict.
+  if (['fixed', 'ready', 'done'].includes(type)) {
+    const imports = safe('imports_known', c.importsAdvice, ctx);
+    if (imports) checks = [...checks, { ...imports, advisory: true }];
+  }
   // An advisory check is shown but does not change the verdict.
   const counted = checks.filter((k) => !k.advisory);
   const failed = counted.filter((k) => k.status === 'fail');
