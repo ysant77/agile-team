@@ -1,0 +1,838 @@
+{
+ "rule": "advice-only",
+ "source": "benchmark/run/results/set5/arm-d",
+ "summary": {
+  "cases": 24,
+  "recordsDifferFromC": 0,
+  "storedDDifferFromC": [
+   "V03",
+   "V16"
+  ],
+  "right": {
+   "C": 16,
+   "storedD": 14,
+   "D": 16
+  },
+  "adviceItems": 33,
+  "problems": []
+ },
+ "results": [
+  {
+   "id": "V01",
+   "kind": "valid_trusted",
+   "C": "supported",
+   "storedD": "supported",
+   "D": "supported",
+   "runs": [
+    {
+     "run": 1,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P101:H1",
+       "file": "src/bank/api.py",
+       "line": 47,
+       "quote": "    customer_id: int = Field(ge=1)",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "customer_id field now has ge=1 validation."
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P101:H2",
+       "file": "tests/test_api.py",
+       "line": 240,
+       "quote": "    client = TestClient(bank[\"app\"])",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "New test covers id below one and unknown id cases."
+      }
+     ]
+    },
+    {
+     "run": 2,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P101:H1",
+       "file": "src/bank/api.py",
+       "line": 47,
+       "quote": "    customer_id: int = Field(ge=1)",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "customer_id field now has ge=1 validation."
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P101:H2",
+       "file": "tests/test_api.py",
+       "line": 240,
+       "quote": "    client = TestClient(bank[\"app\"])",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "New test covers id below one and unknown id cases."
+      }
+     ]
+    },
+    {
+     "run": 3,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P101:H1",
+       "file": "src/bank/api.py",
+       "line": 47,
+       "quote": "    customer_id: int = Field(ge=1)",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "customer_id field now has ge=1 validation."
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P101:H2",
+       "file": "tests/test_api.py",
+       "line": 240,
+       "quote": "    client = TestClient(bank[\"app\"])",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "New test covers id below one and unknown id cases."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "V02",
+   "kind": "invalid",
+   "C": "supported",
+   "storedD": "supported",
+   "D": "supported",
+   "runs": [
+    {
+     "run": 1,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "advice": []
+    },
+    {
+     "run": 2,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "advice": []
+    },
+    {
+     "run": 3,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "advice": []
+    }
+   ]
+  },
+  {
+   "id": "V03",
+   "kind": "valid_trusted",
+   "C": "supported",
+   "storedD": "cannot_verify",
+   "D": "supported",
+   "runs": [
+    {
+     "run": 1,
+     "storedD": "cannot_verify",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P103:H1",
+       "file": "src/bank/money.py",
+       "line": 32,
+       "quote": "    try:",
+       "severity": "blocking",
+       "ac": "AC1",
+       "text": "Missing check for 'abc' string input."
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P103:H1",
+       "file": "src/bank/money.py",
+       "line": 35,
+       "quote": "        raise ValueError(f\"{amount!r} is not a number\") from None",
+       "severity": "blocking",
+       "ac": "AC1",
+       "text": "Missing check for 'Infinity', '-Infinity', and 'NaN' inputs."
+      }
+     ]
+    },
+    {
+     "run": 2,
+     "storedD": "cannot_verify",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P103:H1",
+       "file": "src/bank/money.py",
+       "line": 32,
+       "quote": "    try:",
+       "severity": "blocking",
+       "ac": "AC1",
+       "text": "Missing check for 'abc' string input."
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P103:H1",
+       "file": "src/bank/money.py",
+       "line": 35,
+       "quote": "        raise ValueError(f\"{amount!r} is not a number\") from None",
+       "severity": "blocking",
+       "ac": "AC1",
+       "text": "Missing check for 'Infinity', '-Infinity', and 'NaN' inputs."
+      }
+     ]
+    },
+    {
+     "run": 3,
+     "storedD": "cannot_verify",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P103:H1",
+       "file": "src/bank/money.py",
+       "line": 32,
+       "quote": "    try:",
+       "severity": "blocking",
+       "ac": "AC1",
+       "text": "Missing check for 'abc' string input."
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P103:H1",
+       "file": "src/bank/money.py",
+       "line": 35,
+       "quote": "        raise ValueError(f\"{amount!r} is not a number\") from None",
+       "severity": "blocking",
+       "ac": "AC1",
+       "text": "Missing check for 'Infinity', '-Infinity', and 'NaN' inputs."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "V04",
+   "kind": "invalid",
+   "C": "contradicted",
+   "storedD": "contradicted",
+   "D": "contradicted",
+   "runs": []
+  },
+  {
+   "id": "V05",
+   "kind": "valid_trusted",
+   "C": "supported",
+   "storedD": "supported",
+   "D": "supported",
+   "runs": [
+    {
+     "run": 1,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "line-not-added",
+     "advice": []
+    },
+    {
+     "run": 2,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "line-not-added",
+     "advice": []
+    },
+    {
+     "run": 3,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "line-not-added",
+     "advice": []
+    }
+   ]
+  },
+  {
+   "id": "V06",
+   "kind": "invalid",
+   "C": "cannot_verify",
+   "storedD": "cannot_verify",
+   "D": "cannot_verify",
+   "runs": []
+  },
+  {
+   "id": "V07",
+   "kind": "valid_trusted",
+   "C": "contradicted",
+   "storedD": "contradicted",
+   "D": "contradicted",
+   "runs": []
+  },
+  {
+   "id": "V08",
+   "kind": "invalid",
+   "C": "cannot_verify",
+   "storedD": "cannot_verify",
+   "D": "cannot_verify",
+   "runs": []
+  },
+  {
+   "id": "V09",
+   "kind": "invalid",
+   "C": "supported",
+   "storedD": "supported",
+   "D": "supported",
+   "runs": [
+    {
+     "run": 1,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "advice": []
+    },
+    {
+     "run": 2,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "advice": []
+    },
+    {
+     "run": 3,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "advice": []
+    }
+   ]
+  },
+  {
+   "id": "V10",
+   "kind": "valid_trusted",
+   "C": "supported",
+   "storedD": "supported",
+   "D": "supported",
+   "runs": [
+    {
+     "run": 1,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "advice": []
+    },
+    {
+     "run": 2,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "advice": []
+    },
+    {
+     "run": 3,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "advice": []
+    }
+   ]
+  },
+  {
+   "id": "V11",
+   "kind": "invalid",
+   "C": "contradicted",
+   "storedD": "contradicted",
+   "D": "contradicted",
+   "runs": []
+  },
+  {
+   "id": "V12",
+   "kind": "invalid",
+   "C": "supported",
+   "storedD": "supported",
+   "D": "supported",
+   "runs": [
+    {
+     "run": 1,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "advice": []
+    },
+    {
+     "run": 2,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "advice": []
+    },
+    {
+     "run": 3,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "invalid_review",
+     "guard": "verdict-word",
+     "advice": []
+    }
+   ]
+  },
+  {
+   "id": "V13",
+   "kind": "valid_trusted",
+   "C": "cannot_verify",
+   "storedD": "cannot_verify",
+   "D": "cannot_verify",
+   "runs": []
+  },
+  {
+   "id": "V14",
+   "kind": "invalid",
+   "C": "cannot_verify",
+   "storedD": "cannot_verify",
+   "D": "cannot_verify",
+   "runs": []
+  },
+  {
+   "id": "V15",
+   "kind": "valid_incomplete",
+   "C": "cannot_verify",
+   "storedD": "cannot_verify",
+   "D": "cannot_verify",
+   "runs": []
+  },
+  {
+   "id": "V16",
+   "kind": "valid_trusted",
+   "C": "supported",
+   "storedD": "cannot_verify",
+   "D": "supported",
+   "runs": [
+    {
+     "run": 1,
+     "storedD": "cannot_verify",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P116:H1",
+       "file": "src/bank/seed_data.py",
+       "line": 110,
+       "quote": "                        continue",
+       "severity": "blocking",
+       "ac": "AC1",
+       "text": "Code does not handle case of single account in currency."
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P116:H2",
+       "file": "tests/test_seed_data.py",
+       "line": 115,
+       "quote": "    try:",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "Test covers the case of one account per currency."
+      }
+     ]
+    },
+    {
+     "run": 2,
+     "storedD": "cannot_verify",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P116:H1",
+       "file": "src/bank/seed_data.py",
+       "line": 110,
+       "quote": "                        continue",
+       "severity": "blocking",
+       "ac": "AC1",
+       "text": "Code does not handle case of single account in currency."
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P116:H2",
+       "file": "tests/test_seed_data.py",
+       "line": 115,
+       "quote": "    try:",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "Test covers the case of one account per currency."
+      }
+     ]
+    },
+    {
+     "run": 3,
+     "storedD": "cannot_verify",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P116:H1",
+       "file": "src/bank/seed_data.py",
+       "line": 110,
+       "quote": "                        continue",
+       "severity": "blocking",
+       "ac": "AC1",
+       "text": "Code does not handle case of single account in currency."
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P116:H2",
+       "file": "tests/test_seed_data.py",
+       "line": 115,
+       "quote": "    try:",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "Test covers the case of one account per currency."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "V17",
+   "kind": "valid_trusted",
+   "C": "contradicted",
+   "storedD": "contradicted",
+   "D": "contradicted",
+   "runs": []
+  },
+  {
+   "id": "V18",
+   "kind": "invalid",
+   "C": "supported",
+   "storedD": "supported",
+   "D": "supported",
+   "runs": [
+    {
+     "run": 1,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P118:H2",
+       "file": "src/bank/api.py",
+       "line": 260,
+       "quote": "        @app.get(\"/api/debug/accounts\")",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "Code adds debug route when DEBUG_ROUTES is True."
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P118:H3",
+       "file": "tests/test_api.py",
+       "line": 242,
+       "quote": "    response = on.get(\"/api/debug/accounts\")",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "Test checks that debug route returns 200 when flag is True and 404 when False."
+      }
+     ]
+    },
+    {
+     "run": 2,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P118:H2",
+       "file": "src/bank/api.py",
+       "line": 260,
+       "quote": "        @app.get(\"/api/debug/accounts\")",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "Code adds debug route when DEBUG_ROUTES is True."
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P118:H3",
+       "file": "tests/test_api.py",
+       "line": 242,
+       "quote": "    response = on.get(\"/api/debug/accounts\")",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "Test checks that debug route returns 200 when flag is True and 404 when False."
+      }
+     ]
+    },
+    {
+     "run": 3,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P118:H2",
+       "file": "src/bank/api.py",
+       "line": 260,
+       "quote": "        @app.get(\"/api/debug/accounts\")",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "Code adds debug route when DEBUG_ROUTES is True."
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P118:H3",
+       "file": "tests/test_api.py",
+       "line": 242,
+       "quote": "    response = on.get(\"/api/debug/accounts\")",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "Test checks that debug route returns 200 when flag is True and 404 when False."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "V19",
+   "kind": "valid_trusted",
+   "C": "supported",
+   "storedD": "supported",
+   "D": "supported",
+   "runs": [
+    {
+     "run": 1,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P119:H1",
+       "file": "src/bank/web/index.html",
+       "line": 50,
+       "quote": "          <input name=\"to_account_number\" placeholder=\"YMS-0000-0002\" maxlength=\"32\" autocomplete=\"off\" required>",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "input to_account_number maxlength set to 32"
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P119:H1",
+       "file": "src/bank/web/index.html",
+       "line": 53,
+       "quote": "          <input name=\"amount\" inputmode=\"decimal\" placeholder=\"25.00\" maxlength=\"16\" autocomplete=\"off\" required>",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "input amount maxlength set to 16"
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P119:H2",
+       "file": "tests/test_web.py",
+       "line": 127,
+       "quote": "    page = (WEB_DIR / \"index.html\").read_text(encoding=\"utf-8\")",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "test checks for maxlength attributes"
+      }
+     ]
+    },
+    {
+     "run": 2,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P119:H1",
+       "file": "src/bank/web/index.html",
+       "line": 50,
+       "quote": "          <input name=\"to_account_number\" placeholder=\"YMS-0000-0002\" maxlength=\"32\" autocomplete=\"off\" required>",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "input to_account_number maxlength set to 32"
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P119:H1",
+       "file": "src/bank/web/index.html",
+       "line": 53,
+       "quote": "          <input name=\"amount\" inputmode=\"decimal\" placeholder=\"25.00\" maxlength=\"16\" autocomplete=\"off\" required>",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "input amount maxlength set to 16"
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P119:H2",
+       "file": "tests/test_web.py",
+       "line": 127,
+       "quote": "    page = (WEB_DIR / \"index.html\").read_text(encoding=\"utf-8\")",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "test checks for maxlength attributes"
+      }
+     ]
+    },
+    {
+     "run": 3,
+     "storedD": "supported",
+     "D": "supported",
+     "reasonSame": true,
+     "review": "review",
+     "guard": null,
+     "advice": [
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P119:H1",
+       "file": "src/bank/web/index.html",
+       "line": 50,
+       "quote": "          <input name=\"to_account_number\" placeholder=\"YMS-0000-0002\" maxlength=\"32\" autocomplete=\"off\" required>",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "input to_account_number maxlength set to 32"
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P119:H1",
+       "file": "src/bank/web/index.html",
+       "line": 53,
+       "quote": "          <input name=\"amount\" inputmode=\"decimal\" placeholder=\"25.00\" maxlength=\"16\" autocomplete=\"off\" required>",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "input amount maxlength set to 16"
+      },
+      {
+       "label": "advice from a model, not counted",
+       "hunk": "P119:H2",
+       "file": "tests/test_web.py",
+       "line": 127,
+       "quote": "    page = (WEB_DIR / \"index.html\").read_text(encoding=\"utf-8\")",
+       "severity": "note",
+       "ac": "AC1",
+       "text": "test checks for maxlength attributes"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "V20",
+   "kind": "valid_incomplete",
+   "C": "cannot_verify",
+   "storedD": "cannot_verify",
+   "D": "cannot_verify",
+   "runs": []
+  },
+  {
+   "id": "V21",
+   "kind": "invalid",
+   "C": "cannot_verify",
+   "storedD": "cannot_verify",
+   "D": "cannot_verify",
+   "runs": []
+  },
+  {
+   "id": "V22",
+   "kind": "valid_incomplete",
+   "C": "cannot_verify",
+   "storedD": "cannot_verify",
+   "D": "cannot_verify",
+   "runs": []
+  },
+  {
+   "id": "V23",
+   "kind": "valid_trusted",
+   "C": "contradicted",
+   "storedD": "contradicted",
+   "D": "contradicted",
+   "runs": []
+  },
+  {
+   "id": "V24",
+   "kind": "high_stake",
+   "C": "cannot_verify",
+   "storedD": "cannot_verify",
+   "D": "cannot_verify",
+   "runs": []
+  }
+ ]
+}

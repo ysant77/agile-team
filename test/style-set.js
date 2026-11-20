@@ -1,4 +1,5 @@
 // The style test set: every text a human reads that code renders, plus sample free-text answers.
+import { ADVICE_HEADING, ADVICE_NOTE } from '../src/review-advice.js';
 import { readFileSync } from 'node:fs';
 import { formatCase, formatOpinion, buildPacket } from '../src/case.js';
 import { applyGuards } from '../src/opinion.js';
@@ -30,6 +31,7 @@ export function renderedTexts() {
     ['opinion comment', formatOpinion('BANK-32', opinion)],
     ['decision comment', formatDecision('BANK-32', decision)],
     ['review comment', formatReview('BANK-4', 61, review)],
+    ['review advice note', `${ADVICE_HEADING}. ${ADVICE_NOTE}`],
     ['review comment (refused)', formatReview('BANK-4', 61, { ...review, outcome: 'invalid_review', guard: 'unknown-hunk', review: null })],
     ...monitor.notes.map((n, i) => [`monitor note ${i + 1}`, n]),
     ['skill: write-checkable-ticket', readFileSync('skills/write-checkable-ticket/SKILL.md', 'utf8').split('---').slice(2).join('---')],

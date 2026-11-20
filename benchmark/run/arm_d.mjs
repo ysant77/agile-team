@@ -7,8 +7,10 @@
 // For each case where C is `supported`, the agent gets the reviewer prompt (manifest.yml,
 // reviewer-agent) and two tools. get-pr-diff returns the app's packet for the case
 // (buildReviewPacket + packetForAgent). record-review runs the app's guards and gate
-// (applyReviewGuards + reviewGate, one retry). D is `cannot_verify` when the accepted review has
-// at least one finding (rating rule, ARM-D-PROTOCOL.md). D never turns a result into `supported`.
+// (applyReviewGuards + reviewGate, one retry). Owner decision 20 Nov: the review is advice only.
+// D is always C's outcome; the accepted findings are stored as advice, not counted. Until 20 Nov
+// a rating-rule option turned D into `cannot_verify` on a finding; it is removed, so no option can
+// make the reviewer change an outcome.
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -23,15 +25,11 @@ const LOG = resolve(opt('--log')[0]);
 const RUNS = Number(opt('--runs')[0] ?? 3);
 const ONLY = new Set((opt('--only')[0] ?? '').split(',').filter(Boolean));
 const manifest = opt('--manifest').flatMap((m) => JSON.parse(readFileSync(m, 'utf8')));
-// Rating rule: 'any-finding' (set 2 protocol, code-review/1) or 'blocking' (code-review/2: only a
-// blocking finding with an AC that passed the guards holds the claim).
-const RULE = opt('--rule')[0] ?? 'any-finding';
 const cResults = JSON.parse(readFileSync(opt('--results')[0], 'utf8'));
 const TRUTH = JSON.parse(readFileSync(opt('--truth')[0], 'utf8'));
 const imp = (p) => import(pathToFileURL(join(REV, p)).href);
-const reviewMod = await imp('src/review.js');
-const { buildReviewPacket, applyReviewGuards, reviewGate, reviewSuggested, REVIEW_PROMPT_VERSION } = reviewMod;
-if (RULE === 'blocking' && !reviewMod.blockingFindings) throw new Error('--rule blocking needs a reviewer with blockingFindings (code-review/2)');
+const { buildReviewPacket, applyReviewGuards, reviewGate, reviewSuggested, REVIEW_PROMPT_VERSION } = await imp('src/review.js');
+const { withAdvice } = await imp('src/review-advice.js');
 const { packetForAgent } = await imp('src/review-actions.js');
 const { TOOL_SPECS } = await imp('src/tool-specs.js');
 // Time limit of one model server call (--timeout-s, default 600 s).
@@ -133,12 +131,12 @@ async function runCase(c, n, cResult, seed) {
       messages.push({ role: 'tool', content: JSON.stringify(result), tool_name: name });
     }
   }
-  const findings = RULE === 'blocking'
-    ? (accepted ? reviewMod.blockingFindings(accepted) : [])
-    : (accepted?.outcome === 'review' ? (accepted.review?.findings ?? []) : []);
+  // The app's own path: the advice is attached, the outcome is not touched.
+  const headSha = packet.pr.headSha ?? 'no-head';
+  const { advice } = withAdvice({ result: cResult.outcome, reason: cResult.reason }, accepted ? [{ ...accepted, headSha }] : [], headSha);
   return {
-    D: findings.length > 0 ? 'cannot_verify' : cResult.outcome,
-    blocking: findings,
+    D: cResult.outcome,
+    advice,
     review: accepted ? { outcome: accepted.outcome, guard: accepted.guard, style: accepted.style ?? null, review: accepted.review } : null,
     inputHash: accepted?.inputHash ?? null,
     trace,
@@ -172,16 +170,9 @@ for (const [n, c] of manifest.entries()) {
     writeFileSync(join(LOG, `${c.id}-run${k}.json`), `${JSON.stringify(r, null, 1)}\n`);
     runs.push({ run: k, seed: k, D: r.D, review: r.review?.outcome ?? 'no review', guard: r.review?.guard ?? null,
       findings: (r.review?.review?.findings ?? []).map((f) => `${f.severity ? `[${f.severity}${f.ac ? ` ${f.ac}` : ''}] ` : ''}${f.hunk} ${f.file}:${f.line}: ${f.text}`) });
-    console.log(c.id, `run ${k}`, r.D, r.review?.outcome ?? 'no review', r.review?.guard ?? '', `blocking ${r.blocking.length}`);
+    console.log(c.id, `run ${k}`, r.D, r.review?.outcome ?? 'no review', r.review?.guard ?? '', `advice ${r.advice.length}`);
   }
-  // Worst run per case (the run least favourable to the app): for a case whose correct outcome
-  // is supported, any run with cannot_verify counts; otherwise D catches the case only when every
-  // run gives cannot_verify.
-  const wantsSupported = (TRUTH[c.id]?.correct ?? []).includes('supported');
-  const D = wantsSupported
-    ? (runs.some((r) => r.D === 'cannot_verify') ? 'cannot_verify' : cr.outcome)
-    : (runs.every((r) => r.D === 'cannot_verify') ? 'cannot_verify' : cr.outcome);
-  const allCaught = runs.every((r) => r.D === 'cannot_verify');
-  out.push({ id: c.id, C: cr.outcome, D, allRunsCannotVerify: allCaught, runs });
+  // Every run gives C's outcome; the runs differ only in the advice they show.
+  out.push({ id: c.id, C: cr.outcome, D: cr.outcome, correct: TRUTH[c.id]?.correct ?? null, runs });
 }
-writeFileSync(join(LOG, 'arm-d.json'), `${JSON.stringify({ model: MODEL, options: OPTIONS, promptVersion: REVIEW_PROMPT_VERSION, rule: RULE, results: out }, null, 1)}\n`);
+writeFileSync(join(LOG, 'arm-d.json'), `${JSON.stringify({ model: MODEL, options: OPTIONS, promptVersion: REVIEW_PROMPT_VERSION, rule: 'advice-only', results: out }, null, 1)}\n`);

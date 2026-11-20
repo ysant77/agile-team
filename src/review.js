@@ -1,15 +1,16 @@
 // Agile Code Reviewer (DESIGN.md section 14a). The reviewer reads the pull request's patch hunks
 // and gives a review marked "not verified": findings tied to hunk ids, risks, and proposed checks.
 // Code checks every id, line, number and proposed test. A review never passes a claim and never
-// approves. Only a blocking finding with an AC id, for the same head commit, can hold a supported
-// claim at cannot_verify for a person to check (src/review-hold.js). A proposed check counts only
-// when CI runs the test and the verifier maps it to an AC.
+// approves. Since 20 Nov a finding is advice only: the verdict comment and the panel show it with
+// the quoted changed line, marked "advice from a model, not counted" (src/review-advice.js); it never
+// changes a verdict. A proposed check counts only when CI runs the test and the verifier maps it to
+// an AC.
 
 import { canonical, sha256 } from './audit.js';
 import { numbersIn, quantityText } from './lint.js';
 import { idsIn } from './opinion.js';
 import { lintText, STYLE_CONTRACT, lintMessage } from './style.js';
-import { statesDefect } from './review-hold.js';
+import { statesDefect } from './review-advice.js';
 import { VERIFY_CONFIG } from './verify-claim.js';
 import { testName, testsByName } from './verifier/report.js';
 import { rawRef, schemaErrorClass } from './trace.js';
@@ -40,17 +41,19 @@ const DEFAULT_GUARDED = [...new Set([...VERIFY_CONFIG.guardedPaths, ...VERIFY_CO
 const SHA = /\b[0-9a-f]{7,40}\b/g;
 const stripShas = (text) => text.replace(SHA, (t) => (/[a-f]/.test(t) && /\d/.test(t) ? ' ' : t));
 
-// New-side line numbers of the '+' lines of a hunk. Context and removed lines do not count.
-function addedLines(h) {
-  const added = new Set();
+// New-side line numbers of the '+' lines of a hunk, with the line text (without the '+').
+// Context and removed lines do not count.
+function addedLineTexts(h) {
+  const added = new Map();
   let n = h.newStart;
   for (const line of h.text.split('\n')) {
-    if (line.startsWith('+')) added.add(n++);
+    if (line.startsWith('+')) added.set(n++, line.slice(1));
     else if (line.startsWith('-') || line.startsWith('\\')) continue;
     else n += 1;
   }
   return added;
 }
+const addedLines = (h) => new Set(addedLineTexts(h).keys());
 
 const isTestFile = (f) => f.startsWith('tests/') || f.split('/').pop().startsWith('test_');
 const matchesPath = (file, paths) => paths.some((g) => (g.endsWith('/') ? file.startsWith(g) : file === g));
@@ -270,8 +273,8 @@ export function applyReviewGuards(raw, packet, meta = {}) {
   // Guard 7 (code-review/2): a blocking finding names an AC of the ticket and states a defect in
   // the reviewer's own words. A quoted changed line is not a defect statement.
   // Known limit (docs/claims.md): the guard refuses copied code only. A short text with no defect
-  // statement and no copied code, such as "Bad.", passes. Such a finding can only hold a
-  // supported claim for a person to check; it can never pass a claim.
+  // statement and no copied code, such as "Bad.", passes. Such a finding is advice only; it never
+  // changes a verdict.
   const acSet = new Set(packet.ticket.acs.map((a) => a.acId));
   for (const f of review.findings) {
     if (f.ac !== undefined && !acSet.has(f.ac)) return invalid('unknown-ac', `${f.ac} is not an AC of ${packet.ticket.key}`);
@@ -310,7 +313,10 @@ export function applyReviewGuards(raw, packet, meta = {}) {
       return invalid('guarded-path', `${c.file} is a guarded path; a change there makes the verifier refuse metric evidence`);
     }
   }
-  const reviewOut = { ...review, proposedChecks: review.proposedChecks.filter((c) => !hasCodeCheck(acs.get(c.ac))) };
+  // The quoted line comes from the packet, by code: the added line the finding points at (guard 1
+  // checked that it is one). The schema drops any quote the model sends.
+  const findings = review.findings.map((f) => ({ ...f, quote: addedLineTexts(hunks.get(f.hunk)).get(f.line) }));
+  const reviewOut = { ...review, findings, proposedChecks: review.proposedChecks.filter((c) => !hasCodeCheck(acs.get(c.ac))) };
   return { ...base, outcome: 'review', guard: null, reasons: [], review: reviewOut, droppedFindings, droppedChecks };
 }
 
@@ -323,8 +329,8 @@ function templateReview(review) {
   };
 }
 
-// Arm D rating rule: the findings that can hold a claim (see review-hold.js).
-export { blockingFindings } from './review-hold.js';
+// The blocking findings with an AC. Since 20 Nov they are advice like any other finding.
+export { blockingFindings } from './review-advice.js';
 
 // Guard 6: a refused review or a style finding gets one retry. After that, a refused review is
 // dropped (the human sees "no valid review"), and style findings are replaced by a template.
@@ -340,7 +346,7 @@ export function reviewGate(record, retries) {
   if (retries < 1) {
     return { action: 'retry', message: `Style findings: ${lintMessage(findings)}. ${STYLE_CONTRACT} Keep the same hunk ids and checks, and call record-review again.` };
   }
-  // Rule (ii): people see the template; the hold decision keeps the model's guard-accepted findings.
+  // Rule (ii): people see the template; the advice keeps the model's guard-accepted findings.
   return { action: 'accept', record: { ...record, review: templateReview(record.review), modelFindings: record.review.findings, style: 'fallback', styleFindings: findings.length } };
 }
 
@@ -385,7 +391,7 @@ export function formatReview(issueKey, prNumber, record) {
   }
   const r = record.review;
   return [
-    `${REVIEW_LABEL} on ${issueKey} PR #${prNumber}. It never passes a claim; a blocking finding holds a supported claim for a person to check.`,
+    `${REVIEW_LABEL} on ${issueKey} PR #${prNumber}: advice from a model, not counted. It never changes a verdict.`,
     ...r.findings.map((f) => `- ${f.severity === 'blocking' ? `Blocking (${f.ac}) ` : ''}${f.hunk} ${f.file}:${f.line}: ${f.text}`),
     ...r.risks.map((x) => `- Risk: ${x}`),
     ...r.proposedChecks.map((c) => `- Proposed check for ${c.ac}: ${c.testName} in ${c.file}. It must assert: ${c.asserts}${c.failsBeforeFix ? ' It must fail before the fix.' : ''}`),
