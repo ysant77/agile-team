@@ -81,17 +81,18 @@ test('a record without stored checks: every level "not checked"; malformed input
   }
 });
 
-test('level 5 names the pinned tests that held, and a review hold, but stays "not checked"', () => {
+test('level 5 names the pinned tests that held, but stays "not checked"; a review never lowers or raises it', () => {
   const pinned = { name: 'pinned_tests_hold', status: 'pass', reason: '12 pinned base test(s) hold on the head code' };
   const l = byLevel(evidenceLevels([pinned]));
   assert.equal(l[L5].status, 'not checked');
   assert.match(l[L5].detail, /old behaviour held by 12 pinned tests/);
   const advisory = byLevel(evidenceLevels([{ ...pinned, advisory: true, reason: 'not run: no pinned block' }]));
   assert.doesNotMatch(advisory[L5].detail, /held by/);
-  const held = verdictView(record([pinned], { result: 'cannot_verify', reviewHold: ['AC1'] }));
-  const l5 = held.levels.find((x) => x.level === L5);
+  const old = verdictView(record([pinned], { result: 'cannot_verify', reviewHold: ['AC1'] }));
+  const l5 = old.levels.find((x) => x.level === L5);
   assert.equal(l5.status, 'not checked');
-  assert.match(l5.detail, /a reviewer's blocking finding on AC1 says a case may be missing/);
+  assert.doesNotMatch(l5.detail, /reviewer/);
+  assert.deepEqual(old.levels, evidenceLevels([pinned]));
 });
 
 test('the view carries the levels and does not change the verdict or the other lists', () => {
