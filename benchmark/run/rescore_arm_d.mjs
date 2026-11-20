@@ -9,7 +9,7 @@
 // withAdvice (src/review-advice.js) to C's verdict. The new D is the result that comes back.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { checkToolCall } from './dispatch.mjs';
 
@@ -91,7 +91,9 @@ const summary = {
   adviceItems: rows.reduce((k, r) => k + r.runs.reduce((j, x) => j + x.advice.length, 0), 0),
   problems,
 };
-const out = { rule: 'advice-only', source: LOG, summary, results: rows };
+// The source is written relative to the app checkout: the repository is public, and a run record
+// must not hold a local home path.
+const out = { rule: 'advice-only', source: relative(APP, LOG).split('\\').join('/'), summary, results: rows };
 const dest = opt('--write')[0];
 if (dest) writeFileSync(dest, `${JSON.stringify(out, null, 1)}\n`);
 console.log(JSON.stringify(summary, null, 1));

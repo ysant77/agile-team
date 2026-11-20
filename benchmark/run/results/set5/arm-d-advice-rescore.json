@@ -1,6 +1,6 @@
 {
  "rule": "advice-only",
- "source": "/Users/yatharthmaheshsant/Documents/codegeist-2026/agile-team-rev/benchmark/run/results/set5/arm-d",
+ "source": "benchmark/run/results/set5/arm-d",
  "summary": {
   "cases": 24,
   "recordsDifferFromC": 0,
