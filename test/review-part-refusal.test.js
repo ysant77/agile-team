@@ -2,8 +2,8 @@
 // REGRESSION-ARM-D-2026-11-17.md). The fixtures are the real packets and model reviews of arm D
 // cases T08 and B21 (reviewer a3b8982, seed 1; packet hashes match the runs).
 // (i) A guard that faults one part of a review refuses that part only.
-// (ii) The hold decision uses the model's own guard-accepted finding text; the style fallback
-//      changes only what people see in the review.
+// (ii) The advice uses the model's own guard-accepted finding text; the style fallback changes
+//      only what people see in the review. Since 20 Nov a review is advice only (no hold).
 // (iii) A finding whose model text has no defect statement (only a hunk or line reference) is
 //      refused as a finding; the review stays.
 
@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { applyReviewGuards, blockingFindings, buildReviewPacket, reviewGate } from '../src/review.js';
-import { applyReviewHold } from '../src/review-hold.js';
+import { withAdvice } from '../src/review-advice.js';
 
 const load = (id) => JSON.parse(readFileSync(new URL(`../fixtures/review-${id}.json`, import.meta.url), 'utf8'));
 const T08 = load('T08');
@@ -19,7 +19,7 @@ const B21 = load('B21');
 const packetOf = (fx) => buildReviewPacket(fx.packetInput);
 const supported = { result: 'supported', reason: 'all checks passed' };
 const HEAD = 'a'.repeat(40);
-const hold = (record) => applyReviewHold(supported, { type: 'ready' }, [{ ...record, headSha: HEAD }], HEAD);
+const hold = (record) => withAdvice(supported, [{ ...record, headSha: HEAD }], HEAD);
 
 test('T08: a proposed check for an AC with a code check is dropped; the review and its blocking finding stay', () => {
   const r = applyReviewGuards(T08.modelReviews[0], packetOf(T08));
@@ -32,11 +32,12 @@ test('T08: a proposed check for an AC with a code check is dropped; the review a
   assert.ok(texts.includes('Code does not handle kind=debit case for filtering lines.'), JSON.stringify(texts));
 });
 
-test('T08: the claim is held, and the reason shown to people has the model\'s defect statement', () => {
+test('T08: the claim stays supported, and the advice shown to people has the model\'s defect statement', () => {
   const r = applyReviewGuards(T08.modelReviews[0], packetOf(T08));
   const v = hold(reviewGate(r, 1).record);
-  assert.equal(v.result, 'cannot_verify');
-  assert.match(v.reason, /does not handle kind=debit/);
+  assert.equal(v.result, 'supported');
+  assert.equal(v.reason, supported.reason);
+  assert.ok(v.advice.some((a) => /does not handle kind=debit/.test(a.text)), JSON.stringify(v.advice));
 });
 
 test('B21: the same rule keeps the reviewer\'s real blocking finding (the reviewer\'s true behaviour)', () => {
@@ -46,7 +47,7 @@ test('B21: the same rule keeps the reviewer\'s real blocking finding (the review
   assert.ok(blockingFindings(r).some((f) => /does not reject underscores or spaces/.test(f.text)));
 });
 
-test('after a style fallback the hold uses the guard-accepted model text; people see the template in the review only', () => {
+test('after a style fallback the advice uses the guard-accepted model text; people see the template in the review only', () => {
   // B21's second review passes the guards; its risk texts fail the style lint, so with the retry
   // used the gate falls back to the template.
   const accepted = reviewGate(applyReviewGuards(B21.modelReviews[1], packetOf(B21)), 1).record;
@@ -55,9 +56,9 @@ test('after a style fallback the hold uses the guard-accepted model text; people
   const texts = blockingFindings(accepted).map((f) => f.text);
   assert.ok(texts.includes('Code does not reject underscores or spaces in amount strings.'), JSON.stringify(texts));
   const v = hold(accepted);
-  assert.equal(v.result, 'cannot_verify');
-  assert.match(v.reason, /does not reject underscores or spaces in amount strings/);
-  assert.doesNotMatch(v.reason, /Finding 1: see/);
+  assert.equal(v.result, 'supported');
+  assert.ok(v.advice.some((a) => /does not reject underscores or spaces in amount strings/.test(a.text)));
+  assert.ok(v.advice.every((a) => !/Finding 1: see/.test(a.text)));
 });
 
 test('a finding whose model text is only a hunk or line reference is refused as a finding; the review stays', () => {
@@ -78,8 +79,9 @@ test('a finding whose model text is only a hunk or line reference is refused as 
   }
 });
 
-test('a stored review with template text only (no model text kept) holds nothing', () => {
+test('a stored review with template text only (no model text kept) gives no advice', () => {
   const stored = { outcome: 'review', style: 'fallback', review: { findings: [{ hunk: 'P121:H3', file: 'src/bank/money.py', line: 62, severity: 'blocking', ac: 'AC1', text: 'Finding 1: see P121:H3, line 62.' }], risks: [], proposedChecks: [] } };
   assert.deepEqual(blockingFindings(stored), []);
   assert.equal(hold(stored).result, 'supported');
+  assert.deepEqual(hold(stored).advice, []);
 });
