@@ -16,6 +16,15 @@ and Jira, bank branches built locally). They are not yet on the demo Jira site.
   demo reports have the pinned block since bank PR 21.
 - **Demo repository:** the case branches `case/U01`, `case/U04`, `case/U20` and `case/T08`
   (demo PRs 1 to 4), and `case/U12`, which carries the set 4 change of U12 on demo `main`.
+- **State on 20 Nov (checked 23:55 SGT):** demo PRs 1, 2, 3, 4 and 6 (U12) are on demo `main`
+  e0c82ae. CI is green on each head. Each report has its `pinned` block, and each run has a
+  marker artifact that matches the comment.
+- **Known gap on the live site:** the panel has no sign-off button yet. The `signOff` action
+  exists, and the local test writes the sign-off directly. Until a button is added, U12 on the
+  site shows Cannot verify only, not the second half (sign-off, then Supported).
+- **T08 on the site:** the code checks give Supported. When the Agile Code Reviewer has reviewed
+  demo PR 4 first, the panel also shows its findings under "Advice from a model, not counted".
+  Without a review the state is the same; only the advice section is absent.
 - **Demo site (prepared, not done):** `scripts/judge-seed.mjs` writes the `aat.ticket` property
   of each case (with the case's own test names) and prints the branch, PR title, labels, claim
   and the expected verdict.
