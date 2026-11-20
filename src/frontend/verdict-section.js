@@ -30,6 +30,8 @@ export function VerdictSection({ view, ui }) {
     h(Heading, { as: 'h4' }, 'What was not checked'),
     ...lines('n', view.notChecked),
     h(SectionMessage, { appearance: 'information' }, h(Text, null, view.meaning)),
+    // The model's advice is apart from the verdict and is not counted (src/review-advice.js).
+    ...(view.advice ? [h(Heading, { as: 'h4', key: 'a-head' }, view.advice.heading), h(Text, { key: 'a-note' }, view.advice.note), ...lines('a', view.advice.lines)] : []),
     h(Heading, { as: 'h4' }, 'Human decision'),
     h(Text, null, view.human),
     h(Text, null, `Verdict set by code (checker ${view.meta.checker ?? 'unknown'}). Agents explain it; only a person decides.`));

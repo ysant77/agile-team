@@ -1,12 +1,21 @@
-// Arm D rating rule in the app: a review can hold a claim, never pass one. This module does not
-// import review.js, because review.js reads VERIFY_CONFIG from verify-claim.js when it loads.
+// Review advice (owner decision 20 Nov, item 1): a model review is advice only. A stored finding
+// is shown with its hunk, its file and line, and the changed line quoted from the packet by code,
+// marked "advice from a model, not counted". It never changes a verdict: the result, the reason
+// and the checks stay as code decided them. Before 20 Nov, applyReviewHold here turned a supported
+// ready, fixed or done claim into cannot_verify when a blocking finding was stored for the head
+// commit; src/verify-claim.js called it on every supported claim and no config turned it off.
+// This module does not import review.js, because review.js reads VERIFY_CONFIG from
+// verify-claim.js when it loads.
 
-export const HOLD_CLAIMS = ['ready', 'fixed', 'done'];
+export const ADVICE_LABEL = 'advice from a model, not counted';
+export const ADVICE_HEADING = 'Advice from a model, not counted';
+export const ADVICE_NOTE = 'A model wrote this. Code did not check it, and it does not change the verdict. A person may read it.';
+export const MAX_ADVICE = 6;
 
 // Rule (iii), 17 Nov: a finding states a defect only when its text has words beyond a reference.
 // Hunk ids, file paths, line references, AC ids, numbers and the words "finding", "see", "line"
 // and "hunk" are removed first. "Finding 1: see P121:H3, line 62." states nothing. Known limit: a
-// short word such as "Bad." still passes; it can only hold a claim for a person to check.
+// short word such as "Bad." still passes; it is advice only.
 const REFERENCE_WORDS = /\b(?:findings?|see|lines?|hunks?|at|in|on|of|the|and)\b/gi;
 export function statesDefect(text) {
   if (typeof text !== 'string') return false;
@@ -19,35 +28,64 @@ export function statesDefect(text) {
   return /[A-Za-z]{2,}/.test(rest);
 }
 
-// The findings that can hold a claim. Only an accepted review counts. Rule (ii), 17 Nov: after a
-// style fallback the record keeps the model's guard-accepted findings in `modelFindings`, and the
-// hold uses them; the template in `review.findings` is only what people see. A malformed stored
-// review (findings not an array, a finding that is not an object) gives no finding and never
-// throws.
-export function blockingFindings(record) {
+// The guard-accepted findings of an accepted review that state a defect. Rule (ii), 17 Nov: after a
+// style fallback the record keeps the model's findings in `modelFindings`; the template in
+// `review.findings` has no defect statement. A malformed stored review gives none and never throws.
+function adviceFindings(record) {
   if (record?.outcome !== 'review') return [];
   const source = Array.isArray(record.modelFindings) ? record.modelFindings : record.review?.findings;
   if (!Array.isArray(source)) return [];
-  return source.filter((f) => f !== null && typeof f === 'object' && f.severity === 'blocking' && f.ac && statesDefect(f.text));
+  return source.filter((f) => f !== null && typeof f === 'object' && typeof f.hunk === 'string' && statesDefect(f.text));
 }
 
-// A supported ready, fixed or done claim becomes cannot_verify when an accepted review for the
-// same head commit has a blocking finding with an AC. Any other verdict is returned unchanged.
-// Fail-open by design: no review, a refused review, a review for another head or a failed read
-// changes nothing, so a model failure cannot block every claim; the code checks still decide.
-export function applyReviewHold(verdict, claim, reviews, headSha) {
-  if (verdict.result !== 'supported' || !HOLD_CLAIMS.includes(claim.type) || !headSha) return verdict;
-  const findings = (Array.isArray(reviews) ? reviews : [])
-    .filter((r) => r?.headSha === headSha)
-    .flatMap(blockingFindings);
-  if (findings.length === 0) return verdict;
-  const acs = [...new Set(findings.map((f) => f.ac))];
-  // The reason shows the model's own defect statement, not only the place (rule ii).
-  const where = [...new Set(findings.map((f) => `${f.hunk} ${f.file}:${f.line}: "${String(f.text).trim()}"`))].join('; ');
-  return {
-    ...verdict,
-    result: 'cannot_verify',
-    reason: `${acs.join(', ')}: the code checks passed, but a person must check the reviewer's blocking finding (${where}) on head ${headSha.slice(0, 7)}`,
-    reviewHold: { acs, headSha },
-  };
+// The blocking findings with an AC (guard 7). They are advice like any other finding; the severity
+// is shown, never counted.
+export function blockingFindings(record) {
+  return adviceFindings(record).filter((f) => f.severity === 'blocking' && f.ac);
+}
+
+const clip = (text, max) => {
+  const s = String(text ?? '').replace(/\s+/g, ' ').trim();
+  return s.length > max ? `${s.slice(0, max - 1)}…` : s;
+};
+
+// The advice items for one head commit: only reviews of that head, only accepted findings.
+export function reviewAdvice(reviews, headSha) {
+  if (!headSha || !Array.isArray(reviews)) return [];
+  const seen = new Set();
+  const items = [];
+  for (const f of reviews.filter((r) => r?.headSha === headSha).flatMap(adviceFindings)) {
+    const item = {
+      label: ADVICE_LABEL,
+      hunk: clip(f.hunk, 20),
+      file: clip(f.file, 120),
+      line: Number.isInteger(f.line) ? f.line : null,
+      quote: typeof f.quote === 'string' ? f.quote.slice(0, 200) : null,
+      severity: f.severity === 'blocking' ? 'blocking' : 'note',
+      ac: typeof f.ac === 'string' && f.ac ? clip(f.ac, 20) : null,
+      text: clip(f.text, 300),
+    };
+    const key = JSON.stringify(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    items.push(item);
+    if (items.length >= MAX_ADVICE) break;
+  }
+  return items;
+}
+
+// The verdict with the advice attached. The result, the reason and the checks are not touched.
+export function withAdvice(verdict, reviews, headSha) {
+  return { ...verdict, advice: reviewAdvice(reviews, headSha) };
+}
+
+export function adviceLine(a) {
+  const where = `${a.hunk} ${a.file}:${a.line ?? '?'} ${typeof a.quote === 'string' ? JSON.stringify(a.quote) : '(line text not stored)'}`;
+  return `${a.severity === 'blocking' ? `Blocking (${a.ac ?? 'no AC'}) ` : 'Note '}${where}: ${a.text}`;
+}
+
+// The verdict comment's advice block: a heading line, then one line per item.
+export function formatAdvice(advice) {
+  if (!Array.isArray(advice) || advice.length === 0) return [];
+  return [`${ADVICE_HEADING}. ${ADVICE_NOTE}`, ...advice.map((a) => `- ${adviceLine(a)}`)];
 }

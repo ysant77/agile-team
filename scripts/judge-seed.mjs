@@ -19,7 +19,7 @@ const EXPECTED = {
   U04: 'contradicted: the AC test passes on base',
   U20: 'contradicted: a pinned base test fails on the head code (protected set)',
   U12: 'cannot_verify: money_semantics needs a sign-off of the merged commit; then another person (not the claimant) signs off in the panel, the claim is made again, and the verdict is supported',
-  T08: 'cannot_verify, held by review (needs the reviewer run on the PR first)',
+  T08: "supported; the reviewer's finding is shown as advice, not counted (needs the reviewer run on the PR first)",
 };
 
 export function seedOf(c, key) {
