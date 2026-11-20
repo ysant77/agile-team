@@ -255,6 +255,10 @@ const ROWS = [
   // Other workflow runs only change the reason when no scanning result exists.
   { allow: { 'workflowRuns.0': Object.keys(BAD) } }],
   ['securityCheck', ['securityRuns', 'securityRuns.0', 'pr.headSha', 'config.securityCheck', 'config.securityCheck.mode']],
+  // Advice only (never counted), but a bad block still never reads as "no unknown import".
+  ['importsAdvice', ['report.imports', 'report.imports.result', 'report.imports.added', 'report.imports.added.0', 'report.imports.unknown', 'report.imports.unparsed'], {
+    tweak: (ctx) => { ctx.report.imports = { version: 1, result: 'pass', added: [{ file: 'src/x.py', line: 1, module: 'json', kind: 'stdlib' }], unknown: [], unparsed: [], lock_changed: false }; },
+    allow: { 'report.imports.added': ['missing', 'empty_array'], 'report.imports.unknown': ['missing', 'empty_array'], 'report.imports.unparsed': ['missing', 'empty_array'] } }],
 ];
 
 // The status a call gives: 'pass' for a pass result, a null reason (helpers), or an all-pass list.
