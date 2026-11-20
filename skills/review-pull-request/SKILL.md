@@ -11,8 +11,8 @@ metadata:
 
 The verifier is code, and it decides every verdict. A review adds findings, risks and proposed
 checks. The issue panel labels it "Review (not verified)". It never passes a claim and never
-approves. A blocking finding with an AC id can hold a supported claim on the same head commit, so
-a person checks it.
+approves. The verdict of the same head commit lists each finding as advice from a model, not
+counted. A finding never changes a verdict; a person may read it.
 
 ## Steps
 

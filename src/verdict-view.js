@@ -1,6 +1,9 @@
 // Verdict view (issue panel): what was proved, what was not checked, why, and what a person must
 // decide. Pure functions; the panel resolver reads the stored verdicts and passes them in. Code sets
-// the verdict; this module only explains it and never changes it.
+// the verdict; this module only explains it and never changes it. A model review is shown apart,
+// as advice that is not counted (owner decision 20 Nov, src/review-advice.js).
+
+import { ADVICE_HEADING, ADVICE_NOTE, adviceLine } from './review-advice.js';
 
 // Blind set 4 lesson (benchmark/RESULTS-4.md): "supported" means that the named test fails before
 // the change and passes after it, on this criterion. It does not show that the test covers every
@@ -15,14 +18,12 @@ const STATES = {
   supported: { label: 'Supported', tone: 'success', headline: 'Done by the code checks. A person decides to merge or close.' },
   contradicted: { label: 'Contradicted', tone: 'removed', headline: 'Not done: the evidence contradicts the claim.' },
   cannot_verify: { label: 'Cannot verify', tone: 'moved', headline: 'Not decided: some evidence is missing or not trusted.' },
-  held: { label: 'Held by review', tone: 'moved', headline: 'Not decided: the code checks passed, but a reviewer\'s blocking finding holds the claim.' },
 };
 
 const HUMAN = {
   supported: 'A person decides to merge or close the work item. No agent can do this.',
   contradicted: 'Fix the change or the test, then claim again. If the evidence is wrong, a person records a decision with a reason.',
   cannot_verify: 'Supply the missing evidence (see "Not checked"), or a person signs off with a reason where the ticket allows it.',
-  held: 'A person reads the blocking finding. If it is right, fix the code and add a test. If it is wrong, a person records that with a reason. A review can hold a claim; it can never pass one.',
 };
 
 const clip = (text, max = REASON_MAX) => {
@@ -67,7 +68,7 @@ function combine(rows) {
   return 'proved';
 }
 
-export function evidenceLevels(checks, { reviewHold = null } = {}) {
+export function evidenceLevels(checks) {
   const list = compactChecks(checks);
   const find = (name) => list.find((c) => c.name === name);
   const level = (name, check, missing) => (check
@@ -89,7 +90,6 @@ export function evidenceLevels(checks, { reviewHold = null } = {}) {
     held ? `Protected regression set: old behaviour held by ${held[1]} pinned tests; they do not cover the new AC.`
       : 'The protected regression set can show that old behaviour still holds; it did not run here.',
     'A person\'s sign-off can accept the coverage.',
-    ...(Array.isArray(reviewHold) && reviewHold.length ? [`Lowered: a reviewer's blocking finding on ${reviewHold.join(', ')} says a case may be missing.`] : []),
   ];
   return [
     level('CI passed', ci, 'not checked for this claim'),
@@ -104,8 +104,14 @@ export function evidenceLevels(checks, { reviewHold = null } = {}) {
 
 export function verdictState(record) {
   if (!record || typeof record !== 'object') return null;
-  if (record.result === 'cannot_verify' && Array.isArray(record.reviewHold) && record.reviewHold.length) return 'held';
   return STATES[record.result] ? record.result : null;
+}
+
+// The model's advice, apart from the verdict. Only well-formed items are shown.
+function adviceView(advice) {
+  const items = (Array.isArray(advice) ? advice : []).filter((a) => a && typeof a === 'object' && typeof a.hunk === 'string' && typeof a.text === 'string');
+  if (items.length === 0) return null;
+  return { heading: ADVICE_HEADING, note: ADVICE_NOTE, lines: items.slice(0, 6).map((a) => clip(adviceLine(a), 600)) };
 }
 
 // One verdict record (aat.verdicts entry) to the view model. A record without checks (written
@@ -132,7 +138,10 @@ export function verdictView(record) {
     }
   }
   if (checks.length === 0) notChecked.push('Per-check detail is not stored for this verdict; see the reason and the verdict comment.');
-  if (state === 'held') notChecked.push(`The reviewer's finding on ${record.reviewHold.join(', ')} is not verified by code.`);
+  // A record written before 20 Nov can carry a review hold. The stored result stays as it was.
+  if (Array.isArray(record.reviewHold) && record.reviewHold.length && record.result === 'cannot_verify') {
+    notChecked.push('An older checker let a model review hold this claim. A review no longer changes a verdict; claim again for a verdict from the code checks.');
+  }
   notChecked.push(NOT_CHECKED_COVERAGE);
   return {
     state,
@@ -145,7 +154,8 @@ export function verdictView(record) {
     failed,
     notChecked,
     human: HUMAN[state],
-    levels: evidenceLevels(record.checks, { reviewHold: state === 'held' ? record.reviewHold : null }),
+    levels: evidenceLevels(record.checks),
+    advice: adviceView(record.advice),
     meta: {
       claim: record.type ?? null,
       at: record.at ?? null,

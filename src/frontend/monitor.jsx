@@ -48,7 +48,7 @@ function App() {
             { key: 'c', content: (
               <Inline space="space.050">
                 {t.claims.map((c) => (
-                  <Lozenge key={c.seq} appearance={APPEARANCE[c.result] ?? 'default'}>{`${c.type}: ${c.state === 'held' ? 'held by review' : c.result.replace('_', ' ')} (seq ${c.seq})`}</Lozenge>
+                  <Lozenge key={c.seq} appearance={APPEARANCE[c.result] ?? 'default'}>{`${c.type}: ${c.result.replace('_', ' ')} (seq ${c.seq})`}</Lozenge>
                 ))}
               </Inline>
             ) },
