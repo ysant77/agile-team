@@ -122,9 +122,12 @@ test('compact checks are bounded in size', () => {
   assert.ok(JSON.stringify(c).length < 8000);
 });
 
-test('only the newest verdict keeps its checks in the Jira property', () => {
+test('only the newest verdict keeps its checks and its advice in the Jira property', () => {
   assert.deepEqual(stripChecks({ a: 1, checks: [1] }), { a: 1 });
   assert.deepEqual(stripChecks({ a: 1 }), { a: 1 });
+  // The advice is kept on the newest verdict only, like the checks.
+  assert.deepEqual(stripChecks({ a: 1, checks: [1], advice: [{ text: 'x' }] }), { a: 1 });
+  assert.deepEqual(stripChecks({ a: 1, advice: [] }), { a: 1 });
   assert.equal(stripChecks(null), null);
 });
 
