@@ -247,6 +247,10 @@ export async function decide({ issueKey, claim }, d) {
     checks: compactChecks(verdict.checks).slice(0, 30),
   };
   let comment = formatVerdict(issueKey, claim, verdict, { prUrl: github.pr?.url, githubConfigured: Boolean(repo) });
+  // The panel's sign-off button reads these from the latest done verdict: the person who claimed
+  // (who cannot sign off) and the merged commit that a sign-off must name (src/sign-off.js).
+  record.claimant = claim.by ?? null;
+  record.mergeSha = github.pr?.mergeSha ?? null;
   // DESIGN 15d: every done verdict carries the evidence record that code built from what it saw.
   let evidence = null;
   if (claim.type === 'done') {

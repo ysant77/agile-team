@@ -189,3 +189,31 @@ test('the stored checks of every judge case stay small', async () => {
     assert.ok(JSON.stringify(record).length < 12000, id);
   }
 });
+
+// The live U12 flow through the panel action (lead, 21 Nov): claim, the claimant is refused, a
+// second person signs off with the button, claim again, Supported. The verdict record names the
+// claimant and the merged commit, so the button needs neither from the person.
+test('U12 through the sign-off button: the claimant is refused, a second person signs off, the claim again is Supported', async () => {
+  const { signOffAction, SIGNOFF_CLAIMANT_REFUSAL } = await import('../src/sign-off.js');
+  const first = await verdictOf(load('U12'), { claimant: 'dev-a' });
+  assert.equal(first.record.result, 'cannot_verify');
+  assert.equal(first.record.claimant, 'dev-a');
+  assert.equal(first.record.mergeSha, U12_SHA());
+  let prev = { seq: 40, hash: 'f'.repeat(64) };
+  const written = [];
+  const deps = {
+    canEdit: async () => true,
+    readVerdicts: async () => [first.record],
+    appendAudit: async (e) => { prev = nextEvent(prev, { ...e, at: '2026-11-21T02:00:00.000Z' }); written.push(prev); return prev; },
+    writeSignoff: async (key, s) => { written.push(s); return { ok: true }; },
+  };
+  const key = load('U12').ticket.key;
+  const self = await signOffAction({ key, accountId: 'dev-a', payload: { reason: 'my own change is fine' } }, deps);
+  assert.deepEqual(self, { ok: false, error: SIGNOFF_CLAIMANT_REFUSAL });
+  assert.equal(written.length, 0);
+  const ok = await signOffAction({ key, accountId: 'finance-b', payload: { reason: 'the finance owner accepts zero decimals' } }, deps);
+  assert.equal(ok.ok, true, ok.error);
+  const [event, property] = written;
+  const again = await verdictOf(load('U12'), { claimant: 'dev-a', signoff: { event, property } });
+  assert.equal(again.record.result, 'supported', again.record.reason);
+});

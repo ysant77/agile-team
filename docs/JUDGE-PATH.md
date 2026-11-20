@@ -19,9 +19,12 @@ and Jira, bank branches built locally). They are not yet on the demo Jira site.
 - **State on 20 Nov (checked 23:55 SGT):** demo PRs 1, 2, 3, 4 and 6 (U12) are on demo `main`
   e0c82ae. CI is green on each head. Each report has its `pinned` block, and each run has a
   marker artifact that matches the comment.
-- **Known gap on the live site:** the panel has no sign-off button yet. The `signOff` action
-  exists, and the local test writes the sign-off directly. Until a button is added, U12 on the
-  site shows Cannot verify only, not the second half (sign-off, then Supported).
+- **U12 sign-off on the site:** the panel has a section "Sign-off of the merged change" when the
+  latest done verdict has a sign-off check. It names the merged commit from that verdict. A person
+  other than the claimant gives a reason and presses "Sign off the merged change"; the claimant is
+  refused with "You made the latest "done" claim on this work item, so you cannot sign it off."
+  The panel then shows who signed, the commit and the audit sequence. The claimant claims again,
+  and the verdict is Supported (`test/judge-path.test.js` runs this flow through the action).
 - **T08 on the site:** the code checks give Supported. When the Agile Code Reviewer has reviewed
   demo PR 4 first, the panel also shows its findings under "Advice from a model, not counted".
   Without a review the state is the same; only the advice section is absent.

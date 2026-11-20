@@ -4,6 +4,7 @@ import ForgeReconciler, {
 } from '@forge/react';
 import { invoke } from '@forge/bridge';
 import { VerdictSection } from './verdict-section.js';
+import { SignOffSection } from './sign-off-section.js';
 
 const APPEARANCE = { supported: 'success', contradicted: 'removed', cannot_verify: 'moved' };
 
@@ -14,6 +15,8 @@ function App() {
   const [adoptReason, setAdoptReason] = useState('');
   const [testName, setTestName] = useState('');
   const [testReason, setTestReason] = useState('');
+  const [signReason, setSignReason] = useState('');
+  const [signError, setSignError] = useState(null);
 
   const load = () => invoke('getPanel').then(setData);
   useEffect(() => {
@@ -41,6 +44,15 @@ function App() {
     const result = await invoke('approveTest', { kind, test: testName, reason: testReason });
     setMessage(result.ok ? { appearance: 'success', text: `Test ${kind} approved. Audit seq ${result.auditSeq}. Comment the claim again to verify.` } : { appearance: 'error', text: result.error });
     if (result.ok) { setTestName(''); setTestReason(''); }
+  };
+
+  // A person other than the claimant signs off the merged commit of the latest done claim. The
+  // commit comes from that verdict; a refusal is shown in the section.
+  const signOff = async () => {
+    const result = await invoke('signOff', { reason: signReason });
+    setSignError(result.ok ? null : result.error);
+    setMessage(result.ok ? { appearance: 'success', text: `Signed off. Audit seq ${result.auditSeq}. Comment the claim again to verify.` } : null);
+    if (result.ok) { setSignReason(''); load(); }
   };
 
   const recordAcs = async () => {
@@ -78,6 +90,8 @@ function App() {
         </Stack>
       )}
       <Inline><Button onClick={recordAcs}>Record these ACs</Button></Inline>
+      <SignOffSection panel={data.signoff} reason={signReason} onReason={setSignReason} onSignOff={signOff} error={signError}
+        ui={{ Button, Heading, Inline, SectionMessage, Stack, Text, TextArea }} />
       <Heading as="h3">Approve an old test change</Heading>
       <Text>A person other than the claimant approves the removal or change of one old test. The issue property does not count.</Text>
       <Stack space="space.100">

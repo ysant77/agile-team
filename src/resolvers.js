@@ -7,6 +7,7 @@ import { adoptFromReviews } from './review.js';
 import { approveTest, recordAcsAction } from './approval-actions.js';
 import { collectJira } from './jira-evidence.js';
 import { latestView } from './verdict-view.js';
+import { signOffAction, signoffPanel } from './sign-off.js';
 
 const resolver = new Resolver();
 
@@ -36,14 +37,15 @@ resolver.define('recordAcs', async ({ context }) => recordAcsAction({ key: conte
 
 resolver.define('getPanel', async ({ context }) => {
   const key = context.extension.issue.key;
-  const [spec, verdicts, approval, reviews] = await Promise.all([
+  const [spec, verdicts, approval, reviews, signoff] = await Promise.all([
     getProperty(key, 'aat.ticket'),
     getProperty(key, 'aat.verdicts'),
     getProperty(key, 'aat.approval'),
     getProperty(key, 'aat.reviews'),
+    getProperty(key, 'aat.signoff'),
   ]);
   // The verdict view explains the newest verdict; code set it, and the view never changes it.
-  return { key, spec, verdicts: verdicts ?? [], view: latestView(verdicts), approval, reviews: reviews ?? [] };
+  return { key, spec, verdicts: verdicts ?? [], view: latestView(verdicts), approval, reviews: reviews ?? [], signoff: signoffPanel(verdicts, signoff) };
 });
 
 resolver.define('approve', async ({ payload, context }) => {
@@ -62,26 +64,21 @@ resolver.define('approve', async ({ payload, context }) => {
   return { ok: true, approval, auditSeq: audit.seq };
 });
 
-// A person signs off the merged change of a high-stake ticket (DESIGN 6a, benchmark B27). As the
-// user: only someone who can edit the issue can sign off. The sign-off names the commit.
-resolver.define('signOff', async ({ payload, context }) => {
-  const key = context.extension.issue.key;
-  const sha = String(payload?.sha ?? '').trim();
-  const reason = String(payload?.reason ?? '').trim();
-  if (!/^[0-9a-f]{40}$/.test(sha)) return { ok: false, error: 'The sign-off must name the full merged commit id.' };
-  if (reason.length < 5) return { ok: false, error: 'A reason of at least 5 characters is required.' };
-  // The audit event comes first: the property names its seq, and the verifier counts a sign-off
-  // only when the event matches (PR 8 review, item 10). An event with no property counts for nothing.
-  const audit = await appendAudit({ actor: context.accountId, event: 'change.signed_off', data: { key, sha, reason } });
-  const signoff = { by: context.accountId, sha, reason, at: new Date().toISOString(), auditSeq: audit.seq };
+// A person signs off the merged change of a high-stake ticket (DESIGN 6a, benchmark B27), from the
+// panel button (src/sign-off.js). The merged commit and the claimant come from the latest done
+// verdict; the claimant is refused. As the user: only someone who can edit the issue can sign off.
+async function writeSignoff(key, signoff) {
   const response = await api.asUser().requestJira(route`/rest/api/3/issue/${key}/properties/aat.signoff`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(signoff),
   });
-  if (!response.ok) return { ok: false, error: `Jira refused the sign-off (HTTP ${response.status}).` };
-  return { ok: true, signoff, auditSeq: audit.seq };
-});
+  return { ok: response.ok, status: response.status };
+}
+resolver.define('signOff', async ({ payload, context }) => signOffAction(
+  { key: context.extension.issue.key, accountId: context.accountId, payload },
+  { canEdit, readVerdicts: (key) => getProperty(key, 'aat.verdicts'), appendAudit, writeSignoff },
+));
 
 // A human adopts a proposed check from a review (DESIGN 14a). The AC then names the test; CI and
 // the verifier decide the result. As the user: only someone who can edit the issue can adopt.
