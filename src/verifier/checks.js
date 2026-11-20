@@ -1314,3 +1314,33 @@ export function securityCheck(ctx, claimType) {
   const r = codeScanning(ctx);
   return conf.mode === 'enforce' ? [r] : [{ ...r, advisory: true, reason: `advisory, not counted: ${r.reason}` }];
 }
+
+// The bank's import guard (scripts/import_guard.py) writes an `imports` block in the CI report:
+// the imports that the PR adds, the unknown ones, the files that do not parse, and whether
+// uv.lock or pyproject.toml changed. The app reads it as advice: this check is always advisory,
+// so it never changes a verdict. A report without the block gives no check.
+const IMPORT_RESULTS = ['pass', 'unknown_import', 'not_checked'];
+export function importsAdvice(ctx) {
+  const report = ctx?.report;
+  if (!isObj(report) || !Object.hasOwn(report, 'imports')) return null;
+  const b = report.imports;
+  const say = (status, text) => ({ ...result('imports_known', status, `advice, not counted: ${text}`), advisory: true });
+  // Only a missing list reads as empty; null or any other value is malformed.
+  const list = (v) => (v === undefined ? [] : v);
+  const added = list(b?.added);
+  const lists = isObj(b) && [list(b.unknown), list(b.unparsed)].every((l) => Array.isArray(l) && l.every((x) => typeof x === 'string'));
+  if (!isObj(b) || !IMPORT_RESULTS.includes(b.result) || !lists || !Array.isArray(added) || !added.every(isObj)) {
+    return say('unknown', 'the imports block is malformed, so the added imports are not known');
+  }
+  const lock = b.lock_changed === true ? '; uv.lock or pyproject.toml changed, so a newly locked package counts as known' : '';
+  if (b.result === 'pass') return say('pass', `no unknown import added (${added.length} added import${added.length === 1 ? '' : 's'})${lock}`);
+  if (b.result === 'unknown_import') {
+    const where = (m) => added.filter((a) => a.kind === 'unknown' && (a.module ?? '(dynamic)') === m).map((a) => `${a.file}:${a.line}`).slice(0, 3);
+    const names = list(b.unknown).slice(0, 10).map((m) => { const w = where(m); return w.length ? `${m} (${w.join(', ')})` : m; });
+    return say('unknown', `unknown import added: ${names.join(', ')}${lock}`);
+  }
+  const unparsed = list(b.unparsed);
+  const why = unparsed.length ? `${unparsed.slice(0, 5).join(', ')} does not parse` : (typeof b.reason === 'string' && b.reason ? b.reason : 'no reason given');
+  return say('unknown', `not checked: ${why}${lock}`);
+}
+
