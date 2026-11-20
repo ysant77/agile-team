@@ -160,17 +160,18 @@ test('the seed script covers the five judge cases; U12 needs the label and a sec
   assert.match(u12.prTitle, /^BANK-64 /);
   assert.equal(seedOf(load('U20'), 'BANK-62').expected.startsWith('contradicted'), true);
   assert.deepEqual(seedOf(load('U01'), 'BANK-60').labels, []);
+  assert.match(seedOf(load('T08'), 'BANK-63').expected, /^supported; the reviewer's finding is shown as advice, not counted/);
 });
 
-test('T08 (set 3): Held by review, with the model\'s own defect text on screen', async () => {
+test('T08 (set 3): Supported by code; the model\'s defect text is shown as advice, not counted', async () => {
   const s = await screen('T08');
-  assert.equal(s.verdict.result, 'cannot_verify');
-  assert.deepEqual(s.record.reviewHold, ['AC1']);
-  assert.equal(s.items.find(([n]) => n === 'Lozenge')[1], 'Held by review');
-  const why = s.texts.find((t) => t.startsWith('Why: '));
-  assert.match(why, /Code does not handle kind=debit case for filtering lines\./);
-  assert.ok(after(s.items, 'What was not checked').includes("The reviewer's finding on AC1 is not verified by code."));
-  assert.match(after(s.items, 'Human decision')[0], /A review can hold a claim; it can never pass one/);
+  assert.equal(s.verdict.result, 'supported');
+  assert.equal('reviewHold' in s.record, false);
+  assert.equal(s.items.find(([n]) => n === 'Lozenge')[1], 'Supported');
+  const advice = after(s.items, 'Advice from a model, not counted');
+  assert.ok(advice.some((t) => /Code does not handle kind=debit case for filtering lines\./.test(t)), JSON.stringify(advice));
+  assert.ok(advice.some((t) => /does not change the verdict/.test(t)), JSON.stringify(advice));
+  assert.doesNotMatch(s.texts.find((t) => t.startsWith('Why: ')), /kind=debit/);
   common(s);
 });
 

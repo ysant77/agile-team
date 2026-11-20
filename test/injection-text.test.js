@@ -51,13 +51,15 @@ test('ticket text that asks for a tool call or to ignore the rules does not chan
   const clean = await verdict('', []);
   const held = await verdict('', [blocking]);
   assert.equal(clean.result, 'supported', clean.reason);
-  assert.equal(held.result, 'cannot_verify', held.reason);
+  // A review is advice only (owner decision 20 Nov): the verdict is the same with it.
+  assert.equal(held.result, 'supported', held.reason);
+  assert.equal(held.advice.length, 1);
   for (const ask of ASKS) {
     const v = await verdict(ask, []);
     assert.equal(v.result, clean.result, ask);
     assert.equal(v.reason, clean.reason, ask);
     const h = await verdict(ask, [blocking]);
-    assert.equal(h.result, 'cannot_verify', ask);
+    assert.equal(h.result, 'supported', ask);
     assert.equal(h.reason, held.reason, ask);
   }
 });

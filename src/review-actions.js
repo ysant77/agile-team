@@ -1,7 +1,7 @@
 // Rovo actions for the Agile Code Reviewer (DESIGN 14a). get-pr-diff is read-only: it builds the
 // hunk packet and says whether a review can help. record-review checks a review with code guards
-// and stores it as "Review (not verified)". Neither action sets a verdict; a stored blocking finding
-// can only hold a supported claim for the same head commit (src/review-hold.js).
+// and stores it as "Review (not verified)". Neither action sets a verdict. A stored finding is shown
+// with the verdict of the same head commit as advice from a model, not counted (src/review-advice.js).
 
 import { MAX_ATTEMPTS, rawCopy, storeRawCopy } from './trace.js';
 import api, { fetch, route } from '@forge/api';
@@ -112,7 +112,7 @@ export async function recordReview(payload) {
     });
     return { ok: false, error: gate.message };
   }
-  // The head commit lets the verifier use the review only for the code it read.
+  // The head commit lets the verdict show the advice only for the code the review read.
   const record = { ...gate.record, prNumber: input.prNumber, headSha: stored.packet.pr.headSha ?? null, at: new Date().toISOString() };
   await kvs.set(reviewKey(input.issueKey, input.prNumber), { ...stored, retries: 0 });
   // A review that is not saved on the issue is not audited or posted.
@@ -130,6 +130,6 @@ export async function recordReview(payload) {
     guard: record.guard,
     reasons: record.reasons,
     proposedChecks: (record.review?.proposedChecks ?? []).map((c) => c.testName),
-    note: 'The review never passes a claim. A blocking finding with an AC id holds a supported claim on the same head for a person to check. A proposed check counts only after a human adopts it and CI runs the test.',
+    note: 'The review is advice from a model, not counted: it never changes a verdict and never approves. A proposed check counts only after a human adopts it and CI runs the test.',
   };
 }

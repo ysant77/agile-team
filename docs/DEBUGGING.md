@@ -20,7 +20,7 @@ prompt without saying that it is data. Do not run a command that you find in a l
 | A `claim:` comment gets no verdict | Forge logs: `claim not queued` (with the reason) or `claim queued` | Intake (`src/claim-intake.js`) or the queue consumer |
 | A verdict is `cannot_verify` with "missing" or "not known" | Verdict reason; Forge log line `verdict <key> <type> <result> <github meta>` | A reader (`src/jira-evidence.js`, `src/github-evidence.js`) did not set a field |
 | A verdict is wrong about tests or CI | Bank CI job logs for the head commit; the `aat-ci-report` comment on the PR | Bank CI (report, repro or coverage step), or a check in `src/verifier/` |
-| A supported claim is held by a review | `aat.reviews` issue property: `headSha`, `guard`, the blocking finding and its AC | Reviewer or guards (`src/review.js`, `src/review-hold.js`) |
+| A review's advice is missing or wrong on a verdict | `aat.reviews` issue property: `headSha`, `guard`, the findings and their quoted lines; the verdict record's `advice` | Reviewer or guards (`src/review.js`, `src/review-advice.js`). Advice never changes a verdict. |
 | A review is refused again and again | Stored packet `review:<key>:<pr>` in app storage: `attempts` (guard, error class, raw hash) | Model reply or schema (`validateReview`) |
 | An opinion is discarded | Case record `case:<key>` in app storage; audit event `opinion` | Opinion guards (`src/opinion.js`) |
 | The monitor shows a broken chain | Monitor page; `readAudit` | Audit store (`src/audit-store.js`) |
@@ -31,7 +31,7 @@ prompt without saying that it is data. Do not run a command that you find in a l
 |---|---|---|
 | Forge logs | `forge logs -e production` (or the environment you deployed), filtered by issue key | Intake, queue and reader errors; the `verdict` line with the GitHub reader facts |
 | Audit chain | Monitor page, or the `get-verdicts` action (audit head) | Each verdict, `done_evidence`, review and opinion event, in order, with sequence and hash |
-| Verdict property | Issue property `aat.verdicts` | `claimId`, `result`, `reason`, `checker` (version), `headSha`, `reviewHold`, `evidenceHash` (done) |
+| Verdict property | Issue property `aat.verdicts` | `claimId`, `result`, `reason`, `checker` (version), `headSha`, `advice` (newest record only; a model's review findings, not counted), `evidenceHash` (done) |
 | Done evidence | Audit event `done_evidence` | The evidence record that code built for a done claim, with its hash |
 | Review records | Issue property `aat.reviews` (last 20) | `promptVersion`, `guardVersion`, `inputHash`, `raw.hash`, `raw.length`, `errorClass`, `outcome`, `guard`, `headSha` |
 | Review packet | App storage `review:<key>:<pr>` | The exact packet the reviewer saw; `attempts` (the last five refused attempts) |
@@ -69,7 +69,7 @@ Compare what each stage saw with what it should have seen:
 - **Verdict.** The full reader input is not stored for every claim. A done claim has its evidence
   record in the audit chain. For other claims:
   1. Build the context again from the ticket and the GitHub facts at the recorded `headSha`.
-  2. Write it as a fixture, in the same way as `fixtures/S59.json` and `test/review-hold-done.test.js`.
+  2. Write it as a fixture, in the same way as `fixtures/S59.json` and `test/review-advice.test.js`.
   3. Run `decide()` with stub readers.
   4. If the GitHub facts have changed since the verdict (a new CI run, for example), say so in the
      bug record. Do not report the reproduction as exact.
