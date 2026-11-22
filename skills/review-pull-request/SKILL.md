@@ -40,6 +40,9 @@ test that a pipeline can run. Do not propose a check for an AC that already has 
 `tests/conftest.py` or another guarded path. Write in `asserts` what the test must show, with only
 numbers from the ACs or the hunks. For a bug, set `failsBeforeFix` to true.
 
+Do not propose a check for an AC that has a code check, and write no count or other number in
+`asserts` unless that number is in the AC or a hunk.
+
 ## Rules
 
 | Rule | Code refuses |
