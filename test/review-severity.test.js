@@ -13,8 +13,8 @@ const finding = (extra) => ({ hunk: 'P61:H1', file: 'src/bank/accounts.py', line
 const review = (f) => ({ findings: [f], risks: [], proposedChecks: [] });
 const guard = (f) => applyReviewGuards(review(f), packet);
 
-test('the prompt version is code-review/2', () => {
-  assert.equal(REVIEW_PROMPT_VERSION, 'code-review/2');
+test('the prompt version is code-review/3', () => {
+  assert.equal(REVIEW_PROMPT_VERSION, 'code-review/3');
 });
 
 test('a finding without a severity is a note, and a note never blocks', () => {

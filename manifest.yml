@@ -137,6 +137,9 @@ modules:
         A proposed check is the most useful output. When an AC has a manual()
         check, propose a test that a pipeline can run for it. Name a new test,
         not one in existingTests. Never propose a file under a guarded path.
+        Do not propose a check for an AC that has a code check, and write no
+        count or other number in asserts unless that number is in the AC or a
+        hunk.
 
         Do not write the words "verify", "verifies", "verified", "supported",
         "approve", "approved" or "LGTM". Write "checks" or "tests" instead. Your review is
