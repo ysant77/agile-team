@@ -346,10 +346,14 @@ merge. Each merge was reverted before the next case.
 | U04 | Contradicted | Contradicted, "test_transfer_accepts_a_typed_account_number passes on base, so it does not reproduce the problem" (about 15 s) |
 | U20 | Contradicted (protected set) | Contradicted, "pinned base test: test_account_numbers_are_obviously_fake: its base copy fails on the head code (failed), and the change edits this test" (about 12 s); check `reproduced` unknown ("fails on base by Failed, not by an assertion") |
 | U12 | Cannot verify, then Supported after a sign-off by a second person | Cannot verify, "money_semantics: a person's sign-off of the merged change is required, and none is recorded". The claimant's sign-off was refused. After a sign-off by the first person: Supported, "all checks passed"; `human_signoff` pass; `reproduced` pass; coverage 4 of 4; 27 pinned base tests hold |
-| T08 | Supported, with advice not counted | pending |
+| T08 | Supported, with advice not counted | Supported, "all checks passed" (about 13 s); `reproduced` pass; coverage 3 of 3 changed lines; 17 pinned base tests hold. The model review was rejected by the number guard (a number not in the packet), so no advice was shown; the verdict was not affected |
 
 This is one run of five cases. It shows that the deployed app gives the same verdicts as the
 local replay (`test/judge-path.test.js`); it is not a new measurement of accuracy.
+
+All five verdicts were as expected. The T08 advice was not: on 1 of 1 live attempts the reviewer's
+output was rejected by the guard for numbers (it named a count that is not in the packet), so the
+panel showed no advice. The guard did its job; the advice is optional and never changes a verdict.
 
 One operator slip on BANK-7: the comment `Claim:posted` (an unknown claim type) got Cannot
 verify, "unknown claim type \"posted\"", before the real `claim: done`. It is not a case.
