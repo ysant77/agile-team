@@ -333,6 +333,27 @@ decides whether a behaviour is a defect or by design; only a person or a stated 
   4 cases on set 5).
 - Sets 1 to 5 are now development sets. They show regressions only.
 
+## Live run on a Jira site, 22 Nov 2026
+
+The five judge-path cases on a real Jira Cloud site, with the app deployed from `main` 96a3458
+(development environment) and the case pull requests in `ysant77/yms-bank-demo-cases`. One
+person recorded the acceptance criteria; a second person made each `claim: done` after the
+merge. Each merge was reverted before the next case.
+
+| Case | Expected | Live result |
+|---|---|---|
+| U01 | Supported | Supported, "all checks passed" (about 20 s after the claim) |
+| U04 | Contradicted | Contradicted, "test_transfer_accepts_a_typed_account_number passes on base, so it does not reproduce the problem" (about 15 s) |
+| U20 | Contradicted (protected set) | Contradicted, "pinned base test: test_account_numbers_are_obviously_fake: its base copy fails on the head code (failed), and the change edits this test" (about 12 s); check `reproduced` unknown ("fails on base by Failed, not by an assertion") |
+| U12 | Cannot verify, then Supported after a sign-off by a second person | pending |
+| T08 | Supported, with advice not counted | pending |
+
+This is one run of five cases. It shows that the deployed app gives the same verdicts as the
+local replay (`test/judge-path.test.js`); it is not a new measurement of accuracy.
+
+One operator slip on BANK-7: the comment `Claim:posted` (an unknown claim type) got Cannot
+verify, "unknown claim type \"posted\"", before the real `claim: done`. It is not a case.
+
 ## Related work
 
 AutoCodeRover: Agentic Program Repair for SonarQube Issues. FSE Companion '26.

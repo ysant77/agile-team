@@ -87,6 +87,10 @@ verdict.
 **Discovery (a model looks for a defect): not met** in two rounds. We present it as a grounded,
 unconfirmed lead that a person classifies, not as a defect finder.
 
+**Live run on a Jira site (22 Nov):** the five demo cases ran on a real site with two users.
+Each gave the expected state; see `docs/claims.md`, "Live run on a Jira site". It is one run of
+five cases, not a measurement of accuracy.
+
 ## Limits
 
 - "Supported" is a claim about the named test, not a claim that the work is correct. The panel

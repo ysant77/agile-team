@@ -43,6 +43,9 @@ site, no account and no network.
 | U12 | Cannot verify, then Supported | A money rule needs a sign-off by a person other than the claimant |
 | T08 | Supported, with advice | A weak test passes the code checks; the reviewer's advice names the gap and is not counted |
 
+On 22 Nov the five cases also ran on a real Jira site with the deployed app; the results are in
+[`docs/claims.md`](docs/claims.md) ("Live run on a Jira site").
+
 The demo pull requests of the five cases are in
 [`ysant77/yms-bank-demo-cases`](https://github.com/ysant77/yms-bank-demo-cases) (PRs 1, 2, 3, 6
 and 4). The full route with the reasons is in [`docs/JUDGE-PATH.md`](docs/JUDGE-PATH.md).
