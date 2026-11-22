@@ -17,11 +17,49 @@ A Forge app for Jira in which AI agents do agile work, and code decides whether 
 The demo bank that the scenarios run against is a separate public repository,
 [`ysant77/yms-bank-demo`](https://github.com/ysant77/yms-bank-demo).
 
+## Judge path
+
+What this entry claims, in one line: code checks a `done` claim against the pull request, the CI
+report and the work item. "Supported" is a claim about the named test, not a claim that the work
+is correct. The submission text is in [`docs/SUBMISSION.md`](docs/SUBMISSION.md), and the
+architecture is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+**1. See the five cases without a site (2 minutes).** You need Node.js 24.
+
+```bash
+npm ci
+node --test test/judge-path.test.js
+```
+
+`test/judge-path.test.js` replays the recorded evidence of the five demo cases
+(`fixtures/judge/`) through the verifier, the verdict view and the panel. It needs no Atlassian
+site, no account and no network.
+
+| Case | Expected state | What it shows |
+|---|---|---|
+| U01 | Supported | The test fails before the fix and passes after it |
+| U04 | Contradicted | The new test passes on the old code too, so it does not show the fix |
+| U20 | Contradicted | An old assertion is made weaker; its base copy fails on the new code |
+| U12 | Cannot verify, then Supported | A money rule needs a sign-off by a person other than the claimant |
+| T08 | Supported, with advice | A weak test passes the code checks; the reviewer's advice names the gap and is not counted |
+
+The demo pull requests of the five cases are in
+[`ysant77/yms-bank-demo-cases`](https://github.com/ysant77/yms-bank-demo-cases) (PRs 1, 2, 3, 6
+and 4). The full route with the reasons is in [`docs/JUDGE-PATH.md`](docs/JUDGE-PATH.md).
+
+**2. Install on your Jira site.** Open the install link in the Devpost entry, pick your site and
+approve the scopes. The app reads the public demo repository; it needs no GitHub token. Open a
+work item, then the **Agile team verifier** panel. The steps to run a case on your own site are
+in [`docs/JUDGE-PATH.md`](docs/JUDGE-PATH.md) ("Demo site").
+
+**3. The figures.** "What we measured" in [`docs/SUBMISSION.md`](docs/SUBMISSION.md) gives the
+blind-set results with the misses. The detail is in [`docs/claims.md`](docs/claims.md)
+("Measured results") and [`benchmark/README.md`](benchmark/README.md).
+
 ## Status
 
-This repository starts from the Forge template. The app code arrives in reviewed pull requests,
-one review unit at a time. Each pull request needs green CI, an independent review and the
-owner's approval.
+The app is built in reviewed pull requests. Each pull request needs green CI, an independent
+review and the owner's approval.
 
 ## No check passes by default
 
