@@ -90,7 +90,9 @@ unconfirmed lead that a person classifies, not as a defect finder.
 **Live run on a Jira site (22 Nov):** the five demo cases ran on a real site with two users.
 Each gave the expected verdict; see `docs/claims.md`, "Live run on a Jira site". On T08 the
 model's review was rejected by the guard for numbers on the first attempt and accepted on the
-second, after a prompt fix (n = 1 after the fix); the verdict was not affected. It is one run of five cases, not a measurement of accuracy.
+second, after a prompt fix (n = 1 after the fix); the verdict was not affected. In a second T08
+run the panel showed this advice beside a Supported verdict; the first claim of that run got
+Cannot verify (GitHub answered HTTP 403, likely its limit for requests without a token). It is one run of five cases, not a measurement of accuracy.
 
 ## Limits
 

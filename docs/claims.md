@@ -358,6 +358,13 @@ accepted with three findings on the missing debit case. That is n = 1 after the 
 guarantee. Neither attempt changed a verdict, and the advice is not yet shown on a panel beside a
 verdict (T08 was claimed before attempt 2).
 
+Video run of T08 (same day, PR 14, the same change as PR 4). The review was accepted after a
+style retry, with template texts in the comment and the model's findings kept for the advice. The
+first claim got Cannot verify, "code host not reachable ... HTTP 403" (likely the GitHub limit for
+requests without a token; not proved). The second claim, about 100 minutes later, got Supported,
+"all checks passed", and the panel showed the three findings as "Advice from a model, not counted"
+beside the verdict. The merge was then reverted.
+
 One operator slip on BANK-7: the comment `Claim:posted` (an unknown claim type) got Cannot
 verify, "unknown claim type \"posted\"", before the real `claim: done`. It is not a case.
 
