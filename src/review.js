@@ -18,7 +18,7 @@ import { rawRef, schemaErrorClass } from './trace.js';
 // Guard version 4: the severity guards (3) plus the line, number, verdict-word and adoption
 // guards from the unit 6 review.
 export const REVIEW_GUARD_VERSION = 6;
-export const REVIEW_PROMPT_VERSION = 'code-review/2';
+export const REVIEW_PROMPT_VERSION = 'code-review/3';
 export const REVIEW_LABEL = 'Review (not verified)';
 export const MAX_FINDINGS = 6;
 export const MAX_CHECKS = 3;
