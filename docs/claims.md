@@ -341,8 +341,9 @@ doi:10.1145/3803437.3805209.
 Three points of this paper match rules here:
 
 - **An import guard.** The bank's CI step `scripts/import_guard.py` writes an `imports` block in
-  the report: the new imports, the unknown ones, and whether the lock file changed. The app does
-  not read the block yet.
+  the report: the new imports, the unknown ones, and whether the lock file changed. The app
+  shows it as the advisory check `imports_known` (`docs/ci-report.md`, "The imports block"); it
+  is not counted.
 - **Validation before and after the merge.** A `done` claim needs the named test to fail on the
   base by an assertion and pass on the head (`reproduced`), and a clean main report for the merge
   commit (`merged_clean`).
