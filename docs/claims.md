@@ -351,9 +351,12 @@ merge. Each merge was reverted before the next case.
 This is one run of five cases. It shows that the deployed app gives the same verdicts as the
 local replay (`test/judge-path.test.js`); it is not a new measurement of accuracy.
 
-All five verdicts were as expected. The T08 advice was not: on 1 of 1 live attempts the reviewer's
-output was rejected by the guard for numbers (it named a count that is not in the packet), so the
-panel showed no advice. The guard did its job; the advice is optional and never changes a verdict.
+All five verdicts were as expected. The T08 advice took 2 live attempts. Attempt 1 (prompt
+`code-review/2`) was rejected by the guard for numbers after one guided retry (it named a count
+that is not in the packet). After a one-line prompt fix, attempt 2 (prompt `code-review/3`) was
+accepted with three findings on the missing debit case. That is n = 1 after the fix, with no
+guarantee. Neither attempt changed a verdict, and the advice is not yet shown on a panel beside a
+verdict (T08 was claimed before attempt 2).
 
 One operator slip on BANK-7: the comment `Claim:posted` (an unknown claim type) got Cannot
 verify, "unknown claim type \"posted\"", before the real `claim: done`. It is not a case.
