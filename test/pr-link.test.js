@@ -1,0 +1,137 @@
+// Fresh-site path, option 1b (docs/DESIGN-FRESH-SITE.md): a person links a PR to the work item
+// from the panel. The link is an audited entry in the app's store. A PR that does not name the
+// key counts for a claim only with an audited link whose author is not the claimant.
+
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { nextEvent } from '../src/audit.js';
+import { collectGithub, collectPrStats } from '../src/github-evidence.js';
+import { latestPrLink, linkPrAction, PR_LINK_EVENT } from '../src/pr-link.js';
+import { decide } from '../src/verify-claim.js';
+
+const REPO = 'ysant77/yms-bank-demo-cases';
+const KEY = 'KAN-1';
+
+function appStore() {
+  const data = new Map();
+  const events = [];
+  let prev = null;
+  return {
+    data,
+    events,
+    store: { get: async (k) => structuredClone(data.get(k)), set: async (k, v) => { data.set(k, structuredClone(v)); } },
+    appendAudit: async (e) => { const ev = nextEvent(prev, { ...e, at: `2026-11-23T10:0${events.length}:00.000Z` }); prev = ev; events.push(ev); return ev; },
+    readAudit: async (seq, n) => events.slice(seq, seq + n),
+  };
+}
+const pr = (number, extra = {}) => ({ number, headRepo: REPO, title: 'A filter for the statement', ...extra });
+const linkDeps = (a, { canEdit = true, prs = { 7: pr(7) } } = {}) => ({
+  canEdit: async () => canEdit, appendAudit: a.appendAudit, store: a.store, repo: REPO,
+  readPr: async (n) => prs[n] ?? null,
+});
+const link = (a, accountId, pull, opts) => linkPrAction({ key: KEY, accountId, payload: { pr: pull, reason: 'the change for this work item' } }, linkDeps(a, opts));
+
+test('a person links a PR of the configured repository; the link is audited and kept in the app store', async () => {
+  const a = appStore();
+  const r = await link(a, 'reviewer', '7');
+  assert.equal(r.ok, true, r.error);
+  assert.equal(a.events[0].event, PR_LINK_EVENT);
+  assert.deepEqual(a.events[0].data, { key: KEY, repo: REPO, prNumber: 7, reason: 'the change for this work item' });
+  const latest = await latestPrLink(KEY, a, 'claimer');
+  assert.equal(latest.prNumber, 7);
+  assert.equal(latest.counted, true);
+});
+
+test('a link to a PR of another repository, a fork PR, an unknown PR or a bad number is refused', async () => {
+  const a = appStore();
+  assert.match((await link(a, 'reviewer', 'https://github.com/someone/other/pull/7')).error, /another repository/);
+  assert.equal((await link(a, 'reviewer', `https://github.com/${REPO}/pull/7`)).ok, true);
+  assert.match((await link(a, 'reviewer', '8', { prs: { 8: pr(8, { headRepo: 'someone/fork' }) } })).error, /fork/);
+  assert.match((await link(a, 'reviewer', '9')).error, /not found/);
+  assert.match((await link(a, 'reviewer', 'x')).error, /pull request number/);
+  assert.match((await link(a, 'reviewer', '7', { canEdit: false })).error, /edit this work item/);
+});
+
+test('a link made by the claimant does not count, and the reason says so', async () => {
+  const a = appStore();
+  await link(a, 'claimer', '7');
+  const latest = await latestPrLink(KEY, a, 'claimer');
+  assert.equal(latest.counted, false);
+  assert.match(latest.reason, /made by the claimant/);
+});
+
+test('with two links the latest audited one is used, and the reason says how many there are', async () => {
+  const a = appStore();
+  await link(a, 'reviewer', '7', { prs: { 7: pr(7), 8: pr(8) } });
+  await link(a, 'reviewer', '8', { prs: { 7: pr(7), 8: pr(8) } });
+  const latest = await latestPrLink(KEY, a, 'claimer');
+  assert.equal(latest.prNumber, 8);
+  assert.match(latest.reason, /2 links; the latest \(audit seq 1\) is used/);
+});
+
+test('a link in the store with no matching audit event does not count', async () => {
+  const a = appStore();
+  await link(a, 'reviewer', '7');
+  const entries = a.data.get(`pr-links:${KEY}`);
+  entries[0].prNumber = 9; // edited after the audit event
+  a.data.set(`pr-links:${KEY}`, entries);
+  const latest = await latestPrLink(KEY, a, 'claimer');
+  assert.equal(latest.counted, false);
+  assert.match(latest.reason, /no matching audit event/);
+});
+
+// The claim: PR 7 does not name the key. Only a counted link makes it the claim's PR.
+const SHA = 'a'.repeat(40);
+const resp = (status, body) => ({ ok: status < 400, status, json: async () => body, headers: { get: () => '4999' } });
+function repoFetch(log) {
+  const pull = { number: 7, title: 'A filter for the statement', state: 'closed', merged_at: '2026-11-23T07:00:00Z', merge_commit_sha: 'b'.repeat(40),
+    head: { ref: 'feat/filter', sha: SHA, repo: { full_name: REPO } }, base: { ref: 'main' }, html_url: 'https://x/7', user: { login: 'u', id: 1 } };
+  return async (url) => {
+    log.push(url);
+    if (/\/pulls\?/.test(url)) return resp(200, [pull]);
+    if (/\/pulls\/7\/files/.test(url)) return resp(200, [{ filename: 'src/a.py', status: 'modified', patch: '@@ -1 +1 @@\n-a\n+b' }]);
+    if (/actions\/runs\?head_sha/.test(url)) return resp(200, { workflow_runs: [] });
+    if (/check-runs/.test(url)) return resp(200, { check_runs: [] });
+    if (/comments/.test(url)) return resp(200, []);
+    return resp(404, {});
+  };
+}
+async function claim(a) {
+  const log = [];
+  const d = {
+    collectJira: async () => ({ key: KEY, type: 'Story', labels: [], subtasks: [], links: [], acceptanceCriteria: [{ acId: 'AC1', check: { type: 'test_passes', args: ['test_x'] } }] }),
+    env: () => ({ repo: REPO, token: 't' }),
+    collectGithub: (args) => collectGithub({ ...args, sleep: async () => {}, now: () => Date.parse('2026-11-23T10:00:00Z') }),
+    collectPrStats, collectReviews: async () => [], fetchFn: repoFetch(log),
+    store: a.store, readAudit: a.readAudit, readApprovals: async () => null,
+  };
+  const { verdict } = await decide({ issueKey: KEY, claim: { id: 'c', type: 'done', by: 'claimer' } }, d);
+  return verdict;
+}
+
+test('a claim reads the PR of a counted link, though its title does not name the key', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  const a = appStore();
+  await link(a, 'reviewer', '7');
+  const v = await claim(a);
+  const onMain = v.checks.find((k) => k.name === 'on_main');
+  assert.equal(onMain.status, 'pass', onMain.reason);
+  const note = v.checks.find((k) => k.name === 'pr_link');
+  assert.equal(note.status, 'pass');
+  assert.match(note.reason, /PR #7 linked by reviewer \(audit seq 0\)/);
+});
+
+test('a claim with only the claimant\'s link does not use it: no PR names the key', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  const a = appStore();
+  await link(a, 'claimer', '7');
+  const v = await claim(a);
+  assert.equal(v.checks.find((k) => k.name === 'on_main').status, 'fail');
+  assert.match(v.checks.find((k) => k.name === 'pr_link').reason, /made by the claimant/);
+});
+
+test('a claim with no link is as before, with no pr_link check', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  const v = await claim(appStore());
+  assert.equal(v.checks.some((k) => k.name === 'pr_link'), false);
+});
