@@ -5,8 +5,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { acHash } from '../src/approvals.js';
-import { acEditorText, saveAcsAction } from '../src/ac-editor.js';
-import { acLineErrors } from '../src/ticket-spec.js';
+import { saveAcsAction } from '../src/ac-editor.js';
+import { acEditorText, acLineErrors } from '../src/ticket-spec.js';
 import { createTicket } from '../src/index.js';
 
 const LINES = 'AC1 | credits only | test_passes(test_statement_can_show_credits_only)\nAC2 | debits too | test_passes(test_a, test_b)';
