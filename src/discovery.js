@@ -358,6 +358,14 @@ function checkFinding(f, inv, reads) {
   return { errors, filesRead: [...new Set(fileReads.map((r) => r.path))] };
 }
 
+// Review of 23 Nov, finding 11: a defect must cite the rule that the code breaks, as a read line of
+// a file that states rules: a file under docs/, a README, or a test file. A defect that cites only
+// code shows what the code does, not that it is wrong, so it is recorded as "unclear" with an open
+// question, never kept as a defect. The kind the model proposed stays in the record.
+const isRuleFile = (path) => /^docs\//.test(path) || /(^|\/)README[^/]*$/i.test(path) || /(^|\/)tests?\//.test(path) || /(^|\/)test_[^/]*\.py$/.test(path);
+const NO_RULE_NOTE = 'recorded as unclear: the defect cites no rule (a read line of docs, a README or a test)';
+export const RULE_QUESTION = 'Which rule does this break? Cite a line of docs, a README or a test that states it.';
+
 export async function recordFinding({ investigationId, by, finding }, d) {
   const { inv, error } = await openInvestigation(d, investigationId, by);
   if (error) return { ok: false, error };
@@ -371,10 +379,15 @@ export async function recordFinding({ investigationId, by, finding }, d) {
   const reads = await readsOf(inv.id, d);
   const { errors, filesRead } = checkFinding(f, inv, reads);
   if (errors.length) return { ok: false, error: errors.join('; ') };
+  const citations = (f.citations ?? []).map((c) => ({ file: c.file, line: Number(c.line) }));
+  const noRule = f.kind === 'defect' && !citations.some((c) => isRuleFile(String(c.file)));
+  const kind = noRule ? 'unclear' : f.kind;
   const body = {
-    kind: f.kind, hypothesis: f.hypothesis.trim(), citations: (f.citations ?? []).map((c) => ({ file: c.file, line: Number(c.line) })),
-    reproducer: f.kind === 'defect' ? { testName: f.reproducer.testName, file: f.reproducer.file, asserts: f.reproducer.asserts.trim() } : null,
-    severity: f.severity ?? null, priority: f.priority ?? null, openQuestions: f.openQuestions ?? [],
+    kind, hypothesis: f.hypothesis.trim(), citations,
+    reproducer: kind === 'defect' ? { testName: f.reproducer.testName, file: f.reproducer.file, asserts: f.reproducer.asserts.trim() } : null,
+    severity: kind === 'defect' ? f.severity ?? null : null, priority: kind === 'defect' ? f.priority ?? null : null,
+    openQuestions: noRule ? [...(f.openQuestions ?? []), RULE_QUESTION].slice(-10) : f.openQuestions ?? [],
+    ...(noRule ? { proposedKind: 'defect' } : {}),
   };
   const hash = sha256(canonical(body));
   const findingId = `F-${inv.id.slice(4)}-${hash.slice(0, 8)}`;
@@ -389,11 +402,11 @@ export async function recordFinding({ investigationId, by, finding }, d) {
   };
   if (!(await createOnce(d.store, `finding:${findingId}`, record))) {
     await closeOpen();
-    return { ok: true, findingId, status: 'unconfirmed', duplicate: true };
+    return { ok: true, findingId, status: 'unconfirmed', kind: body.kind, duplicate: true, ...(noRule ? { note: NO_RULE_NOTE } : {}) };
   }
   await closeOpen();
   const audit = await d.appendAudit({ actor: by, event: 'finding.recorded', data: { findingId, investigationId: inv.id, kind: body.kind, commit: inv.commit, hash } });
-  return { ok: true, findingId, status: 'unconfirmed', kind: body.kind, auditSeq: audit.seq };
+  return { ok: true, findingId, status: 'unconfirmed', kind: body.kind, auditSeq: audit.seq, ...(noRule ? { note: NO_RULE_NOTE } : {}) };
 }
 
 export async function readFinding(findingId, d) {

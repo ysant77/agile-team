@@ -101,6 +101,17 @@ missing part as not known, never as "not there": no linked PR in the read part g
 
 ## Which PR a claim means
 
+**Linked PR (23 Nov, fresh-site path).** A person can link a PR to a work item in the panel ("Link
+PR"). The link is an audit event (`pr.linked`) and an entry in the app's store, never an issue
+property. A claim uses the latest link whose audit event matches, and only when the link names
+the configured repository and a person other than the claimant made it. Such a counted link
+**redirects the claim to that PR, even when another PR names the key**: the claim then reads the
+linked PR by number, and the other PR is not a candidate. The redirect is audited (who linked
+which PR, with a reason, at which audit sequence), and the verdict shows it in the advisory check
+`pr_link`. A link by the claimant, a link with no matching audit event, or a link with no
+repository does not count, and `pr_link` says why.
+
+
 - A PR is linked when its **title or branch name** has the key at a boundary on both sides
   (`BANK-1` does not match `BANK-10`, `ABANK-1` or `BANK-1abc`). The key in the PR description
   does not link a PR.
@@ -301,6 +312,11 @@ is the measurement.
   value that ships is never tested.
 - **V12:** a PR that removes `httponly=True`, `secure=True`, `verify=True` or `check_hostname=True`
   from a call in non-test code gives unknown. The list is narrow on purpose.
+- **W10 (set 6, owner decision 23 Nov):** a PR that changes or removes the `samesite` value of a
+  call in non-test code (for example `"lax"` to `"none"`) gives unknown and names both values.
+  **Not seen:** an added middleware (W10 also allows every origin with credentials through a
+  CORS middleware), any other argument, and any change outside these two lists. Regression on
+  sets 1 to 6: only W10 changes, from supported to cannot_verify.
 - **V07:** changed-line coverage under the floor gives unknown, not fail.
 
 Regression, arm C on the stored evidence of sets 1 to 5: set 5 changes are V07 contradicted to
@@ -415,7 +431,11 @@ This is why the reviewer is now advice only (see "Review advice").
 
 **Discovery (Mode B).** Owner wording, 20 Nov: discovery gives a grounded, unconfirmed lead that
 a person classifies. It is not a defect finder. Every finding has status `unconfirmed`, and every
-cited line comes from a read of the investigation (`docs/DISCOVERY.md`).
+cited line comes from a read of the investigation (`docs/DISCOVERY.md`). Since 23 Nov a defect
+must also cite a read line of docs, a README or a test (the rule it breaks); a defect that cites
+only code is recorded as `unclear` with an open question. The discovery rounds D1 and D2 are
+development data from now on: this rule was made after their results were known, so they do not
+measure it. No model run was made for this rule.
 
 | Round | Cases | Result | Source |
 |---|---|---|---|
