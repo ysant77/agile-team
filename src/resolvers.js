@@ -11,6 +11,7 @@ import { linkPrAction } from './pr-link.js';
 import { collectJira } from './jira-evidence.js';
 import { latestView } from './verdict-view.js';
 import { readLatestDone, signOffAction, signoffPanel } from './sign-off.js';
+import { getFindingAction } from './finding-view.js';
 
 const resolver = new Resolver();
 
@@ -140,6 +141,10 @@ resolver.define('adoptCheck', async ({ payload, context }) => {
   const recorded = await recordAcsAction({ key, accountId: context.accountId }, approvalDeps);
   return { ok: true, auditSeq: audit.seq, acsAuditSeq: recorded.ok ? recorded.auditSeq : null };
 });
+
+// The panel shows a stored discovery finding by its id (src/finding-view.js). It only reads the
+// app's store; the finding is not tied to the work item.
+resolver.define('getFinding', async ({ payload }) => getFindingAction(payload, { store: kvs }));
 
 // Monitor page: the whole audit chain (small in the demo), checked and replayed.
 const MONITOR_MAX = 2000;

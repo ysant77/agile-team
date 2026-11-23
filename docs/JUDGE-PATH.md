@@ -93,7 +93,7 @@ This route needs no REST console and no help from the owner after the install. S
 side is on branches for review (`feat/panel-ac-editor`, `feat/panel-link-pr`,
 `feat/base-report-per-branch`); the steps on the demo cases repository, the deploy and the
 install link are held for the owner (`docs/OWNER-HELD-STEPS.md`). Design:
-`docs/DESIGN-FRESH-SITE.md`.
+`docs/DESIGN-FRESH-SITE.md`. The owner's first claim on a judge branch: `docs/FIRST-JUDGE-CLAIM.md`.
 
 **What the judge needs:** a Jira Cloud site, and two accounts on it. Account A records the ACs
 and links the PRs; account B makes the claims. The app counts an AC record and a PR link only when
