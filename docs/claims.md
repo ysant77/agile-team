@@ -222,6 +222,39 @@ dismissals and dependency alerts need a token and are after the freeze (DESIGN 1
 
 These are development sets; no claim is made before blind set 5.
 
+## Verifier corrections (23 Nov 2026, lead review)
+
+Set 5 is development data from now on; these corrections were made with its outcomes known, so
+they are not a measurement. A new blind set 6, written by a person who has not seen these changes,
+is the measurement.
+
+- **`test_passes(a, b, ...)`** checks every named test; a missing or failing one is a fail. Before,
+  only the first name was checked, so a second test that did not exist still gave Supported.
+  Ticket creation keeps every name. The first name stays the test that must fail on base.
+- **Sign-off source.** The sign-off button reads the claimant and the merged commit from the
+  latest done verdict in the audit chain (a pointer in the app's store names its seq and hash),
+  not from the issue property `aat.verdicts`, which any editor can write. A done verdict made
+  before this change has no pointer: claim done again before a sign-off. Limit: a PR author can
+  still sign off when another person made the claim; the app does not link Jira and GitHub
+  accounts for sign-offs.
+- **Approval names** are compared by test name (`file::Class::test_x` counts for `test_x`), and an
+  audited change approval by another person also covers a test that the PR renames and edits
+  (V17).
+- **V18:** an AC test that sets a module-level name that the PR adds (a flag) gives unknown: the
+  value that ships is never tested.
+- **V12:** a PR that removes `httponly=True`, `secure=True`, `verify=True` or `check_hostname=True`
+  from a call in non-test code gives unknown. The list is narrow on purpose.
+- **V07:** changed-line coverage under the floor gives unknown, not fail.
+
+Regression, arm C on the stored evidence of sets 1 to 5: set 5 changes are V07 contradicted to
+cannot_verify, V12 supported to cannot_verify, V17 contradicted to supported, V18 supported to
+cannot_verify; V04, V11 and the ten controls do not change. Set 1: B02 and B06 (invalid claims
+held only by the coverage floor) move from contradicted to cannot_verify; they stay held. Sets 2,
+3 and 4: no change.
+
+Limits with no code fix: V02 and V09 (unsafe Supported) and V13 (a false block) depend on what the
+AC text means, and the verifier never reads AC text.
+
 ## Approvals and the AC record (19 Nov 2026, finding E1)
 
 Any issue editor can write the issue property `aat.ticket` by REST. So:
