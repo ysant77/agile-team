@@ -193,7 +193,9 @@ export function prLinked(ctx) {
   if ((ctx.prCandidates ?? []).length > 1) {
     return result('pr_linked', 'unknown', `PRs ${ctx.prCandidates.map((n) => `#${n}`).join(', ')} all name ${ctx.ticket.key}; link one PR`);
   }
-  const named = namesKey(pr.title, ctx.ticket.key) || namesKey(pr.branch, ctx.ticket.key);
+  // A PR that does not name the key counts only as the counted, audited panel link (linkedPr is set
+  // by src/verify-claim.js from src/pr-link.js).
+  const named = namesKey(pr.title, ctx.ticket.key) || namesKey(pr.branch, ctx.ticket.key) || (Number.isInteger(ctx.linkedPr) && ctx.linkedPr === pr.number);
   if (!named) return result('pr_linked', 'fail', `PR #${pr.number} does not name ${ctx.ticket.key}`);
   // The merge flag decides only for a closed PR.
   if ((pr.state !== 'open' && pr.state !== 'closed') || (pr.state === 'closed' && typeof pr.merged !== 'boolean')) {
