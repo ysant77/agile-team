@@ -1,6 +1,14 @@
 // Admission for "claim:" comments (review F9, 16 Nov). Any commenter can claim, so code
-// deduplicates by comment id and caps claims per work item, per author and per site. GitHub allows
-// 60 calls an hour without a token and 5,000 with one; one claim makes about 6 calls plus pages.
+// deduplicates by comment id and caps claims per work item, per author and per site.
+//
+// GitHub budget (lead review of 23 Nov, finding 4). One claim on a merged PR makes about 10 GitHub
+// calls (the pull list, runs, comments, files, check runs, main.json, provenance runs and
+// artifacts, deploy runs); an open PR adds the base branch; re-runs, long lists and server
+// retries add more. Without a token GitHub allows 60 calls an hour for each outgoing address, and
+// the platform's addresses are shared with other apps: about 5 claims an hour at best, far under
+// the site cap below (30 claims, about 300 calls). With a token the limit is 5,000 calls an hour
+// for the token, so the site cap is the limit. A claim that GitHub cannot answer for a transient
+// reason gives its slots back (releaseClaim).
 //
 // Atomic (second review, item 8): KVS has no counter increment. A cap of N is N slot keys, and a
 // claim takes a slot by writing it with FAIL_IF_EXISTS, so two writers can never take the same
@@ -52,5 +60,25 @@ export async function admitClaim({ issueKey, commentId, authorId = 'unknown', no
     }
     taken.push(slot);
   }
+  // The slots of this claim, so releaseClaim can give them back. A failed write only means the
+  // slots cannot be given back early; they still end with the hour.
+  try {
+    await store.set(slotsKey(`${issueKey}:${commentId}`), taken);
+  } catch {
+    // not fatal
+  }
   return { ok: true };
+}
+
+const slotsKey = (claimId) => `claim-slots:${claimId}`;
+
+// Gives back the slots of one admitted claim (claim id "<issueKey>:<commentId>"). The "seen" key
+// stays: the same comment is never queued twice. A later comment is a new claim.
+export async function releaseClaim(claimId, store) {
+  const taken = await store.get(slotsKey(claimId));
+  if (!Array.isArray(taken)) return;
+  for (const key of taken) {
+    if ((await store.get(key)) === claimId) await store.delete?.(key);
+  }
+  await store.delete?.(slotsKey(claimId));
 }

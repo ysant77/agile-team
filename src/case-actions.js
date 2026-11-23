@@ -8,7 +8,7 @@ import { HUMAN_DOMAINS } from './arbitration.js';
 import { appendAudit } from './audit-store.js';
 import { cannotSee, userCanBrowse } from './action-guard.js';
 import { buildPacket, caseInputErrors, formatCase, formatOpinion, QUESTIONS } from './case.js';
-import { collectGithub, collectPrStats } from './github-evidence.js';
+import { collectGithub, collectPrStats, githubFailure } from './github-evidence.js';
 import { addComment } from './jira.js';
 import { collectJira } from './jira-evidence.js';
 import { applyGuards, OPINION_PROMPT_VERSION } from './opinion.js';
@@ -49,7 +49,12 @@ export async function openCase(payload) {
   if (disagree.length) return { ok: false, error: disagree.join('; ') };
   const evidence = [];
   for (const prNumber of input.prNumbers) {
-    const github = await collectGithub({ repo, key: input.issueKey, token, fetchFn: fetch, prNumber });
+    let github;
+    try {
+      github = await collectGithub({ repo, key: input.issueKey, token, fetchFn: fetch, prNumber });
+    } catch (error) {
+      return githubFailure(error);
+    }
     if (!github.pr) {
       const where = github.truncated?.pulls ? `the latest 500 pull requests of ${repo}` : repo;
       return { ok: false, error: `pull request ${prNumber} not found in ${where}` };

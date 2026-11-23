@@ -8,7 +8,7 @@ import api, { fetch, route } from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { appendAudit } from './audit-store.js';
 import { cannotSee, userCanBrowse } from './action-guard.js';
-import { collectGithub, collectPrFiles } from './github-evidence.js';
+import { collectGithub, collectPrFiles, githubFailure } from './github-evidence.js';
 import { addComment } from './jira.js';
 import { collectJira } from './jira-evidence.js';
 import {
@@ -61,12 +61,23 @@ export async function getPrDiff(payload) {
   if (!repo) return { ok: false, error: 'no repository configured' };
   const token = process.env.GITHUB_TOKEN;
   const ticket = await collectJira(input.issueKey);
-  const github = await collectGithub({ repo, key: input.issueKey, token, fetchFn: fetch, prNumber: input.prNumber });
+  let github;
+  try {
+    github = await collectGithub({ repo, key: input.issueKey, token, fetchFn: fetch, prNumber: input.prNumber });
+  } catch (error) {
+    return githubFailure(error);
+  }
   if (!github.pr) {
     const where = github.truncated?.pulls ? `the latest 500 pull requests of ${repo}` : repo;
     return { ok: false, error: `pull request ${input.prNumber} not found in ${where}` };
   }
-  const { files, truncated } = await collectPrFiles({ repo, prNumber: input.prNumber, token, fetchFn: fetch });
+  let files;
+  let truncated;
+  try {
+    ({ files, truncated } = await collectPrFiles({ repo, prNumber: input.prNumber, token, fetchFn: fetch }));
+  } catch (error) {
+    return githubFailure(error);
+  }
   // The verdict uses collectGithub's file list: every page, or null when it is cut.
   const verdict = verify({ id: `review:${input.issueKey}:${input.prNumber}`, type: 'ready', text: '' },
     { ticket, ...github, config: configFor(repo) });
