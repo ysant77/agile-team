@@ -22,7 +22,8 @@ function deps({ verdicts = [done()], canEdit = true, writeOk = true } = {}) {
   return {
     calls,
     canEdit: async () => canEdit,
-    readVerdicts: async () => verdicts,
+    // The latest done verdict as the audit chain holds it (readLatestDone, src/sign-off.js).
+    readLatestDone: async () => (verdicts ?? []).filter((v) => v && v.type === 'done').at(-1) ?? null,
     appendAudit: async (e) => {
       const ev = nextEvent(prev, { ...e, at: '2026-11-21T02:00:00.000Z' });
       prev = ev;
@@ -76,8 +77,8 @@ test('refusals: short reason, unknown person, no edit permission, no done claim,
     [() => act('finance-b', deps(), 'ok'), /at least 5 characters/],
     [() => act(null, deps()), /person is not known/],
     [() => act('finance-b', deps({ canEdit: false })), /only a person who can edit this work item/],
-    [() => act('finance-b', deps({ verdicts: [] })), /no "done" claim on this work item yet/],
-    [() => act('finance-b', deps({ verdicts: null })), /no "done" claim on this work item yet/],
+    [() => act('finance-b', deps({ verdicts: [] })), /no audited "done" verdict on this work item yet/],
+    [() => act('finance-b', deps({ verdicts: null })), /no audited "done" verdict on this work item yet/],
     [() => act('finance-b', deps({ verdicts: [done({ mergeSha: null })] })), /no merged commit/],
     [() => act('finance-b', deps({ verdicts: [done({ mergeSha: 'abc' })] })), /no merged commit/],
     [() => act('finance-b', deps({ writeOk: false })), /Jira refused the sign-off \(HTTP 403\)/],

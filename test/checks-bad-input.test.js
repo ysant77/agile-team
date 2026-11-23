@@ -126,6 +126,7 @@ function setPath(obj, path, value) {
 // default", exceptions). Each one says why.
 const ARGS = {
   testPasses: ['test_X1_fix'],
+  testPassesAll: [['test_X1_fix']],
   metricCompare: ['latency_ms', 20, 'max'],
   versionAtLeast: ['requests', '2.0.0'],
   pathAbsent: ['old/legacy.py'],
@@ -163,6 +164,7 @@ const ROWS = [
     // No configured list means the default pinned workflow, which the good run is.
     { allow: merge(RUN_ALLOW, { 'config.requiredWorkflowPaths': ['missing'] }) }],
   ['testPasses', ['arg:0', ...TRUST, 'report.tests', 'report.tests.0', 'report.tests.0.id', 'report.tests.0.outcome'], { allow: TRUST_ALLOW }],
+  ['testPassesAll', [...TRUST, 'report.tests', 'report.tests.0', 'report.tests.0.id', 'report.tests.0.outcome'], { allow: TRUST_ALLOW }],
   ['bugTestExists', [...TRUST, 'report.tests', 'report.tests.0', 'report.tests.0.id', 'report.tests.0.outcome', 'ticket', 'ticket.key'], { allow: TRUST_ALLOW }],
   // For a metric the test list is a guard (no failed test), not the evidence: an empty list has
   // no failed test. A missing list is a report without tests.
@@ -232,6 +234,7 @@ const ROWS = [
     { allow: { ticket: Object.keys(BAD),
       'ticket.key': Object.keys(BAD) } }],
   ['acTestsRunNewCode', ['prPatches', 'prPatches.[src/x.py]', 'report.tests', 'report.tests.0'], { expect: null }],
+  ['securityArgsKept', ['prPatches', 'prPatches.[src/x.py]'], { expect: null }],
   // An empty earlierFailures list is the read result "no step failed in an earlier attempt". The
   // run's own status and conclusion are ci_green's inputs; ci_attempts reads only the attempts.
   ['ciAttempts', [...RUN, 'workflowRuns.0.earlierFailures', 'workflowRuns.0.earlierFailures.0', 'pr', 'pr.headSha'],
@@ -412,11 +415,15 @@ test('coverageOk: a missing or non-integer changed_excluded gives unknown', () =
   }
 });
 
-test('coverageOk: a changed-line floor fail stays a fail when lines are excluded', () => {
+// V07 (lead review of 23 Nov, finding 9): coverage under the floor is unknown, not fail. A line
+// that no test reaches is a reason for a person to look, not proof that the claim is false.
+test('coverageOk: changed-line coverage under the floor gives unknown, also when lines are excluded', () => {
   const ctx = good();
   ctx.report.coverage.changed_covered = 2;
   ctx.report.coverage.changed_excluded = 4;
-  assert.equal(c.coverageOk(ctx).status, 'fail');
+  const r = c.coverageOk(ctx);
+  assert.equal(r.status, 'unknown', r.reason);
+  assert.match(r.reason, /under the floor .*a person checks the lines that no test reaches/);
 });
 
 // PR 9 review, item 4: the changed-line counts are whole numbers of lines, at least 0, and no

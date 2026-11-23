@@ -7,7 +7,7 @@ import { adoptFromReviews } from './review.js';
 import { approveTest, recordAcsAction } from './approval-actions.js';
 import { collectJira } from './jira-evidence.js';
 import { latestView } from './verdict-view.js';
-import { signOffAction, signoffPanel } from './sign-off.js';
+import { readLatestDone, signOffAction, signoffPanel } from './sign-off.js';
 
 const resolver = new Resolver();
 
@@ -77,7 +77,7 @@ async function writeSignoff(key, signoff) {
 }
 resolver.define('signOff', async ({ payload, context }) => signOffAction(
   { key: context.extension.issue.key, accountId: context.accountId, payload },
-  { canEdit, readVerdicts: (key) => getProperty(key, 'aat.verdicts'), appendAudit, writeSignoff },
+  { canEdit, readLatestDone: (key) => readLatestDone(key, { store: kvs, readAudit }), appendAudit, writeSignoff },
 ));
 
 // A human adopts a proposed check from a review (DESIGN 14a). The AC then names the test; CI and
