@@ -362,7 +362,7 @@ function checkFinding(f, inv, reads) {
 // a file that states rules: a file under docs/, a README, or a test file. A defect that cites only
 // code shows what the code does, not that it is wrong, so it is recorded as "unclear" with an open
 // question, never kept as a defect. The kind the model proposed stays in the record.
-const isRuleFile = (path) => /^docs\//.test(path) || /(^|\/)README[^/]*$/i.test(path) || /(^|\/)tests?\//.test(path) || /(^|\/)test_[^/]*\.py$/.test(path);
+export const isRuleFile = (path) => /^docs\//.test(path) || /(^|\/)README[^/]*$/i.test(path) || /(^|\/)tests?\//.test(path) || /(^|\/)test_[^/]*\.py$/.test(path);
 const NO_RULE_NOTE = 'recorded as unclear: the defect cites no rule (a read line of docs, a README or a test)';
 export const RULE_QUESTION = 'Which rule does this break? Cite a line of docs, a README or a test that states it.';
 
