@@ -5,6 +5,8 @@ import { monitorForViewer } from './monitor.js';
 import { kvs } from '@forge/kvs';
 import { adoptFromReviews } from './review.js';
 import { approveTest, recordAcsAction } from './approval-actions.js';
+import { githubClient, githubFailure } from './github-evidence.js';
+import { linkPrAction } from './pr-link.js';
 import { collectJira } from './jira-evidence.js';
 import { latestView } from './verdict-view.js';
 import { readLatestDone, signOffAction, signoffPanel } from './sign-off.js';
@@ -35,6 +37,24 @@ resolver.define('approveTest', async ({ payload, context }) => approveTest({ key
 // until a person records them again.
 resolver.define('recordAcs', async ({ context }) => recordAcsAction({ key: context.extension.issue.key, accountId: context.accountId }, approvalDeps));
 
+// Fresh-site path (option 1b): a person links a PR to the work item. The link is audited and kept
+// in the app's store (src/pr-link.js); a claim counts it only when the claimant did not make it.
+async function readPr(prNumber) {
+  const repo = process.env.GITHUB_REPO;
+  const { get } = githubClient({ token: process.env.GITHUB_TOKEN, fetchFn: api.fetch });
+  const body = await get(`/repos/${repo}/pulls/${prNumber}`);
+  return body ? { number: body.number, headRepo: body.head?.repo?.full_name ?? null } : null;
+}
+resolver.define('linkPr', async ({ payload, context }) => {
+  try {
+    return await linkPrAction({ key: context.extension.issue.key, accountId: context.accountId, payload },
+      { canEdit, appendAudit, store: kvs, repo: process.env.GITHUB_REPO, readPr });
+  } catch (error) {
+    if (error?.name === 'GitHubError') return githubFailure(error);
+    throw error;
+  }
+});
+
 resolver.define('getPanel', async ({ context }) => {
   const key = context.extension.issue.key;
   const [spec, verdicts, approval, reviews, signoff] = await Promise.all([
@@ -45,7 +65,9 @@ resolver.define('getPanel', async ({ context }) => {
     getProperty(key, 'aat.signoff'),
   ]);
   // The verdict view explains the newest verdict; code set it, and the view never changes it.
-  return { key, spec, verdicts: verdicts ?? [], view: latestView(verdicts), approval, reviews: reviews ?? [], signoff: signoffPanel(verdicts, signoff) };
+  const prLinks = (await kvs.get(`pr-links:${key}`)) ?? [];
+  return { key, spec, verdicts: verdicts ?? [], view: latestView(verdicts), approval, reviews: reviews ?? [], signoff: signoffPanel(verdicts, signoff),
+    prLink: Array.isArray(prLinks) && prLinks.length ? { ...prLinks.at(-1), count: prLinks.length } : null };
 });
 
 resolver.define('approve', async ({ payload, context }) => {
