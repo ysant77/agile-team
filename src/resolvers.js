@@ -5,6 +5,7 @@ import { monitorForViewer } from './monitor.js';
 import { kvs } from '@forge/kvs';
 import { adoptFromReviews } from './review.js';
 import { approveTest, recordAcsAction } from './approval-actions.js';
+import { saveAcsAction } from './ac-editor.js';
 import { collectJira } from './jira-evidence.js';
 import { latestView } from './verdict-view.js';
 import { readLatestDone, signOffAction, signoffPanel } from './sign-off.js';
@@ -34,6 +35,21 @@ resolver.define('approveTest', async ({ payload, context }) => approveTest({ key
 // A person records the current ACs. A later change to the ACs makes the verdict cannot_verify
 // until a person records them again.
 resolver.define('recordAcs', async ({ context }) => recordAcsAction({ key: context.extension.issue.key, accountId: context.accountId }, approvalDeps));
+
+// Fresh-site path (option 1a): a person types the ACs in the panel; the app writes the ticket
+// spec as the user and records the ACs (src/ac-editor.js).
+async function writeSpec(key, spec) {
+  const response = await api.asUser().requestJira(route`/rest/api/3/issue/${key}/properties/aat.ticket`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(spec),
+  });
+  return { ok: response.ok, status: response.status };
+}
+resolver.define('saveAcs', async ({ payload, context }) => saveAcsAction(
+  { key: context.extension.issue.key, accountId: context.accountId, payload },
+  { ...approvalDeps, readSpec: (key) => getProperty(key, 'aat.ticket'), writeSpec },
+));
 
 resolver.define('getPanel', async ({ context }) => {
   const key = context.extension.issue.key;

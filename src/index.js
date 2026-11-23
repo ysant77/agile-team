@@ -8,7 +8,7 @@ import { applyDecision, deciderRule, formatDecision, parseDecision, parseGithubA
 import { admitClaim } from './claim-intake.js';
 import { readLatestCommit } from './github.js';
 import { addComment, createIssue, getComment } from './jira.js';
-import { malformedAcLines, normaliseAcs, parseAcLines, testPassesArgErrors } from './ticket-spec.js';
+import { acLineErrors, normaliseAcs, parseAcLines } from './ticket-spec.js';
 import { lintRequirement } from './lint.js';
 import { adfToText, checkStoryPoints, parseClaim } from './text.js';
 
@@ -29,23 +29,9 @@ export async function createTicket(payload) {
   const issueType = payload.issueType === undefined || payload.issueType === null || payload.issueType === '' ? 'Task' : String(payload.issueType).trim();
   if (!ISSUE_TYPES.includes(issueType)) return { ok: false, error: `issueType must be one of ${ISSUE_TYPES.join(', ')}` };
   const storyPoints = checkStoryPoints(payload.storyPoints);
-  const malformed = malformedAcLines(payload.acceptanceCriteria);
-  if (malformed.length) {
-    return {
-      ok: false,
-      error: 'Every acceptance criterion must be one line "AC1 | statement | check", for example ' +
-        '"AC1 | balance never below 0.00 | test_passes(test_{TOKEN}_balance_never_negative)". ' +
-        `Fix these lines and call again: ${malformed.join(' / ')}`,
-    };
-  }
-  const multi = testPassesArgErrors(parseAcLines(payload.acceptanceCriteria));
-  if (multi.length) {
-    return {
-      ok: false,
-      error: `${multi.map((id) => `${id}: test_passes needs a test name`).join('; ')}, for example ` +
-        '"AC1 | credits only | test_passes(test_{TOKEN}_credits_only)". Fix these ACs and call again.',
-    };
-  }
+  // The same AC line rules as the panel's AC editor (src/ac-editor.js).
+  const lineError = acLineErrors(payload.acceptanceCriteria);
+  if (lineError) return { ok: false, error: lineError };
   const grounding = ticketGrounding(payload);
   if (grounding) return { ok: false, error: grounding };
   // A ticket from a discovery finding (Mode B): the finding must exist and name a defect. The
