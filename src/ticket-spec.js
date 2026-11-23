@@ -38,10 +38,16 @@ export function normaliseTestName(name, projectKey) {
   return `test_{TOKEN}_${rest}`;
 }
 
+// The ACs whose test_passes check names no test. Ticket creation refuses them.
+export function testPassesArgErrors(acs) {
+  return acs.filter((ac) => ac.check?.type === 'test_passes' && (ac.check.args ?? []).length === 0).map((ac) => ac.acId);
+}
+
 export function normaliseAcs(acs, projectKey) {
   return acs.map((ac) =>
     ac.check.type === 'test_passes'
-      ? { ...ac, check: { ...ac.check, args: [normaliseTestName(ac.check.args[0], projectKey)] } }
+      // Every name is kept: the verifier checks each one (lead review of 23 Nov, finding 5).
+      ? { ...ac, check: { ...ac.check, args: ac.check.args.map((n) => normaliseTestName(n, projectKey)) } }
       : ac,
   );
 }

@@ -32,7 +32,9 @@ export function runAcCheck(ctx, check) {
   );
   switch (check.type) {
     case 'test_passes':
-      return c.testPasses(ctx, a[0]);
+      // Every named test must pass. A second name used to be ignored, so a missing second test
+      // still passed (lead review of 23 Nov, finding 5).
+      return c.testPassesAll(ctx, a);
     case 'metric_at_least':
       return c.metricCompare(ctx, a[0], a[1], 'min');
     case 'metric_at_most':
@@ -116,6 +118,7 @@ export const CLAIM_CHECKS = {
     safe('pr_linked', c.prLinked, ctx),
     safe('ci_green', c.ciGreen, ctx),
     ...[safe('ac_tests_run_new_code', c.acTestsRunNewCode, ctx)].filter(Boolean),
+    ...[safe('security_args_kept', c.securityArgsKept, ctx)].filter(Boolean),
     ...[safe('ci_attempts', c.ciAttempts, ctx)].filter(Boolean),
     safe('ac_mapped', acMapped, ctx),
     safe('acs_recorded', c.acsRecorded, ctx),
@@ -130,6 +133,7 @@ export const CLAIM_CHECKS = {
     safe('pr_linked', c.prLinked, ctx),
     safe('ci_green', c.ciGreen, ctx),
     ...[safe('ac_tests_run_new_code', c.acTestsRunNewCode, ctx)].filter(Boolean),
+    ...[safe('security_args_kept', c.securityArgsKept, ctx)].filter(Boolean),
     ...[safe('ci_attempts', c.ciAttempts, ctx)].filter(Boolean),
     ...[safe('base_current', c.baseCurrent, ctx)].filter(Boolean),
     safe('ac_mapped', acMapped, ctx),
@@ -163,6 +167,8 @@ export const CLAIM_CHECKS = {
     }
     const replaced = safe('ac_tests_run_new_code', c.acTestsRunNewCode, ctx);
     if (replaced) checks.push(replaced);
+    const security = safe('security_args_kept', c.securityArgsKept, ctx);
+    if (security) checks.push(security);
     const attempts = safe('ci_attempts', c.ciAttempts, ctx);
     if (attempts) checks.push(attempts);
     const measured = safe('measurement_unchanged', c.measurementUnchanged, ctx);

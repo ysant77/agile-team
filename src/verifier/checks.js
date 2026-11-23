@@ -344,6 +344,20 @@ export function testPasses(ctx, name, report = ctx.report) {
   return result(label, 'pass', `${name} passed`);
 }
 
+// test_passes(a, b, ...): every named test passes on the head. A fail of any name is a fail; else
+// an unknown of any name is unknown. The first name stays the reproducer (ticketTests).
+export function testPassesAll(ctx, names) {
+  if (!Array.isArray(names) || names.length === 0) return result('test_passes', 'unknown', 'no test name');
+  if (names.length === 1) return testPasses(ctx, names[0]);
+  const parts = names.map((n) => testPasses(ctx, n));
+  const label = `test_passes(${names.map(String).join(', ')})`;
+  const failed = parts.filter((p) => p.status === 'fail');
+  const unknownParts = parts.filter((p) => p.status === 'unknown');
+  if (failed.length) return result(label, 'fail', failed.map((p) => p.reason).join('; '));
+  if (unknownParts.length) return result(label, 'unknown', unknownParts.map((p) => p.reason).join('; '));
+  return result(label, 'pass', parts.map((p) => p.reason).join('; '));
+}
+
 export function bugTestExists(ctx) {
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result('bug_test_exists', 'unknown', trust.reason);
@@ -573,13 +587,16 @@ function auditedApprovals(ctx, kind) {
   if (!isObj(a) || ['removals', 'changes'].some((f) => a[f] !== undefined && !isObjList(a[f]))) return { ...out, error: 'the app\'s approval record is malformed' };
   for (const x of a[field] ?? []) {
     const shaped = isText(x.test) && typeof x.reason === 'string' && x.reason.trim().length >= 5 && isText(x.by) && Number.isInteger(x.auditSeq) && x.auditSeq >= 0;
+    // The event holds the name as the person gave it; the checks compare test names, so a full id
+    // ("file::Class::test_x") counts for "test_x" (lead review of 23 Nov, finding 8; V17).
+    const n = isText(x.test) ? testName(x.test) : x.test;
     if (!shaped || !eventMatches(eventOf(ctx, x.auditSeq), x.auditSeq, APPROVAL_EVENTS[kind], x.by, { key: ctx.ticket?.key, test: x.test, reason: x.reason })) {
-      if (isText(x.test)) out.unmatched.add(x.test);
+      if (isText(x.test)) out.unmatched.add(n);
       continue;
     }
-    if (!isText(ctx.claimant)) out.noClaimant.add(x.test);
-    else if (x.by === ctx.claimant) out.self.add(x.test);
-    else out.names.add(x.test);
+    if (!isText(ctx.claimant)) out.noClaimant.add(n);
+    else if (x.by === ctx.claimant) out.self.add(n);
+    else out.names.add(n);
   }
   return out;
 }
@@ -606,11 +623,15 @@ export function testsNotRemoved(ctx, report = ctx.report) {
   if (!isObj(ctx.ticket)) return result('tests_not_removed', 'unknown', 'the ticket is not readable, so its approved test removals are not known');
   const audited = auditedApprovals(ctx, 'removal');
   if (audited.error) return result('tests_not_removed', 'unknown', `the approved test removals are not readable: ${audited.error}`);
+  // An audited change approval by another person also covers the old name of a test that the
+  // change renames and edits (V17): the person approved that its assertion changes.
+  const changes = auditedApprovals(ctx, 'change');
+  if (changes.error) return result('tests_not_removed', 'unknown', `the approved test changes are not readable: ${changes.error}`);
   // A report without a repro block is from before the base record existed; any other value
   // that is not an object is malformed.
   if (report.repro !== undefined && !isObj(report.repro)) return result('tests_not_removed', 'unknown', 'the repro block of the report is malformed');
   const head = new Set(report.tests.map((t) => testName(t.id)));
-  const approved = new Set(audited.names);
+  const approved = new Set([...audited.names, ...changes.names]);
   // A rename with the same body (pinned block) is not a removal (benchmark U10).
   for (const [from, to] of pinnedRenames(report)) if (head.has(to)) approved.add(from);
   // The base side: the main report, and the base test ids of every test module the PR changes,
@@ -692,7 +713,8 @@ export function pinnedTestsHold(ctx, report = ctx.report) {
   for (const t of p.tests) {
     const n = testName(t.id);
     if (t.head_id === null) {
-      if (!approvedRemoval.has(n)) { fails.push(`${n} is deleted`); failing.push(['removal', n]); }
+      // A change approval covers a rename with an edit, where the old id is gone (V17).
+      if (!approvedRemoval.has(n) && !approvedChange.has(n)) { fails.push(`${n} is deleted`); failing.push(['removal', n]); }
       continue;
     }
     const edited = t.head_hash !== t.base_hash;
@@ -960,6 +982,9 @@ export function acTestsRunNewCode(ctx) {
   for (const [file, patch] of Object.entries(patches)) {
     if (/(^|\/)tests?\//.test(file) || /(^|\/)test_[^/]*\.py$/.test(file)) continue;
     for (const m of added(patch).matchAll(/^\+\s*(?:async\s+)?def\s+(\w+)\s*\(/gm)) defined.add(m[1]);
+    // A module-level name the PR adds (an assignment at column 0, such as a flag). A test that
+    // sets it never runs the value that ships (lead review of 23 Nov, finding 9; V18).
+    for (const m of added(patch).matchAll(/^\+([A-Za-z_]\w*)\s*(?::[^=\n]+)?=(?!=)/gm)) defined.add(m[1]);
   }
   if (!defined.size) return null;
   const files = new Set();
@@ -976,6 +1001,26 @@ export function acTestsRunNewCode(ctx) {
   }
   return replaced.length
     ? result('ac_tests_run_new_code', 'unknown', `${[...new Set(replaced)].join('; ')}, which this PR adds: the AC test does not run the new code, so a person checks`)
+    : null;
+}
+
+// A security argument that the PR removes from a call in non-test code (lead review of 23 Nov,
+// finding 9; V12): a cookie that loses httponly=True, a request that loses verify=True. The list
+// is narrow on purpose. Read from the diff: a removed line has the argument and no added line of
+// the same file has it. Returns null when nothing is found.
+export const SECURITY_ARGS = ['httponly=True', 'secure=True', 'verify=True', 'check_hostname=True'];
+export function securityArgsKept(ctx) {
+  const patches = isObj(ctx.prPatches) ? ctx.prPatches : {};
+  const found = [];
+  for (const [file, patch] of Object.entries(patches)) {
+    if (typeof patch !== 'string' || isTestFile(file)) continue;
+    const lines = patch.split('\n');
+    const removed = lines.filter((l) => l.startsWith('-') && !l.startsWith('---')).join('\n').replace(/\s+/g, '');
+    const added = lines.filter((l) => l.startsWith('+') && !l.startsWith('+++')).join('\n').replace(/\s+/g, '');
+    for (const arg of SECURITY_ARGS) if (removed.includes(arg) && !added.includes(arg)) found.push(`${arg} in ${file}`);
+  }
+  return found.length
+    ? result('security_args_kept', 'unknown', `the PR removes ${found.join('; ')}: a person checks that the security setting is meant to go`)
     : null;
 }
 
@@ -1236,11 +1281,12 @@ export function coverageOk(ctx) {
     if (code.length) return result('coverage', 'unknown', `no changed executable lines reported, but ${code.join(', ')} changed code`);
   }
   const floorPct = Math.round(conf.changedFloor * 100);
+  // Under the floor is unknown, not fail (lead review of 23 Nov, finding 9; V07): a changed line
+  // that no test reaches is a reason for a person to look, not proof that the claim is false.
   if (exec > 0 && covered / exec < conf.changedFloor) {
-    return result('coverage', 'fail', `${covered} of ${exec} changed lines covered (${Math.round((covered / exec) * 100)}%), floor ${floorPct}%`);
+    return result('coverage', 'unknown', `${covered} of ${exec} changed lines covered (${Math.round((covered / exec) * 100)}%), under the floor of ${floorPct}%: a person checks the lines that no test reaches`);
   }
-  // Checked after the changed-line floor: a file missing from the data only lowers the share of
-  // covered changed lines, so a fail there stays a fail.
+  // Checked after the changed-line floor.
   // A changed source file that the coverage data does not have looks fully covered in the counts
   // (benchmark set 2, S18). The coverage script names such files. A report without the list, or
   // with a list that is not an array, cannot show that every changed file was measured (review
