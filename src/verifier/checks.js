@@ -1070,18 +1070,33 @@ export function acTestsRunNewCode(ctx) {
 // is narrow on purpose. Read from the diff: a removed line has the argument and no added line of
 // the same file has it. Returns null when nothing is found.
 export const SECURITY_ARGS = ['httponly=True', 'secure=True', 'verify=True', 'check_hostname=True'];
+// Cookie arguments whose value matters (set 6, W10): a changed or removed value is seen. Only
+// these; an added middleware or any change outside the two lists is not seen (docs/claims.md).
+export const SECURITY_VALUE_ARGS = ['samesite'];
+const argValues = (text, arg) => new Set([...text.matchAll(new RegExp(`\\b${arg}\\s*=\\s*["']([^"']*)["']`, 'gi'))].map((m) => m[1].toLowerCase()));
 export function securityArgsKept(ctx) {
   const patches = isObj(ctx.prPatches) ? ctx.prPatches : {};
   const found = [];
   for (const [file, patch] of Object.entries(patches)) {
     if (typeof patch !== 'string' || isTestFile(file)) continue;
     const lines = patch.split('\n');
-    const removed = lines.filter((l) => l.startsWith('-') && !l.startsWith('---')).join('\n').replace(/\s+/g, '');
-    const added = lines.filter((l) => l.startsWith('+') && !l.startsWith('+++')).join('\n').replace(/\s+/g, '');
-    for (const arg of SECURITY_ARGS) if (removed.includes(arg) && !added.includes(arg)) found.push(`${arg} in ${file}`);
+    const removedText = lines.filter((l) => l.startsWith('-') && !l.startsWith('---')).join('\n');
+    const addedText = lines.filter((l) => l.startsWith('+') && !l.startsWith('+++')).join('\n');
+    const removed = removedText.replace(/\s+/g, '');
+    const added = addedText.replace(/\s+/g, '');
+    for (const arg of SECURITY_ARGS) if (removed.includes(arg) && !added.includes(arg)) found.push(`removes ${arg} in ${file}`);
+    for (const arg of SECURITY_VALUE_ARGS) {
+      const before = argValues(removedText, arg);
+      const after = argValues(addedText, arg);
+      for (const v of before) {
+        if (after.has(v)) continue;
+        if (after.size) found.push(`changes ${arg} from "${v}" to "${[...after].join('", "')}" in ${file}`);
+        else found.push(`removes ${arg}="${v}" in ${file}`);
+      }
+    }
   }
   return found.length
-    ? result('security_args_kept', 'unknown', `the PR removes ${found.join('; ')}: a person checks that the security setting is meant to go`)
+    ? result('security_args_kept', 'unknown', `the PR ${found.join('; ')}: a person checks that the security setting is meant to change`)
     : null;
 }
 

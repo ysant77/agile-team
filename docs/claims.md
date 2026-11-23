@@ -312,6 +312,11 @@ is the measurement.
   value that ships is never tested.
 - **V12:** a PR that removes `httponly=True`, `secure=True`, `verify=True` or `check_hostname=True`
   from a call in non-test code gives unknown. The list is narrow on purpose.
+- **W10 (set 6, owner decision 23 Nov):** a PR that changes or removes the `samesite` value of a
+  call in non-test code (for example `"lax"` to `"none"`) gives unknown and names both values.
+  **Not seen:** an added middleware (W10 also allows every origin with credentials through a
+  CORS middleware), any other argument, and any change outside these two lists. Regression on
+  sets 1 to 6: only W10 changes, from supported to cannot_verify.
 - **V07:** changed-line coverage under the floor gives unknown, not fail.
 
 Regression, arm C on the stored evidence of sets 1 to 5: set 5 changes are V07 contradicted to
