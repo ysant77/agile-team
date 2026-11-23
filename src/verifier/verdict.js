@@ -83,6 +83,8 @@ export function runAcCheck(ctx, check) {
   }
 }
 
+export const NO_ACS = 'nothing to check: the work item has no acceptance criteria and no sub-tasks; record the ACs in the panel, then claim again';
+
 export function acMapped(ctx) {
   if (!isObj(ctx.ticket)) return { ...unknown('ac_mapped', 'malformed input: the ticket was not read'), parts: [] };
   // None stored means no AC; any other value that is not a list of objects is malformed.
@@ -90,13 +92,15 @@ export function acMapped(ctx) {
   if (!Array.isArray(acs) || !acs.every(isObj)) return { ...unknown('ac_mapped', 'malformed input: the acceptance criteria are not a list of objects'), parts: [] };
   if (acs.length === 0) {
     // Work defined by sub-tasks: every sub-task done stands for the AC (benchmark B24). A ticket
-    // with no AC and no sub-task has nothing to check (B13).
+    // with no AC and no sub-task has nothing to check (B13): unknown, not fail (lead review of
+    // 23 Nov, finding 2). A check that does fail (no PR for a fixed claim, S26) still counts.
     const subs = ctx.ticket.subtasks ?? [];
     if (!Array.isArray(subs) || !subs.every(isObj)) return { ...unknown('ac_mapped', 'malformed input: the sub-task list is malformed'), parts: [] };
     if (subs.length && subs.every((t) => t.statusCategory === 'done')) {
       return { name: 'ac_mapped', status: 'pass', reason: `no AC; the work is ${subs.length} sub-task(s), all done`, parts: [] };
     }
-    return { name: 'ac_mapped', status: 'fail', reason: 'ticket has no acceptance criteria', parts: [] };
+    if (!subs.length) return { name: 'ac_mapped', status: 'unknown', reason: NO_ACS, parts: [] };
+    return { name: 'ac_mapped', status: 'unknown', reason: `no AC; ${subs.filter((t) => t.statusCategory === 'done').length} of ${subs.length} sub-task(s) done`, parts: [] };
   }
   const parts = acs.map((ac) => ({ acId: ac.acId, ...safe(`${ac.acId ?? 'AC'} check`, runAcCheck, ctx, ac.check) }));
   const failed = parts.filter((p) => p.status === 'fail');
