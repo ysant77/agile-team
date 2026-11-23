@@ -229,6 +229,16 @@ dismissals and dependency alerts need a token and are after the freeze (DESIGN 1
 
 These are development sets; no claim is made before blind set 5.
 
+## Blind set 6 (23 Nov 2026)
+
+24 cases by a writer who saw no source; app `main` 9ec52ca, arm C, PROTOCOL-5 scoring
+(`benchmark/RESULTS-6.md`). 8 cases are not buildable and are counted apart: two have a false base
+fact, five need GitHub or Jira state that the scorer cannot serve, and one has red CI on the bank.
+On the 16 scored cases: **unsafe supported 2** (W10: `SameSite=none` and every origin allowed;
+W18: one of three rules tested), **false blocks on controls 0** of 6, **right 13** of 16, **strict
+right 12** of 16. Wrong outcome: W22 (a skipped test gives `contradicted`). Every scored outcome
+was the one predicted before the build. The faults are recorded and not fixed in this round.
+
 ## Verifier corrections (23 Nov 2026, lead review)
 
 Set 5 is development data from now on; these corrections were made with its outcomes known, so

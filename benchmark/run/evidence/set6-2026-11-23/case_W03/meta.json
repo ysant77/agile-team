@@ -1,0 +1,31 @@
+{
+ "branch": "case/W03",
+ "head": "e6c631cb7073afb5c2d025e3b63b708fe2a7e93d",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -172,6 +172,8 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         conn: Conn,\n         start: Annotated[date | None, Query(alias=\"from\")] = None,\n         end: Annotated[date | None, Query(alias=\"to\")] = None,\n+        limit: Annotated[int | None, Query(ge=1, le=200)] = None,\n+        offset: Annotated[int, Query(ge=0)] = 0,\n     ) -> dict[str, object]:\n         for value in (start, end):\n             if value is not None and not EARLIEST_DATE <= value <= LATEST_DATE:\n@@ -183,24 +185,27 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         except ledger.LedgerError as exc:\n             raise HTTPException(400, str(exc)) from None\n         cur = account.currency\n+        lines = [\n+            {\n+                \"entry_id\": line.entry_id,\n+                \"posted_at\": line.posted_at,\n+                \"kind\": line.kind,\n+                \"description\": line.description,\n+                \"reference\": line.reference,\n+                **money_fields(\"amount\", line.amount_minor, cur),\n+                **money_fields(\"balance\", line.balance_minor, cur),\n+            }\n+            for line in st.lines\n+        ]\n+        page = lines[offset:] if limit is None else lines[offset : offset + limit]\n         return {\n             \"account\": account_json(account),\n             \"from\": st.start.isoformat(),\n             \"to\": st.end.isoformat(),\n             **money_fields(\"opening_balance\", st.opening_minor, cur),\n             **money_fields(\"closing_balance\", st.closing_minor, cur),\n-            \"lines\": [\n-                {\n-                    \"entry_id\": line.entry_id,\n-                    \"posted_at\": line.posted_at,\n-                    \"kind\": line.kind,\n-                    \"description\": line.description,\n-                    \"reference\": line.reference,\n-                    **money_fields(\"amount\", line.amount_minor, cur),\n-                    **money_fields(\"balance\", line.balance_minor, cur),\n-                }\n-                for line in st.lines\n-            ],\n+            \"lines\": page,\n+            \"total_lines\": len(lines),\n         }\n \n     @app.post(\"/api/transfers\", status_code=201)\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,46 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def add_may_deposits(bank, at):\n+    conn = ledger.open_db(bank[\"path\"])\n+    for day, amount in ((\"2026-05-10\", \"1.00\"), (\"2026-05-11\", \"2.00\"), (\"2026-05-12\", \"3.00\")):\n+        ledger.deposit(conn, bank[\"eur\"].id, Money.of(amount, \"EUR\"), at=at(day))\n+    conn.close()\n+\n+\n+WINDOW = \"from=2026-05-02&to=2026-05-31\"\n+\n+\n+def test_statement_limit_returns_the_first_lines(bank, at):\n+    add_may_deposits(bank, at)\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    body = client.get(f\"/api/accounts/{bank['eur'].id}/statement?{WINDOW}&limit=2\").json()\n+    assert [line[\"amount\"] for line in body[\"lines\"]] == [\"1.00\", \"2.00\"]\n+\n+\n+def test_statement_reports_total_lines(bank, at):\n+    add_may_deposits(bank, at)\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    paged = client.get(f\"/api/accounts/{bank['eur'].id}/statement?{WINDOW}&limit=2\").json()\n+    full = client.get(f\"/api/accounts/{bank['eur'].id}/statement?{WINDOW}\").json()\n+    assert paged.get(\"total_lines\") == 3\n+    assert full.get(\"total_lines\") == 3\n+\n+\n+def test_statement_offset_skips_lines(bank, at):\n+    add_may_deposits(bank, at)\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    full = client.get(f\"/api/accounts/{bank['eur'].id}/statement?{WINDOW}\").json()\n+    paged = client.get(f\"/api/accounts/{bank['eur'].id}/statement?{WINDOW}&offset=1&limit=1\").json()\n+    assert len(paged[\"lines\"]) == 1\n+    assert paged[\"lines\"][0][\"amount\"] == \"2.00\"\n+    assert paged[\"lines\"][0][\"balance\"] == full[\"lines\"][1][\"balance\"]\n+\n+\n+def test_statement_paging_refuses_bad_values(bank, at):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    for query in (\"limit=0\", \"limit=201\", \"offset=-1\"):\n+        response = client.get(f\"/api/accounts/{bank['eur'].id}/statement?{WINDOW}&{query}\")\n+        assert response.status_code == 422, query\n"
+  }
+ ],
+ "additions": 60,
+ "deletions": 12,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 77%]\n........................................................................ [ 97%]\n..........                                                               [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/bench-bank-6/coverage.json\n370 passed, 1 deselected in 201.60s (0:03:21)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}
