@@ -106,8 +106,7 @@ they come from a person other than the claimant.
    acceptance criteria", paste the line of the case and press **Save and record**. The panel shows
    the AC and the audit sequence of the record.
 4. **PR (account A).** In "Linked pull request", give the number of the case's judge PR
-   (the table below; the numbers are filled in after the judge branches exist), a reason, and
-   press **Link PR**. The demo PRs name `BANK-5` to `BANK-9`, not the judge's keys, so the link is
+   (the table below), a reason, and press **Link PR**. The demo PRs name `BANK-5` to `BANK-9`, not the judge's keys, so the link is
    how the app finds the PR.
 5. **Claim (account B).** Comment `claim: done` on each work item. The verdict comment appears in
    about 15 s, and the panel shows it.
@@ -117,11 +116,11 @@ they come from a person other than the claimant.
 
 | Case | Work item type | Judge branch | Judge PR | Expected verdict |
 |---|---|---|---|---|
-| U01 | Bug | `judge/U01` | (after step 2 of the owner's list) | Supported |
-| U04 | Bug | `judge/U04` | | Contradicted: the AC test passes on base |
-| U20 | Bug | `judge/U20` | | Contradicted: a pinned base test fails on the head code |
-| U12 | Bug | `judge/U12` | | Cannot verify, then Supported after the sign-off by account A |
-| T08 | Story | `judge/T08` | | Supported (advice from the reviewer only if it was run on the PR) |
+| U01 | Bug | `judge/U01` | 17 | Supported |
+| U04 | Bug | `judge/U04` | 18 | Contradicted: the AC test passes on base |
+| U20 | Bug | `judge/U20` | 19 | Contradicted: a pinned base test fails on the head code |
+| U12 | Bug | `judge/U12` | 20 | Cannot verify, then Supported after the sign-off by account A |
+| T08 | Story | `judge/T08` | 21 | Supported (advice from the reviewer only if it was run on the PR) |
 
 The AC line of each case (one line; paste it as it is):
 
