@@ -138,61 +138,84 @@ function approvalCtx(test, kind = 'change') {
   };
 }
 
-// The module on the head gains a test id the base did not have: a rename with an edit.
+// Rename rule (lead, 23 Nov, after set 6 W13): a change approval covers a test that is gone from
+// the head only when the report links this test to its successor: a pinned entry whose head_id is
+// another id in the same module, which the base did not have. "The module gained any new id" is
+// not enough. No link: unknown, never pass. A plain deletion with a change approval only is not
+// approved.
 const OLD = 'tests/test_idempotency.py::TestKeys::test_keys_expire_after_24_hours';
 const NEW = 'tests/test_idempotency.py::TestKeys::test_keys_expire_after_48_hours';
 const KEPT = 'tests/test_idempotency.py::TestKeys::test_a_failed_attempt_stores_no_key';
-const pinnedReport = (headIds, modules = ['tests/test_idempotency.py']) => ({
+const pinnedReport = (headIds, oldEntry) => ({
   tests: headIds.map((id) => ({ id, outcome: 'passed' })),
-  pinned: { version: 1, modules, tests: [
-    { id: OLD, head_id: null, base_hash: 'a'.repeat(64), head_hash: null, outcome: 'not_run' },
+  pinned: { version: 1, modules: ['tests/test_idempotency.py'], tests: [
+    oldEntry,
     { id: KEPT, head_id: KEPT, base_hash: 'b'.repeat(64), head_hash: 'b'.repeat(64), outcome: 'passed' },
   ] },
 });
+const unlinked = { id: OLD, head_id: null, base_hash: 'a'.repeat(64), head_hash: null, outcome: 'not_run' };
+const linked = { id: OLD, head_id: NEW, base_hash: 'a'.repeat(64), head_hash: 'c'.repeat(64), outcome: 'failed' };
+const pinned = (ctx, report) => c.pinnedTestsHold({ ...ctx, config: { pinnedRequired: true } }, report);
 
-test('V17: a change approval covers a pinned test that is renamed and edited (the module gains a new id)', () => {
-  const ctx = approvalCtx(OLD);
-  const r = c.pinnedTestsHold({ ...ctx, config: { pinnedRequired: true } }, pinnedReport([KEPT, NEW]));
+test('a change approval covers a pinned test that the report links to its renamed, edited successor', () => {
+  const r = pinned(approvalCtx(OLD), pinnedReport([KEPT, NEW], linked));
   assert.equal(r.status, 'pass', r.reason);
 });
 
-test('a pinned test deleted with only a change approval, and no new id in its module, is a fail', () => {
-  const ctx = approvalCtx(OLD);
-  const r = c.pinnedTestsHold({ ...ctx, config: { pinnedRequired: true } }, pinnedReport([KEPT]));
-  assert.equal(r.status, 'fail', r.reason);
-  assert.match(r.reason, /test_keys_expire_after_24_hours is deleted/);
-});
-
-test('when the report cannot show whether the module gained an id, a change approval gives unknown', () => {
-  const ctx = approvalCtx(OLD);
-  const report = pinnedReport([KEPT, NEW]);
-  delete report.tests;
-  const r = c.pinnedTestsHold({ ...ctx, config: { pinnedRequired: true } }, report);
+test('a module that gains an unrelated new test no longer counts as a rename: unknown (W13)', () => {
+  const r = pinned(approvalCtx(OLD), pinnedReport([KEPT, 'tests/test_idempotency.py::TestKeys::test_purge'], unlinked));
   assert.equal(r.status, 'unknown', r.reason);
-  assert.match(r.reason, /rename with an edit/);
+  assert.match(r.reason, /test_keys_expire_after_24_hours .*no link from the old test to a new one/);
 });
 
-const removalCtx = (headIds, baseTestIds) => ({
-  ...approvalCtx('tests/test_idempotency.py::test_keys_expire_after_24_hours'),
-  baseReport: { tests: [{ id: 'tests/test_idempotency.py::test_keys_expire_after_24_hours', outcome: 'passed' }, { id: 'tests/test_idempotency.py::test_kept', outcome: 'passed' }] },
-  report: { tests: headIds.map((id) => ({ id, outcome: 'passed' })), ...(baseTestIds ? { repro: { base_test_ids: baseTestIds, base_collect: { rc: 0, modules_without_ids: [] } } } : {}) },
-});
-const BASE_IDS = ['tests/test_idempotency.py::test_keys_expire_after_24_hours', 'tests/test_idempotency.py::test_kept'];
-
-test('V17: a change approval covers the old name in the removal check only for a rename with an edit', () => {
-  const renamed = removalCtx(['tests/test_idempotency.py::test_kept', 'tests/test_idempotency.py::test_keys_expire_after_48_hours'], BASE_IDS);
-  assert.equal(c.testsNotRemoved(renamed, renamed.report).status, 'pass');
-  const deleted = removalCtx(['tests/test_idempotency.py::test_kept'], BASE_IDS);
-  const r = c.testsNotRemoved(deleted, deleted.report);
-  assert.equal(r.status, 'fail', r.reason);
-  assert.match(r.reason, /removed without approval: test_keys_expire_after_24_hours/);
-});
-
-test('the removal check gives unknown when the base ids of the module are not known', () => {
-  const ctx = removalCtx(['tests/test_idempotency.py::test_kept', 'tests/test_idempotency.py::test_keys_expire_after_48_hours'], null);
-  const r = c.testsNotRemoved(ctx, ctx.report);
+test('V17 shape: an edited rename that the pinned block does not link gives unknown, not pass', () => {
+  const r = pinned(approvalCtx(OLD), pinnedReport([KEPT, NEW], unlinked));
   assert.equal(r.status, 'unknown', r.reason);
-  assert.match(r.reason, /rename with an edit/);
+});
+
+test('a link to an id the base already had, or to another module, is not a rename', () => {
+  const toKept = { ...linked, head_id: KEPT };
+  assert.notEqual(pinned(approvalCtx(OLD), pinnedReport([KEPT, NEW], toKept)).status, 'pass');
+  const otherModule = { ...linked, head_id: 'tests/test_other.py::test_keys_expire_after_48_hours' };
+  assert.notEqual(pinned(approvalCtx(OLD), pinnedReport([KEPT, 'tests/test_other.py::test_keys_expire_after_48_hours'], otherModule)).status, 'pass');
+});
+
+test('a removal approval still covers a deleted pinned test', () => {
+  const r = pinned(approvalCtx(OLD, 'removal'), pinnedReport([KEPT], unlinked));
+  assert.equal(r.status, 'pass', r.reason);
+});
+
+const removalCtx = (headIds, entry) => {
+  const base = ['tests/test_idempotency.py::test_keys_expire_after_24_hours', 'tests/test_idempotency.py::test_kept'];
+  return {
+    ...approvalCtx('tests/test_idempotency.py::test_keys_expire_after_24_hours'),
+    baseReport: { tests: base.map((id) => ({ id, outcome: 'passed' })) },
+    report: {
+      tests: headIds.map((id) => ({ id, outcome: 'passed' })),
+      repro: { base_test_ids: base, base_collect: { rc: 0, modules_without_ids: [] } },
+      ...(entry ? { pinned: { version: 1, modules: ['tests/test_idempotency.py'], tests: [entry] } } : {}),
+    },
+  };
+};
+const OLD2 = 'tests/test_idempotency.py::test_keys_expire_after_24_hours';
+const NEW2 = 'tests/test_idempotency.py::test_keys_expire_after_48_hours';
+
+test('the removal check: a change approval covers the old name only with a rename link', () => {
+  const ok = removalCtx(['tests/test_idempotency.py::test_kept', NEW2], { id: OLD2, head_id: NEW2, base_hash: 'a'.repeat(64), head_hash: 'c'.repeat(64), outcome: 'failed' });
+  assert.equal(c.testsNotRemoved(ok, ok.report).status, 'pass');
+  const noLink = removalCtx(['tests/test_idempotency.py::test_kept', NEW2], { id: OLD2, head_id: null, base_hash: 'a'.repeat(64), head_hash: null, outcome: 'not_run' });
+  const r = c.testsNotRemoved(noLink, noLink.report);
+  assert.equal(r.status, 'unknown', r.reason);
+  assert.match(r.reason, /no link from the old test to a new one/);
+  const noPinned = removalCtx(['tests/test_idempotency.py::test_kept', NEW2], null);
+  assert.equal(c.testsNotRemoved(noPinned, noPinned.report).status, 'unknown');
+});
+
+test('an AC test that the PR deletes is named as deleted, not only as missing', () => {
+  const ctx = removalCtx(['tests/test_idempotency.py::test_kept'], null);
+  const r = c.deletedTestNote(ctx, 'test_keys_expire_after_24_hours');
+  assert.match(r, /the PR deletes it/);
+  assert.equal(c.deletedTestNote(ctx, 'test_never_existed'), null);
 });
 
 test('an approval by the claimant still does not count after the name is normalised', () => {
