@@ -5,6 +5,7 @@ import ForgeReconciler, {
 import { invoke } from '@forge/bridge';
 import { VerdictSection } from './verdict-section.js';
 import { SignOffSection } from './sign-off-section.js';
+import { acEditorText } from '../ticket-spec.js';
 
 const APPEARANCE = { supported: 'success', contradicted: 'removed', cannot_verify: 'moved' };
 
@@ -17,6 +18,7 @@ function App() {
   const [testReason, setTestReason] = useState('');
   const [signReason, setSignReason] = useState('');
   const [signError, setSignError] = useState(null);
+  const [acText, setAcText] = useState(null);
   const [prRef, setPrRef] = useState('');
   const [prReason, setPrReason] = useState('');
 
@@ -57,6 +59,14 @@ function App() {
     if (result.ok) { setSignReason(''); load(); }
   };
 
+  // Fresh-site path: a person types the AC lines and saves them; the app writes them and records
+  // them with an audit event (src/ac-editor.js).
+  const saveAcs = async () => {
+    const result = await invoke('saveAcs', { text: acText ?? acEditorText(acs) });
+    setMessage(result.ok ? { appearance: 'success', text: `${result.count} AC(s) saved and recorded. Audit seq ${result.acsAuditSeq}.` } : { appearance: 'error', text: result.error });
+    if (result.ok) { setAcText(null); load(); }
+  };
+
   // Fresh-site path: a person links the work item's PR; a claim counts the link only when the
   // claimant did not make it (src/pr-link.js).
   const linkPr = async () => {
@@ -90,6 +100,12 @@ function App() {
           }))}
         />
       )}
+      <Heading as="h3">Edit the acceptance criteria</Heading>
+      <Text>One line for each AC: "AC1 | statement | test_passes(test_name)". Saving records them in your name.</Text>
+      <Stack space="space.100">
+        <TextArea value={acText ?? acEditorText(acs)} onChange={(e) => setAcText(e.target.value)} />
+        <Inline><Button appearance="primary" onClick={saveAcs} isDisabled={!(acText ?? acEditorText(acs)).trim()}>Save and record</Button></Inline>
+      </Stack>
       <Heading as="h3">Linked pull request</Heading>
       {data.prLink ? (
         <Text>PR #{data.prLink.prNumber}, linked by {data.prLink.by} (audit seq {data.prLink.auditSeq}){data.prLink.count > 1 ? `; ${data.prLink.count} links, the latest counts` : ''}. A claim counts it only when the claimant did not make it.</Text>
