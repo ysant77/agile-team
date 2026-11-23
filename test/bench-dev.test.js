@@ -53,7 +53,9 @@ async function runCase(c, opts = {}) {
 // Invalid claims: their current contradicted or cannot_verify. Valid claims with incomplete
 // evidence: cannot_verify. Controls that pass today: supported.
 const KEEP = {
-  B02: 'contradicted', B03: 'contradicted', B06: 'contradicted', B07: 'cannot_verify', B08: 'cannot_verify',
+  // B02 and B06: held by changed-line coverage under the floor, which is unknown since V07 (lead
+  // review of 23 Nov, finding 9): still held, now cannot_verify.
+  B02: 'cannot_verify', B03: 'contradicted', B06: 'cannot_verify', B07: 'cannot_verify', B08: 'cannot_verify',
   B09: 'cannot_verify', B11: 'cannot_verify', B12: 'cannot_verify', B13: 'contradicted', I06: 'contradicted',
   I07: 'contradicted', B10: 'cannot_verify', B14: 'cannot_verify', B15: 'cannot_verify', B16: 'cannot_verify',
   B23: 'supported', I03: 'supported', I04: 'supported',

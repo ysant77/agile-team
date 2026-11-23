@@ -2,34 +2,48 @@
 // rule has its own test; set 5 (development data now) is the regression check.
 
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { nextEvent } from '../src/audit.js';
 import { createTicket } from '../src/index.js';
 import { LATEST_DONE_KEY, readLatestDone, signOffAction } from '../src/sign-off.js';
-import { testPassesArgErrors } from '../src/ticket-spec.js';
-import { verifyClaim } from '../src/verify-claim.js';
+import { normaliseAcs, parseAcLines, testPassesArgErrors } from '../src/ticket-spec.js';
+import { collectGithub, collectPrStats } from '../src/github-evidence.js';
+import { decide, verifyClaim } from '../src/verify-claim.js';
+import { fetchFrom } from './helpers/recorded-github.js';
 import * as c from '../src/verifier/checks.js';
-import { acMapped } from '../src/verifier/verdict.js';
 
-// Finding 5: test_passes(a, b) used to check a only.
-test('test_passes with two test names gives unknown, never a silent pass of the first', () => {
-  const ticket = { key: 'T-1', acceptanceCriteria: [{ acId: 'AC1', check: { type: 'test_passes', args: ['test_a', 'test_b'] } }] };
-  const report = { tests: [{ id: 'tests/t.py::test_a', outcome: 'passed' }] };
-  const r = acMapped({ ticket, report });
-  assert.equal(r.status, 'unknown', r.reason);
-  assert.match(r.parts[0].reason, /test_passes takes one test name.*got 2.*one AC for each test/);
+// Finding 5: test_passes(a, b) used to check a only. Every named test is checked now (U12 names
+// three tests in one AC); the first name stays the reproducer.
+async function u12(args) {
+  const c = JSON.parse(readFileSync(new URL('../fixtures/judge/U12.json', import.meta.url), 'utf8'));
+  if (args) c.ticket.acceptanceCriteria[0].check.args = args;
+  const d = {
+    collectJira: async () => ({ subtasks: [], links: [], ...c.ticket }), readAudit: async () => [],
+    env: () => ({ repo: 'ysant77/yms-bank-demo', token: 'local' }), collectGithub, collectPrStats,
+    fetchFn: fetchFrom(c.github), collectReviews: async () => [],
+  };
+  return (await decide({ issueKey: c.ticket.key, claim: { id: 'u12', type: c.claim, by: 'dev-a' } }, d)).verdict;
+}
+
+test('test_passes with three test names: all are checked; a missing one is a fail', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  const ok = await u12();
+  const ac = ok.checks.find((k) => k.name === 'ac_mapped');
+  assert.equal(ac.status, 'pass', ac.reason);
+  assert.match(ac.parts[0].reason, /test_zero_decimals_are_accepted passed; test_non_zero_extra_decimals_are_still_refused passed; test_transfer_accepts_zero_decimals passed/);
+  const v = await u12(['test_zero_decimals_are_accepted', 'test_that_does_not_exist']);
+  assert.equal(v.result, 'contradicted');
+  assert.match(v.reason, /test_that_does_not_exist is missing from the report/);
 });
 
-test('ticket creation refuses test_passes with more than one test name', async () => {
-  const acs = [{ acId: 'AC1', check: { type: 'test_passes', args: ['test_a', 'test_b'] } }, { acId: 'AC2', check: { type: 'test_passes', args: ['test_c'] } }];
-  assert.deepEqual(testPassesArgErrors(acs), ['AC1']);
-  const out = await createTicket({
-    projectKey: 'BANK', summary: 's', issueType: 'Story',
-    acceptanceCriteria: 'AC1 | both rules | test_passes(test_a, test_b)',
-  });
+test('ticket creation keeps every test name of test_passes, and refuses an empty one', async () => {
+  const kept = normaliseAcs(parseAcLines('AC1 | both rules | test_passes(test_a, test_b)'), 'KAN');
+  assert.deepEqual(kept[0].check.args, ['test_{TOKEN}_a', 'test_{TOKEN}_b']);
+  assert.deepEqual(testPassesArgErrors(parseAcLines('AC1 | x | test_passes()\nAC2 | y | test_passes(test_c)')), ['AC1']);
+  const out = await createTicket({ projectKey: 'BANK', summary: 's', issueType: 'Story', storyPoints: 3, acceptanceCriteria: 'AC1 | no test | test_passes()' });
   assert.equal(out.ok, false);
-  assert.match(out.error, /AC1: test_passes takes one test name/);
-  assert.match(out.error, /one AC for each test/);
+  assert.match(out.error, /AC1: test_passes needs a test name/);
 });
 
 // Finding 6: the sign-off gate read the claimant and the merged commit from aat.verdicts, an
@@ -127,7 +141,7 @@ function approvalCtx(test, kind = 'change') {
 test('V17: a full-id change approval covers a renamed and edited pinned test', () => {
   const ctx = approvalCtx('tests/test_idempotency.py::TestKeys::test_keys_expire_after_24_hours');
   const report = { pinned: { version: 1, modules: ['tests/test_idempotency.py'], tests: [
-    { id: 'tests/test_idempotency.py::TestKeys::test_keys_expire_after_24_hours', head_id: null, base_hash: 'a', head_hash: null, outcome: 'not_run' },
+    { id: 'tests/test_idempotency.py::TestKeys::test_keys_expire_after_24_hours', head_id: null, base_hash: 'a'.repeat(64), head_hash: null, outcome: 'not_run' },
   ] } };
   const r = c.pinnedTestsHold({ ...ctx, config: { pinnedRequired: true } }, report);
   assert.equal(r.status, 'pass', r.reason);
@@ -145,7 +159,7 @@ test('V17: a change approval covers the old name in the removal check', () => {
 test('an approval by the claimant still does not count after the name is normalised', () => {
   const ctx = approvalCtx('tests/t.py::test_x');
   ctx.claimant = 'reviewer';
-  const report = { pinned: { version: 1, modules: ['tests/t.py'], tests: [{ id: 'tests/t.py::test_x', head_id: null, base_hash: 'a', head_hash: null, outcome: 'not_run' }] } };
+  const report = { pinned: { version: 1, modules: ['tests/t.py'], tests: [{ id: 'tests/t.py::test_x', head_id: null, base_hash: 'a'.repeat(64), head_hash: null, outcome: 'not_run' }] } };
   assert.equal(c.pinnedTestsHold({ ...ctx, config: { pinnedRequired: true } }, report).status, 'fail');
 });
 

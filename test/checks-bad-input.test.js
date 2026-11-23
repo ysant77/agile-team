@@ -232,6 +232,7 @@ const ROWS = [
     { allow: { ticket: Object.keys(BAD),
       'ticket.key': Object.keys(BAD) } }],
   ['acTestsRunNewCode', ['prPatches', 'prPatches.[src/x.py]', 'report.tests', 'report.tests.0'], { expect: null }],
+  ['securityArgsKept', ['prPatches', 'prPatches.[src/x.py]'], { expect: null }],
   // An empty earlierFailures list is the read result "no step failed in an earlier attempt". The
   // run's own status and conclusion are ci_green's inputs; ci_attempts reads only the attempts.
   ['ciAttempts', [...RUN, 'workflowRuns.0.earlierFailures', 'workflowRuns.0.earlierFailures.0', 'pr', 'pr.headSha'],

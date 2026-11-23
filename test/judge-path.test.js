@@ -203,7 +203,8 @@ test('U12 through the sign-off button: the claimant is refused, a second person 
   const written = [];
   const deps = {
     canEdit: async () => true,
-    readVerdicts: async () => [first.record],
+    // The sign-off reads the latest done verdict from the audit chain (src/sign-off.js).
+    readLatestDone: async () => first.record,
     appendAudit: async (e) => { prev = nextEvent(prev, { ...e, at: '2026-11-21T02:00:00.000Z' }); written.push(prev); return prev; },
     writeSignoff: async (key, s) => { written.push(s); return { ok: true }; },
   };
