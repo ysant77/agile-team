@@ -2,37 +2,26 @@
 
 These are the steps the owner does in Jira for the first claim through the fresh-site path
 (`docs/JUDGE-PATH.md`, "A judge on a fresh site"). The app work for this path is on `main`, and
-development runs version 5.10.0. The five judge branches and their reports exist on the cases
-repository (cases PRs 17 to 21).
+development runs 5.13.0 (deployed on 23 Nov from `main` 520811a). The five judge branches and
+their reports exist on the cases repository (cases PRs 17 to 21).
 
-## Before you start: the repository of the environment
+## The repository of the environment (done on 23 Nov)
 
 Each judge PR is on `ysant77/yms-bank-demo-cases`. The app reads one repository only: the
-`GITHUB_REPO` variable of its environment. On 23 Nov the development environment has
-`GITHUB_REPO` = `ysant77/yms-bank-demo`, a different repository.
+`GITHUB_REPO` variable of its environment. Until 23 Nov development had `ysant77/yms-bank-demo`,
+a different repository, so "Link PR 17" would have found PR 17 of that repository.
 
-With that value, "Link PR" for the number 17 finds PR 17 of `yms-bank-demo`, which is not the
-judge PR. A link given as a URL of the cases repository is refused ("that PR is in another
-repository"). Thus, before the first claim on development, the owner sets the variable (in a
-terminal, in the app's folder):
-
-```bash
-forge variables set -e development GITHUB_REPO ysant77/yms-bank-demo-cases
-```
-
-Then deploy development one time, so that the new value is used:
-
-```bash
-forge deploy -e development
-```
-
-Both repositories are public, so the token does not need a new grant. This change is held for the
-owner; no session sets it. The old BANK-5 to BANK-9 claims on development then read the cases
-repository too.
+The owner approved the switch on 23 Nov. On development, `GITHUB_REPO` is now
+`ysant77/yms-bank-demo-cases`, and development was deployed from app `main` dbf5555 at 21:32
+SGT (version 5.11.0). At 21:37 SGT it was deployed again from `main` 0bc97a8 (version 5.12.0),
+with the discovery finding view of PR 80, and later from 520811a (version 5.13.0), with the
+discovery variables.
+Both repositories are public, so the token needs no new grant. The old BANK-5 to BANK-9 claims on
+development now read the cases repository too. Production is not changed.
 
 ## What you need
 
-- A Jira site with the app installed (development, 5.10.0 or later).
+- A Jira site with the app installed (development, 5.13.0 or later).
 - Two accounts on that site. Account A records the ACs and links the PR. Account B makes the
   claim. The app counts an AC record and a PR link only when they come from a person other than
   the claimant.
