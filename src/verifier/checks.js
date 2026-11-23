@@ -600,6 +600,24 @@ function auditedApprovals(ctx, kind) {
   }
   return out;
 }
+// Whether test module `mod` on the head has a test id that the base did not have: the sign of a
+// rename with an edit. A change approval covers a test that is gone from the head only then (lead
+// review of PR C, 23 Nov); a plain deletion needs a removal approval. The base ids of the module
+// come from the pinned block (when it lists the module) or the repro block's base_test_ids.
+// null: the report cannot show it.
+function moduleGainedId(report, mod) {
+  if (!isObj(report) || !isObjList(report.tests) || !isText(mod)) return null;
+  const inMod = (id) => isText(id) && id.split('::')[0] === mod;
+  const p = isObj(report.pinned) ? report.pinned : null;
+  const pinnedBase = p && isList(p.modules) && p.modules.includes(mod) && isObjList(p.tests) ? p.tests.map((t) => t.id).filter(inMod) : null;
+  const listed = isObj(report.repro) ? optList(report.repro.base_test_ids) : null;
+  const reproBase = listed && listed.every(isText) && listed.some(inMod) ? listed.filter(inMod) : null;
+  if (!pinnedBase && !reproBase) return null;
+  const base = new Set([...(pinnedBase ?? []), ...(reproBase ?? [])]);
+  return report.tests.some((t) => isObj(t) && inMod(t.id) && !base.has(t.id));
+}
+const RENAME_UNKNOWN = (n) => `${n} has a change approval, which covers it only for a rename with an edit, and the report cannot show that its test module gained a new test`;
+
 // Why a test that needs an approval has none that counts.
 function approvalNotes(ctx, names, audited, propertyLists) {
   const notes = [];
@@ -631,7 +649,7 @@ export function testsNotRemoved(ctx, report = ctx.report) {
   // that is not an object is malformed.
   if (report.repro !== undefined && !isObj(report.repro)) return result('tests_not_removed', 'unknown', 'the repro block of the report is malformed');
   const head = new Set(report.tests.map((t) => testName(t.id)));
-  const approved = new Set([...audited.names, ...changes.names]);
+  const approved = new Set(audited.names);
   // A rename with the same body (pinned block) is not a removal (benchmark U10).
   for (const [from, to] of pinnedRenames(report)) if (head.has(to)) approved.add(from);
   // The base side: the main report, and the base test ids of every test module the PR changes,
@@ -641,9 +659,21 @@ export function testsNotRemoved(ctx, report = ctx.report) {
   const listed = optList(repro.base_test_ids);
   const ids = listed && listed.every(isText) ? listed : [];
   const baseIds = [...ctx.baseReport.tests.map((t) => t.id), ...ids];
+  // A change approval covers a missing test only for a rename with an edit: every module of that
+  // test on the base gained a new test id on the head. Not known: unknown, never a pass.
+  const renameUnknown = [];
+  for (const n of changes.names) {
+    if (head.has(n) || approved.has(n)) continue;
+    const gained = [...new Set(baseIds.filter((id) => testName(id) === n).map((id) => id.split('::')[0]))].map((m) => moduleGainedId(report, m));
+    if (gained.length && gained.every((g) => g === true)) approved.add(n);
+    else if (gained.some((g) => g === null)) renameUnknown.push(n);
+  }
   const removed = [...new Set(baseIds.map((id) => testName(id)))].filter(
     (n) => !head.has(n) && !approved.has(n),
   );
+  if (removed.length && removed.every((n) => renameUnknown.includes(n))) {
+    return result('tests_not_removed', 'unknown', removed.map(RENAME_UNKNOWN).join('; '));
+  }
   // A listed base test that the head lacks is a fail, even when the record is incomplete.
   if (removed.length) {
     const notes = approvalNotes(ctx, removed, audited, listedNames(ctx.ticket.approvedTestRemovals));
@@ -710,11 +740,15 @@ export function pinnedTestsHold(ctx, report = ctx.report) {
   const failing = [];
   const fails = [];
   const changed = [];
+  const renameUnknown = [];
   for (const t of p.tests) {
     const n = testName(t.id);
     if (t.head_id === null) {
-      // A change approval covers a rename with an edit, where the old id is gone (V17).
-      if (!approvedRemoval.has(n) && !approvedChange.has(n)) { fails.push(`${n} is deleted`); failing.push(['removal', n]); }
+      // A change approval covers a rename with an edit only: the module gains a new id (V17).
+      if (approvedRemoval.has(n)) continue;
+      const gained = approvedChange.has(n) ? moduleGainedId(report, t.id.split('::')[0]) : false;
+      if (gained === null) { renameUnknown.push(n); continue; }
+      if (!gained) { fails.push(`${n} is deleted`); failing.push(['removal', n]); }
       continue;
     }
     const edited = t.head_hash !== t.base_hash;
@@ -732,6 +766,7 @@ export function pinnedTestsHold(ctx, report = ctx.report) {
     if (failing.every(([k, n]) => (k === 'removal' ? rem : chg).noClaimant.has(n))) return result(name, 'unknown', notes.join('; '));
     return result(name, 'fail', `pinned base test: ${fails.join('; ')}; a real requirement change needs the approval of the new pin by a person other than the claimant${notes.length ? `; ${notes.join('; ')}` : ''}`);
   }
+  if (renameUnknown.length) return result(name, 'unknown', renameUnknown.map(RENAME_UNKNOWN).join('; '));
   // The protection is the base copy: when it still passes on the head code, an edit of the head
   // copy keeps the old assertion in force, so it does not hold the claim (benchmark S02). The
   // reason names the edit, so a person sees it.
