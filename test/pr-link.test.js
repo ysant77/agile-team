@@ -143,3 +143,16 @@ test('pr_linked accepts a PR that does not name the key only when it is the coun
   assert.equal(c.prLinked({ ...base, linkedPr: 7 }).status, 'pass');
   assert.equal(c.prLinked({ ...base, linkedPr: 8 }).status, 'fail');
 });
+
+test('a link with no repository, or for another repository than the configured one, does not count', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  const a = appStore();
+  // An entry and its audit event with no repo field: both written so that the hashes match.
+  const ev = await a.appendAudit({ actor: 'reviewer', event: PR_LINK_EVENT, data: { key: KEY, prNumber: 7, reason: 'the change for this work item' } });
+  await a.store.set(`pr-links:${KEY}`, [{ key: KEY, prNumber: 7, reason: 'the change for this work item', by: 'reviewer', at: ev.at, auditSeq: ev.seq }]);
+  const latest = await latestPrLink(KEY, a, 'claimer');
+  assert.equal(latest.counted, false);
+  assert.match(latest.reason, /names no repository/);
+  const v = await claim(a);
+  assert.equal(v.checks.find((k) => k.name === 'on_main').status, 'fail');
+});
