@@ -75,38 +75,40 @@ so it is the second choice.
 
 - Steps 2 to 4 and 6: the discovery actions, the rule-citation rule (merged, PR 74) and
   `create-ticket` with `findingId`.
-- Step 5: the panel section "Discovery finding" (branch `feat/panel-discovery-finding`, for
-  review).
-- Steps 7 and 12: the AC editor and "Link PR" (merged, deployed in 5.10.0).
+- Step 5: the panel section "Discovery finding" (merged, PR 80; deployed to development in
+  5.12.0 on 23 Nov).
+- Steps 7 and 12: the AC editor and "Link PR" (merged, deployed since 5.10.0).
+- The repository of the environment: development reads `ysant77/yms-bank-demo-cases` since 23
+  Nov (owner's approval; `docs/FIRST-JUDGE-CLAIM.md`).
 - Steps 9, 13, 14 and 16: CI with the report, the verifier, the sign-off and the decision rules.
 - The judge-branch way of the cases repository: a push to `judge/**` writes the report of the
   merge commit (cases PR 16).
 
 ### What is missing
 
-1. **The repository of the environment.** Development reads `ysant77/yms-bank-demo`; the cases
-   and the investigated branch are on `ysant77/yms-bank-demo-cases` (`docs/FIRST-JUDGE-CLAIM.md`).
-2. **The discovery variables.** `DISCOVERY_REPO` and `DISCOVERY_REF` are not set
-   (`docs/OWNER-HELD-STEPS.md`, step 3a).
-3. **A branch with only this bug.** `investigate/symptoms-2` is not on GitHub, and its tree is
+1. **The discovery variables.** `DISCOVERY_REPO` and `DISCOVERY_REF` are not set on development
+   (checked 23 Nov, 21:36 SGT; `docs/OWNER-HELD-STEPS.md`, step 3a).
+2. **A branch with only this bug.** `investigate/symptoms-2` is not on GitHub, and its tree is
    older than the judge workflow. The run needs one branch, for example `judge/D2-1`, that is
    the current cases `main` plus the D2-1 seed change only. It is both the investigated branch
    (`DISCOVERY_REF`) and the base of the fix PR. Its push run writes its report. It must hold no
-   answer key; the bank's `tests/test_discovery_branch.py` checks this.
-4. **The fix PR.** Prepared by the owner (step 8 stays scripted): the fix and one test that fails
+   answer key; the bank's `tests/test_discovery_branch.py` checks this. The push of this branch
+   to the cases repository is **not approved** (23 Nov); nothing is pushed until the owner
+   approves it.
+3. **The fix PR.** Prepared by the owner (step 8 stays scripted): the fix and one test that fails
    on base, for example `test_statement_includes_the_end_day`. The model chooses its own
    reproducer name, so the person who records the ACs (step 7) names the prepared test in the AC
    line. That is a person's step, and it is shown as one.
-5. **A second candidate PR (optional).** Steps 15 and 16 run only with two PRs for one work item.
+4. **A second candidate PR (optional).** Steps 15 and 16 run only with two PRs for one work item.
    Without a second PR, the run ends at the verdict (step 13) and the merge.
 
 ### The order of work
 
 | # | Work | Who | Depends on |
 |---|---|---|---|
-| 1 | Review and merge `feat/panel-discovery-finding` | lead | none |
-| 2 | Set `GITHUB_REPO`, `DISCOVERY_REPO` and `DISCOVERY_REF` on development; one deploy | owner | 1, 3 |
-| 3 | Push `judge/D2-1` (cases `main` plus the D2-1 seed only); check the push run and its report; run the answer-key check | session, after the owner's approval of a cases-repository change | none |
+| 1 | Done on 23 Nov: PR 80 merged; `GITHUB_REPO` switched; development deployed (5.12.0) | lead, owner | none |
+| 2 | Set `DISCOVERY_REPO` and `DISCOVERY_REF` on development; one deploy | owner | 3 |
+| 3 | Push `judge/D2-1` (cases `main` plus the D2-1 seed only); check the push run and its report; run the answer-key check. **Not approved on 23 Nov** | session, only after the owner's approval of this cases-repository change | none |
 | 4 | Prepare the fix patch and its test on a local branch; no PR yet | session | 3 |
 | 5 | Rehearsal: symptom (the D2-1 text, word for word) in Rovo chat, investigation, finding, the panel view, ticket, ACs (account A), fix PR into `judge/D2-1`, CI, review advice, merge, link (account A), `claim: done` (account B), verdict | owner in Jira, session on GitHub | 2, 4 |
 | 6 | Record the run: each audit sequence, the finding, the verdict, the token log line; one results page | session | 5 |
