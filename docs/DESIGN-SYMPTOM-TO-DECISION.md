@@ -52,3 +52,66 @@ marked:
 Then one rehearsal: symptom, investigation, finding (`unconfirmed`), ticket, ACs recorded, fix PR,
 review advice, merge, link, claim, verdict, decision. Each step leaves an audit record that the
 monitor page shows.
+
+## Plan for one full run before the 9 Dec freeze (23 Nov, plan only)
+
+Status: plan, no code. The run is one symptom, one finding, one ticket, one fix PR, one claim
+and one decision on the development site.
+
+### The case
+
+The statement end date of discovery set 2 (case D2-1, `benchmark/RESULTS-DISCOVERY-2.md`): the
+statement query uses a half-open interval, so a line on the end date is missing. The rule is a
+README line: the statement endpoint gives lines with "both dates inclusive". Thus a defect
+finding can cite a rule line and stays a defect. In the bake-off the local model found the right
+cause and file in 2 of 3 runs. The deployed Rovo model was not measured on it.
+
+The fallback is D-1 of set 1 (the race in `src/bank/ledger.py`). It is on the branch that exists
+today (`investigate/symptoms` of the cases repository, 45a211d), and the README states the rule
+("concurrent withdrawals cannot overdraw an account"). The local model found it in 0 of 3 runs,
+so it is the second choice.
+
+### What exists on 23 Nov
+
+- Steps 2 to 4 and 6: the discovery actions, the rule-citation rule (merged, PR 74) and
+  `create-ticket` with `findingId`.
+- Step 5: the panel section "Discovery finding" (branch `feat/panel-discovery-finding`, for
+  review).
+- Steps 7 and 12: the AC editor and "Link PR" (merged, deployed in 5.10.0).
+- Steps 9, 13, 14 and 16: CI with the report, the verifier, the sign-off and the decision rules.
+- The judge-branch way of the cases repository: a push to `judge/**` writes the report of the
+  merge commit (cases PR 16).
+
+### What is missing
+
+1. **The repository of the environment.** Development reads `ysant77/yms-bank-demo`; the cases
+   and the investigated branch are on `ysant77/yms-bank-demo-cases` (`docs/FIRST-JUDGE-CLAIM.md`).
+2. **The discovery variables.** `DISCOVERY_REPO` and `DISCOVERY_REF` are not set
+   (`docs/OWNER-HELD-STEPS.md`, step 3a).
+3. **A branch with only this bug.** `investigate/symptoms-2` is not on GitHub, and its tree is
+   older than the judge workflow. The run needs one branch, for example `judge/D2-1`, that is
+   the current cases `main` plus the D2-1 seed change only. It is both the investigated branch
+   (`DISCOVERY_REF`) and the base of the fix PR. Its push run writes its report. It must hold no
+   answer key; the bank's `tests/test_discovery_branch.py` checks this.
+4. **The fix PR.** Prepared by the owner (step 8 stays scripted): the fix and one test that fails
+   on base, for example `test_statement_includes_the_end_day`. The model chooses its own
+   reproducer name, so the person who records the ACs (step 7) names the prepared test in the AC
+   line. That is a person's step, and it is shown as one.
+5. **A second candidate PR (optional).** Steps 15 and 16 run only with two PRs for one work item.
+   Without a second PR, the run ends at the verdict (step 13) and the merge.
+
+### The order of work
+
+| # | Work | Who | Depends on |
+|---|---|---|---|
+| 1 | Review and merge `feat/panel-discovery-finding` | lead | none |
+| 2 | Set `GITHUB_REPO`, `DISCOVERY_REPO` and `DISCOVERY_REF` on development; one deploy | owner | 1, 3 |
+| 3 | Push `judge/D2-1` (cases `main` plus the D2-1 seed only); check the push run and its report; run the answer-key check | session, after the owner's approval of a cases-repository change | none |
+| 4 | Prepare the fix patch and its test on a local branch; no PR yet | session | 3 |
+| 5 | Rehearsal: symptom (the D2-1 text, word for word) in Rovo chat, investigation, finding, the panel view, ticket, ACs (account A), fix PR into `judge/D2-1`, CI, review advice, merge, link (account A), `claim: done` (account B), verdict | owner in Jira, session on GitHub | 2, 4 |
+| 6 | Record the run: each audit sequence, the finding, the verdict, the token log line; one results page | session | 5 |
+
+A wrong cause or a by-design result from the model is a result, not a failure of the run. It is
+recorded as it is, and the person decides at step 5 not to make a ticket. One more attempt is
+allowed, with the same symptom and no change to the prompt or the rules. Nothing is tuned to get
+a pass.
