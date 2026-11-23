@@ -2,7 +2,7 @@
 // symptom, reads the investigated branch with read-only actions, and records a finding. Rules:
 // - a path allowlist (src/, tests/, docs/, README.md) that refuses seeds/, scenarios/ and their
 //   READMEs, "..", absolute paths and symlinks; a refused path makes no GitHub call;
-// - an explicit read budget with no token (GitHub allows 60 calls an hour): at most 20 calls per
+// - an explicit read budget (GitHub allows 60 calls an hour without a token): at most 20 calls per
 //   investigation and 40 per site per hour, taken before each call;
 // - every call is logged per investigation;
 // - a finding cites only lines that a read returned, and numbers from the symptom or a read; its
@@ -178,12 +178,12 @@ test('a file above the size cap is refused with no content', async () => {
   assert.equal(r.lines, undefined);
 });
 
-test('the GitHub rate limit answer is passed on with the reset time', async () => {
+test('the GitHub rate limit answer is passed on with the time to try again', async () => {
   const d = deps(github({ rateLimited: true }));
   const r = await startInvestigation(START, d);
   assert.equal(r.ok, false);
   assert.match(r.error, /rate limit/);
-  assert.match(r.error, /2026-11-18T|reset/);
+  assert.match(r.error, /try again after 2026-11-18 \d\d:\d\d UTC/);
 });
 
 test('the investigation budget is enforced before the call', async () => {
