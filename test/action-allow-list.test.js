@@ -84,7 +84,7 @@ test('an exported helper that is not a declared handler cannot be invoked by For
 test('the panel resolver defines a fixed set of keys, and the resolver refuses any other key', async () => {
   const src = readFileSync('src/resolvers.js', 'utf8');
   const keys = [...src.matchAll(/resolver\.define\('(\w+)'/g)].map((m) => m[1]);
-  assert.deepEqual(keys, ['approveTest', 'recordAcs', 'saveAcs', 'getPanel', 'approve', 'signOff', 'adoptCheck', 'getMonitor']);
+  assert.deepEqual(keys, ['approveTest', 'recordAcs', 'saveAcs', 'linkPr', 'getPanel', 'approve', 'signOff', 'adoptCheck', 'getMonitor']);
   // Same library and same keys as src/resolvers.js (that module needs the Forge bundler to load).
   const lib = await import('@forge/resolver');
   const Resolver = lib.default.default ?? lib.default;

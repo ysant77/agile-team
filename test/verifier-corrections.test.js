@@ -269,3 +269,30 @@ test('V12: the done claim runs the security argument check', async () => {
     assert.ok(CLAIM_CHECKS[type](ctx).some((k) => k?.name === 'security_args_kept' && k.status === 'unknown'), type);
   }
 });
+
+// Set 6, W10 (owner decision 23 Nov): the security check also sees a changed or removed value of
+// a listed cookie argument (samesite). An added middleware, or any change outside the list, is not
+// seen (stated in docs/claims.md).
+const W10_SRC = '@@ -146,7 +146,7 @@\n-        response.set_cookie(COOKIE, str(customer["id"]), httponly=True, samesite="lax")\n+        response.set_cookie(COOKIE, str(customer["id"]), httponly=True, samesite="none")';
+
+test('W10: a changed samesite value gives unknown and names both values', () => {
+  const r = c.securityArgsKept({ prPatches: { 'src/bank/api.py': W10_SRC } });
+  assert.equal(r?.status, 'unknown');
+  assert.match(r.reason, /samesite from "lax" to "none" in src\/bank\/api\.py/);
+});
+
+test('W10: a removed samesite gives unknown; the same value kept, or a test file, gives no check', () => {
+  const removed = '@@ -1 +1 @@\n-        response.set_cookie(C, v, httponly=True, samesite="lax")\n+        response.set_cookie(C, v, httponly=True)';
+  assert.match(c.securityArgsKept({ prPatches: { 'src/bank/api.py': removed } })?.reason ?? '', /removes samesite="lax"/);
+  const kept = '@@ -1 +1 @@\n-        response.set_cookie(C, v, samesite="lax")\n+        response.set_cookie(C, v, samesite="lax", max_age=1800)';
+  assert.equal(c.securityArgsKept({ prPatches: { 'src/bank/api.py': kept } }), null);
+  assert.equal(c.securityArgsKept({ prPatches: { 'tests/test_api.py': W10_SRC } }), null);
+  const quotes = "@@ -1 +1 @@\n-    response.set_cookie(C, v, samesite='lax')\n+    response.set_cookie(C, v, samesite=\"lax\")";
+  assert.equal(c.securityArgsKept({ prPatches: { 'src/bank/api.py': quotes } }), null);
+});
+
+test('V12 still gives only the removed httponly=True', () => {
+  const r = c.securityArgsKept({ prPatches: { 'src/bank/api.py': V12_SRC } });
+  assert.match(r.reason, /httponly=True/);
+  assert.doesNotMatch(r.reason, /samesite/);
+});
