@@ -489,3 +489,47 @@ test('a no-defect finding with a wording proposal is recorded with no CI read', 
   });
   assert.equal(r.ok, true, r.error);
 });
+
+
+// Review of 23 Nov, finding 11: a "defect" must cite the rule it breaks: a line that a read
+// returned from a file under docs/, a README, or a test file. A defect that cites only code is
+// recorded as "unclear", with an open question that asks for the rule; it is never refused for
+// this, and never kept as a defect.
+const RULE_Q = /Which rule does this break\? Cite a line of docs, a README or a test/;
+
+test('a defect that cites only code lines is recorded as unclear, with the open question', async () => {
+  const { d, id } = await withRead();
+  const r = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(FINDING) }, d);
+  assert.equal(r.ok, true, r.error);
+  assert.equal(r.kind, 'unclear');
+  assert.match(r.note, /cites no rule/);
+  const stored = await d.store.get(`finding:${r.findingId}`);
+  assert.equal(stored.kind, 'unclear');
+  assert.equal(stored.reproducer, null);
+  assert.ok(stored.openQuestions.some((q) => RULE_Q.test(q)), JSON.stringify(stored.openQuestions));
+  assert.equal(stored.proposedKind, 'defect');
+  assert.equal(d.audit.at(-1).data.kind, 'unclear');
+});
+
+for (const [file, line] of [['tests/test_ledger.py', 2], ['README.md', 1]]) {
+  test(`a defect that cites a read line of ${file} stays a defect`, async () => {
+    const { d, id } = await withRead();
+    await readRepoFile({ investigationId: id, by: 'pm-1', path: file }, d);
+    const finding = { ...FINDING, citations: [...FINDING.citations, { file, line }] };
+    const r = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(finding) }, d);
+    assert.equal(r.ok, true, r.error);
+    assert.equal(r.kind, 'defect');
+    const stored = await d.store.get(`finding:${r.findingId}`);
+    assert.equal(stored.kind, 'defect');
+    assert.notEqual(stored.reproducer, null);
+  });
+}
+
+test('a rule line must come from a read: citing an unread test line is still refused', async () => {
+  const { d, id } = await withRead();
+  const finding = { ...FINDING, citations: [...FINDING.citations, { file: 'tests/test_ledger.py', line: 2 }] };
+  const r = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(finding) }, d);
+  assert.equal(r.ok, false);
+  assert.match(r.error, /tests\/test_ledger.py:2 was not in a read/);
+});
+

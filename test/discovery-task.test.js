@@ -90,8 +90,10 @@ test('runDiscovery runs the tool loop with the real rules and stops at a recorde
       [{ name: 'start-investigation', arguments: { symptom: 'My balance went below zero after two withdrawals.' } }],
       [{ name: 'read-repo-file', arguments: { investigationId: '$ID', path: 'seeds/k1_race.patch' } }],
       [{ name: 'read-repo-file', arguments: { investigationId: '$ID', path: 'src/bank/ledger.py' } }],
+      // A defect cites the rule it breaks: a read line of docs, a README or a test (23 Nov).
+      [{ name: 'read-repo-file', arguments: { investigationId: '$ID', path: 'README.md' } }],
       [{ name: 'read-ci-results', arguments: { investigationId: '$ID' } }],
-      [{ name: 'record-finding', arguments: { investigationId: '$ID', finding: JSON.stringify({ kind: 'defect', hypothesis: 'withdraw checks the balance, then sleeps, so two withdrawals at the same time both pass.', citations: [{ file: 'src/bank/ledger.py', line: 2 }], reproducer: { testName: 'test_two_withdrawals_at_once', file: 'tests/test_ledger.py', asserts: 'one of two withdrawals succeeds' }, severity: { level: 'high', reason: 'overdraft' }, priority: { level: 'P1', reason: 'money' } }) } }],
+      [{ name: 'record-finding', arguments: { investigationId: '$ID', finding: JSON.stringify({ kind: 'defect', hypothesis: 'withdraw checks the balance, then sleeps, so two withdrawals at the same time both pass.', citations: [{ file: 'src/bank/ledger.py', line: 2 }, { file: 'README.md', line: 1 }], reproducer: { testName: 'test_two_withdrawals_at_once', file: 'tests/test_ledger.py', asserts: 'one of two withdrawals succeeds' }, severity: { level: 'high', reason: 'overdraft' }, priority: { level: 'P1', reason: 'money' } }) } }],
       [],
     ];
     let id = null;
@@ -108,9 +110,9 @@ test('runDiscovery runs the tool loop with the real rules and stops at a recorde
     const out = await runDiscovery(ask, { id: 'D1', symptom: 'My balance went below zero after two withdrawals.', truth: 'race' }, { tree: r.dir });
     assert.equal(out.score, 1, JSON.stringify(out));
     assert.equal(out.finding.kind, 'defect');
-    assert.equal(out.toolCalls, 5); // with the CI read a defect needs (19 Nov);
+    assert.equal(out.toolCalls, 6); // with the CI read a defect needs (19 Nov) and the rule read (23 Nov);
     assert.equal(out.refusedCalls, 1);
-    assert.equal(out.githubCalls, 3);
+    assert.equal(out.githubCalls, 4);
     // The symptom the model gets is the case's, not the model's argument.
     assert.equal(seen[0].content, 'My balance went below zero after two withdrawals.');
   } finally {
