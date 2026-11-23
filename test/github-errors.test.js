@@ -2,6 +2,8 @@
 // a plain reason for each class, a bounded retry for server errors and short secondary limits,
 // and a transient failure that is not stored as a final verdict and does not use a claim slot.
 
+// fetch-switch first: it must run before @forge/api loads.
+import './helpers/fetch-switch.js';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import api from '@forge/api';
@@ -246,7 +248,7 @@ test('collectGithub gives the Python patches, so no second read is needed', asyn
 
 test('the token is sent on the claim, discovery and commit paths', async (t) => {
   const seen = [];
-  t.mock.method(globalThis, 'fetch', async (url, init) => {
+  t.mock.property(globalThis, 'testFetch', async (url, init) => {
     seen.push({ url: String(url), auth: init?.headers?.Authorization ?? null });
     return new Response(JSON.stringify([{ sha: SHA, commit: { message: 'm', author: { date: 'd' } }, html_url: 'h' }]), { status: 200 });
   });
@@ -274,7 +276,7 @@ function actionMocks(t) {
   t.mock.method(api, 'asApp', () => ({
     requestJira: async () => ({ ok: true, status: 200, json: async () => ({ key: 'BANK-4', fields: { summary: 's', issuetype: { name: 'Story' }, labels: [], subtasks: [], issuelinks: [] } }) }),
   }));
-  t.mock.method(globalThis, 'fetch', async () => new Response('{}', { status: 401 }));
+  t.mock.property(globalThis, 'testFetch', async () => new Response('{}', { status: 401 }));
   t.mock.method(console, 'log', () => {});
 }
 
