@@ -7,8 +7,9 @@ word for that step. The order matters: steps 1 and 2 make the evidence, steps 3 
 app reachable for a judge.
 
 Status on 23 Nov: the owner approved steps 1 and 2 (the cases workflow change and the five judge
-branches) and the deploy of development. The lead approves the plan of steps 1 and 2 before work
-starts. Steps 3 to 5 (production) are open.
+branches) and the deploy of development. Steps 1 and 2 are done: the workflow change is cases
+PR 16, and the judge PRs are cases PRs 17 to 21 (the table in `docs/JUDGE-PATH.md`). Each judge
+branch has its report file. Steps 3 to 5 (production) are open.
 
 ## 1. The workflow change on the cases repository
 
