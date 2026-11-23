@@ -19,6 +19,8 @@ function App() {
   const [signReason, setSignReason] = useState('');
   const [signError, setSignError] = useState(null);
   const [acText, setAcText] = useState(null);
+  const [prRef, setPrRef] = useState('');
+  const [prReason, setPrReason] = useState('');
 
   const load = () => invoke('getPanel').then(setData);
   useEffect(() => {
@@ -65,6 +67,14 @@ function App() {
     if (result.ok) { setAcText(null); load(); }
   };
 
+  // Fresh-site path: a person links the work item's PR; a claim counts the link only when the
+  // claimant did not make it (src/pr-link.js).
+  const linkPr = async () => {
+    const result = await invoke('linkPr', { pr: prRef, reason: prReason });
+    setMessage(result.ok ? { appearance: 'success', text: `PR #${result.prNumber} linked. Audit seq ${result.auditSeq}.` } : { appearance: 'error', text: result.error });
+    if (result.ok) { setPrRef(''); setPrReason(''); load(); }
+  };
+
   const recordAcs = async () => {
     const result = await invoke('recordAcs', {});
     setMessage(result.ok ? { appearance: 'success', text: `ACs recorded. Audit seq ${result.auditSeq}.` } : { appearance: 'error', text: result.error });
@@ -95,6 +105,17 @@ function App() {
       <Stack space="space.100">
         <TextArea value={acText ?? acEditorText(acs)} onChange={(e) => setAcText(e.target.value)} />
         <Inline><Button appearance="primary" onClick={saveAcs} isDisabled={!(acText ?? acEditorText(acs)).trim()}>Save and record</Button></Inline>
+      </Stack>
+      <Heading as="h3">Linked pull request</Heading>
+      {data.prLink ? (
+        <Text>PR #{data.prLink.prNumber}, linked by {data.prLink.by} (audit seq {data.prLink.auditSeq}){data.prLink.count > 1 ? `; ${data.prLink.count} links, the latest counts` : ''}. A claim counts it only when the claimant did not make it.</Text>
+      ) : (
+        <Text>No linked PR. A claim finds a PR whose title or branch names the work item key.</Text>
+      )}
+      <Stack space="space.100">
+        <Textfield placeholder="PR number or GitHub URL" value={prRef} onChange={(e) => setPrRef(e.target.value)} />
+        <TextArea placeholder="Reason (at least 5 characters)" value={prReason} onChange={(e) => setPrReason(e.target.value)} />
+        <Inline><Button onClick={linkPr} isDisabled={!prRef.trim() || prReason.trim().length < 5}>Link PR</Button></Inline>
       </Stack>
       <Heading as="h3">Approval</Heading>
       {data.approval ? (
