@@ -126,6 +126,7 @@ function setPath(obj, path, value) {
 // default", exceptions). Each one says why.
 const ARGS = {
   testPasses: ['test_X1_fix'],
+  testPassesAll: [['test_X1_fix']],
   metricCompare: ['latency_ms', 20, 'max'],
   versionAtLeast: ['requests', '2.0.0'],
   pathAbsent: ['old/legacy.py'],
@@ -163,6 +164,7 @@ const ROWS = [
     // No configured list means the default pinned workflow, which the good run is.
     { allow: merge(RUN_ALLOW, { 'config.requiredWorkflowPaths': ['missing'] }) }],
   ['testPasses', ['arg:0', ...TRUST, 'report.tests', 'report.tests.0', 'report.tests.0.id', 'report.tests.0.outcome'], { allow: TRUST_ALLOW }],
+  ['testPassesAll', [...TRUST, 'report.tests', 'report.tests.0', 'report.tests.0.id', 'report.tests.0.outcome'], { allow: TRUST_ALLOW }],
   ['bugTestExists', [...TRUST, 'report.tests', 'report.tests.0', 'report.tests.0.id', 'report.tests.0.outcome', 'ticket', 'ticket.key'], { allow: TRUST_ALLOW }],
   // For a metric the test list is a guard (no failed test), not the evidence: an empty list has
   // no failed test. A missing list is a report without tests.
