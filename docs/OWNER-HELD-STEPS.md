@@ -43,6 +43,10 @@ commit). The `main` branch and the history of BANK-5 to BANK-9 do not change.
 
 ## 3. The environment for judges (open owner decision 1)
 
+Development (done on 23 Nov, owner's approval): `GITHUB_REPO` is `ysant77/yms-bank-demo-cases`,
+and development was deployed from app `main` dbf5555. The token was not changed. The steps
+below are for production and are still open.
+
 The live app reads `GITHUB_REPO` and `GITHUB_TOKEN` of its environment. For a judge environment
 (production is the usual choice), in a terminal in the app's folder:
 
