@@ -147,6 +147,18 @@ Any commenter on a work item can make a claim. Code admits a comment once and ca
 at 5 per work item, 10 per author and 30 per site each hour. The caps limit load; they do not
 limit who can claim.
 
+GitHub errors (23 Nov). One claim on a merged PR makes about 10 GitHub calls. Without a token
+GitHub allows 60 calls an hour for each outgoing address, shared with other apps, so about 5
+claims; with the app's read-only token the limit is 5,000 an hour. Each GitHub failure has its own
+reason: rate limit (with the time to try again), secondary limit (with the time to try again),
+token refused (401), access refused with calls left (403), not found (404), server error (5xx),
+network error. A server or network error is tried 3 times; a secondary limit of at most 10 s is
+waited out once. A rate limit, a secondary limit, or a server or network error after the retries
+is **not a verdict**: the work item gets a comment "was not checked" with the reason and the time
+to try again; no verdict property and no audit entry are written, and the claim's slots are given
+back, so it does not count toward the caps. A 401, a 403 with calls left or a 404 is a stored
+Cannot verify, "code host not reachable: ..." with that reason. Tests: `test/github-errors.test.js`.
+
 ## The claim `done` (definition of done)
 
 A ticket has code work when an AC is a test or the ticket is a Bug. For code work, `done` is

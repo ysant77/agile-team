@@ -51,7 +51,9 @@ The demo pull requests of the five cases are in
 and 4). The full route with the reasons is in [`docs/JUDGE-PATH.md`](docs/JUDGE-PATH.md).
 
 **2. Install on your Jira site.** Open the install link in the Devpost entry, pick your site and
-approve the scopes. The app reads the public demo repository; it needs no GitHub token. Open a
+approve the scopes. The app reads the public demo repository with a read-only GitHub token that
+the app owner sets; the judge does not need one. Without a token GitHub allows 60 calls an hour
+for each outgoing address, shared with other apps, which is about five claims. Open a
 work item, then the **Agile team verifier** panel. The steps to run a case on your own site are
 in [`docs/JUDGE-PATH.md`](docs/JUDGE-PATH.md) ("Demo site").
 

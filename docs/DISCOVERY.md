@@ -24,11 +24,12 @@ shows that the proposed reproducer fails on base (the existing `reproduced` chec
   any file name with `scenario`, `..`, `.`, empty parts, an absolute path, a backslash, a NUL,
   pathspec magic, and paths longer than 300 characters. A symbolic link or a file above 300,000
   bytes gives an error and no content.
-- **Read budget, enforced, no token.** Without a token GitHub allows 60 calls an hour per
-  address. Each GitHub call first takes one slot of its investigation (at most 20) and one slot
+- **Read budget, enforced.** Without a token GitHub allows 60 calls an hour per
+  address; the budget is set for that case. Each GitHub call first takes one slot of its investigation (at most 20) and one slot
   of the site for the hour (at most 40, so the verifier keeps about 20). A slot is a KVS key
   written with `FAIL_IF_EXISTS`. A refused call takes no slot. A GitHub rate-limit answer is
-  passed on with the reset time. `GITHUB_TOKEN` is never used by these actions.
+  passed on with the time to try again. When `GITHUB_TOKEN` is set, these actions send it too
+  (23 Nov); the budget stays the same.
 - **Read log.** The investigation's slots are its log: action, path, line range, status and the
   numbers in the returned lines.
 - **Grounding.** A finding of kind `defect` cites at least one `file:line` that a read returned,
