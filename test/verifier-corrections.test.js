@@ -175,7 +175,7 @@ test('when the report cannot show whether the module gained an id, a change appr
 const removalCtx = (headIds, baseTestIds) => ({
   ...approvalCtx('tests/test_idempotency.py::test_keys_expire_after_24_hours'),
   baseReport: { tests: [{ id: 'tests/test_idempotency.py::test_keys_expire_after_24_hours', outcome: 'passed' }, { id: 'tests/test_idempotency.py::test_kept', outcome: 'passed' }] },
-  report: { tests: headIds.map((id) => ({ id, outcome: 'passed' })), ...(baseTestIds ? { repro: { base_test_ids: baseTestIds } } : {}) },
+  report: { tests: headIds.map((id) => ({ id, outcome: 'passed' })), ...(baseTestIds ? { repro: { base_test_ids: baseTestIds, base_collect: { rc: 0, modules_without_ids: [] } } } : {}) },
 });
 const BASE_IDS = ['tests/test_idempotency.py::test_keys_expire_after_24_hours', 'tests/test_idempotency.py::test_kept'];
 
