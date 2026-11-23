@@ -73,10 +73,22 @@ shows that the proposed reproducer fails on base (the existing `reproduced` chec
 - **The finding names its report.** A recorded finding carries the symptom of its investigation
   word for word, and a ticket made from it shows `Answers the report: "..."`.
 
+## The finding in the panel (23 Nov)
+
+The issue panel has a section "Discovery finding". A person types a finding id (from the chat, or
+from the description of a ticket made from the finding) and presses **Show finding**. The section
+shows the kind and the status as stored, the symptom, the hypothesis, the cited rule lines (docs,
+a README or a test) apart from the cited code lines, the reproducer, the severity and the
+priority. For an `unclear` finding that the model proposed as a defect, it says that no rule was
+cited and shows the rule question. The view only reads the store (`src/finding-view.js`,
+`src/frontend/finding-section.js`, `test/panel-finding.test.js`). A finding is not tied to a work
+item, so any person who can open the panel and has the id can see it.
+
 ## Owner steps (not done)
 
-- Set the Forge variables `DISCOVERY_REPO` (the demo repository) and `DISCOVERY_REF` (the
-  investigated branch, built by the bank's `scripts/build_discovery_branch.py`).
+- Set the Forge variables `DISCOVERY_REPO` and `DISCOVERY_REF` (the commands are in
+  `docs/OWNER-HELD-STEPS.md`, step 3a). The investigated branch is built by the bank's
+  `scripts/build_discovery_branch.py`.
 - Live runs with Rovo (part f6) wait for the owner.
 
 ## Limits

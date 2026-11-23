@@ -58,6 +58,26 @@ The second command asks for the value when it is left out. Type the read-only to
 paste it into a chat, a file or a commit. Check with `forge variables list -e production` (the
 token shows as encrypted, with no value).
 
+## 3a. The discovery variables (development; not set on 23 Nov)
+
+Discovery from symptoms starts no investigation until the environment names the repository and
+the investigated branch. On 23 Nov neither variable is set on development. The investigated
+branch is `investigate/symptoms` of the cases repository (head `45a211d` on 23 Nov). In a
+terminal, in the app's folder:
+
+```bash
+forge variables set -e development DISCOVERY_REPO ysant77/yms-bank-demo-cases
+```
+
+```bash
+forge variables set -e development DISCOVERY_REF investigate/symptoms
+```
+
+Then deploy development one time, so that the values are used. Discovery sends `GITHUB_TOKEN`
+when it is set, so it needs no token of its own. The panel section "Discovery finding" shows a
+recorded finding by its id (`docs/DISCOVERY.md`). For a judge environment, set the same two
+variables with `-e production` before step 4.
+
 ## 4. The deploy
 
 ```bash
