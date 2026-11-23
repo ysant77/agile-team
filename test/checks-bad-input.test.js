@@ -280,7 +280,7 @@ function call(name, ctx, args) {
 test('every exported check of checks.js is in the table, except the helpers that are not checks', () => {
   const fns = Object.entries(c).filter(([, v]) => typeof v === 'function').map(([k]) => k);
   const covered = new Set(ROWS.map(([n]) => n));
-  assert.deepEqual(fns.filter((n) => !covered.has(n)).sort(), ['hasCodeWork', 'needsRepro', 'ticketTests']);
+  assert.deepEqual(fns.filter((n) => !covered.has(n)).sort(), ['deletedTestNote', 'hasCodeWork', 'needsRepro', 'ticketTests']);
 });
 
 for (const [name, keys, opts = {}] of ROWS) {
@@ -605,3 +605,61 @@ test('checks with a missing ticket or a key that is not text do not throw', () =
     assert.notEqual(c.reproduced(ctx).status, 'pass', `key ${JSON.stringify(key)}`);
   }
 });
+
+
+// Set 6, W22 (owner decision, 23 Nov): a named test that did not run (skipped, xfailed, xpassed,
+// deselected or any state other than passed, failed and error) is unknown, never a fail and never
+// a pass, and the reason names the state.
+const NOT_RUN = /skipped: a person checks why it did not run/;
+const withAcState = (state) => {
+  const ctx = good();
+  ctx.report.tests[0].outcome = state;
+  ctx.report.repro.tests[0].head.outcome = state;
+  return ctx;
+};
+
+test('test_passes: a skipped or xfailed named test is unknown and names the state; failed and error stay a fail', () => {
+  for (const state of ['skipped', 'xfailed', 'xpassed', 'deselected']) {
+    const r = c.testPasses(withAcState(state), 'test_X1_fix');
+    assert.equal(r.status, 'unknown', state);
+    assert.match(r.reason, new RegExp(`${state}: a person checks why it did not run`), state);
+  }
+  for (const state of ['failed', 'error']) assert.equal(c.testPasses(withAcState(state), 'test_X1_fix').status, 'fail', state);
+});
+
+test('test_passes over several names: a skipped one is unknown, a failed one wins', () => {
+  const ctx = withAcState('skipped');
+  assert.equal(c.testPassesAll(ctx, ['test_X1_fix', 'test_other']).status, 'unknown');
+  ctx.report.tests[1].outcome = 'failed';
+  assert.equal(c.testPassesAll(ctx, ['test_X1_fix', 'test_other']).status, 'fail');
+});
+
+test('bug_test_exists: a skipped key test is unknown, not a fail', () => {
+  const r = c.bugTestExists(withAcState('skipped'));
+  assert.equal(r.status, 'unknown', r.reason);
+  assert.match(r.reason, NOT_RUN);
+});
+
+test('reproduced: a test skipped on head, or on base, is unknown with the state, not a fail', () => {
+  const head = c.reproduced(withAcState('skipped'));
+  assert.equal(head.status, 'unknown', head.reason);
+  assert.match(head.reason, /test_X1_fix is skipped on head: a person checks why it did not run/);
+  const ctx = good();
+  ctx.report.repro.tests[0].base = { outcome: 'skipped', exc_type: null };
+  const base = c.reproduced(ctx);
+  assert.equal(base.status, 'unknown', base.reason);
+  assert.match(base.reason, /test_X1_fix is skipped on base: a person checks why it did not run/);
+});
+
+test('a done claim whose only AC test is skipped is cannot_verify, never contradicted (W22)', () => {
+  const v = verify({ id: 'c', type: 'done' }, withAcState('skipped'));
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, NOT_RUN);
+});
+
+test('a pinned base test that did not run on the head code never counts as holding', () => {
+  const ctx = good();
+  ctx.report.pinned.tests[0].outcome = 'not_run';
+  assert.equal(c.pinnedTestsHold(ctx).status, 'fail');
+});
+
