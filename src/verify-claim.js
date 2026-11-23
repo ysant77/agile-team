@@ -7,6 +7,7 @@ import { auditSeqs, readApprovals } from './approvals.js';
 import { collectGithub, collectPrStats } from './github-evidence.js';
 import { releaseClaim } from './claim-intake.js';
 import { addComment, findComment } from './jira.js';
+import { LATEST_DONE_KEY } from './sign-off.js';
 import { addVerdictProperty, collectJira, collectReviews } from './jira-evidence.js';
 import { formatAdvice, withAdvice } from './review-advice.js';
 import { compactChecks } from './verdict-view.js';
@@ -164,6 +165,12 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
     if (!progress.steps.audit) {
       const audit = await d.appendAudit({ actor: 'team-lead-verifier', event: 'verdict', data: { issueKey, ...progress.record } });
       progress.steps.audit = { seq: audit.seq, hash: audit.hash };
+      await save();
+    }
+    // The sign-off reads the claimant and the merged commit from this audit entry (src/sign-off.js).
+    if (claim.type === 'done' && !progress.steps.latestDone) {
+      await d.store.set(LATEST_DONE_KEY(issueKey), { seq: progress.steps.audit.seq, hash: progress.steps.audit.hash });
+      progress.steps.latestDone = true;
       await save();
     }
     // The evidence record goes into the audit chain before the comment, so a posted done verdict

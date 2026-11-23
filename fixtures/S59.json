@@ -1233,9 +1233,9 @@
         ]
       },
       "expect": {
-        "result": "contradicted",
+        "result": "cannot_verify",
         "reasonIncludes": [
-          "14 of 20 changed lines covered (70%), floor 80%"
+          "14 of 20 changed lines covered (70%), under the floor of 80%"
         ]
       }
     },
