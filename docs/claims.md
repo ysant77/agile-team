@@ -149,6 +149,13 @@ limit who can claim.
 
 ## The claim `done` (definition of done)
 
+A work item with no acceptance criteria and no sub-tasks has nothing to check: `ac_mapped` is
+unknown, "nothing to check: ... record the ACs in the panel, then claim again", and a `done`
+claim on it is Cannot verify (23 Nov; before, it was Contradicted). A check that fails for
+another reason still counts: a `fixed` claim with no PR stays Contradicted. Regression on sets 1 to
+5 (arm C, stored evidence): one outcome changed, B13, from contradicted to cannot_verify, which is
+its predicted outcome.
+
 A ticket has code work when an AC is a test or the ticket is a Bug. For code work, `done` is
 supported only when all of these pass:
 
