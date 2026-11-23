@@ -18,7 +18,7 @@ test('a done claim on a plain work item with no repository is Cannot verify', ()
 });
 
 test('a fixed claim with no ACs and no PR stays Contradicted by the PR check (S26)', () => {
-  const v = verify({ id: 'c', type: 'fixed', by: 'a' }, { ticket: plain({ type: 'Bug' }), pr: null, workflowRuns: [], deployRuns: [], config: {} });
+  const v = verify({ id: 'c', type: 'fixed', by: 'a' }, { ticket: plain({ type: 'Bug' }), pr: null, truncated: { pulls: false } });
   assert.equal(v.result, 'contradicted');
   assert.match(v.reason, /no pull request/);
   assert.equal(v.checks.find((k) => k.name === 'ac_mapped').status, 'unknown');
