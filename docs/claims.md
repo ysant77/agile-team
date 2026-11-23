@@ -415,7 +415,11 @@ This is why the reviewer is now advice only (see "Review advice").
 
 **Discovery (Mode B).** Owner wording, 20 Nov: discovery gives a grounded, unconfirmed lead that
 a person classifies. It is not a defect finder. Every finding has status `unconfirmed`, and every
-cited line comes from a read of the investigation (`docs/DISCOVERY.md`).
+cited line comes from a read of the investigation (`docs/DISCOVERY.md`). Since 23 Nov a defect
+must also cite a read line of docs, a README or a test (the rule it breaks); a defect that cites
+only code is recorded as `unclear` with an open question. The discovery rounds D1 and D2 are
+development data from now on: this rule was made after their results were known, so they do not
+measure it. No model run was made for this rule.
 
 | Round | Cases | Result | Source |
 |---|---|---|---|
