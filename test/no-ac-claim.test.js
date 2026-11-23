@@ -17,12 +17,11 @@ test('a done claim on a plain work item with no repository is Cannot verify', ()
   assert.equal(v.checks.find((k) => k.name === 'ac_mapped').status, 'unknown');
 });
 
-test('every claim type that maps ACs gives Cannot verify on a plain work item', () => {
-  for (const type of ['done', 'fixed', 'ready']) {
-    const v = verify({ id: 'c', type, by: 'a' }, { ticket: plain(), pr: null, workflowRuns: [], deployRuns: [], config: {} });
-    assert.equal(v.result, 'cannot_verify', type);
-    assert.match(v.reason, NOTHING, type);
-  }
+test('a fixed claim with no ACs and no PR stays Contradicted by the PR check (S26)', () => {
+  const v = verify({ id: 'c', type: 'fixed', by: 'a' }, { ticket: plain({ type: 'Bug' }), pr: null, workflowRuns: [], deployRuns: [], config: {} });
+  assert.equal(v.result, 'contradicted');
+  assert.match(v.reason, /no pull request/);
+  assert.equal(v.checks.find((k) => k.name === 'ac_mapped').status, 'unknown');
 });
 
 const ok = (body) => ({ ok: true, status: 200, json: async () => body, headers: { get: () => '50' } });
