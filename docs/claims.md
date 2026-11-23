@@ -238,8 +238,9 @@ is the measurement.
   still sign off when another person made the claim; the app does not link Jira and GitHub
   accounts for sign-offs.
 - **Approval names** are compared by test name (`file::Class::test_x` counts for `test_x`), and an
-  audited change approval by another person also covers a test that the PR renames and edits
-  (V17).
+  audited change approval by another person also covers the old name when that test is gone from
+  the head (V17: a rename with an edit). So a change approval also allows the deletion of that one
+  test; the approval is still audited and must come from a person other than the claimant.
 - **V18:** an AC test that sets a module-level name that the PR adds (a flag) gives unknown: the
   value that ships is never tested.
 - **V12:** a PR that removes `httponly=True`, `secure=True`, `verify=True` or `check_hostname=True`
