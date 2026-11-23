@@ -135,3 +135,11 @@ test('a claim with no link is as before, with no pr_link check', async (t) => {
   const v = await claim(appStore());
   assert.equal(v.checks.some((k) => k.name === 'pr_link'), false);
 });
+
+test('pr_linked accepts a PR that does not name the key only when it is the counted linked PR', async () => {
+  const c = await import('../src/verifier/checks.js');
+  const base = { ticket: { key: KEY }, pr: { number: 7, title: 'A filter', branch: 'feat/filter', state: 'closed', merged: true }, prCandidates: [7], truncated: { pulls: false } };
+  assert.equal(c.prLinked(base).status, 'fail');
+  assert.equal(c.prLinked({ ...base, linkedPr: 7 }).status, 'pass');
+  assert.equal(c.prLinked({ ...base, linkedPr: 8 }).status, 'fail');
+});
