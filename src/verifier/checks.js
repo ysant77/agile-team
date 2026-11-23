@@ -193,7 +193,9 @@ export function prLinked(ctx) {
   if ((ctx.prCandidates ?? []).length > 1) {
     return result('pr_linked', 'unknown', `PRs ${ctx.prCandidates.map((n) => `#${n}`).join(', ')} all name ${ctx.ticket.key}; link one PR`);
   }
-  const named = namesKey(pr.title, ctx.ticket.key) || namesKey(pr.branch, ctx.ticket.key);
+  // A PR that does not name the key counts only as the counted, audited panel link (linkedPr is set
+  // by src/verify-claim.js from src/pr-link.js).
+  const named = namesKey(pr.title, ctx.ticket.key) || namesKey(pr.branch, ctx.ticket.key) || (Number.isInteger(ctx.linkedPr) && ctx.linkedPr === pr.number);
   if (!named) return result('pr_linked', 'fail', `PR #${pr.number} does not name ${ctx.ticket.key}`);
   // The merge flag decides only for a closed PR.
   if ((pr.state !== 'open' && pr.state !== 'closed') || (pr.state === 'closed' && typeof pr.merged !== 'boolean')) {
@@ -330,6 +332,21 @@ export function ciGreen(ctx) {
   return result('ci_green', unknown ? 'unknown' : 'pass', reasons.join('; '));
 }
 
+// Test states (owner decision 23 Nov, set 6 W22). passed: it ran and passed. failed and error: it
+// ran and did not pass, a fail. Any other state (skipped, xfailed, xpassed, deselected, not_run,
+// or none) means it did not run: unknown, never a fail and never a pass.
+const RAN_BAD = ['failed', 'error'];
+const didNotRun = (outcome) => outcome !== 'passed' && !RAN_BAD.includes(outcome);
+const NOT_RUN_REASON = (outcome) => `${isText(outcome) ? outcome : 'no result'}: a person checks why it did not run`;
+
+// A named test that the head report lacks but the base had: the PR deletes it (set 6 W13). The
+// base ids are the base report's and the repro block's. null when the base did not have it.
+export function deletedTestNote(ctx, name, report = ctx.report) {
+  const listed = isObj(report?.repro) ? optList(report.repro.base_test_ids) : null;
+  const base = [...(isObjList(ctx.baseReport?.tests) ? ctx.baseReport.tests.map((t) => t.id) : []), ...(listed && listed.every(isText) ? listed : [])];
+  return base.some((id) => testName(id) === name) ? 'it is in the base report, so the PR deletes it' : null;
+}
+
 export function testPasses(ctx, name, report = ctx.report) {
   // Another report (the merge result) is matched to its commit by the caller (mergedClean).
   const trust = reportTrusted(ctx, report, report === ctx.report ? ctx.pr?.headSha : ANY_HEAD);
@@ -338,9 +355,14 @@ export function testPasses(ctx, name, report = ctx.report) {
   if (trust.status !== 'pass') return result(label, 'unknown', trust.reason);
   if (!isObjList(report.tests)) return result(label, 'unknown', 'the report has no valid test list');
   const tests = testsByName(report, name);
-  if (tests.length === 0) return result(label, 'fail', `${name} is missing from the report`);
-  const bad = tests.filter((t) => t.outcome !== 'passed');
+  if (tests.length === 0) {
+    const deleted = report === ctx.report ? deletedTestNote(ctx, name, report) : null;
+    return result(label, 'fail', `${name} is missing from the report${deleted ? `; ${deleted}` : ''}`);
+  }
+  const bad = tests.filter((t) => RAN_BAD.includes(t.outcome));
   if (bad.length) return result(label, 'fail', `${name}: ${bad[0].outcome}`);
+  const notRun = tests.find((t) => didNotRun(t.outcome));
+  if (notRun) return result(label, 'unknown', `${name}: ${NOT_RUN_REASON(notRun.outcome)}`);
   return result(label, 'pass', `${name} passed`);
 }
 
@@ -369,8 +391,10 @@ export function bugTestExists(ctx) {
   if (tests.length === 0) {
     return result('bug_test_exists', 'fail', `no test named for ${ctx.ticket.key}: the change may be right, but nothing proves it`);
   }
-  const failed = tests.find((t) => t.outcome !== 'passed');
+  const failed = tests.find((t) => RAN_BAD.includes(t.outcome));
   if (failed) return result('bug_test_exists', 'fail', `${testName(failed.id)}: ${failed.outcome}`);
+  const notRun = tests.find((t) => didNotRun(t.outcome));
+  if (notRun) return result('bug_test_exists', 'unknown', `${testName(notRun.id)}: ${NOT_RUN_REASON(notRun.outcome)}`);
   return result('bug_test_exists', 'pass', `${tests.length} test(s) for ${ctx.ticket.key} passed`);
 }
 
@@ -600,23 +624,21 @@ function auditedApprovals(ctx, kind) {
   }
   return out;
 }
-// Whether test module `mod` on the head has a test id that the base did not have: the sign of a
-// rename with an edit. A change approval covers a test that is gone from the head only then (lead
-// review of PR C, 23 Nov); a plain deletion needs a removal approval. The base ids of the module
-// come from the pinned block (when it lists the module) or the repro block's base_test_ids.
-// null: the report cannot show it.
-function moduleGainedId(report, mod) {
-  if (!isObj(report) || !isObjList(report.tests) || !isText(mod)) return null;
-  const inMod = (id) => isText(id) && id.split('::')[0] === mod;
-  const p = isObj(report.pinned) ? report.pinned : null;
-  const pinnedBase = p && isList(p.modules) && p.modules.includes(mod) && isObjList(p.tests) ? p.tests.map((t) => t.id).filter(inMod) : null;
-  const listed = isObj(report.repro) ? optList(report.repro.base_test_ids) : null;
-  const reproBase = listed && listed.every(isText) && listed.some(inMod) ? listed.filter(inMod) : null;
-  if (!pinnedBase && !reproBase) return null;
-  const base = new Set([...(pinnedBase ?? []), ...(reproBase ?? [])]);
-  return report.tests.some((t) => isObj(t) && inMod(t.id) && !base.has(t.id));
+// The rename link for one base test id (owner decision 23 Nov, after set 6 W13): the pinned entry
+// of that id names a head id (head_id) that is another test in the same module, which the base did
+// not have and which the head report has. That is the only link from an old test to its edited
+// successor that the report gives. "The module gained any new id" is not a link. Returns the new
+// id, or null when the report links nothing.
+function renameSuccessor(report, oldId, baseIds) {
+  const p = isObj(report) && isObj(report.pinned) && isObjList(report.pinned.tests) ? report.pinned : null;
+  const entry = p?.tests.find((t) => t.id === oldId);
+  const to = entry?.head_id;
+  if (!isText(to) || to === oldId || to.split('::')[0] !== oldId.split('::')[0]) return null;
+  const base = new Set([...(p?.tests ?? []).map((t) => t.id), ...baseIds]);
+  if (base.has(to)) return null;
+  return isObjList(report.tests) && report.tests.some((t) => t.id === to) ? to : null;
 }
-const RENAME_UNKNOWN = (n) => `${n} has a change approval, which covers it only for a rename with an edit, and the report cannot show that its test module gained a new test`;
+const RENAME_UNKNOWN = (n) => `${n} has a change approval, which covers it only for a rename that the report links; the report has no link from the old test to a new one, so a person checks whether it was renamed or deleted`;
 
 // Why a test that needs an approval has none that counts.
 function approvalNotes(ctx, names, audited, propertyLists) {
@@ -659,14 +681,15 @@ export function testsNotRemoved(ctx, report = ctx.report) {
   const listed = optList(repro.base_test_ids);
   const ids = listed && listed.every(isText) ? listed : [];
   const baseIds = [...ctx.baseReport.tests.map((t) => t.id), ...ids];
-  // A change approval covers a missing test only for a rename with an edit: every module of that
-  // test on the base gained a new test id on the head. Not known: unknown, never a pass.
+  // A change approval covers a missing test only when the report links it to its renamed
+  // successor (renameSuccessor). No link: unknown, never a pass.
   const renameUnknown = [];
+  const linkBase = [...ids, ...ctx.baseReport.tests.map((t) => t.id)];
   for (const n of changes.names) {
     if (head.has(n) || approved.has(n)) continue;
-    const gained = [...new Set(baseIds.filter((id) => testName(id) === n).map((id) => id.split('::')[0]))].map((m) => moduleGainedId(report, m));
-    if (gained.length && gained.every((g) => g === true)) approved.add(n);
-    else if (gained.some((g) => g === null)) renameUnknown.push(n);
+    const olds = baseIds.filter((id) => testName(id) === n);
+    if (olds.length && olds.every((id) => renameSuccessor(report, id, linkBase))) approved.add(n);
+    else renameUnknown.push(n);
   }
   const removed = [...new Set(baseIds.map((id) => testName(id)))].filter(
     (n) => !head.has(n) && !approved.has(n),
@@ -741,18 +764,21 @@ export function pinnedTestsHold(ctx, report = ctx.report) {
   const fails = [];
   const changed = [];
   const renameUnknown = [];
+  const reproIds = isObj(report.repro) ? optList(report.repro.base_test_ids) : null;
+  const pinBase = [...(reproIds && reproIds.every(isText) ? reproIds : []), ...(isObjList(ctx.baseReport?.tests) ? ctx.baseReport.tests.map((t) => t.id) : [])];
   for (const t of p.tests) {
     const n = testName(t.id);
     if (t.head_id === null) {
-      // A change approval covers a rename with an edit only: the module gains a new id (V17).
+      // No head copy is linked, so a change approval cannot show a rename: unknown (W13). A
+      // removal approval covers a deletion.
       if (approvedRemoval.has(n)) continue;
-      const gained = approvedChange.has(n) ? moduleGainedId(report, t.id.split('::')[0]) : false;
-      if (gained === null) { renameUnknown.push(n); continue; }
-      if (!gained) { fails.push(`${n} is deleted`); failing.push(['removal', n]); }
+      if (approvedChange.has(n)) { renameUnknown.push(n); continue; }
+      fails.push(`${n} is deleted`); failing.push(['removal', n]);
       continue;
     }
     const edited = t.head_hash !== t.base_hash;
-    if (approvedChange.has(n)) continue;
+    // A change approval covers the test itself (same id), or a linked rename (renameSuccessor).
+    if (approvedChange.has(n) && (t.head_id === t.id || renameSuccessor(report, t.id, pinBase))) continue;
     if (t.outcome !== 'passed') failing.push(['change', n]);
     if (t.outcome === 'not_run') fails.push(`${n}: its base copy did not run on the head code (deselected or skipped)`);
     else if (t.outcome !== 'passed') fails.push(`${n}: its base copy fails on the head code (${t.outcome})${edited ? ', and the change edits this test' : ''}`);
@@ -1044,18 +1070,33 @@ export function acTestsRunNewCode(ctx) {
 // is narrow on purpose. Read from the diff: a removed line has the argument and no added line of
 // the same file has it. Returns null when nothing is found.
 export const SECURITY_ARGS = ['httponly=True', 'secure=True', 'verify=True', 'check_hostname=True'];
+// Cookie arguments whose value matters (set 6, W10): a changed or removed value is seen. Only
+// these; an added middleware or any change outside the two lists is not seen (docs/claims.md).
+export const SECURITY_VALUE_ARGS = ['samesite'];
+const argValues = (text, arg) => new Set([...text.matchAll(new RegExp(`\\b${arg}\\s*=\\s*["']([^"']*)["']`, 'gi'))].map((m) => m[1].toLowerCase()));
 export function securityArgsKept(ctx) {
   const patches = isObj(ctx.prPatches) ? ctx.prPatches : {};
   const found = [];
   for (const [file, patch] of Object.entries(patches)) {
     if (typeof patch !== 'string' || isTestFile(file)) continue;
     const lines = patch.split('\n');
-    const removed = lines.filter((l) => l.startsWith('-') && !l.startsWith('---')).join('\n').replace(/\s+/g, '');
-    const added = lines.filter((l) => l.startsWith('+') && !l.startsWith('+++')).join('\n').replace(/\s+/g, '');
-    for (const arg of SECURITY_ARGS) if (removed.includes(arg) && !added.includes(arg)) found.push(`${arg} in ${file}`);
+    const removedText = lines.filter((l) => l.startsWith('-') && !l.startsWith('---')).join('\n');
+    const addedText = lines.filter((l) => l.startsWith('+') && !l.startsWith('+++')).join('\n');
+    const removed = removedText.replace(/\s+/g, '');
+    const added = addedText.replace(/\s+/g, '');
+    for (const arg of SECURITY_ARGS) if (removed.includes(arg) && !added.includes(arg)) found.push(`removes ${arg} in ${file}`);
+    for (const arg of SECURITY_VALUE_ARGS) {
+      const before = argValues(removedText, arg);
+      const after = argValues(addedText, arg);
+      for (const v of before) {
+        if (after.has(v)) continue;
+        if (after.size) found.push(`changes ${arg} from "${v}" to "${[...after].join('", "')}" in ${file}`);
+        else found.push(`removes ${arg}="${v}" in ${file}`);
+      }
+    }
   }
   return found.length
-    ? result('security_args_kept', 'unknown', `the PR removes ${found.join('; ')}: a person checks that the security setting is meant to go`)
+    ? result('security_args_kept', 'unknown', `the PR ${found.join('; ')}: a person checks that the security setting is meant to change`)
     : null;
 }
 
@@ -1243,7 +1284,8 @@ export function reproduced(ctx) {
     names = acNames.size ? [...acNames] : guards.filter(reproduces);
     for (const g of guards.filter((n) => !names.includes(n))) {
       const row = rowOf(g);
-      if (row && row.head?.outcome !== 'passed') fails.push(`${g} fails on head (${row.head?.outcome ?? 'no result'})`);
+      if (row && isText(row.head?.outcome) && didNotRun(row.head.outcome)) unknowns.push(`${g} is ${NOT_RUN_REASON(row.head.outcome).replace(':', ' on head:')}`);
+      else if (row && row.head?.outcome !== 'passed') fails.push(`${g} fails on head (${row.head?.outcome ?? 'no result'})`);
     }
   }
   if (names.length === 0) fails.push(`no test for ${ctx.ticket?.key}: nothing reproduces the problem`);
@@ -1254,7 +1296,16 @@ export function reproduced(ctx) {
       continue;
     }
     const base = row.base ?? {};
+    // A test that did not run on head or on base shows nothing: unknown with its state (W22).
+    if (isText(row.head?.outcome) && didNotRun(row.head.outcome)) {
+      unknowns.push(`${name} is ${NOT_RUN_REASON(row.head.outcome).replace(':', ' on head:')}`);
+      continue;
+    }
     if (row.head?.outcome !== 'passed') fails.push(`${name} fails on head (${row.head?.outcome ?? 'no result'})`);
+    if (isText(base.outcome) && didNotRun(base.outcome)) {
+      unknowns.push(`${name} is ${NOT_RUN_REASON(base.outcome).replace(':', ' on base:')}`);
+      continue;
+    }
     if (base.outcome === 'passed') fails.push(`${name} passes on base, so it does not reproduce the problem`);
     else if (newModuleStory(ctx, row) || newFunctionStory(ctx, row)) continue;
     else if (base.outcome === 'error' || CANNOT_RUN_ON_BASE.includes(base.exc_type)) {

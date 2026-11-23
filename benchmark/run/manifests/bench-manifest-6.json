@@ -1,0 +1,1151 @@
+[
+ {
+  "id": "W01",
+  "void": "not buildable: base fact false; the base already has end_session (DELETE /api/session gives 204)",
+  "branches": [
+   "case/W01"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-601",
+   "type": "Story",
+   "labels": [],
+   "text": "a customer can end the session.",
+   "acceptanceCriteria": []
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "W02",
+  "void": null,
+  "branches": [
+   "case/W02"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-602",
+   "type": "Story",
+   "labels": [],
+   "text": "the customer chooser can search.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/customers?q=<text> returns only the customers whose name has the text, compared without case.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_search_matches_without_case"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "A q that has fewer than 2 characters after the outer spaces are removed gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_search_refuses_short_queries"
+      ]
+     }
+    },
+    {
+     "acId": "AC3",
+     "text": "The characters % and _ in q are plain text, not wildcards: q=%% returns no customer when no name has %%.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_search_treats_wildcards_as_text"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/customers?q=<text> returns only the customers whose name has the text, compared without case.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_search_matches_without_case"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "A q that has fewer than 2 characters after the outer spaces are removed gives 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_search_refuses_short_queries"
+       ]
+      }
+     },
+     {
+      "acId": "AC3",
+      "text": "The characters % and _ in q are plain text, not wildcards: q=%% returns no customer when no name has %%.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_search_treats_wildcards_as_text"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W03",
+  "void": null,
+  "branches": [
+   "case/W03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-603",
+   "type": "Story",
+   "labels": [],
+   "text": "the statement can be read in pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_limit_returns_the_first_lines",
+       "test_statement_reports_total_lines"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_offset_skips_lines",
+       "test_statement_paging_refuses_bad_values"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_limit_returns_the_first_lines",
+        "test_statement_reports_total_lines"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_offset_skips_lines",
+        "test_statement_paging_refuses_bad_values"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W04",
+  "void": "not buildable: the scorer cannot answer each request with 403 and the rate-limit headers",
+  "branches": [
+   "case/W04"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-604",
+   "type": "Story",
+   "labels": [],
+   "text": "the account list tells the number of decimals of the currency.",
+   "acceptanceCriteria": []
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "W05",
+  "void": null,
+  "branches": [
+   "case/W05"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-605",
+   "type": "Story",
+   "labels": [],
+   "text": "a key conflict answers 409.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the same Idempotency-Key with a different request gives 409 (it gave 422); the detail text does not change and no money moves.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_key_conflict_answers_409"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "The same key with the same request still gives 200 and replayed: true.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_key_conflict_answers_409"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "the same Idempotency-Key with a different request gives 409 (it gave 422); the detail text does not change and no money moves.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_key_conflict_answers_409"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "The same key with the same request still gives 200 and replayed: true.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_key_conflict_answers_409"
+       ]
+      }
+     }
+    ]
+   },
+   "changes": [
+    {
+     "test": "tests/test_api.py::test_same_key_with_a_different_body_is_rejected",
+     "reason": "AC 1 moves the conflict status from 422 to 409; the test keeps its balance assertion; only the status and the name change.",
+     "by": "acct-reviewer",
+     "at": "T-3h"
+    }
+   ],
+   "removals": [
+    {
+     "test": "tests/test_api.py::test_same_key_with_a_different_body_is_rejected",
+     "reason": "AC 1 moves the conflict status from 422 to 409; the test keeps its balance assertion; only the status and the name change.",
+     "by": "acct-reviewer",
+     "at": "T-3h"
+    }
+   ]
+  }
+ },
+ {
+  "id": "W06",
+  "void": null,
+  "branches": [
+   "case/W06"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-606",
+   "type": "Story",
+   "labels": [],
+   "text": "each transfer gets a receipt number.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the reply of a new transfer (201) has receipt: the text RCP- and 12 hexadecimal digits in upper case.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_transfer_reply_has_a_receipt"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "Two transfers never get the same receipt.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_receipts_are_different_for_each_transfer"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "the reply of a new transfer (201) has receipt: the text RCP- and 12 hexadecimal digits in upper case.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_transfer_reply_has_a_receipt"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "Two transfers never get the same receipt.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_receipts_are_different_for_each_transfer"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W07",
+  "void": null,
+  "branches": [
+   "case/W07"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-607",
+   "type": "Story",
+   "labels": [],
+   "text": "a statement window has a maximum length.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "when from and to are given and the window has more than 366 days (the two end days included), the reply is 422 with the detail statement window is longer than 366 days; a window of exactly 366 days is served as before.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_window_has_a_maximum_length"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "when from and to are given and the window has more than 366 days (the two end days included), the reply is 422 with the detail statement window is longer than 366 days; a window of exactly 366 days is served as before.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_window_has_a_maximum_length"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W08",
+  "void": "not buildable: the scorer has no audited sign-off, and the app refuses a sign-off by the claimant",
+  "branches": [
+   "case/W08"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-608",
+   "type": "Story",
+   "labels": [],
+   "text": "an amount can be split into equal parts.",
+   "acceptanceCriteria": []
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "W09",
+  "void": null,
+  "branches": [
+   "case/W09"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-609",
+   "type": "Story",
+   "labels": [],
+   "text": "the account list has a currency filter.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/accounts?currency=<code> returns only the accounts of the session customer in that currency; the code is compared without case; a request with no currency does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_account_list_filters_by_currency"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "A code that is not in EXPONENTS gives 422 with the detail unsupported currency.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_account_list_refuses_an_unknown_currency"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/accounts?currency=<code> returns only the accounts of the session customer in that currency; the code is compared without case; a request with no currency does not change.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_account_list_filters_by_currency"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "A code that is not in EXPONENTS gives 422 with the detail unsupported currency.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_account_list_refuses_an_unknown_currency"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W10",
+  "void": null,
+  "branches": [
+   "case/W10"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-610",
+   "type": "Story",
+   "labels": [],
+   "text": "the API allows the local front-end server.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "a request with the header Origin: http://localhost:5173 gets the reply headers Access-Control-Allow-Origin: http://localhost:5173 and Access-Control-Allow-Credentials: true; a request from a different origin gets no Access-Control-Allow-Origin header; the attributes of the session cookie do not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_local_frontend_origin_is_allowed"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "a request with the header Origin: http://localhost:5173 gets the reply headers Access-Control-Allow-Origin: http://localhost:5173 and Access-Control-Allow-Credentials: true; a request from a different origin gets no Access-Control-Allow-Origin header; the attributes of the session cookie do not change.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_local_frontend_origin_is_allowed"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W11",
+  "void": "not buildable: base fact false; the base already has read_session (GET /api/session gives 401 with no session)",
+  "branches": [
+   "case/W11"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-611",
+   "type": "Story",
+   "labels": [],
+   "text": "the page can ask who is signed in.",
+   "acceptanceCriteria": []
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "W12",
+  "void": "not buildable: CI is red on the head, not green; the bank test test_scenario_templates.py (S17) runs every test of tests/test_fraud_model.py on seeded code, where 686 holdout rows are flagged, so the row's fixed count 827 fails there",
+  "branches": [
+   "case/W12"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-612",
+   "type": "Story",
+   "labels": [],
+   "text": "the fraud model records its flag rate.",
+   "acceptanceCriteria": []
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "W13",
+  "void": null,
+  "branches": [
+   "case/W13"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-613",
+   "type": "Task",
+   "labels": [],
+   "text": "expired idempotency keys are removed by a purge function, not on each transfer.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "ledger.purge_expired_keys(conn, *, now) deletes each key that is older than IDEMPOTENCY_WINDOW_SECONDS and returns the number of deleted rows.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_purge_removes_only_expired_keys"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "ledger.transfer_once deletes no key; a key that is older than the window is still free: a request with that key and a different amount makes a new transfer.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_keys_expire_after_24_hours"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "ledger.purge_expired_keys(conn, *, now) deletes each key that is older than IDEMPOTENCY_WINDOW_SECONDS and returns the number of deleted rows.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_purge_removes_only_expired_keys"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "ledger.transfer_once deletes no key; a key that is older than the window is still free: a request with that key and a different amount makes a new transfer.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_keys_expire_after_24_hours"
+       ]
+      }
+     }
+    ]
+   },
+   "changes": [
+    {
+     "test": "tests/test_idempotency.py::test_keys_expire_after_24_hours",
+     "reason": "the test may pass the clock to the new code; its assertions stay",
+     "by": "acct-reviewer",
+     "at": "T-5h"
+    }
+   ]
+  }
+ },
+ {
+  "id": "W14",
+  "void": null,
+  "branches": [
+   "case/W14"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-614",
+   "type": "Story",
+   "labels": [],
+   "text": "each reply of the API has a request id.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each reply has the header X-Request-Id; when the request has this header with 8 to 64 characters from the letters, the digits and -, the reply has the same value.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_request_id_is_echoed"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "When the request has no such header, or a value that breaks the rule of AC 1, the reply has a new value of 32 hexadecimal digits in lower case; two requests get two different values.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_request_id_is_generated_when_absent",
+       "test_request_id_replaces_a_bad_value"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "each reply has the header X-Request-Id; when the request has this header with 8 to 64 characters from the letters, the digits and -, the reply has the same value.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_request_id_is_echoed"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "When the request has no such header, or a value that breaks the rule of AC 1, the reply has a new value of 32 hexadecimal digits in lower case; two requests get two different values.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_request_id_is_generated_when_absent",
+        "test_request_id_replaces_a_bad_value"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W15",
+  "void": "not buildable: the scorer serves the report commit as the merge commit and its report as the main report",
+  "branches": [
+   "case/W15"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-615",
+   "type": "Story",
+   "labels": [],
+   "text": "the transfer reply shows the new balance.",
+   "acceptanceCriteria": []
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "W16",
+  "void": null,
+  "branches": [
+   "case/W16"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-616",
+   "type": "Story",
+   "labels": [],
+   "text": "the statement can cover the last days.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with days=<n> and no from and no to, the window is the last n days and ends today (from is today minus n-1 days); n is 1 to 90; a value above 90 gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_days_window"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-5d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with days=<n> and no from and no to, the window is the last n days and ends today (from is today minus n-1 days); n is 1 to 30; a value above 30 gives 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_days_window"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W17",
+  "void": "not buildable: the scorer has no audited sign-off for the product owner's sign-off of the merge commit",
+  "branches": [
+   "case/W17"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-617",
+   "type": "Story",
+   "labels": [],
+   "text": "a fee quote.",
+   "acceptanceCriteria": []
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "W18",
+  "void": null,
+  "branches": [
+   "case/W18"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-618",
+   "type": "Story",
+   "labels": [],
+   "text": "the statement can show the newest line first.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with sort=desc the lines are in the order newest first, and sort=asc or no sort gives the usual order; the balance of each line is the same value as that line has in the usual order (the balance after that line in time); a different value of sort gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_can_be_sorted_newest_first"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with sort=desc the lines are in the order newest first, and sort=asc or no sort gives the usual order; the balance of each line is the same value as that line has in the usual order (the balance after that line in time); a different value of sort gives 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_can_be_sorted_newest_first"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W19",
+  "void": null,
+  "branches": [
+   "case/W19"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-619",
+   "type": "Story",
+   "labels": [],
+   "text": "statement lines have a number.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each object of lines has line_no, the position of the line in the window, from 1.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_lines_are_numbered"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "secondOpenPr": true
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "each object of lines has line_no, the position of the line in the window, from 1.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_lines_are_numbered"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W20",
+  "void": null,
+  "branches": [
+   "case/W20"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-620",
+   "type": "Story",
+   "labels": [],
+   "text": "a health route.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/health, with no session, returns 200 and {\"status\": \"ok\", \"accounts\": <n>}, where n is the number of accounts in the database, with the reply header Cache-Control: no-store.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_health_reports_ok_and_the_account_count"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/health, with no session, returns 200 and {\"status\": \"ok\", \"accounts\": <n>}, where n is the number of accounts in the database, with the reply header Cache-Control: no-store.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_health_reports_ok_and_the_account_count"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W21",
+  "void": null,
+  "branches": [
+   "case/W21"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-621",
+   "type": "Bug",
+   "labels": [],
+   "text": "a customer name can have control characters, which break the statement header.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "ledger.create_customer raises LedgerError for a name that, after the outer whitespace is removed, has a character below U+0020 or the character U+007F; nothing is stored.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_name_refuses_control_characters"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "ledger.create_customer raises LedgerError for a name that, after the outer whitespace is removed, has a character below U+0020 or the character U+007F; nothing is stored.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_name_refuses_control_characters"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W22",
+  "void": null,
+  "branches": [
+   "case/W22"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-622",
+   "type": "Story",
+   "labels": [],
+   "text": "the statement tells when it was made.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the body of GET /api/accounts/{id}/statement has generated_at, the UTC time of the reply in the form 2026-11-23T08:15:30Z.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_has_generated_at"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "the body of GET /api/accounts/{id}/statement has generated_at, the UTC time of the reply in the form 2026-11-23T08:15:30Z.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_has_generated_at"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "W23",
+  "void": null,
+  "branches": [
+   "case/W23"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-623",
+   "type": "Task",
+   "labels": [],
+   "text": "log transfers for support.",
+   "acceptanceCriteria": []
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "W24",
+  "void": "not buildable: the scorer cannot serve a push run in progress and a main report for an older merge commit",
+  "branches": [
+   "case/W24"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-624",
+   "type": "Story",
+   "labels": [],
+   "text": "a route that tells the settings of the API.",
+   "acceptanceCriteria": []
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ }
+]

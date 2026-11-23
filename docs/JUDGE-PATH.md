@@ -86,3 +86,77 @@ Source files: `benchmark/RESULTS-4.md`, `benchmark/RESULTS-5.md`, `benchmark/RES
 `benchmark/CASES-4-INDEPENDENT.md` (U01, U04, U12, U20), `benchmark/CASES-3-INDEPENDENT.md`
 (T08), `benchmark/REGRESSION-LISTING-2026-11-19.md` (the protected set), and the arm D records
 of set 3.
+
+## A judge on a fresh site (option 1, prepared 23 Nov)
+
+This route needs no REST console and no help from the owner after the install. Status: the app
+side is on branches for review (`feat/panel-ac-editor`, `feat/panel-link-pr`,
+`feat/base-report-per-branch`); the steps on the demo cases repository, the deploy and the
+install link are held for the owner (`docs/OWNER-HELD-STEPS.md`). Design:
+`docs/DESIGN-FRESH-SITE.md`.
+
+**What the judge needs:** a Jira Cloud site, and two accounts on it. Account A records the ACs
+and links the PRs; account B makes the claims. The app counts an AC record and a PR link only when
+they come from a person other than the claimant.
+
+1. **Install.** Open the install link in the Devpost entry, pick the site, approve the scopes.
+2. **Project.** Make a Jira project with any key (for example `KAN`). Make five work items, one
+   for each case below, of the type shown. On the U12 work item, add the label `money_semantics`.
+3. **ACs (account A).** On each work item, open the **Agile team verifier** panel. In "Edit the
+   acceptance criteria", paste the line of the case and press **Save and record**. The panel shows
+   the AC and the audit sequence of the record.
+4. **PR (account A).** In "Linked pull request", give the number of the case's judge PR
+   (the table below; the numbers are filled in after the judge branches exist), a reason, and
+   press **Link PR**. The demo PRs name `BANK-5` to `BANK-9`, not the judge's keys, so the link is
+   how the app finds the PR.
+5. **Claim (account B).** Comment `claim: done` on each work item. The verdict comment appears in
+   about 15 s, and the panel shows it.
+6. **U12 sign-off (account A).** The first U12 claim is Cannot verify (the money rule needs a
+   sign-off). Account A presses "Sign off the merged change" with a reason; account B claims
+   again; the verdict is Supported.
+
+| Case | Work item type | Judge branch | Judge PR | Expected verdict |
+|---|---|---|---|---|
+| U01 | Bug | `judge/U01` | (after step 2 of the owner's list) | Supported |
+| U04 | Bug | `judge/U04` | | Contradicted: the AC test passes on base |
+| U20 | Bug | `judge/U20` | | Contradicted: a pinned base test fails on the head code |
+| U12 | Bug | `judge/U12` | | Cannot verify, then Supported after the sign-off by account A |
+| T08 | Story | `judge/T08` | | Supported (advice from the reviewer only if it was run on the PR) |
+
+The AC line of each case (one line; paste it as it is):
+
+**U01** (Bug):
+
+```text
+AC1 | for the id 9223372036854775808, (1) GET /api/accounts/{id} gives 404; (2) GET /api/accounts/{id}/statement gives 404; (3) POST /api/transfers with that value as from_account_id gives 404 and moves no money. | test_passes(test_a_huge_account_id_is_404)
+```
+
+**U04** (Bug):
+
+```text
+AC1 | each of these forms finds the account YMS-0000-0003: (1) lower case, yms-0000-0003; (2) spaces at the start and the end; (3) spaces in place of the hyphens, YMS 0000 0003. | test_passes(test_transfer_accepts_a_typed_account_number)
+```
+
+**U20** (Bug):
+
+```text
+AC1 | (1) ledger.account_number raises LedgerError for a sequence below 1 or above 99,999,999; (2) for each sequence from 1 to 99,999,999 the number is the same as before. | test_passes(test_account_number_refuses_a_sequence_out_of_range)
+```
+
+**U12** (Bug, label `money_semantics`):
+
+```text
+AC1 | an amount is accepted if each decimal after the decimals of the currency is zero ("1.0" in JPY is 1 minor unit; "1.2300" in EUR is 123 minor units; "10.000" in a transfer between two EUR accounts gives 201 and the amount "10.00"); an amount with a decimal that is not zero after the decimals of the currency is still refused. | test_passes(test_zero_decimals_are_accepted, test_non_zero_extra_decimals_are_still_refused, test_transfer_accepts_zero_decimals)
+```
+
+**T08** (Story):
+
+```text
+AC1 | kind=credit returns only lines with a positive amount; kind=debit returns only lines with a negative amount; with no kind all lines are returned. | test_passes(test_statement_can_show_credits_only)
+```
+
+**Limits of this route.** The verdicts depend on the five judge branches, each with one merged
+case and its report (way A of the design note). Until those exist, a link to a demo PR that is
+not merged gives the verdict for an unmerged PR. The T08 advice needs the Agile Code Reviewer in
+Rovo on the judge's site.
+

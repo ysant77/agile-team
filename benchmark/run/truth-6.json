@@ -1,0 +1,228 @@
+{
+ "_note": "Built by run/make_truth6.py from CASES-6-INDEPENDENT.md (sha256 94ec2911...bc8d) before any build or run. reason: the Pattern alternatives as plain text (PROTOCOL-5.md, as set 4). class: the first word of the Class column. Arguable cases named by the author: W11, W16, W23.",
+ "W01": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "W02": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "weak-test",
+  "reason": "test_customer_search_treats_wildcards_as_text|wildcard|AC\\s+3|third|does\\s+not\\s+exist|not\\s+found|missing\\s+test|no\\s+test|not\\s+in\\s+the\\s+report|did\\s+not\\s+run|ESCAPE",
+  "pattern": "`test_customer_search_treats_wildcards_as_text\\|wildcard\\|AC 3\\|third\\|does not exist\\|not found\\|missing test\\|no test\\|not in the report\\|did not run\\|ESCAPE`",
+  "reason_regex": "test_customer_search_treats_wildcards_as_text|wildcard|AC 3|third|does not exist|not found|missing test|no test|not in the report|did not run|ESCAPE"
+ },
+ "W03": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "W04": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "no-evidence",
+  "reason": "rate\\s+limit|not\\s+reachable|unreachable|403|code\\s+host|GitHub|could\\s+not\\s+read|try\\s+again|retry",
+  "pattern": "`rate limit\\|not reachable\\|unreachable\\|403\\|code host\\|GitHub\\|could not read\\|try again\\|retry`",
+  "reason_regex": "rate limit|not reachable|unreachable|403|code host|GitHub|could not read|try again|retry"
+ },
+ "W05": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "W06": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "weak-test",
+  "reason": "monkeypatch|new_receipt_id|replace|patch|stub|fake|fixed\\s+receipt|never\\s+runs|does\\s+not\\s+run|not\\s+covered|same\\s+second|same\\s+receipt|not\\s+unique|time\\.time",
+  "pattern": "`monkeypatch\\|new_receipt_id\\|replace\\|patch\\|stub\\|fake\\|fixed receipt\\|never runs\\|does not run\\|not covered\\|same second\\|same receipt\\|not unique\\|time.time`",
+  "reason_regex": "monkeypatch|new_receipt_id|replace|patch|stub|fake|fixed receipt|never runs|does not run|not covered|same second|same receipt|not unique|time.time"
+ },
+ "W07": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "W08": {
+  "kind": "high_stake",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "high-stake",
+  "reason": "sign\\-off|signoff|sign\\s+off|money_semantics|claimant|second\\s+person|different\\s+person|other\\s+than|own|finance\\s+owner|Approvers|finance\\-ok|label",
+  "pattern": "`sign-off\\|signoff\\|sign off\\|money_semantics\\|claimant\\|second person\\|different person\\|other than\\|own\\|finance owner\\|Approvers\\|finance-ok\\|label`",
+  "reason_regex": "sign-off|signoff|sign off|money_semantics|claimant|second person|different person|other than|own|finance owner|Approvers|finance-ok|label"
+ },
+ "W09": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "W10": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "side-effect",
+  "reason": "SameSite|same\\-site|samesite|any\\s+origin|each\\s+origin|all\\s+origins|every\\s+origin|different\\s+origin|other\\s+origin|allow_origin_regex|evil|cookie\\s+attribute",
+  "pattern": "`SameSite\\|same-site\\|samesite\\|any origin\\|each origin\\|all origins\\|every origin\\|different origin\\|other origin\\|allow_origin_regex\\|evil\\|cookie attribute`",
+  "reason_regex": "SameSite|same-site|samesite|any origin|each origin|all origins|every origin|different origin|other origin|allow_origin_regex|evil|cookie attribute"
+ },
+ "W11": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "no-evidence",
+  "reason": "coverage|58|7\\s+of\\s+12|covered|80%|not\\s+run|bad\\s+cookie",
+  "pattern": "`coverage\\|58\\|7 of 12\\|covered\\|80%\\|not run\\|bad cookie`",
+  "reason_regex": "coverage|58|7 of 12|covered|80%|not run|bad cookie",
+  "arguable": true
+ },
+ "W12": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "W13": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "old-test",
+  "reason": "test_keys_expire_after_24_hours|deleted|removed|removal|not\\s+approved|no\\s+approval|change\\s+approval|approved\\s+a\\s+change|AC\\s+2|never\\s+expire|still\\s+found|IdempotencyConflict",
+  "pattern": "`test_keys_expire_after_24_hours\\|deleted\\|removed\\|removal\\|not approved\\|no approval\\|change approval\\|approved a change\\|AC 2\\|never expire\\|still found\\|IdempotencyConflict`",
+  "reason_regex": "test_keys_expire_after_24_hours|deleted|removed|removal|not approved|no approval|change approval|approved a change|AC 2|never expire|still found|IdempotencyConflict"
+ },
+ "W14": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "W15": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "accept": [
+   "contradicted"
+  ],
+  "class": "report-trust",
+  "reason": "head\\s+commit|head_sha|older\\s+commit|earlier\\s+commit|previous\\s+commit|not\\s+for\\s+the\\s+head|not\\s+the\\s+head|different\\s+commit|stale|no\\s+run|skip\\s+ci|balance_after|source_balance",
+  "pattern": "`head commit\\|head_sha\\|older commit\\|earlier commit\\|previous commit\\|not for the head\\|not the head\\|different commit\\|stale\\|no run\\|skip ci\\|balance_after\\|source_balance`",
+  "reason_regex": "head commit|head_sha|older commit|earlier commit|previous commit|not for the head|not the head|different commit|stale|no run|skip ci|balance_after|source_balance"
+ },
+ "W16": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "ac-change",
+  "reason": "criteria|recorded|changed|edited|record\\s+again|not\\s+confirmed|product\\s+owner|colleague|30|90",
+  "pattern": "`criteria\\|recorded\\|changed\\|edited\\|record again\\|not confirmed\\|product owner\\|colleague\\|30\\|90`",
+  "reason_regex": "criteria|recorded|changed|edited|record again|not confirmed|product owner|colleague|30|90",
+  "arguable": true
+ },
+ "W17": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "W18": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "weak-test",
+  "reason": "balance|running|only\\s+the\\s+order|order\\s+only|one\\s+of\\s+three|one\\s+rule|second\\s+rule|422|not\\s+asserted|does\\s+not\\s+read",
+  "pattern": "`balance\\|running\\|only the order\\|order only\\|one of three\\|one rule\\|second rule\\|422\\|not asserted\\|does not read`",
+  "reason_regex": "balance|running|only the order|order only|one of three|one rule|second rule|422|not asserted|does not read"
+ },
+ "W19": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "no-evidence",
+  "reason": "two\\s+pull\\s+requests|two\\s+PRs|2\\s+pull\\s+requests|more\\s+than\\s+one|both|second\\s+pull\\s+request|which\\s+pull\\s+request|which\\s+PR|ambiguous|follow\\-up",
+  "pattern": "`two pull requests\\|two PRs\\|2 pull requests\\|more than one\\|both\\|second pull request\\|which pull request\\|which PR\\|ambiguous\\|follow-up`",
+  "reason_regex": "two pull requests|two PRs|2 pull requests|more than one|both|second pull request|which pull request|which PR|ambiguous|follow-up"
+ },
+ "W20": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "W21": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "weak-test",
+  "reason": "passes\\s+on\\s+base|pass\\s+on\\s+base|passed\\s+on\\s+base|passes\\s+on\\s+the\\s+base|does\\s+not\\s+reproduce|not\\s+reproduce|no\\s+reproduction|empty\\s+name|carriage\\s+return|other\\s+control|only\\s+tab",
+  "pattern": "`passes on base\\|pass on base\\|passed on base\\|passes on the base\\|does not reproduce\\|not reproduce\\|no reproduction\\|empty name\\|carriage return\\|other control\\|only tab`",
+  "reason_regex": "passes on base|pass on base|passed on base|passes on the base|does not reproduce|not reproduce|no reproduction|empty name|carriage return|other control|only tab"
+ },
+ "W22": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "no-evidence",
+  "reason": "skipped|skip|did\\s+not\\s+run|not\\s+run|no\\s+reproduction|not\\s+passed|no\\s+evidence",
+  "pattern": "`skipped\\|skip\\|did not run\\|not run\\|no reproduction\\|not passed\\|no evidence`",
+  "reason_regex": "skipped|skip|did not run|not run|no reproduction|not passed|no evidence"
+ },
+ "W23": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "no-evidence",
+  "reason": "no\\s+acceptance\\s+criteria|no\\s+criteria|no\\s+AC|no\\s+criterion|criteria\\s+are\\s+missing|not\\s+recorded|no\\s+record|nothing\\s+to\\s+check|record\\s+the",
+  "pattern": "`no acceptance criteria\\|no criteria\\|no AC\\|no criterion\\|criteria are missing\\|not recorded\\|no record\\|nothing to check\\|record the`",
+  "reason_regex": "no acceptance criteria|no criteria|no AC|no criterion|criteria are missing|not recorded|no record|nothing to check|record the",
+  "arguable": true
+ },
+ "W24": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "no-evidence",
+  "reason": "main\\s+report|merge\\s+commit|in\\s+progress|in_progress|not\\s+finished|not\\s+complete|still\\s+running|pending|not\\s+for\\s+the\\s+merge|older\\s+commit|no\\s+report",
+  "pattern": "`main report\\|merge commit\\|in progress\\|in_progress\\|not finished\\|not complete\\|still running\\|pending\\|not for the merge\\|older commit\\|no report`",
+  "reason_regex": "main report|merge commit|in progress|in_progress|not finished|not complete|still running|pending|not for the merge|older commit|no report"
+ }
+}

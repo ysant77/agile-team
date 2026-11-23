@@ -1,0 +1,31 @@
+{
+ "branch": "case/W10",
+ "head": "49eef0442abc778aa1ebc1ffad72dad8ac9a4b42",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -19,6 +19,7 @@ from pathlib import Path\n from typing import Annotated\n \n from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response\n+from fastapi.middleware.cors import CORSMiddleware\n from fastapi.staticfiles import StaticFiles\n from pydantic import BaseModel, Field\n \n@@ -135,6 +136,13 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n \n     app = FastAPI(title=\"YMS Bank demo\", lifespan=lifespan)\n     app.state.db_path = path\n+    app.add_middleware(\n+        CORSMiddleware,\n+        allow_origin_regex=\".*\",\n+        allow_credentials=True,\n+        allow_methods=[\"*\"],\n+        allow_headers=[\"*\"],\n+    )\n \n     @app.get(\"/api/customers\")\n     def list_customers(conn: Conn) -> list[dict[str, object]]:\n@@ -146,7 +154,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             customer = ledger.get_customer(conn, body.customer_id)\n         except ledger.NotFound:\n             raise HTTPException(404, \"customer not found\") from None\n-        response.set_cookie(COOKIE, str(customer[\"id\"]), httponly=True, samesite=\"lax\")\n+        response.set_cookie(COOKIE, str(customer[\"id\"]), httponly=True, samesite=\"none\")\n         return {\"id\": customer[\"id\"], \"name\": customer[\"name\"]}\n \n     @app.get(\"/api/session\")\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,10 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_local_frontend_origin_is_allowed(bank):\n+    client = TestClient(bank[\"app\"])\n+    response = client.get(\"/api/customers\", headers={\"Origin\": \"http://localhost:5173\"})\n+    assert response.headers.get(\"access-control-allow-origin\") == \"http://localhost:5173\"\n+    assert response.headers.get(\"access-control-allow-credentials\") == \"true\"\n"
+  }
+ ],
+ "additions": 16,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/bench-bank-6/coverage.json\n367 passed, 1 deselected in 187.46s (0:03:07)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

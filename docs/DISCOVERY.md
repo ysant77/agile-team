@@ -37,6 +37,15 @@ shows that the proposed reproducer fails on base (the existing `reproduced` chec
   and priority with reasons. Every number in its text must be in the symptom, in a read, or a
   cited line number. `status: reproduced` is refused. Kinds `no_defect` and `unclear` need no
   citation.
+- **A defect cites the rule it breaks (23 Nov, review finding 11).** At least one cited line
+  must come from a file that states rules: a file under `docs/`, a README, or a test file, and
+  that line must be in a read of the investigation. A defect that cites only code is recorded as
+  `unclear`, not refused: its reproducer, severity and priority are dropped, `proposedKind:
+  defect` keeps what the model said, and the open question "Which rule does this break? Cite a
+  line of docs, a README or a test that states it." is added. An `unclear` finding cannot become a
+  bug ticket. Limits: the code checks only that a rule file is cited, not that the cited line
+  states the rule that the code breaks; and the rule does not check that a finding relates to the
+  symptom (review finding 11, D2-2), which a person still judges.
 - **Shape first.** `record-finding` checks the keys and types before any grounding check. A
   refusal names the part and the keys it got, for example
   `citations[0] needs keys file, line; got keys: path, line`. A finding with a wrong shape gets

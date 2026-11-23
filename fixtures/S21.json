@@ -32,7 +32,7 @@
           "metrics": { "repeat_pass_rate_BANK21": 1.0, "repeat_runs_BANK21": 50 } },
         "workflowRuns": [ { "name": "CI", "path": ".github/workflows/ci.yml", "headSha": "1b7319726929f7f7eaa4b292a8f6559db7c7358e", "status": "completed", "conclusion": "success", "createdAt": "2026-11-25T07:00:00Z" } ]
       },
-      "expect": { "result": "contradicted", "reasonIncludes": ["test_transfer_timeout: skipped"] }
+      "expect": { "result": "cannot_verify", "reasonIncludes": ["test_transfer_timeout: skipped: a person checks why it did not run"] }
     }
   ]
 }

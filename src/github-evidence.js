@@ -6,6 +6,15 @@ import { extractReport, extractReportText, namesKey } from './verifier/report.js
 
 const API = 'https://api.github.com';
 const BOT = 'github-actions[bot]';
+// The file on the ci-reports branch that holds the report of a base branch. main (or no branch)
+// keeps main.json, so the current demo PRs read what they read before. Another branch gets
+// reports/<name>.json, with each "/" as "-"; a name with any other character gives null.
+export function baseReportPath(branch) {
+  if (branch === null || branch === undefined || branch === 'main') return 'main.json';
+  const name = String(branch).replaceAll('/', '-');
+  return /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/.test(name) && !name.includes('..') ? `reports/${name}.json` : null;
+}
+
 // The GitHub Actions bot account. Checked by id and type: a login is only text.
 export const ACTIONS_BOT_ID = 41898282;
 const isActionsBot = (u) => u?.id === ACTIONS_BOT_ID && u?.type === 'Bot';
@@ -320,10 +329,13 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     baseTip = branch?.commit?.sha ?? null;
   }
 
-  // Report for the default branch, written by CI to the `ci-reports` branch as main.json.
+  // Report of the PR's base branch, written by CI to the `ci-reports` branch: main.json for main
+  // (and when no PR is found), reports/<branch>.json for another base branch (fresh-site path,
+  // way A: one judge branch for each demo case). A name that cannot be mapped: no base report.
   let baseReport = null;
   let baseReportRaw = null;
-  const file = await get(`/repos/${repo}/contents/main.json?ref=ci-reports`);
+  const reportPath = baseReportPath(pr?.baseRef ?? null);
+  const file = reportPath ? await get(`/repos/${repo}/contents/${reportPath}?ref=ci-reports`) : null;
   if (file?.content) {
     try {
       baseReportRaw = Buffer.from(file.content, 'base64').toString('utf8');

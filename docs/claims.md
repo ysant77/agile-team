@@ -101,6 +101,17 @@ missing part as not known, never as "not there": no linked PR in the read part g
 
 ## Which PR a claim means
 
+**Linked PR (23 Nov, fresh-site path).** A person can link a PR to a work item in the panel ("Link
+PR"). The link is an audit event (`pr.linked`) and an entry in the app's store, never an issue
+property. A claim uses the latest link whose audit event matches, and only when the link names
+the configured repository and a person other than the claimant made it. Such a counted link
+**redirects the claim to that PR, even when another PR names the key**: the claim then reads the
+linked PR by number, and the other PR is not a candidate. The redirect is audited (who linked
+which PR, with a reason, at which audit sequence), and the verdict shows it in the advisory check
+`pr_link`. A link by the claimant, a link with no matching audit event, or a link with no
+repository does not count, and `pr_link` says why.
+
+
 - A PR is linked when its **title or branch name** has the key at a boundary on both sides
   (`BANK-1` does not match `BANK-10`, `ABANK-1` or `BANK-1abc`). The key in the PR description
   does not link a PR.
@@ -229,6 +240,54 @@ dismissals and dependency alerts need a token and are after the freeze (DESIGN 1
 
 These are development sets; no claim is made before blind set 5.
 
+## Blind set 6 (23 Nov 2026)
+
+24 cases by a writer who saw no source; app `main` 9ec52ca, arm C, PROTOCOL-5 scoring
+(`benchmark/RESULTS-6.md`). 8 cases are not buildable and are counted apart: two have a false base
+fact, five need GitHub or Jira state that the scorer cannot serve, and one has red CI on the bank.
+On the 16 scored cases: **unsafe supported 2** (W10: `SameSite=none` and every origin allowed;
+W18: one of three rules tested), **false blocks on controls 0** of 6, **right 13** of 16, **strict
+right 12** of 16. Wrong outcome: W22 (a skipped test gives `contradicted`). Every scored outcome
+was the one predicted before the build. The faults are recorded and not fixed in this round.
+
+## Skipped tests and the rename link (23 Nov 2026, owner decision after set 6)
+
+Sets 5 and 6 are development data from now on; these fixes were made with their outcomes known,
+so they are not a measurement.
+
+**A test that did not run.** A test state is one of: `passed`; `failed` or `error` (it ran and
+did not pass); or any other state (`skipped`, `xfailed`, `xpassed`, `deselected`, `not_run`, or
+none), which means it did not run.
+
+| Place | Before | Now |
+|---|---|---|
+| `test_passes` (one name) | every state other than `passed` was a fail | `failed` and `error` are a fail; a state that did not run is unknown, "<state>: a person checks why it did not run" |
+| `test_passes` over several names | through `test_passes`: a skipped name was a fail | a fail of any name wins; else a skipped name makes it unknown |
+| `bug_test_exists` | a key test in any state other than `passed` was a fail | `failed` and `error` are a fail; a state that did not run is unknown |
+| `reproduced` (AC tests and Bug guards) | a head state other than `passed` was a fail ("fails on head (skipped)"); a skipped base gave "has no base result" | a head or base state that did not run is unknown, "<name> is <state> on head (or base): a person checks why it did not run" |
+| `pinned_tests_hold` | `not_run` (the base copy deselected or skipped on the head code) was a fail | unchanged: a fail, so a skipped pinned test never counts as holding |
+| `merged_clean` | uses `test_passes` on the main report | follows `test_passes` |
+| `tests_not_removed` | a skipped test is present, not removed | unchanged |
+
+**The rename link.** A change approval by a person other than the claimant covers a test that is
+gone from the head only when the report links that test to its successor: the pinned entry of
+the old id names a head id in the same module, which the base did not have and the head report
+has. "The module gained any new test id" (PR 67) no longer counts; it let a change approval cover
+a plain deletion (set 6, W13). With no link the check is unknown, never a pass. A deletion still
+needs a removal approval. An AC test that the PR deletes is now named as deleted ("it is in the
+base report, so the PR deletes it").
+
+The bank's pinned block links a rename only when the body is the same (the same hash); for an
+edited rename its head id is empty. So no report today links an edited rename, and a change
+approval no longer covers one: **V17 (set 5) moves from supported to cannot_verify**. Making
+V17 pass again needs the bank's pinned step to record the successor of an edited test.
+
+Regression on the stored evidence of sets 1 to 6 (arm C, app `main` 91c3e02 against the fix):
+I06 (set 1) and S12 (set 2) move from contradicted to cannot_verify (their AC test is skipped;
+both stay held); V17 (set 5) from supported to cannot_verify; W22 (set 6) from contradicted to
+cannot_verify. Every other outcome is unchanged. W13 stays contradicted, and its reason now names
+the deletion.
+
 ## Verifier corrections (23 Nov 2026, lead review)
 
 Set 5 is development data from now on; these corrections were made with its outcomes known, so
@@ -253,6 +312,11 @@ is the measurement.
   value that ships is never tested.
 - **V12:** a PR that removes `httponly=True`, `secure=True`, `verify=True` or `check_hostname=True`
   from a call in non-test code gives unknown. The list is narrow on purpose.
+- **W10 (set 6, owner decision 23 Nov):** a PR that changes or removes the `samesite` value of a
+  call in non-test code (for example `"lax"` to `"none"`) gives unknown and names both values.
+  **Not seen:** an added middleware (W10 also allows every origin with credentials through a
+  CORS middleware), any other argument, and any change outside these two lists. Regression on
+  sets 1 to 6: only W10 changes, from supported to cannot_verify.
 - **V07:** changed-line coverage under the floor gives unknown, not fail.
 
 Regression, arm C on the stored evidence of sets 1 to 5: set 5 changes are V07 contradicted to
@@ -367,7 +431,11 @@ This is why the reviewer is now advice only (see "Review advice").
 
 **Discovery (Mode B).** Owner wording, 20 Nov: discovery gives a grounded, unconfirmed lead that
 a person classifies. It is not a defect finder. Every finding has status `unconfirmed`, and every
-cited line comes from a read of the investigation (`docs/DISCOVERY.md`).
+cited line comes from a read of the investigation (`docs/DISCOVERY.md`). Since 23 Nov a defect
+must also cite a read line of docs, a README or a test (the rule it breaks); a defect that cites
+only code is recorded as `unclear` with an open question. The discovery rounds D1 and D2 are
+development data from now on: this rule was made after their results were known, so they do not
+measure it. No model run was made for this rule.
 
 | Round | Cases | Result | Source |
 |---|---|---|---|
