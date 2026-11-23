@@ -228,7 +228,9 @@ export async function decide({ issueKey, claim }, d) {
       console.log('PR link not read', issueKey, error.message);
     }
   }
-  const linkedPr = prLink?.counted && (!prLink.repo || String(prLink.repo).toLowerCase() === String(repo ?? '').toLowerCase()) ? prLink.prNumber : null;
+  // A counted link names the configured repository; a link with no repository, or for another
+  // one, does not count.
+  const linkedPr = prLink?.counted && typeof prLink.repo === 'string' && prLink.repo.toLowerCase() === String(repo ?? '').toLowerCase() ? prLink.prNumber : null;
   let github = { pr: null, workflowRuns: [], deployRuns: [] };
   let githubError = null;
   if (repo) {

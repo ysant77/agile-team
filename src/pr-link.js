@@ -67,6 +67,7 @@ export async function latestPrLink(key, { store, readAudit }, claimant) {
     && event.data?.key === key && event.data?.prNumber === e.prNumber && event.data?.repo === e.repo
     && (() => { const { hash, ...body } = event; return sha256(canonical(body)) === hash; })();
   if (!matches) return out(false, `the link to PR #${e?.prNumber} has no matching audit event, so it does not count`);
+  if (typeof e.repo !== 'string' || !e.repo) return out(false, `the link to PR #${e.prNumber} names no repository, so it does not count`);
   if (typeof claimant !== 'string' || !claimant) return out(false, `PR #${e.prNumber} is linked, but the claimant is not known, so the link cannot be shown to come from another person`);
   if (e.by === claimant) return out(false, `the link to PR #${e.prNumber} was made by the claimant, so it does not count; another person links the PR`);
   return out(true, `PR #${e.prNumber} linked by ${e.by} (audit seq ${e.auditSeq})`);
