@@ -2,7 +2,7 @@
 
 These are the steps the owner does in Jira for the first claim through the fresh-site path
 (`docs/JUDGE-PATH.md`, "A judge on a fresh site"). The app work for this path is on `main`, and
-development runs 5.12.0 (deployed on 23 Nov from `main` 0bc97a8). The five judge branches and
+development runs 5.13.0 (deployed on 23 Nov from `main` 520811a). The five judge branches and
 their reports exist on the cases repository (cases PRs 17 to 21).
 
 ## The repository of the environment (done on 23 Nov)
@@ -14,13 +14,14 @@ a different repository, so "Link PR 17" would have found PR 17 of that repositor
 The owner approved the switch on 23 Nov. On development, `GITHUB_REPO` is now
 `ysant77/yms-bank-demo-cases`, and development was deployed from app `main` dbf5555 at 21:32
 SGT (version 5.11.0). At 21:37 SGT it was deployed again from `main` 0bc97a8 (version 5.12.0),
-with the discovery finding view of PR 80.
+with the discovery finding view of PR 80, and later from 520811a (version 5.13.0), with the
+discovery variables.
 Both repositories are public, so the token needs no new grant. The old BANK-5 to BANK-9 claims on
 development now read the cases repository too. Production is not changed.
 
 ## What you need
 
-- A Jira site with the app installed (development, 5.12.0 or later).
+- A Jira site with the app installed (development, 5.13.0 or later).
 - Two accounts on that site. Account A records the ACs and links the PR. Account B makes the
   claim. The app counts an AC record and a PR link only when they come from a person other than
   the claimant.

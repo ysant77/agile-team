@@ -9,7 +9,10 @@ app reachable for a judge.
 Status on 23 Nov: the owner approved steps 1 and 2 (the cases workflow change and the five judge
 branches) and the deploy of development. Steps 1 and 2 are done: the workflow change is cases
 PR 16, and the judge PRs are cases PRs 17 to 21 (the table in `docs/JUDGE-PATH.md`). Each judge
-branch has its report file. Steps 3 to 5 (production) are open.
+branch has its report file. Step 3 is done on 23 Nov: the owner set `GITHUB_REPO` and
+`GITHUB_TOKEN` on development and on production. Step 3a is done for development; the
+discovery variables of production, the production deploy (step 4) and the install link (step 5)
+are open.
 
 ## 1. The workflow change on the cases repository
 
@@ -41,12 +44,12 @@ Each judge branch then has exactly one merged case and the report of its merge c
 on any of the five is checked against its own merge (a main report counts only for its own merge
 commit). The `main` branch and the history of BANK-5 to BANK-9 do not change.
 
-## 3. The environment for judges (open owner decision 1)
+## 3. The environment for judges (done on 23 Nov)
 
-Development (done on 23 Nov, owner's approval): `GITHUB_REPO` is `ysant77/yms-bank-demo-cases`,
-and development was deployed from app `main` dbf5555 (5.11.0), then from 0bc97a8 (5.12.0). The
-token was not changed. The steps
-below are for production and are still open.
+Done on 23 Nov, with the owner's approval. On development and on production, `GITHUB_REPO` is
+`ysant77/yms-bank-demo-cases` and `GITHUB_TOKEN` is set (encrypted). Development was deployed
+from app `main` dbf5555 (5.11.0), from 0bc97a8 (5.12.0), and from 520811a (5.13.0). Production
+is not deployed (step 4). The commands below are kept as the record of the step.
 
 The live app reads `GITHUB_REPO` and `GITHUB_TOKEN` of its environment. For a judge environment
 (production is the usual choice), in a terminal in the app's folder:
@@ -63,10 +66,11 @@ The second command asks for the value when it is left out. Type the read-only to
 paste it into a chat, a file or a commit. Check with `forge variables list -e production` (the
 token shows as encrypted, with no value).
 
-## 3a. The discovery variables (development; not set on 23 Nov)
+## 3a. The discovery variables (done for development on 23 Nov; production open)
 
 Discovery from symptoms starts no investigation until the environment names the repository and
-the investigated branch. On 23 Nov neither variable is set on development. The investigated
+the investigated branch. On 23 Nov the owner set both on development, and development was
+deployed with them (5.13.0). Production has no discovery variable. The investigated
 branch is `investigate/symptoms` of the cases repository (head `45a211d` on 23 Nov). In a
 terminal, in the app's folder:
 

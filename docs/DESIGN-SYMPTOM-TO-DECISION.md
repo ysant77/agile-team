@@ -86,8 +86,9 @@ so it is the second choice.
 
 ### What is missing
 
-1. **The discovery variables.** `DISCOVERY_REPO` and `DISCOVERY_REF` are not set on development
-   (checked 23 Nov, 21:36 SGT; `docs/OWNER-HELD-STEPS.md`, step 3a).
+1. **The discovery variables (done for development).** The owner set `DISCOVERY_REPO` and
+   `DISCOVERY_REF` on development on 23 Nov (`investigate/symptoms`); development runs 5.13.0
+   with them. For the D2-1 run, `DISCOVERY_REF` must name the branch of item 2.
 2. **A branch with only this bug.** `investigate/symptoms-2` is not on GitHub, and its tree is
    older than the judge workflow. The run needs one branch, for example `judge/D2-1`, that is
    the current cases `main` plus the D2-1 seed change only. It is both the investigated branch
@@ -106,8 +107,8 @@ so it is the second choice.
 
 | # | Work | Who | Depends on |
 |---|---|---|---|
-| 1 | Done on 23 Nov: PR 80 merged; `GITHUB_REPO` switched; development deployed (5.12.0) | lead, owner | none |
-| 2 | Set `DISCOVERY_REPO` and `DISCOVERY_REF` on development; one deploy | owner | 3 |
+| 1 | Done on 23 Nov: PR 80 merged; `GITHUB_REPO` switched; discovery variables set; development deployed (5.13.0) | lead, owner | none |
+| 2 | Set `DISCOVERY_REF` on development to the branch of item 3; one deploy | owner | 3 |
 | 3 | Push `judge/D2-1` (cases `main` plus the D2-1 seed only); check the push run and its report; run the answer-key check. **Not approved on 23 Nov** | session, only after the owner's approval of this cases-repository change | none |
 | 4 | Prepare the fix patch and its test on a local branch; no PR yet | session | 3 |
 | 5 | Rehearsal: symptom (the D2-1 text, word for word) in Rovo chat, investigation, finding, the panel view, ticket, ACs (account A), fix PR into `judge/D2-1`, CI, review advice, merge, link (account A), `claim: done` (account B), verdict | owner in Jira, session on GitHub | 2, 4 |
