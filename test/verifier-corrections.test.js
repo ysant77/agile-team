@@ -138,22 +138,61 @@ function approvalCtx(test, kind = 'change') {
   };
 }
 
-test('V17: a full-id change approval covers a renamed and edited pinned test', () => {
-  const ctx = approvalCtx('tests/test_idempotency.py::TestKeys::test_keys_expire_after_24_hours');
-  const report = { pinned: { version: 1, modules: ['tests/test_idempotency.py'], tests: [
-    { id: 'tests/test_idempotency.py::TestKeys::test_keys_expire_after_24_hours', head_id: null, base_hash: 'a'.repeat(64), head_hash: null, outcome: 'not_run' },
-  ] } };
-  const r = c.pinnedTestsHold({ ...ctx, config: { pinnedRequired: true } }, report);
+// The module on the head gains a test id the base did not have: a rename with an edit.
+const OLD = 'tests/test_idempotency.py::TestKeys::test_keys_expire_after_24_hours';
+const NEW = 'tests/test_idempotency.py::TestKeys::test_keys_expire_after_48_hours';
+const KEPT = 'tests/test_idempotency.py::TestKeys::test_a_failed_attempt_stores_no_key';
+const pinnedReport = (headIds, modules = ['tests/test_idempotency.py']) => ({
+  tests: headIds.map((id) => ({ id, outcome: 'passed' })),
+  pinned: { version: 1, modules, tests: [
+    { id: OLD, head_id: null, base_hash: 'a'.repeat(64), head_hash: null, outcome: 'not_run' },
+    { id: KEPT, head_id: KEPT, base_hash: 'b'.repeat(64), head_hash: 'b'.repeat(64), outcome: 'passed' },
+  ] },
+});
+
+test('V17: a change approval covers a pinned test that is renamed and edited (the module gains a new id)', () => {
+  const ctx = approvalCtx(OLD);
+  const r = c.pinnedTestsHold({ ...ctx, config: { pinnedRequired: true } }, pinnedReport([KEPT, NEW]));
   assert.equal(r.status, 'pass', r.reason);
 });
 
-test('V17: a change approval covers the old name in the removal check', () => {
-  const ctx = approvalCtx('tests/test_idempotency.py::test_keys_expire_after_24_hours');
-  const r = c.testsNotRemoved({
-    ...ctx,
-    baseReport: { tests: [{ id: 'tests/test_idempotency.py::test_keys_expire_after_24_hours', outcome: 'passed' }] },
-  }, { tests: [{ id: 'tests/test_idempotency.py::test_keys_expire_after_48_hours', outcome: 'passed' }] });
-  assert.equal(r.status, 'pass', r.reason);
+test('a pinned test deleted with only a change approval, and no new id in its module, is a fail', () => {
+  const ctx = approvalCtx(OLD);
+  const r = c.pinnedTestsHold({ ...ctx, config: { pinnedRequired: true } }, pinnedReport([KEPT]));
+  assert.equal(r.status, 'fail', r.reason);
+  assert.match(r.reason, /test_keys_expire_after_24_hours is deleted/);
+});
+
+test('when the report cannot show whether the module gained an id, a change approval gives unknown', () => {
+  const ctx = approvalCtx(OLD);
+  const report = pinnedReport([KEPT, NEW]);
+  delete report.tests;
+  const r = c.pinnedTestsHold({ ...ctx, config: { pinnedRequired: true } }, report);
+  assert.equal(r.status, 'unknown', r.reason);
+  assert.match(r.reason, /rename with an edit/);
+});
+
+const removalCtx = (headIds, baseTestIds) => ({
+  ...approvalCtx('tests/test_idempotency.py::test_keys_expire_after_24_hours'),
+  baseReport: { tests: [{ id: 'tests/test_idempotency.py::test_keys_expire_after_24_hours', outcome: 'passed' }, { id: 'tests/test_idempotency.py::test_kept', outcome: 'passed' }] },
+  report: { tests: headIds.map((id) => ({ id, outcome: 'passed' })), ...(baseTestIds ? { repro: { base_test_ids: baseTestIds } } : {}) },
+});
+const BASE_IDS = ['tests/test_idempotency.py::test_keys_expire_after_24_hours', 'tests/test_idempotency.py::test_kept'];
+
+test('V17: a change approval covers the old name in the removal check only for a rename with an edit', () => {
+  const renamed = removalCtx(['tests/test_idempotency.py::test_kept', 'tests/test_idempotency.py::test_keys_expire_after_48_hours'], BASE_IDS);
+  assert.equal(c.testsNotRemoved(renamed, renamed.report).status, 'pass');
+  const deleted = removalCtx(['tests/test_idempotency.py::test_kept'], BASE_IDS);
+  const r = c.testsNotRemoved(deleted, deleted.report);
+  assert.equal(r.status, 'fail', r.reason);
+  assert.match(r.reason, /removed without approval: test_keys_expire_after_24_hours/);
+});
+
+test('the removal check gives unknown when the base ids of the module are not known', () => {
+  const ctx = removalCtx(['tests/test_idempotency.py::test_kept', 'tests/test_idempotency.py::test_keys_expire_after_48_hours'], null);
+  const r = c.testsNotRemoved(ctx, ctx.report);
+  assert.equal(r.status, 'unknown', r.reason);
+  assert.match(r.reason, /rename with an edit/);
 });
 
 test('an approval by the claimant still does not count after the name is normalised', () => {
