@@ -121,3 +121,13 @@ python run/summarize.py run/evidence/set6-2026-11-23/results.json run/truth-6.js
 Its "False block" row uses the set 4 definition (any non-`supported` outcome on a valid claim)
 and counts W22 there; under PROTOCOL-5 W22 is a wrong outcome, and the false blocks on controls
 are 0.
+
+## Added note, 23 Nov 2026 (after the score)
+
+Sets 5 and 6 are development data from now on. Two of the faults above (3: W22, a skipped test;
+4: W13, the rename rule) were then fixed with the owner's approval, on branch
+`fix/skipped-tests-and-rename-link`. The scored figures above are the result for app 9ec52ca and
+do not change. With the fix, on the stored evidence: W22 gives `cannot_verify` ("skipped: a person
+checks why it did not run") and W13 stays `contradicted`, with the reason "it is in the base
+report, so the PR deletes it". A new measurement needs a new blind set.
+
