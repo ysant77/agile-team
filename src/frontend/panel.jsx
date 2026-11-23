@@ -5,6 +5,7 @@ import ForgeReconciler, {
 import { invoke } from '@forge/bridge';
 import { VerdictSection } from './verdict-section.js';
 import { SignOffSection } from './sign-off-section.js';
+import { FindingSection } from './finding-section.js';
 import { acEditorText } from '../ticket-spec.js';
 
 const APPEARANCE = { supported: 'success', contradicted: 'removed', cannot_verify: 'moved' };
@@ -21,6 +22,9 @@ function App() {
   const [acText, setAcText] = useState(null);
   const [prRef, setPrRef] = useState('');
   const [prReason, setPrReason] = useState('');
+  const [findingRef, setFindingRef] = useState('');
+  const [finding, setFinding] = useState(null);
+  const [findingError, setFindingError] = useState(null);
 
   const load = () => invoke('getPanel').then(setData);
   useEffect(() => {
@@ -57,6 +61,13 @@ function App() {
     setSignError(result.ok ? null : result.error);
     setMessage(result.ok ? { appearance: 'success', text: `Signed off. Audit seq ${result.auditSeq}. Comment the claim again to verify.` } : null);
     if (result.ok) { setSignReason(''); load(); }
+  };
+
+  // A stored discovery finding, by its id (src/finding-view.js). Read only.
+  const showFinding = async () => {
+    const result = await invoke('getFinding', { findingId: findingRef });
+    setFinding(result.ok ? result.view : null);
+    setFindingError(result.ok ? null : result.error);
   };
 
   // Fresh-site path: a person types the AC lines and saves them; the app writes them and records
@@ -180,6 +191,8 @@ function App() {
           ))}
         </Stack>
       )}
+      <FindingSection view={finding} findingRef={findingRef} onRef={setFindingRef} onShow={showFinding} error={findingError}
+        ui={{ Button, Heading, Inline, SectionMessage, Stack, Text, Textfield }} />
     </Stack>
   );
 }
