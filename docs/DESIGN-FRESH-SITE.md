@@ -44,7 +44,7 @@ What changes:
 - **Judge path.** A judge creates five work items, types the ACs from `docs/JUDGE-PATH.md` (one
   line each), links demo PRs 1, 2, 3, 6 and 4, and a second person claims `done`. The demo PRs are
   already merged and reverted; a judge would need them merged at claim time, so the owner keeps
-  one prepared set of the five merges on a second branch or repository for judges.
+  one prepared set of the five merges for judges (see "The prepared merges for judges").
 
 Scopes: none new. `write:jira-work` (issue properties as the user) and `storage:app` are already
 in the manifest. Egress stays `api.github.com`.
@@ -59,6 +59,55 @@ What the owner must do:
 
 Risks: the audited PR link is a new way to choose evidence, so it needs its own tests, the
 claimant rule above and a regression run on sets 1 to 5.
+
+### The prepared merges for judges
+
+The judge path needs the five case PRs merged when a judge claims `done`. One rule limits how:
+a merged PR's main report counts only while it is for that PR's merge commit (DESIGN 15a; the
+`mergeReport` in `src/github-evidence.js`). On one branch with five merges, only the last merged
+case has a valid main report; the other four give Cannot verify. So the set needs **one base
+branch (or repository) for each case**, each with exactly one merge.
+
+What in the app assumes the default branch (read from the code at `main` 9ec52ca):
+
+- `collectGithub` reads the base report from one fixed file, `main.json` on the `ci-reports`
+  branch. Nothing selects the file by the PR's base branch.
+- The cases repository's workflow runs on push to `main` only, and its `publish-main-report` job
+  writes `main.json` only for `refs/heads/main`. Its PR job also reads `main.json` for the base
+  coverage total.
+- The provenance check already uses the PR's base branch (`pr.baseRef`) for the push run.
+- `on_main` checks only that the PR is merged; a merge into any base branch passes it, and the
+  reason says "merged". For a judge branch this is right, but the name `on_main` is then loose.
+- The pinned and provenance rules are switched on per repository name (`pinnedRequiredRepos`,
+  `provenanceRequiredRepos`); a repository that is not listed makes them advisory, so U20 would
+  lose its protected-set result.
+
+**Way A: five long-lived branches on the cases repository** (for example `judge/U01` to
+`judge/T08`), each the base of one merged case PR.
+
+- Workflow (cases repository): push trigger also on `judge/**`; `publish-main-report` writes the
+  report of each branch to its own file (for example `reports/judge-U01.json`), never to
+  `main.json`; the PR job reads the file of its base branch.
+- App: read the base report of the PR's base branch (`main.json` for `main`, the branch file
+  otherwise). One function and its tests; the verdict rules do not change. A deploy.
+- No new repository, no change to `GITHUB_REPO` or to the per-repository lists.
+
+**Way B: separate public repositories**, each a copy of the cases repository with one merge on
+its own `main`.
+
+- Five repositories (one per case, by the rule above), each with the CI workflow, the branch
+  rules and the bot report as today.
+- App: `GITHUB_REPO` names one repository per environment, so five repositories need option 2 (a
+  repository per project) or five environments. Each repository must be added to
+  `pinnedRequiredRepos` and `provenanceRequiredRepos`, and the provenance listing needs a real run
+  on each first. A deploy.
+- The owner creates five public repositories (repositories are private by default; making them
+  public needs the owner's word).
+
+**Smaller: way A.** It changes one read in the app and the cases workflow, and keeps one
+repository, one variable and the per-repository lists. Way B needs five new public repositories
+and option 2 or five environments. Both need the owner's word: the workflow change on the cases
+repository (way A) or the new repositories (way B), and the deploy.
 
 ## Option 2: a repository per Jira project
 
