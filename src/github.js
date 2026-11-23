@@ -1,20 +1,17 @@
 import { fetch } from '@forge/api';
+import { classifyGithubResponse, githubHeaders } from './github-evidence.js';
 import { parseRepository } from './text.js';
 
 const API = 'https://api.github.com';
 
-// Spike: unauthenticated read of a public repository (60 requests per hour per IP).
+// Spike: read the latest commit of a repository. The app's token is sent when one is set
+// (without it, 60 calls an hour for each outgoing address).
 export async function readLatestCommit(repository) {
   const repo = parseRepository(repository);
-  const response = await fetch(`${API}/repos/${repo}/commits?per_page=1`, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      'User-Agent': 'agile-team-forge-app',
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
-  });
+  const response = await fetch(`${API}/repos/${repo}/commits?per_page=1`, { headers: githubHeaders(process.env.GITHUB_TOKEN) });
   if (!response.ok) {
-    return { ok: false, repository: repo, status: response.status };
+    const c = classifyGithubResponse(response);
+    return { ok: false, repository: repo, status: response.status, kind: c.kind, reason: c.reason, retryAt: c.retryAt };
   }
   const [commit] = await response.json();
   return {

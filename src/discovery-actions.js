@@ -1,25 +1,26 @@
 // Rovo actions for discovery from symptoms (Mode B). The rules are in src/discovery.js; this file
 // binds them to Forge: Jira says who is asking, KVS holds the investigation and its read log, the
-// audit chain records starts and findings, and GitHub is read without a token.
+// audit chain records starts and findings, and GitHub is read with the app's token when one is set.
 //
 // Configuration (Forge variables): DISCOVERY_REPO (owner/name) and DISCOVERY_REF (the investigated
-// branch). With either one missing, no investigation starts. GITHUB_TOKEN is never used here: the
-// read budget is set for 60 calls an hour.
+// branch). With either one missing, no investigation starts. GITHUB_TOKEN, when set, is sent here
+// too (lead review of 23 Nov, finding 4): without it, discovery and claims share the 60 calls an
+// hour of an outgoing address. The read budget of src/discovery.js stays as it is; it limits what
+// one investigation may read, not what GitHub allows.
 
 import api from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { appendAudit } from './audit-store.js';
 import { currentAccountId } from './action-guard.js';
 import { listRepoFiles, readCiResults, readRepoFile, recordFinding, startInvestigation } from './discovery.js';
+import { githubHeaders } from './github-evidence.js';
 
 const API = 'https://api.github.com';
-const HEADERS = { Accept: 'application/vnd.github+json', 'User-Agent': 'agile-team-forge-app', 'X-GitHub-Api-Version': '2022-11-28' };
 
-function forgeDeps() {
+export function forgeDeps() {
   return {
     store: kvs,
-    // No Authorization header, on purpose (see the top of this file).
-    get: (path) => api.fetch(`${API}${path}`, { headers: { ...HEADERS } }),
+    get: (path) => api.fetch(`${API}${path}`, { headers: githubHeaders(process.env.GITHUB_TOKEN) }),
     now: () => Date.now(),
     appendAudit,
   };

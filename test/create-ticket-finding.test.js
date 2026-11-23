@@ -83,7 +83,7 @@ test('a ticket without a finding is unchanged: no label', async (t) => {
   assert.equal(posts[0].labels, undefined);
 });
 
-test('the Forge read actions use no token and the configured branch', async (t) => {
+test('the Forge read actions send the app token when one is set, and use the configured branch', async (t) => {
   mockKvs(t);
   mockUser(t);
   const seen = [];
@@ -103,7 +103,7 @@ test('the Forge read actions use no token and the configured branch', async (t) 
   assert.equal(started.ok, true, started.error);
   const list = await listRepoFilesAction({ investigationId: started.investigationId });
   assert.deepEqual(list.files.map((f) => f.path), ['src/a.py']);
-  assert.ok(seen.length === 2 && seen.every((s) => s.auth === null && s.url.startsWith('https://api.github.com/repos/ysant77/yms-bank-demo-cases/')));
+  assert.ok(seen.length === 2 && seen.every((s) => s.auth === 'Bearer secret-token' && s.url.startsWith('https://api.github.com/repos/ysant77/yms-bank-demo-cases/')));
   const refused = await readRepoFileAction({ investigationId: started.investigationId, path: 'seeds/k1_race.patch' });
   assert.equal(refused.ok, false);
   assert.equal(seen.length, 2);

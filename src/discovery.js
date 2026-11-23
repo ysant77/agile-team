@@ -15,6 +15,7 @@
 
 import { canonical, sha256 } from './audit.js';
 import { createOnce } from './action-guard.js';
+import { classifyGithubResponse } from './github-evidence.js';
 
 export const DISCOVERY_LIMITS = {
   callsPerInvestigation: 20,
@@ -97,14 +98,13 @@ export async function readsOf(id, d) {
   return out;
 }
 
+// The shared classifier (src/github-evidence.js). Both limits are recorded as rate_limited in
+// the read log; the text names the time to try again.
 function githubError(response) {
-  if ((response.status === 403 || response.status === 429) && response.headers?.get?.('x-ratelimit-remaining') === '0') {
-    const reset = Number(response.headers.get('x-ratelimit-reset'));
-    const at = Number.isFinite(reset) ? new Date(reset * 1000).toISOString() : 'unknown';
-    return { status: 'rate_limited', error: `GitHub rate limit reached (no token: 60 calls an hour); reset at ${at}` };
-  }
-  if (response.status === 404) return { status: 'not_found', error: 'not found at the pinned commit' };
-  return { status: 'error', error: `GitHub answered HTTP ${response.status}` };
+  const c = classifyGithubResponse(response);
+  if (c.kind === 'rate_limited' || c.kind === 'secondary_limit') return { status: 'rate_limited', error: c.reason };
+  if (c.kind === 'not_found') return { status: 'not_found', error: 'not found at the pinned commit' };
+  return { status: 'error', error: c.reason };
 }
 
 // One GitHub call inside the budget. Returns { body } or { error }.

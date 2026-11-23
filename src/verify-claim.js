@@ -5,6 +5,7 @@ import { kvs } from '@forge/kvs';
 import { appendAudit, readAudit } from './audit-store.js';
 import { auditSeqs, readApprovals } from './approvals.js';
 import { collectGithub, collectPrStats } from './github-evidence.js';
+import { releaseClaim } from './claim-intake.js';
 import { addComment, findComment } from './jira.js';
 import { addVerdictProperty, collectJira, collectReviews } from './jira-evidence.js';
 import { formatAdvice, withAdvice } from './review-advice.js';
@@ -73,8 +74,21 @@ export function formatVerdict(issueKey, claim, verdict, meta) {
   return lines.join('\n');
 }
 
+// A claim that GitHub could not answer for a transient reason (a rate limit, a server error, a
+// network error): no verdict is stored, the claim slots are given back, and the person is told
+// when to try again (lead review of 23 Nov, finding 3).
+export function formatNotChecked(issueKey, claim, transient) {
+  const when = transient.retryAt ? 'Post the claim again after that time.' : 'Post the claim again in a few minutes.';
+  return [
+    `Team lead verifier: claim "${claim.type}" on ${issueKey} was not checked.`,
+    `Reason: ${transient.reason}.`,
+    `No verdict was recorded, and this claim does not count toward the hourly claim limit. ${when}`,
+  ].join('\n');
+}
+
 const DEFAULT_DEPS = {
   collectJira, collectGithub, collectPrStats, collectReviews, addVerdictProperty, appendAudit, readAudit, addComment, findComment, fetchFn: fetch, store: kvs,
+  releaseClaim,
   env: () => ({ repo: process.env.GITHUB_REPO, token: process.env.GITHUB_TOKEN }),
 };
 
@@ -109,11 +123,39 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
     progress = (await d.store.get(progressKey)) ?? null;
     if (progress?.done) return progress.verdict;
     if (!progress) {
-      const { verdict, record, comment, evidence } = await decide({ issueKey, claim }, d);
-      progress = { verdict, record, comment, evidence: evidence ?? null, steps: {} };
+      const { verdict, record, comment, evidence, transient } = await decide({ issueKey, claim }, d);
+      progress = transient
+        ? { transient, comment: formatNotChecked(issueKey, claim, transient), steps: {} }
+        : { verdict, record, comment, evidence: evidence ?? null, steps: {} };
       await d.store.set(progressKey, progress);
     }
     const save = () => d.store.set(progressKey, progress);
+    if (progress.transient) {
+      // No property, no audit entry: nothing final was decided. The slots go back first, so a
+      // failed comment post does not keep them.
+      if (!progress.steps.released) {
+        await d.releaseClaim?.(claim.id, d.store);
+        progress.steps.released = true;
+        await save();
+      }
+      if (!progress.steps.comment) {
+        const marker = verdictMarker(claim.id);
+        if (!progress.steps.commentMarker) {
+          progress.steps.commentMarker = marker;
+          await save();
+        } else if (await d.findComment(issueKey, marker)) {
+          progress.steps.comment = true;
+        }
+        if (!progress.steps.comment) {
+          await d.addComment(issueKey, `${progress.comment}\n${marker}`);
+          progress.steps.comment = true;
+        }
+      }
+      progress.done = true;
+      progress.verdict = { result: 'not_checked', reason: progress.transient.reason, retryAt: progress.transient.retryAt ?? null };
+      await save();
+      return progress.verdict;
+    }
     if (!progress.steps.property) {
       await d.addVerdictProperty(issueKey, progress.record);
       progress.steps.property = true;
@@ -174,13 +216,18 @@ export async function decide({ issueKey, claim }, d) {
     try {
       github = await d.collectGithub({ repo, key: issueKey, token, fetchFn: d.fetchFn, securityCheck: VERIFY_CONFIG.securityCheck,
         provenance: { workflowPaths: VERIFY_CONFIG.requiredWorkflowPaths } });
-      if (github.pr) {
-        // Patches of Python files for the metric tamper check; the file list comes from
-        // collectGithub, which reads every page.
+      // Patches of Python files for the metric tamper check. collectGithub keeps them from its
+      // own read of the file list; a reader that does not (a test stub) is asked separately.
+      if (github.pr && !('prPatches' in github)) {
         const stats = await d.collectPrStats({ repo, prNumber: github.pr.number, token, fetchFn: d.fetchFn });
         github.prPatches = stats.patches;
       }
     } catch (error) {
+      // A transient failure says nothing about the claim: no verdict (see verifyClaim).
+      if (error?.transient) {
+        console.log('claim not checked', issueKey, claim.type, error.kind, error.message);
+        return { transient: { kind: error.kind, reason: error.message, retryAt: error.retryAt ?? null } };
+      }
       githubError = error.message;
     }
   }

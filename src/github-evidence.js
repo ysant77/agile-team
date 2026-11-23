@@ -1,5 +1,6 @@
 // Collects GitHub evidence for one ticket. fetchFn is injected (Forge fetch in production,
-// a stub in tests). Token optional: without it, only a public repository can be read.
+// a stub in tests). Token optional: without it, only a public repository can be read, and GitHub
+// allows 60 calls an hour for each outgoing address (shared with other apps on the platform).
 
 import { extractReport, extractReportText, namesKey } from './verifier/report.js';
 
@@ -9,17 +10,140 @@ const BOT = 'github-actions[bot]';
 export const ACTIONS_BOT_ID = 41898282;
 const isActionsBot = (u) => u?.id === ACTIONS_BOT_ID && u?.type === 'Bot';
 
+export const githubHeaders = (token) => ({
+  Accept: 'application/vnd.github+json',
+  'User-Agent': 'agile-team-forge-app',
+  'X-GitHub-Api-Version': '2022-11-28',
+  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+});
+
+// "2026-11-23 08:01 UTC": the time to try again, as a person reads it.
+const utc = (ms) => `${new Date(ms).toISOString().slice(0, 16).replace('T', ' ')} UTC`;
+
+// One classifier for a GitHub answer that is not ok (lead review of 23 Nov, finding 3). Classes:
+// rate_limited (the hourly limit; 0 calls left), secondary_limit (too many calls at once),
+// auth (401), forbidden (403 with calls left), not_found (404), server (5xx), other. The two
+// limits and server errors are transient: they say nothing about the claim. GitHub's rules: the
+// primary limit resets at x-ratelimit-reset (seconds since 1970); a secondary limit gives
+// retry-after (seconds), or, without it, a wait of at least one minute.
+export function classifyGithubResponse(response, { now = Date.now(), message = '' } = {}) {
+  const status = response?.status ?? 0;
+  const header = (k) => response?.headers?.get?.(k) ?? null;
+  const remaining = header('x-ratelimit-remaining');
+  const retryAfter = Number(header('retry-after'));
+  const reset = Number(header('x-ratelimit-reset'));
+  const limited = status === 403 || status === 429;
+  if (limited && remaining === '0') {
+    const at = Number.isFinite(reset) && reset > 0 ? reset * 1000 : now + 60 * 60 * 1000;
+    return { kind: 'rate_limited', status, transient: true, retryAt: new Date(at).toISOString(),
+      reason: `GitHub rate limit reached (HTTP ${status}, 0 calls left this hour); try again after ${utc(at)}` };
+  }
+  if (limited && (status === 429 || header('retry-after') !== null || /secondary rate limit/i.test(message))) {
+    const at = now + (Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 60) * 1000;
+    return { kind: 'secondary_limit', status, transient: true, retryAt: new Date(at).toISOString(), retryAfterS: Math.round((at - now) / 1000),
+      reason: `GitHub secondary rate limit, too many calls at once (HTTP ${status}); try again after ${utc(at)}` };
+  }
+  if (status === 401) {
+    return { kind: 'auth', status, transient: false, retryAt: null,
+      reason: 'GitHub refused the token (HTTP 401): it is wrong, revoked or expired' };
+  }
+  if (status === 403) {
+    return { kind: 'forbidden', status, transient: false, retryAt: null,
+      reason: 'GitHub refused access (HTTP 403) with calls left: the token or the app may not read this repository' };
+  }
+  if (status === 404) {
+    return { kind: 'not_found', status, transient: false, retryAt: null,
+      reason: 'not found (HTTP 404): the repository is private or not readable with this token, or the item does not exist' };
+  }
+  if (status >= 500) {
+    return { kind: 'server', status, transient: true, retryAt: null, reason: `GitHub server error (HTTP ${status})` };
+  }
+  return { kind: 'other', status, transient: false, retryAt: null, reason: `GitHub answered HTTP ${status}` };
+}
+
+// A GitHub read that failed. The message keeps the old form "GitHub <path>: HTTP <status>" and
+// adds the reason. transient: the failure says nothing about the claim, so no verdict is stored.
+export class GitHubError extends Error {
+  constructor(path, c, tries = 1) {
+    const where = `GitHub ${path.split('?')[0]}`;
+    const tail = tries > 1 ? ` after ${tries} tries` : '';
+    super(c.status ? `${where}: HTTP ${c.status}: ${c.reason}${tail}` : `${where}: ${c.reason}${tail}`);
+    this.name = 'GitHubError';
+    Object.assign(this, { kind: c.kind, status: c.status, transient: c.transient, retryAt: c.retryAt, reason: `${c.reason}${tail}` });
+  }
+}
+
+// The answer of a Rovo action when GitHub could not be read: the reason, not an exception.
+export const githubFailure = (error) => ({ ok: false, error: `GitHub could not be read: ${error?.message ?? error}` });
+
+// Bounded retry: a server error or a network error is tried 3 times in all (waits of 0.3 s and
+// 0.9 s); a secondary limit with a wait of at most 10 s is waited out once. The primary limit is
+// never waited out here: its reset can be an hour away.
+export const RETRY = { waitsMs: [300, 900], secondaryMaxWaitS: 10 };
+const realSleep = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
+
+// One GitHub reader for all paths. get(path) returns the parsed body; with required: false, a 404
+// gives null (an empty answer). Every other failure throws a GitHubError.
+export function githubClient({ token, fetchFn, sleep = realSleep, now = Date.now, retry = RETRY }) {
+  const headers = githubHeaders(token);
+  const meta = { calls: 0, rateRemaining: null, retries: 0 };
+  const get = async (path, { required = false } = {}) => {
+    let secondaryWaited = false;
+    for (let attempt = 1; ; attempt += 1) {
+      meta.calls += 1;
+      let response;
+      try {
+        response = await fetchFn(`${API}${path}`, { headers });
+      } catch (error) {
+        if (attempt <= retry.waitsMs.length) {
+          meta.retries += 1;
+          await sleep(retry.waitsMs[attempt - 1]);
+          continue;
+        }
+        throw new GitHubError(path, { kind: 'network', status: 0, transient: true, retryAt: null,
+          reason: `GitHub could not be reached (${String(error?.message ?? error).slice(0, 80)})` }, attempt);
+      }
+      meta.rateRemaining = response.headers?.get?.('x-ratelimit-remaining') ?? meta.rateRemaining;
+      if (response.status === 404 && !required) return null;
+      if (response.ok) return response.json();
+      let message = '';
+      try {
+        message = String((await response.json())?.message ?? '');
+      } catch {
+        message = '';
+      }
+      const c = classifyGithubResponse(response, { now: now(), message });
+      if (c.kind === 'server' && attempt <= retry.waitsMs.length) {
+        meta.retries += 1;
+        await sleep(retry.waitsMs[attempt - 1]);
+        continue;
+      }
+      if (c.kind === 'secondary_limit' && !secondaryWaited && c.retryAfterS <= retry.secondaryMaxWaitS) {
+        secondaryWaited = true;
+        meta.retries += 1;
+        await sleep(c.retryAfterS * 1000);
+        continue;
+      }
+      throw new GitHubError(path, c, c.kind === 'server' ? attempt : 1);
+    }
+  };
+  return { get, meta };
+}
+
 // All changed file names of one PR (GitHub serves at most 3,000, in pages of 100). A renamed
 // file counts under both names. A full last page means the list may go on: the result is null
 // (not known), never a short list that hides a changed file (second review, item 1).
 export const FILE_PAGES = 30;
-export async function listPrFiles(get, repo, prNumber, added = []) {
+// patches: the patches of Python files are kept there (null when GitHub leaves one out), so a
+// claim needs no second read of the same list (lead review of 23 Nov, finding 4).
+export async function listPrFiles(get, repo, prNumber, added = [], patches = null) {
   const names = [];
   for (let page = 1; page <= FILE_PAGES; page += 1) {
     const files = (await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`, { required: true })) ?? [];
     for (const f of files) {
       names.push(f.filename, ...(f.previous_filename ? [f.previous_filename] : []));
       if (f.status === 'added') added.push(f.filename);
+      if (patches && String(f.filename).endsWith('.py')) patches[f.filename] = typeof f.patch === 'string' ? f.patch : null;
     }
     if (files.length < 100) return names;
   }
@@ -28,25 +152,10 @@ export async function listPrFiles(get, repo, prNumber, added = []) {
 
 // prNumber picks one pull request; without it, the latest one whose title or branch names the key.
 // provenance: { workflowPaths } reads the run artifacts that carry the report hash markers.
-export async function collectGithub({ repo, key, token, fetchFn, prNumber = null, securityCheck = null, provenance = null }) {
-  const headers = {
-    Accept: 'application/vnd.github+json',
-    'User-Agent': 'agile-team-forge-app',
-    'X-GitHub-Api-Version': '2022-11-28',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-  let calls = 0;
-  let rateRemaining = null;
+export async function collectGithub({ repo, key, token, fetchFn, prNumber = null, securityCheck = null, provenance = null, sleep, now }) {
   // required: a 404 means GitHub hides the repository (private, no token), which is an error,
   // not an empty answer.
-  const get = async (path, { required = false } = {}) => {
-    calls += 1;
-    const response = await fetchFn(`${API}${path}`, { headers });
-    rateRemaining = response.headers?.get?.('x-ratelimit-remaining') ?? rateRemaining;
-    if (response.status === 404 && !required) return null;
-    if (!response.ok) throw new Error(`GitHub ${path.split('?')[0]}: HTTP ${response.status}`);
-    return response.json();
-  };
+  const { get, meta } = githubClient({ token, fetchFn, sleep, now });
   // Pages of 100 until a short page or the page limit. A full last page means the list may go
   // on, so the caller gets `truncated` and must treat the missing part as not known.
   const getPages = async (path, maxPages, pick = (body) => body, options = {}) => {
@@ -106,6 +215,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
   let reportComment = null;
   let prFiles = null;
   let prAddedFiles = null;
+  let prPatches = null;
   let workflowRuns = [];
   let securityRuns = null;
   if (pr) {
@@ -176,8 +286,12 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     }
     // Every changed file, so the verifier can see a change to the workflow or the report plugin.
     prAddedFiles = [];
-    prFiles = await listPrFiles(get, repo, pr.number, prAddedFiles);
-    if (prFiles === null) prAddedFiles = null;
+    prPatches = {};
+    prFiles = await listPrFiles(get, repo, pr.number, prAddedFiles, prPatches);
+    if (prFiles === null) {
+      prAddedFiles = null;
+      prPatches = null; // a cut list: not known
+    }
     truncated.files = prFiles === null;
     // The code-scanning result check of the head (small security check, DESIGN 14g). Public
     // check runs need no token; the app id filter keeps the list short.
@@ -273,6 +387,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     reportComment,
     prFiles,
     prAddedFiles,
+    prPatches,
     baseTip,
     securityRuns,
     workflowRuns,
@@ -287,23 +402,14 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     mergeSha: pr?.mergeSha ?? null,
     mergeReport: pr?.mergeSha ? baseReport : null,
     deployRuns,
-    meta: { calls, rateRemaining, authenticated: Boolean(token) },
+    meta: { calls: meta.calls, retries: meta.retries, rateRemaining: meta.rateRemaining, authenticated: Boolean(token) },
   };
 }
 
 // Size of one pull request: changed lines and file names (two calls).
-export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
-  const headers = {
-    Accept: 'application/vnd.github+json',
-    'User-Agent': 'agile-team-forge-app',
-    'X-GitHub-Api-Version': '2022-11-28',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-  const get = async (path) => {
-    const response = await fetchFn(`${API}${path}`, { headers });
-    if (!response.ok) throw new Error(`GitHub ${path.split('?')[0]}: HTTP ${response.status}`);
-    return response.json();
-  };
+export async function collectPrStats({ repo, prNumber, token, fetchFn, sleep, now }) {
+  const client = githubClient({ token, fetchFn, sleep, now });
+  const get = (path) => client.get(path, { required: true });
   const pr = await get(`/repos/${repo}/pulls/${prNumber}`);
   // Every page of changed files. A full last page means the list may go on, so the files and
   // patches are null (not known), never a short list (second review of unit 1, item 1).
@@ -329,20 +435,13 @@ export async function collectPrStats({ repo, prNumber, token, fetchFn }) {
 // Changed files of one pull request with their patches, for the code reviewer (DESIGN 14a). Every
 // page of 100 (GitHub serves at most 3,000 files); GitHub leaves out the patch of a very large
 // file, which stays null.
-export async function collectPrFiles({ repo, prNumber, token, fetchFn }) {
-  const headers = {
-    Accept: 'application/vnd.github+json',
-    'User-Agent': 'agile-team-forge-app',
-    'X-GitHub-Api-Version': '2022-11-28',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+export async function collectPrFiles({ repo, prNumber, token, fetchFn, sleep, now }) {
+  const { get } = githubClient({ token, fetchFn, sleep, now });
   // Any error, a 404 included, stops the read: a hidden list is not an empty change. A full last
   // page means the list may go on, so it is marked as cut (second review of unit 1, items 1, 2).
   const files = [];
   for (let page = 1; page <= FILE_PAGES; page += 1) {
-    const response = await fetchFn(`${API}/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`, { headers });
-    if (!response.ok) throw new Error(`GitHub pull request files: HTTP ${response.status}`);
-    const list = await response.json();
+    const list = await get(`/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`, { required: true });
     files.push(...list.map((f) => ({ filename: f.filename, status: f.status, patch: typeof f.patch === 'string' ? f.patch : null })));
     if (list.length < 100) return { files, truncated: false };
   }
