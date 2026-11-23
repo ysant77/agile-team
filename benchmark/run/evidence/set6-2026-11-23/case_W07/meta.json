@@ -1,0 +1,31 @@
+{
+ "branch": "case/W07",
+ "head": "c830ff569891e8beeaf768ac00bba1f91fa2daca",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -31,6 +31,7 @@ WEB_DIR = Path(__file__).resolve().parent / \"web\"\n STATEMENT_DAYS = 30\n EARLIEST_DATE = date(1900, 1, 1)\n LATEST_DATE = date(9998, 12, 31)\n+MAX_STATEMENT_DAYS = 366\n SEED_FLAG = \"demo_seeded\"\n SEED_WAIT_MS = 120_000  # how long a second worker waits for the first one's seed\n \n@@ -176,6 +177,9 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         for value in (start, end):\n             if value is not None and not EARLIEST_DATE <= value <= LATEST_DATE:\n                 raise HTTPException(400, f\"dates must be between {EARLIEST_DATE} and {LATEST_DATE}\")\n+        if start is not None and end is not None and (end - start).days + 1 > MAX_STATEMENT_DAYS:\n+            detail = f\"statement window is longer than {MAX_STATEMENT_DAYS} days\"\n+            raise HTTPException(422, detail)\n         end = end or datetime.now(UTC).date()\n         start = start or end - timedelta(days=STATEMENT_DAYS - 1)\n         try:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,12 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_statement_window_has_a_maximum_length(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    url = f\"/api/accounts/{bank['eur'].id}/statement\"\n+    assert client.get(f\"{url}?from=2025-11-01&to=2026-11-01\").status_code == 200\n+    response = client.get(f\"{url}?from=2025-11-01&to=2026-11-02\")\n+    assert response.status_code == 422\n+    assert response.json()[\"detail\"] == \"statement window is longer than 366 days\"\n"
+  }
+ ],
+ "additions": 13,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/bench-bank-6/coverage.json\n367 passed, 1 deselected in 189.74s (0:03:09)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "branch": "case/W21",
+ "head": "2adf1f6587600dbef5d6b56a540e6793c3950f27",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -110,6 +110,8 @@ ACCOUNT_COLUMNS = \"id, number, customer_id, kind, currency, balance_minor\"\n def create_customer(conn: sqlite3.Connection, name: str, at: datetime | None = None) -> int:\n     if not name.strip():\n         raise LedgerError(\"customer name is empty\")\n+    if \"\\t\" in name.strip() or \"\\n\" in name.strip():\n+        raise LedgerError(\"name has control characters\")\n     with write_txn(conn):\n         cur = conn.execute(\n             \"INSERT INTO customers (name, created_at) VALUES (?, ?)\", (name.strip(), timestamp(at))\n"
+  },
+  {
+   "filename": "tests/test_ledger.py",
+   "status": "modified",
+   "patch": "@@ -269,3 +269,11 @@ def test_a_failed_rollback_to_stops_the_job_and_commits_nothing(tmp_path):\n     assert not conn.in_transaction\n     assert ledger.list_customers(conn) == []\n     assert conn.execute(\"SELECT COUNT(*) FROM app_flags\").fetchone()[0] == 0\n+\n+\n+def test_customer_name_refuses_control_characters(conn):\n+    before = len(ledger.list_customers(conn))\n+    for name in (\"\\t\", \"\\n\", \" \\t\\n \"):\n+        with pytest.raises(ledger.LedgerError):\n+            ledger.create_customer(conn, name)\n+    assert len(ledger.list_customers(conn)) == before\n"
+  }
+ ],
+ "additions": 10,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/bench-bank-6/coverage.json\n367 passed, 1 deselected in 190.00s (0:03:10)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

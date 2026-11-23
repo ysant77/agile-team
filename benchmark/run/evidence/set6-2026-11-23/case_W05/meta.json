@@ -1,0 +1,31 @@
+{
+ "branch": "case/W05",
+ "head": "c8cbd04b7cf46ec290e446f4acd039bc120465a5",
+ "base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "merge_base": "dafa3141f1068df2a88193193d5f9e89c2d63399",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -234,7 +234,7 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n                 body.reference,\n             )\n         except ledger.IdempotencyConflict as exc:\n-            raise HTTPException(422, str(exc)) from None\n+            raise HTTPException(409, str(exc)) from None\n         except ledger.InsufficientFunds as exc:\n             raise HTTPException(409, str(exc)) from None\n         except ledger.LedgerError as exc:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -174,13 +174,13 @@ def test_retry_with_the_same_key_moves_money_once(bank):\n     assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"90.00\"\n \n \n-def test_same_key_with_a_different_body_is_rejected(bank):\n+def test_same_key_with_a_different_body_gives_409(bank):\n     client = login(bank[\"app\"], bank[\"owner\"])\n     assert (\n         transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"5.00\", key=\"k\").status_code == 201\n     )\n     clash = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"6.00\", key=\"k\")\n-    assert clash.status_code == 422\n+    assert clash.status_code == 409\n     assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"95.00\"\n \n \n@@ -234,3 +234,15 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_key_conflict_answers_409(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    first = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"5.00\", key=\"k409\")\n+    assert first.status_code == 201\n+    clash = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"6.00\", key=\"k409\")\n+    assert clash.status_code == 409\n+    assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"95.00\"\n+    again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"5.00\", key=\"k409\")\n+    assert again.status_code == 200\n+    assert again.json()[\"replayed\"] is True\n"
+  }
+ ],
+ "additions": 15,
+ "deletions": 3,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 58%]\n........................................................................ [ 78%]\n........................................................................ [ 98%]\n.......                                                                  [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file <tmp>/bench-bank-6/coverage.json\n367 passed, 1 deselected in 201.60s (0:03:21)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}
