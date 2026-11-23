@@ -6,6 +6,7 @@ import { appendAudit, readAudit } from './audit-store.js';
 import { auditSeqs, readApprovals } from './approvals.js';
 import { collectGithub, collectPrStats } from './github-evidence.js';
 import { releaseClaim } from './claim-intake.js';
+import { latestPrLink } from './pr-link.js';
 import { addComment, findComment } from './jira.js';
 import { LATEST_DONE_KEY } from './sign-off.js';
 import { addVerdictProperty, collectJira, collectReviews } from './jira-evidence.js';
@@ -217,12 +218,25 @@ export function configFor(repo, repos = VERIFY_CONFIG.pinnedRequiredRepos, prove
 export async function decide({ issueKey, claim }, d) {
   const ticket = await d.collectJira(issueKey);
   const { repo, token } = d.env();
+  // An audited PR link from the panel (src/pr-link.js). It counts only when a person other than
+  // the claimant made it; then the claim reads that PR by number. A read error: no link.
+  let prLink = null;
+  if (d.store && d.readAudit) {
+    try {
+      prLink = await latestPrLink(issueKey, { store: d.store, readAudit: d.readAudit }, claim.by ?? null);
+    } catch (error) {
+      console.log('PR link not read', issueKey, error.message);
+    }
+  }
+  // A counted link names the configured repository; a link with no repository, or for another
+  // one, does not count.
+  const linkedPr = prLink?.counted && typeof prLink.repo === 'string' && prLink.repo.toLowerCase() === String(repo ?? '').toLowerCase() ? prLink.prNumber : null;
   let github = { pr: null, workflowRuns: [], deployRuns: [] };
   let githubError = null;
   if (repo) {
     try {
       github = await d.collectGithub({ repo, key: issueKey, token, fetchFn: d.fetchFn, securityCheck: VERIFY_CONFIG.securityCheck,
-        provenance: { workflowPaths: VERIFY_CONFIG.requiredWorkflowPaths } });
+        provenance: { workflowPaths: VERIFY_CONFIG.requiredWorkflowPaths }, ...(linkedPr ? { prNumber: linkedPr } : {}) });
       // Patches of Python files for the metric tamper check. collectGithub keeps them from its
       // own read of the file list; a reader that does not (a test stub) is asked separately.
       if (github.pr && !('prPatches' in github)) {
@@ -272,8 +286,10 @@ export async function decide({ issueKey, claim }, d) {
   // mergeRequiredTests: tests that must pass by name in the merge result. None are configured;
   // merged_clean still needs every base test kept and unique migrations. The checks read a
   // missing list as not known, so it is always set here.
-  const ctx = { ticket, ...github, repo, mergeRequiredTests: [], config: configFor(repo), claimant: claim.by ?? null, signoffEvent, approvals, approvalEvents };
+  const ctx = { ticket, ...github, repo, linkedPr, mergeRequiredTests: [], config: configFor(repo), claimant: claim.by ?? null, signoffEvent, approvals, approvalEvents };
   let verdict = verify(claim, ctx);
+  // The link is shown with the checks, as advice that never changes the verdict by itself.
+  if (prLink) verdict = { ...verdict, checks: [...verdict.checks, { name: 'pr_link', status: 'pass', advisory: true, reason: prLink.reason }] };
   // Without the code host, a PR check that does not pass says why (a fail or an unknown).
   if ((githubError || !repo) && verdict.result !== 'supported' && verdict.checks.some((c) => ['pr_linked', 'on_main'].includes(c.name) && c.status !== 'pass')) {
     verdict = { ...verdict, result: 'cannot_verify', reason: `code host not reachable${githubError ? `: ${githubError}` : ''}` };
