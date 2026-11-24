@@ -1,0 +1,14 @@
+[
+  {
+    "id": "R2-1",
+    "symptom": "On 10 May I paid in 5.00 in cash at the branch, but the clerk booked it on 21 May with the date of 10 May. My May statement now shows the 20.00 from 20 May above the 5.00 from 10 May, and the balance next to each of those two lines is not the balance I had on that day. A statement should list the lines in date order, each with the balance after it."
+  },
+  {
+    "id": "R2-2",
+    "symptom": "A security review of the demo site says: a page on another site can send a form to the bank in the background while a customer is signed in, and the bank treats the request as the customer's. The session should not be used for requests that start on another site."
+  },
+  {
+    "id": "R2-C",
+    "symptom": "My statement for 2 to 31 May starts with an opening balance of 100.00, but I made no payment between 2 and 9 May. Should the opening balance not be 0.00?"
+  }
+]

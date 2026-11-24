@@ -5,7 +5,10 @@
     "symptom_source": "discovery-cases-2.json of the lead, case D2-1; passed to the model exactly as stored",
     "tree_branch": "investigate/symptoms-2 (d193c76)",
     "truth": "end_day",
-    "protected": ["tests/test_ledger.py", "tests/test_api.py"],
+    "protected": [
+      "tests/test_ledger.py",
+      "tests/test_api.py"
+    ],
     "hidden": "D2-1.py"
   },
   {
@@ -14,7 +17,10 @@
     "symptom_source": "symptoms-dev.json",
     "tree_branch": "bank local branch work/unattended-20261124-discovery-d7 (e0de365): bank 165b689, kits removed, one seeded change",
     "truth": "key_window",
-    "protected": ["tests/test_idempotency.py", "tests/test_api.py"],
+    "protected": [
+      "tests/test_idempotency.py",
+      "tests/test_api.py"
+    ],
     "hidden": "D7-1.py"
   },
   {
@@ -23,7 +29,46 @@
     "symptom_source": "symptoms-dev.json",
     "tree_branch": "bank local branch work/unattended-20261124-discovery-d7-control (2d7b042): bank 165b689, kits removed, no seeded change",
     "truth": "none",
-    "protected": ["tests/test_idempotency.py", "tests/test_api.py"],
+    "protected": [
+      "tests/test_idempotency.py",
+      "tests/test_api.py"
+    ],
+    "hidden": null
+  },
+  {
+    "id": "R2-1",
+    "label": "development run 2 (written by the builder of the harness on 24 Nov 2026; not blind, not held out)",
+    "symptom_source": "symptoms-dev-2.json",
+    "tree_branch": "bank local branch work/repair-dev2-r2-1 (57deaf0): bank 165b689, kits removed (2d7b042), one seeded change",
+    "truth": "line_order",
+    "protected": [
+      "tests/test_ledger.py",
+      "tests/test_api.py"
+    ],
+    "hidden": "R2-1.py"
+  },
+  {
+    "id": "R2-2",
+    "label": "development run 2 (written by the builder of the harness on 24 Nov 2026; not blind, not held out)",
+    "symptom_source": "symptoms-dev-2.json",
+    "tree_branch": "bank local branch work/repair-dev2-r2-2 (29ba7d4): bank 165b689, kits removed (2d7b042), one seeded change",
+    "truth": "cookie_samesite",
+    "protected": [
+      "tests/test_api.py",
+      "tests/test_web.py"
+    ],
+    "hidden": "R2-2.py"
+  },
+  {
+    "id": "R2-C",
+    "label": "development run 2 clean control (written by the builder on 24 Nov 2026): the reported behaviour is the documented one",
+    "symptom_source": "symptoms-dev-2.json",
+    "tree_branch": "bank local branch work/repair-dev2-r2-c (2d7b042): bank 165b689, kits removed, no seeded change (the same tree content as D7-C; a new symptom)",
+    "truth": "none",
+    "protected": [
+      "tests/test_ledger.py",
+      "tests/test_api.py"
+    ],
     "hidden": null
   }
 ]
