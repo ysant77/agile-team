@@ -30,9 +30,9 @@ What 5.14.0 to 5.16.0 added over the version of the live claims: the retry recor
 (`"retried"`), the "pull request linked only by the claimant" rule (Cannot verify), the "push run
 still running" reason, the DID NOT RAISE rule, the merge result that reads the AC tests, two more
 lines under "Never checked by the code checks", and "Drafts waiting for you" in the panel (a
-ticket draft with a number or money waits for the person who asked). Merged after 5.16.0 and not
-deployed when this was written: the panel line for a claim that was not checked (a GitHub rate
-limit).
+ticket draft with a number or money waits for the person who asked). Not on 5.16.0 (a branch
+after it, `feat/store-not-checked`, waits for merge and the next deploy): the panel line for a
+claim that was not checked (a GitHub rate limit).
 
 On return, in this order (each step needs the owner's word; details in the sections below and in
 `docs/FIRST-JUDGE-CLAIM.md`):
