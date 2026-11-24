@@ -13,6 +13,27 @@ export const SUPPORTED_MEANS =
   'Supported means: for each criterion, the named test fails before the change and passes after it, on the head commit.';
 export const NOT_CHECKED_COVERAGE = 'Not checked: whether the test covers every case of the criterion.';
 
+// What the code checks never read, on any verdict (C2.3, 24 Nov 2026). Set 6 supported a change with
+// an unasserted side effect (W10) and one whose test asserted only part of the criterion (W18).
+export const NEVER_CHECKED = [
+  'Whether the tests cover every case of the criterion (a test may assert only part of it).',
+  'The text of the acceptance criteria: only the named tests and the mechanical checks are run.',
+  'A side effect that no test asserts (for example a changed cookie, header or log).',
+];
+
+// One sentence on what the verdict rests on. A verdict describes the evidence at the time of the
+// claim, not the work item's later state.
+function scopeOf(record) {
+  const sha = (v) => (typeof v === 'string' && /^[0-9a-f]{7,40}$/.test(v) ? v.slice(0, 7) : null);
+  const head = sha(record.headSha);
+  const merge = sha(record.mergeSha);
+  const ev = typeof record.evidenceHash === 'string' && /^[0-9a-f]{12,64}$/.test(record.evidenceHash) ? record.evidenceHash.slice(0, 12) : null;
+  const at = typeof record.at === 'string' ? record.at.slice(0, 16).replace('T', ' ') : 'an unknown time';
+  return `This verdict rests on the evidence read at ${at} UTC: ${head ? `head ${head}` : 'no head commit'}, `
+    + `${merge ? `merge commit ${merge}` : 'no merge commit'}, ${ev ? `evidence record ${ev}` : 'no evidence record'}, `
+    + `checker ${record.checker ?? 'unknown'}. A later push, merge or change of the ACs is not covered; claim again.`;
+}
+
 const REASON_MAX = 300;
 const STATES = {
   supported: { label: 'Supported', tone: 'success', headline: 'Done by the code checks. A person decides to merge or close.' },
@@ -124,6 +145,7 @@ export function verdictView(record) {
   const proved = [];
   const notChecked = [];
   const failed = [];
+  let unknown = 0;
   for (const c of checks) {
     if (c.advisory) {
       notChecked.push(`${c.name}: ${c.reason}`);
@@ -134,7 +156,10 @@ export function verdictView(record) {
       const line = `${r.acId ? `${r.acId} ` : ''}${r.name}: ${r.reason}`.trim();
       if (r.status === 'pass') proved.push(line);
       else if (r.status === 'fail') failed.push(line);
-      else notChecked.push(line);
+      else {
+        notChecked.push(line);
+        unknown += 1;
+      }
     }
   }
   if (checks.length === 0) notChecked.push('Per-check detail is not stored for this verdict; see the reason and the verdict comment.');
@@ -155,6 +180,9 @@ export function verdictView(record) {
     notChecked,
     human: HUMAN[state],
     levels: evidenceLevels(record.checks),
+    scope: scopeOf(record),
+    kinds: { verified: proved.length, contradicted: failed.length, unknown },
+    neverChecked: NEVER_CHECKED,
     advice: adviceView(record.advice),
     meta: {
       claim: record.type ?? null,

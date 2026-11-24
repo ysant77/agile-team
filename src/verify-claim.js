@@ -2,7 +2,7 @@
 
 import { fetch } from '@forge/api';
 import { kvs } from '@forge/kvs';
-import { appendAudit, readAudit } from './audit-store.js';
+import { appendAudit, appendAuditOnce, readAudit } from './audit-store.js';
 import { auditSeqs, readApprovals } from './approvals.js';
 import { collectGithub, collectPrStats } from './github-evidence.js';
 import { releaseClaim } from './claim-intake.js';
@@ -132,6 +132,10 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
       await d.store.set(progressKey, progress);
     }
     const save = () => d.store.set(progressKey, progress);
+    // Review of 24 Nov, audit order: one event per claim and step, also when the save after the
+    // event fails and the queue delivers the claim again.
+    const auditOnce = (opId, entry) => appendAuditOnce(opId, entry, { store: d.store, append: d.appendAudit,
+      read: d.readAudit ? async (seq) => (await d.readAudit(seq, 1))[0] ?? null : null });
     if (progress.transient) {
       // No property, no audit entry: nothing final was decided. The slots go back first, so a
       // failed comment post does not keep them.
@@ -164,7 +168,7 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
       await save();
     }
     if (!progress.steps.audit) {
-      const audit = await d.appendAudit({ actor: 'team-lead-verifier', event: 'verdict', data: { issueKey, ...progress.record } });
+      const audit = await auditOnce(`verdict:${claim.id}`, { actor: 'team-lead-verifier', event: 'verdict', data: { issueKey, ...progress.record } });
       progress.steps.audit = { seq: audit.seq, hash: audit.hash };
       await save();
     }
@@ -177,7 +181,7 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
     // The evidence record goes into the audit chain before the comment, so a posted done verdict
     // always has its record (DESIGN 15d).
     if (progress.evidence && !progress.steps.evidence) {
-      const audit = await d.appendAudit({ actor: 'team-lead-verifier', event: 'done_evidence', data: { issueKey, ...progress.evidence } });
+      const audit = await auditOnce(`done_evidence:${claim.id}`, { actor: 'team-lead-verifier', event: 'done_evidence', data: { issueKey, ...progress.evidence } });
       progress.steps.evidence = { seq: audit.seq, hash: audit.hash };
       await save();
     }

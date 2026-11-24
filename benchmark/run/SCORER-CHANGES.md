@@ -75,3 +75,17 @@ records differ on each set, and the right counts are 35, 18, 13 and 15.
 What change 21 does not serve, because the frozen app does not read it: the Jira change history
 (V06, V20), the comment edit history (V15), and the commits of the `ci-reports` branch (V21). The
 lead's answers keep these facts as context only; `BUILD-5.md` states them per case.
+
+## Set 7 preparation (24 Nov 2026; written before any set 7 case file exists)
+
+| # | Change | Seen set 7 results before? | Kind |
+|---|---|---|---|
+| 22 | The five facts that `SET7-PREPARATION.md` lists as not expressible. Each part acts only on a manifest field that sets 1 to 6 do not have. **(a)** `jira.signoff { by, at, sha: 'merge' \| <sha>, reason }`: the ticket gets the `aat.signoff` property and the audit chain gets its `change.signed_off` event (`run/sim-jira.mjs`), as the panel's sign-off button writes them (`src/sign-off.js`); `'merge'` is the case PR's merge commit. **(b)** `jira.prLink { by, at, prNumber: 'case' \| <n>, repo?, reason }`: the app store gets `pr-links:<key>` and the chain its `pr.linked` event (`src/pr-link.js`); the claim then reads the PR by number, so `/pulls/<n>` gives the whole PR for such a case. `github.titleWithoutKey` serves the PR title without the work item key. **(c)** `github.rateLimited { remaining, resetAt?, retryAfterS?, message?, pathPattern? }`: every GitHub call (or each one whose URL matches the pattern) gets 403 with the rate-limit headers (`run/sim-set7.mjs`). A transient answer gives no verdict, so arm C records `not_checked` with the app's reason, as the app's comment says. **(d)** `github.mergeCommit { branch? }`: the merge commit is not the head that CI ran on (a fixed id made from the head, or the head of the named evidence branch of the merge result); `main.json` is that branch's report for the merge commit, or else the earlier main report. **(e)** `github.pushRunInProgress`: the push run on the merge commit has status `in_progress` and no conclusion; `main.json` is still the earlier main report. | No (no set 7 case file exists) | Support for the set 7 facts, as PROTOCOL-5 allows. Unit tests: `test/sim-set7.test.js`, one or two per part. |
+
+**Identity check of change 22 (24 Nov 2026).** The old scorer (`main` 665e93e) and the new
+scorer (this branch) were run on the stored evidence of sets 1 to 6 (`run/evidence/pinned-2026-11-18`
+s1 to s4, `run/evidence/set5-2026-11-19`, `run/evidence/set6-2026-11-23`), each with the same app
+on both sides: app `main` 665e93e, the set 5 frozen app 36de990 (sets 1, 4, 5 and 6), and the set 6
+frozen app 9ec52ca (sets 1 to 6). Every `results.json` is byte-identical (16 of 16 pairs); the
+hashes are in `run/evidence/identity-22-2026-11-24.txt`. With 9ec52ca, set 6 gives 13 right of 16
+scored, as in `RESULTS-6.md`.

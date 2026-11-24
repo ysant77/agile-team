@@ -19,7 +19,12 @@ const GENESIS = '0'.repeat(64);
 // jira: { claimant, acs: { by, at, acceptanceCriteria }, changes: [{ test, reason, by, at }],
 // removals: [...] } as the case text gives them. Returns null for a case with no Jira data, so
 // sets 1 to 4 get exactly what they got before.
-export function simJira(jira, issueKey) {
+// SCORER-CHANGES 22 (a, b), set 7: jira.signoff { by, at, sha: 'merge' | <sha>, reason } gives the
+// aat.signoff property and its change.signed_off event (src/sign-off.js); jira.prLink { by, at,
+// prNumber: 'case' | <n>, reason } gives the pr-links:<key> store entry and its pr.linked event
+// (src/pr-link.js). ctx: { mergeSha, prNumber, repo } of the case PR. Events follow the order of
+// the case: acs, removals, changes, prLink, signoff.
+export function simJira(jira, issueKey, ctx = {}) {
   if (!jira) return null;
   const events = [];
   const append = (actor, event, data, at) => {
@@ -40,7 +45,25 @@ export function simJira(jira, issueKey) {
       approvals[list].push({ test: x.test, reason: x.reason, by: x.by, at: x.at ?? null, auditSeq, kind });
     }
   }
+  let store = null;
+  if (jira.prLink) {
+    const l = jira.prLink;
+    const prNumber = l.prNumber === 'case' || l.prNumber === undefined ? ctx.prNumber : l.prNumber;
+    const data = { key: issueKey, repo: l.repo ?? ctx.repo, prNumber, reason: l.reason };
+    const auditSeq = append(l.by, 'pr.linked', data, l.at);
+    const links = [{ ...data, by: l.by, at: l.at ?? null, auditSeq }];
+    store = { get: async (k) => (k === `pr-links:${issueKey}` ? structuredClone(links) : undefined) };
+  }
+  let signoff = null;
+  if (jira.signoff) {
+    const s = jira.signoff;
+    const sha = s.sha === 'merge' ? ctx.mergeSha : s.sha;
+    const auditSeq = append(s.by, 'change.signed_off', { key: issueKey, sha, reason: s.reason }, s.at);
+    signoff = { by: s.by, sha, reason: s.reason, at: s.at ?? null, auditSeq };
+  }
   return {
+    signoff,
+    store,
     claimant: jira.claimant ?? null,
     readApprovals: async (key) => (key === issueKey ? structuredClone(approvals) : { removals: [], changes: [], acs: null }),
     readAudit: async (seq, count) => events.slice(seq, seq + count).map((e) => structuredClone(e)),
