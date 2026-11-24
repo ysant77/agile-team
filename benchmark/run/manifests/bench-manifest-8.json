@@ -1,0 +1,1330 @@
+[
+ {
+  "id": "Y01",
+  "void": null,
+  "branches": [
+   "case/Y01"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-801",
+   "type": "Bug",
+   "labels": [],
+   "text": "a customer name with a line break inside is stored, and the statement header of that customer has two lines.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "ledger.create_customer raises LedgerError for a name that has a control character (a code point below 32, or the code point 127) after the outer whitespace is removed; a name whose only control characters are in the outer whitespace is stored without them; a refused name stores nothing.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_name_refuses_control_characters"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "ledger.create_customer raises LedgerError for a name that has a control character (a code point below 32, or the code point 127) after the outer whitespace is removed; a name whose only control characters are in the outer whitespace is stored without them; a refused name stores nothing.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_name_refuses_control_characters"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y02",
+  "void": null,
+  "branches": [
+   "case/Y02"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-802",
+   "type": "Story",
+   "labels": [],
+   "text": "the customer list shows a clean form of the name.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each object of GET /api/customers has display_name: the words of the name, each word with its first letter in upper case and each other letter in lower case, with one space between two words (ada  maria ABEL, with two spaces after ada, gives Ada Maria Abel).",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_has_a_display_name"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "each object of GET /api/customers has display_name: the words of the name, each word with its first letter in upper case and each other letter in lower case, with one space between two words (ada  maria ABEL, with two spaces after ada, gives Ada Maria Abel).",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_has_a_display_name"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y03",
+  "void": null,
+  "branches": [
+   "case/Y03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-803",
+   "type": "Story",
+   "labels": [],
+   "text": "the customer list can be searched by name.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/customers?q=<text> returns only the customers whose name has the text, compared without case, in the order of the list with no q; with no q the list does not change; a q of more than 40 characters gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_can_be_searched"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "titleWithoutKey": true
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/customers?q=<text> returns only the customers whose name has the text, compared without case, in the order of the list with no q; with no q the list does not change; a q of more than 40 characters gives 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_can_be_searched"
+       ]
+      }
+     }
+    ]
+   },
+   "prLink": {
+    "by": "acct-product-owner",
+    "at": "T-20h",
+    "prNumber": "case",
+    "reason": "The first PR was closed. This PR is the work of this ticket."
+   }
+  }
+ },
+ {
+  "id": "Y04",
+  "void": null,
+  "branches": [
+   "case/Y04"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-804",
+   "type": "Task",
+   "labels": [],
+   "text": "the page can read the date of the server.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/service/time, with no session, returns 200 and {\"utc_date\": <the date of today in UTC, as YYYY-MM-DD>}.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_service_time_returns_the_utc_date"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "rateLimited": {
+    "status": 429,
+    "remaining": 0,
+    "limit": 60,
+    "used": 60,
+    "resetAt": "2026-11-24T15:25:00Z",
+    "message": "API rate limit exceeded"
+   }
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/service/time, with no session, returns 200 and {\"utc_date\": <the date of today in UTC, as YYYY-MM-DD>}.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_service_time_returns_the_utc_date"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y05",
+  "void": null,
+  "branches": [
+   "case/Y05"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-805",
+   "type": "Bug",
+   "labels": [],
+   "text": "a deposit with a date in the future is stored, and the balance of today shows money that is not there yet.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "ledger.deposit raises LedgerError for a date after today (UTC) and stores nothing; a deposit with the date of today is stored as before.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_deposit_refuses_a_future_date"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "ledger.deposit raises LedgerError for a date after today (UTC) and stores nothing; a deposit with the date of today is stored as before.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_deposit_refuses_a_future_date"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y06",
+  "void": null,
+  "branches": [
+   "case/Y06"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-806",
+   "type": "Story",
+   "labels": [],
+   "text": "the browser can keep the customer list for a short time.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the reply of GET /api/customers has the header Cache-Control: private, max-age=60.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_has_a_cache_header"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "mergeCommit": {
+    "branch": "merge/Y06",
+    "pushConclusion": "failure"
+   }
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "the reply of GET /api/customers has the header Cache-Control: private, max-age=60.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_has_a_cache_header"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y07",
+  "void": null,
+  "branches": [
+   "case/Y07"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-807",
+   "type": "Story",
+   "labels": [],
+   "text": "a key conflict gets the status 409.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the same Idempotency-Key with a different request gives 409 (it gave 422), with the same detail text as before; no money moves.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_key_conflict_gives_409"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "the same Idempotency-Key with a different request gives 409 (it gave 422), with the same detail text as before; no money moves.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_key_conflict_gives_409"
+       ]
+      }
+     }
+    ]
+   },
+   "changes": [
+    {
+     "test": "tests/test_api.py::test_same_key_with_a_different_body_is_rejected",
+     "by": "acct-product-owner",
+     "at": "T-30h",
+     "reason": "The status of a key conflict changes by this ticket. 409 is the new requirement; the balance check stays."
+    }
+   ]
+  }
+ },
+ {
+  "id": "Y08",
+  "void": null,
+  "branches": [
+   "case/Y08"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-808",
+   "type": "Story",
+   "labels": [],
+   "text": "an amount can be divided into equal parts.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/split?amount=<text>&currency=<code>&parts=<n> returns parts: a list of n amount texts whose sum is the amount; each part is the amount in minor units divided by n and rounded down, and the first parts of the list get one more minor unit until the sum is the amount; the reply also has the currency.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_split_gives_the_remainder_to_the_first_parts"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "parts below 1 or above 50, an unsupported currency, or an amount with too many decimals gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_split_refuses_bad_input"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/split?amount=<text>&currency=<code>&parts=<n> returns parts: a list of n amount texts whose sum is the amount; each part is the amount in minor units divided by n and rounded down, and the first parts of the list get one more minor unit until the sum is the amount; the reply also has the currency.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_split_gives_the_remainder_to_the_first_parts"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "parts below 1 or above 50, an unsupported currency, or an amount with too many decimals gives 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_split_refuses_bad_input"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y09",
+  "void": null,
+  "branches": [
+   "case/Y09"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-809",
+   "type": "Story",
+   "labels": [],
+   "text": "the page shows the value date of a transfer.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/value-date?date=YYYY-MM-DD, with no session, returns 200 and {\"value_date\": <the first day after the date that is a day from Monday to Friday>}; for Friday 2026-05-15 the value date is 2026-05-18, and for Saturday 2026-05-16 it is 2026-05-18; a text that is not a date gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_value_date_is_the_next_working_day"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/value-date?date=YYYY-MM-DD, with no session, returns 200 and {\"value_date\": <the first day after the date that is a day from Monday to Friday>}; for Friday 2026-05-15 the value date is 2026-05-18, and for Saturday 2026-05-16 it is 2026-05-18; a text that is not a date gives 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_value_date_is_the_next_working_day"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y10",
+  "void": null,
+  "branches": [
+   "case/Y10"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-810",
+   "type": "Story",
+   "labels": [],
+   "text": "the account list can be limited to one currency.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/accounts?currency=<code>, in a session, returns only the accounts of the customer of the session that have this currency; a supported currency in which the customer has no account gives an empty list; with no currency the list does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_account_list_can_be_filtered_by_currency"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "A code that is not a code of EXPONENTS gives 422 with the detail unsupported currency.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_account_list_refuses_an_unknown_currency"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/accounts?currency=<code>, in a session, returns only the accounts of the customer of the session that have this currency; a supported currency in which the customer has no account gives an empty list; with no currency the list does not change.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_account_list_can_be_filtered_by_currency"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "A code that is not a code of EXPONENTS gives 422 with the detail unsupported currency.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_account_list_refuses_an_unknown_currency"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y11",
+  "void": null,
+  "branches": [
+   "case/Y11"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-811",
+   "type": "Story",
+   "labels": [],
+   "text": "the customer list tells its length in a header.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the reply of GET /api/customers has the header X-Total-Count, the number of customers of the reply as a decimal text.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_has_a_total_count_header"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "titleWithoutKey": true
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "the reply of GET /api/customers has the header X-Total-Count, the number of customers of the reply as a decimal text.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_has_a_total_count_header"
+       ]
+      }
+     }
+    ]
+   },
+   "prLink": {
+    "by": "acct-claimant",
+    "at": "T-1h",
+    "prNumber": "case",
+    "reason": "PR of my colleague for this ticket"
+   }
+  }
+ },
+ {
+  "id": "Y12",
+  "void": null,
+  "branches": [
+   "case/Y12"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-812",
+   "type": "Story",
+   "labels": [
+    "money_semantics"
+   ],
+   "text": "a deposit has a maximum amount.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "ledger.deposit raises LedgerError for an amount of more than 100,000,000 minor units of the currency of the account (1000000.00 EUR) and stores nothing; an amount of exactly 100,000,000 minor units is stored as before.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_deposit_above_the_maximum_is_refused"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "ledger.deposit raises LedgerError for an amount of more than 100,000,000 minor units of the currency of the account (1000000.00 EUR) and stores nothing; an amount of exactly 100,000,000 minor units is stored as before.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_deposit_above_the_maximum_is_refused"
+       ]
+      }
+     }
+    ]
+   },
+   "signoff": {
+    "by": "acct-product-owner",
+    "at": "T-1h",
+    "sha": "merge",
+    "reason": "1,000,000.00 in the major unit is the agreed maximum for one deposit; the test has the two sides of the limit"
+   }
+  }
+ },
+ {
+  "id": "Y13",
+  "void": null,
+  "branches": [
+   "case/Y13"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-813",
+   "type": "Story",
+   "labels": [],
+   "text": "the page can read one balance.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/balance?account_id=<id>, in a session, returns 200 and {\"account_id\": <id>, \"balance\": <the balance text>, \"currency\": <code>} for an account of the customer of the session; an account of a different customer and an id that does not exist give 404; with no session the reply is 401.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_balance_of_one_account"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/balance?account_id=<id>, in a session, returns 200 and {\"account_id\": <id>, \"balance\": <the balance text>, \"currency\": <code>} for an account of the customer of the session; an account of a different customer and an id that does not exist give 404; with no session the reply is 401.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_balance_of_one_account"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y14",
+  "void": null,
+  "branches": [
+   "case/Y14"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-814",
+   "type": "Story",
+   "labels": [],
+   "text": "the page can read one currency.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/currencies/{code}, with no session, returns 200 and {\"code\": <the code in upper case>, \"decimals\": <n>} for a code of EXPONENTS, compared without case; each other code gives 404 with the detail unknown currency.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_one_currency_can_be_read"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "mergeCommit": {
+    "branch": "merge/Y14",
+    "pushConclusion": "failure"
+   }
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/currencies/{code}, with no session, returns 200 and {\"code\": <the code in upper case>, \"decimals\": <n>} for a code of EXPONENTS, compared without case; each other code gives 404 with the detail unknown currency.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_one_currency_can_be_read"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y15",
+  "void": null,
+  "branches": [
+   "case/Y15"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-815",
+   "type": "Story",
+   "labels": [],
+   "text": "the account list can hide empty accounts.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/accounts?only=nonzero, in a session, returns only the accounts of the customer whose balance is not zero; with no only the list does not change. A different value of only gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_account_list_can_hide_empty_accounts",
+       "test_account_list_refuses_an_unknown_only_value"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-2d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/accounts?only=nonzero, in a session, returns only the accounts of the customer whose balance is not zero; with no only the list does not change. A different value of only gives 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_account_list_can_hide_empty_accounts",
+        "test_account_list_refuses_an_unknown_only_value"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y16",
+  "void": null,
+  "branches": [
+   "case/Y16"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-816",
+   "type": "Story",
+   "labels": [],
+   "text": "each account object tells the decimals of its currency.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each object of GET /api/accounts has decimals, the number of decimals of the currency of the account (2 for EUR, 0 for JPY).",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_account_list_has_the_decimals"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "mainPushRunAttempt": 2
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "each object of GET /api/accounts has decimals, the number of decimals of the currency of the account (2 for EUR, 0 for JPY).",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_account_list_has_the_decimals"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y17",
+  "void": null,
+  "branches": [
+   "case/Y17"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-817",
+   "type": "Story",
+   "labels": [],
+   "text": "the page shows two numbers of the bank.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/stats/customers, with no session, returns 200 and {\"customers\": <the number of customers>, \"accounts\": <the number of accounts that have a customer>}.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_stats_count_customers_and_accounts"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "pushRunInProgress": true,
+   "otherPushRuns": [
+    {
+     "name": "pages build and deployment",
+     "path": "dynamic/pages/pages-build-deployment",
+     "status": "completed",
+     "conclusion": "success"
+    }
+   ]
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/stats/customers, with no session, returns 200 and {\"customers\": <the number of customers>, \"accounts\": <the number of accounts that have a customer>}.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_stats_count_customers_and_accounts"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y18",
+  "void": null,
+  "branches": [
+   "case/Y18"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-818",
+   "type": "Story",
+   "labels": [],
+   "text": "the reply for a key conflict has a clear text.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the same Idempotency-Key with a different request gives 422 as before, with the detail this key was used for a different transfer; no money moves.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_key_conflict_has_a_clear_detail"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "the same Idempotency-Key with a different request gives 422 as before, with the detail this key was used for a different transfer; no money moves.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_key_conflict_has_a_clear_detail"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y19",
+  "void": null,
+  "branches": [
+   "case/Y19"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-819",
+   "type": "Story",
+   "labels": [],
+   "text": "a cash amount is rounded to 5 minor units.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/cash-rounding?amount=<text>&currency=<code> returns rounded: for a currency with 2 decimals, the amount at the nearest multiple of 5 minor units; for each other currency, the amount with no change; the reply also has rounded_minor and the currency.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_cash_rounding_goes_to_the_nearest_five"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "An unsupported currency or an amount with too many decimals gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_cash_rounding_refuses_bad_input"
+      ]
+     }
+    }
+   ],
+   "domain": "money_semantics"
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/cash-rounding?amount=<text>&currency=<code> returns rounded: for a currency with 2 decimals, the amount at the nearest multiple of 5 minor units; for each other currency, the amount with no change; the reply also has rounded_minor and the currency.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_cash_rounding_goes_to_the_nearest_five"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "An unsupported currency or an amount with too many decimals gives 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_cash_rounding_refuses_bad_input"
+       ]
+      }
+     }
+    ]
+   },
+   "signoff": {
+    "by": "acct-finance-owner",
+    "at": "T-90m",
+    "sha": "merge",
+    "reason": "approved",
+    "noAuditEvent": true
+   }
+  }
+ },
+ {
+  "id": "Y20",
+  "void": null,
+  "branches": [
+   "case/Y20"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-820",
+   "type": "Story",
+   "labels": [],
+   "text": "the page shows how many customer accounts each currency has.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/stats/currencies, with no session, returns 200 and an object that has, for each currency with one or more accounts of a customer, the code as the key and the number of those accounts as the value.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_stats_counts_accounts_by_currency"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3h",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/stats/currencies, with no session, returns 200 and an object that has, for each currency with one or more accounts of a customer, the code as the key and the number of those accounts as the value.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_stats_counts_accounts_by_currency"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y21",
+  "void": null,
+  "branches": [
+   "case/Y21"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-821",
+   "type": "Task",
+   "labels": [],
+   "text": "the page asks the server for a new idempotency key.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/keys/new, with no session, returns 200 and {\"key\": <32 hexadecimal digits in lower case>}; two requests get two different keys.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_new_key_is_32_hex_digits"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-claimant",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/keys/new, with no session, returns 200 and {\"key\": <32 hexadecimal digits in lower case>}; two requests get two different keys.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_new_key_is_32_hex_digits"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y22",
+  "void": "not buildable: the scorer cannot serve the main report of a later merge of a different PR (PR B) after the merge of the linked PR A; it serves one PR per case",
+  "branches": [
+   "case/Y22"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-822",
+   "type": "Story",
+   "labels": [],
+   "text": "each account object tells if the account is empty.",
+   "acceptanceCriteria": []
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant"
+  }
+ },
+ {
+  "id": "Y23",
+  "void": null,
+  "branches": [
+   "case/Y23"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-823",
+   "type": "Story",
+   "labels": [],
+   "text": "each customer object tells the currencies of its accounts.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each object of GET /api/customers has account_currencies: the currency codes of the accounts of that customer, each code one time, in the order of the codes; a customer with no account has an empty list.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_has_account_currencies"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "reportCommentNote": "Checked by hand, all good."
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "each object of GET /api/customers has account_currencies: the currency codes of the accounts of that customer, each code one time, in the order of the codes; a customer with no account has an empty list.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_has_account_currencies"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Y24",
+  "void": null,
+  "branches": [
+   "case/Y24"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-824",
+   "type": "Story",
+   "labels": [],
+   "text": "the customer list can be limited to one first letter.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/customers?initial=<letter> returns only the customers whose name starts with that letter, compared without case, in the order of the list with no initial; with no initial the list does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_can_be_filtered_by_initial"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "A value of initial that is not exactly one letter from A to Z, in upper or lower case, gives 422 with the detail initial must be one letter.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_refuses_a_bad_initial"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/customers?initial=<letter> returns only the customers whose name starts with that letter, compared without case, in the order of the list with no initial; with no initial the list does not change.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_can_be_filtered_by_initial"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "A value of initial that is not exactly one letter from A to Z, in upper or lower case, gives 422 with the detail initial must be one letter.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_refuses_a_bad_initial"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ }
+]
