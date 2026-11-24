@@ -413,3 +413,25 @@ export async function readFinding(findingId, d) {
   const id = String(findingId ?? '').trim();
   return /^F-[0-9a-f]{12}-[0-9a-f]{8}$/.test(id) ? (await d.store.get(`finding:${id}`)) ?? null : null;
 }
+
+// Review of 24 Nov, finding access: a finding holds the symptom, the hypothesis, the cited code
+// and the investigator, so the caller is part of every read. The investigator reads it. Another
+// person reads it only through an explicit link to a work item (a ticket made from the finding,
+// see createTicket) that Jira lets that person browse. A record with no investigator is closed to
+// everyone (no migration). null for every refusal, the same as an id that does not exist.
+export const findingLinksKey = (findingId) => `finding-links:${findingId}`;
+const ISSUE_KEY = /^[A-Z][A-Z0-9_]{1,9}-[1-9][0-9]{0,9}$/;
+// d = { store, accountId, canBrowse(key) -> boolean }. Without canBrowse, links open nothing.
+export async function readFindingFor(findingId, d) {
+  if (typeof d?.accountId !== 'string' || !d.accountId) return null;
+  const f = await readFinding(findingId, d);
+  if (!f || typeof f.by !== 'string' || !f.by || typeof f.findingId !== 'string') return null;
+  if (f.by === d.accountId) return f;
+  if (typeof d.canBrowse !== 'function') return null;
+  const links = await d.store.get(findingLinksKey(f.findingId));
+  if (!Array.isArray(links)) return null;
+  for (const key of links) {
+    if (typeof key === 'string' && ISSUE_KEY.test(key) && (await d.canBrowse(key)) === true) return f;
+  }
+  return null;
+}

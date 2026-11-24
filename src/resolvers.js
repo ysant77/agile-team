@@ -142,9 +142,13 @@ resolver.define('adoptCheck', async ({ payload, context }) => {
   return { ok: true, auditSeq: audit.seq, acsAuditSeq: recorded.ok ? recorded.auditSeq : null };
 });
 
+// As the user: a work item the person cannot browse returns 404.
+const canBrowse = async (key) => (await api.asUser().requestJira(route`/rest/api/3/issue/${key}?fields=id`)).ok;
+
 // The panel shows a stored discovery finding by its id (src/finding-view.js). It only reads the
-// app's store; the finding is not tied to the work item.
-resolver.define('getFinding', async ({ payload }) => getFindingAction(payload, { store: kvs }));
+// app's store. Review of 24 Nov: only the investigator, or a person who can browse a work item
+// that the finding is linked to, gets the view.
+resolver.define('getFinding', async ({ payload, context }) => getFindingAction(payload, { store: kvs, accountId: context?.accountId, canBrowse }));
 
 // Monitor page: the whole audit chain (small in the demo), checked and replayed.
 const MONITOR_MAX = 2000;
@@ -153,9 +157,8 @@ resolver.define('getMonitor', async () => {
   const count = head ? Math.min(head.seq + 1, MONITOR_MAX) : 0;
   const events = [];
   for (let from = 0; from < count; from += 50) events.push(...(await readAudit(from, Math.min(50, count - from))));
-  // As the user: a work item the viewer cannot browse returns 404 and is left out.
-  const canSee = async (key) => (await api.asUser().requestJira(route`/rest/api/3/issue/${key}?fields=id`)).ok;
-  const monitor = await monitorForViewer(events, canSee);
+  // As the user: a work item the viewer cannot browse is left out.
+  const monitor = await monitorForViewer(events, canBrowse);
   return { ...monitor, truncated: head ? head.seq + 1 > MONITOR_MAX : false, readAt: new Date().toISOString() };
 });
 

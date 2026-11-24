@@ -38,8 +38,10 @@ function mockUser(t, accountId = 'pm-1') {
 }
 
 const FINDING_ID = 'F-0123456789ab-89abcdef';
+// Review of 24 Nov (finding access): a finding names its investigator, the person who may make a
+// ticket from it (mockUser's default account).
 const finding = (kind = 'defect') => ({
-  findingId: FINDING_ID, kind, status: 'unconfirmed', hypothesis: 'withdraw checks the balance before the write transaction.',
+  findingId: FINDING_ID, by: 'pm-1', kind, status: 'unconfirmed', hypothesis: 'withdraw checks the balance before the write transaction.',
   reproducer: kind === 'defect' ? { testName: 'test_two_processes_withdraw_at_once', file: 'tests/test_ledger.py', asserts: 'one withdrawal succeeds' } : null,
 });
 const draft = (extra = {}) => ({
