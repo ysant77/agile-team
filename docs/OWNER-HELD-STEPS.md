@@ -26,10 +26,12 @@ Versions on development: 5.13.0 (520811a) for the live claims of 24 Nov; then 5.
 non-interactively with no change of `manifest.yml` against 520811a, so no new scope.
 
 **Production version (dated line, 24 Nov 2026).** Production runs the version that the owner
-deployed on 24 Nov at 12:45 UTC, built from `main` as it was at that time (e1bcb72, after PR 107).
-Production does **not** hold PR 106 (the panel line for a claim that was not checked), PR 117 (the
-high-stake mark kept with the AC record) or PR 118 (a later test of another module is not read as
-removed). A production deploy by the owner is needed to bring them; the manifest has not changed
+deployed on 24 Nov at 12:45 UTC. That it was built from `main` e1bcb72 (after PR 107, the last
+merge before that time) is an inference from the time of the deploy, not a proof; the owner can
+confirm it. If so, production holds PR 103 (ticket drafts) and PR 106 (the panel line for a claim
+that was not checked), and does **not** hold PR 117 (the high-stake mark kept with the AC record)
+or PR 118 (a later test of another module is not read as removed). PR 108 is docs only. A
+production deploy by the owner is needed to bring PR 117 and PR 118; the manifest has not changed
 since 520811a, so no prompt is expected, and if one comes, stop and decide.
 
 **Production (24 Nov, done by the owner).** Production was deployed on 24 Nov (12:45 UTC) by the owner, and distribution is set to sharing. A fresh-site install from the install link and one U01 claim gave **Supported** (live, n = 1): a work item on a new site, 11 checks verified. The production log has the verdict line with `"authenticated":true` and a rate limit of the 5,000 class (written by the queue consumer, about 9 s after the trigger's "claim queued" line). The install link is given in the submission form, not in this repository. Of the list below, the production deploy
@@ -45,7 +47,7 @@ lines under "Never checked by the code checks", and "Drafts waiting for you" in 
 ticket draft with a number or money waits for the person who asked). 5.17.0 adds the panel line
 for a claim that was not checked (a GitHub rate limit, PR 106), the high-stake mark kept with the
 AC record (PR 117) and the removed-test reason that reads only the modules of the PR (PR 118).
-These three are on development only.
+PR 106 is also on production (if production is e1bcb72); PR 117 and PR 118 are on development only.
 
 On return, in this order (each step needs the owner's word; details in the sections below and in
 `docs/FIRST-JUDGE-CLAIM.md`):
