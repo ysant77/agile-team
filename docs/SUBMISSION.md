@@ -98,7 +98,7 @@ fact; a fact the simulation cannot serve). The 22 scored: 18 right, 18 with the 
 unsafe Supported (Y02, Y09: weak tests; Y13: a route with no ownership check; Y08: a money label
 removed by the claimant before the claim), 0 false blocks on 8 controls. It confirmed the two
 fixes made after set 7 on held-out cases. Y08 is the only unsafe Supported in a high-stake class in sets 5 to 8;
-a fix is pushed for review.
+its fix is merged (PR 117) and is measured only on development data so far.
 
 After set 7, two of its faults were fixed (X01 and the merge result of X09). They are measured
 only on cases we have read, so they are not a new result; a new blind set is needed.

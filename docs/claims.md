@@ -354,8 +354,9 @@ false blocks (`benchmark/RESULTS-8.md`). PR 100 and PR 101 were confirmed on hel
 four unsafe cases:
 
 - **A label removed before the claim** (Y08). The claimant removed `money_semantics` before the
-  claim, so no sign-off was asked. A fix is pushed for review (the mark is kept with the AC record);
-  until it is merged and measured on a new blind set, this is a limit.
+  claim, so no sign-off was asked. Fixed in PR 117 (the mark is kept with the audited AC record;
+  see "A high-stake mark removed before the claim"); measured on development data only, so a new
+  blind set measures it.
 - **A test that transforms both sides before it compares** (Y02): it lower-cases the text, so it
   cannot see the letter case that the AC asks for.
 - **A test that expects a wrong value** (Y09): its expected date contradicts the example in the AC
