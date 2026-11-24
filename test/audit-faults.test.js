@@ -102,3 +102,24 @@ test('createTicket: the audit append after the Jira create fails; the retry make
   assert.equal(posts.length, 1);
   assert.equal(events(store.map, 'ticket.created').length, 1);
 });
+
+// Lead review of 24 Nov: the finding link is written between the "done" key and the audit event.
+// A stop after "done" and before the link must be repaired by the retry: link and event both
+// written, once, and no second issue.
+test('createTicket: the finding link write after "done" fails; the retry writes the link and ticket.created once', async (t) => {
+  const store = faultyStore();
+  t.mock.method(kvs, 'get', store.get);
+  t.mock.method(kvs, 'set', store.set);
+  t.mock.method(kvs, 'delete', store.delete);
+  const id = 'F-0123456789ab-89abcdef';
+  store.map.set(`finding:${id}`, { findingId: id, by: 'pm-1', kind: 'defect', status: 'unconfirmed', hypothesis: 'the export misses the last line.',
+    reproducer: { testName: 'test_export_has_every_line', file: 'tests/test_export.py', asserts: 'every line is exported' } });
+  const posts = mockJiraUser(t);
+  store.failOnce((k) => k === `finding-links:${id}`);
+  await quiet(() => assert.rejects(createTicket({ ...DRAFT, findingId: id }), /injected failure/));
+  const again = await quiet(() => createTicket({ ...DRAFT, findingId: id }));
+  assert.equal(again.ok, true, again.error);
+  assert.equal(posts.length, 1);
+  assert.deepEqual(store.map.get(`finding-links:${id}`), [again.key]);
+  assert.equal(events(store.map, 'ticket.created').length, 1);
+});
