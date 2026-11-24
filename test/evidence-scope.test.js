@@ -73,3 +73,11 @@ test('the panel shows the scope and the never-checked list', () => {
   for (const line of NEVER_CHECKED) assert.ok(shown.includes(line), line);
   assert.match(shown, /Checks: 2 verified, 1 contradicted, 1 unknown/);
 });
+
+test('a claim that was not checked gets one plain line for the panel', async () => {
+  const { notCheckedLine } = await import('../src/verdict-view.js');
+  const line = notCheckedLine({ claimId: 'K-1:9', type: 'done', reason: 'GitHub rate limit reached (HTTP 403, 0 calls left this hour)', retryAt: '2026-11-24T10:41:00.000Z', at: '2026-11-24T10:00:12.000Z' });
+  assert.equal(line, 'The last claim "done" (2026-11-24 10:00 UTC) was not checked: GitHub rate limit reached (HTTP 403, 0 calls left this hour). No verdict was recorded. Post the claim again after 2026-11-24 10:41 UTC.');
+  assert.match(notCheckedLine({ type: 'fixed', reason: 'GitHub server error', retryAt: null, at: '2026-11-24T10:00:12.000Z' }), /Post the claim again in a few minutes\.$/);
+  assert.equal(notCheckedLine(null), null);
+});
