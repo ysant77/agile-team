@@ -167,7 +167,9 @@ network error. A server or network error is tried 3 times; a secondary limit of 
 waited out once. A rate limit, a secondary limit, or a server or network error after the retries
 is **not a verdict**: the work item gets a comment "was not checked" with the reason and the time
 to try again; no verdict property and no audit entry are written, and the claim's slots are given
-back, so it does not count toward the caps. A 401, a 403 with calls left or a 404 is a stored
+back, so it does not count toward the caps. Since 24 Nov the app also keeps the outcome in its
+store (`not-checked:<key>`, the last 5), and the issue panel shows "The last claim ... was not
+checked" with the reason and the time to try again, while no verdict is newer. A 401, a 403 with calls left or a 404 is a stored
 Cannot verify, "code host not reachable: ..." with that reason. Tests: `test/github-errors.test.js`.
 
 ## The claim `done` (definition of done)

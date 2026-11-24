@@ -89,6 +89,18 @@ export function formatNotChecked(issueKey, claim, transient) {
   ].join('\n');
 }
 
+// The not-checked outcomes of a work item, for the panel (lead's open item, 24 Nov). They are
+// kept apart from the verdicts: no issue property and no audit event, because nothing final was
+// decided. The last 5 are kept; the panel shows the newest while no verdict is newer.
+export const notCheckedKey = (issueKey) => `not-checked:${issueKey}`;
+const NOT_CHECKED_KEPT = 5;
+export function latestNotChecked(entries, verdicts) {
+  const last = Array.isArray(entries) ? entries.at(-1) : null;
+  if (!last || typeof last.at !== 'string') return null;
+  const newest = (Array.isArray(verdicts) ? verdicts : []).map((v) => v?.at).filter((a) => typeof a === 'string').sort().at(-1);
+  return newest && newest >= last.at ? null : last;
+}
+
 const DEFAULT_DEPS = {
   collectJira, collectGithub, collectPrStats, collectReviews, addVerdictProperty, appendAudit, readAudit, addComment, findComment, fetchFn: fetch, store: kvs,
   releaseClaim,
@@ -167,6 +179,16 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
         await fence();
         await d.releaseClaim?.(claim.id, d.store);
         progress.steps.released = true;
+        await save();
+      }
+      if (!progress.steps.stored) {
+        await fence();
+        const t = progress.transient;
+        const entry = { claimId: claim.id, type: claim.type, kind: t.kind ?? null, reason: t.reason, retryAt: t.retryAt ?? null, at: new Date().toISOString() };
+        const prior = (await d.store.get(notCheckedKey(issueKey))) ?? [];
+        const kept = (Array.isArray(prior) ? prior : []).filter((e) => e?.claimId !== claim.id);
+        await d.store.set(notCheckedKey(issueKey), [...kept, entry].slice(-NOT_CHECKED_KEPT));
+        progress.steps.stored = true;
         await save();
       }
       if (!progress.steps.comment) {
