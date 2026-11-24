@@ -67,4 +67,5 @@ into git only as a scores-only file, and only after the pre-push scan passes on 
   minutes); the full suite is a separate step before any change is proposed for real.
 - The Python environment is built from another bank commit; the copy's `src/` comes first on the
   path. A dependency change in a patch is refused, so this holds.
-- One development case so far. No model has run in this harness yet.
+- Three development cases (D2-1, D7-1 and the control D7-C). The first model run is
+  `RESULTS-DEV-1.md` (24 Nov): 0 of 6 repaired, 0 of 3 defects invented on the control.
