@@ -61,8 +61,8 @@ No model API outside Atlassian is called by the app. The agents run on Rovo.
 
 All runs are local: local branches of a demo bank, CI commands run locally, and a simulated GitHub
 and Jira in the scorer. The case sets were written outside the team. The figures below are from
-`benchmark/RESULTS-4.md`, `benchmark/RESULTS-5.md`, `benchmark/RESULTS-5-ARM-D.md` and
-`docs/claims.md`.
+`benchmark/RESULTS-4.md` to `benchmark/RESULTS-7.md`, `benchmark/RESULTS-5-ARM-D.md` and
+`docs/claims.md`. The allowed wording of each claim is in `docs/CLAIM-REGISTER.md`.
 
 **Blind set 4 (24 cases).** Right outcome:
 
@@ -79,6 +79,22 @@ and Jira in the scorer. The case sets were written outside the team. The figures
 - **Miss:** 3 false blocks on correct controls (V07, V13, V17), where the rule allowed at most 1.
 - **Miss:** 4 unsafe Supported (V02, V09, V12, V18). In each, the test fails before and passes
   after, but does not check every case of the criterion.
+
+**Blind set 6 (24 cases; 16 buildable, 8 counted apart with their reasons), verifier (app 9ec52ca):**
+13 of 16 right, 12 with the named reason. 2 unsafe Supported (W10: an insecure cookie and CORS
+setting; W18: a test that checks one rule of three). 0 false blocks on the 6 controls. 0 unsafe
+Supported in the high-stake classes.
+
+**Blind set 7 (24 cases), verifier (app cea0470).** X02 is not buildable (a false base fact). Four
+cases are not buildable as written (the bank's own tests make CI red against the case's green CI)
+and are scored as build disputes. Headline of record, the 19 undisputed cases: 16 right, 15 with
+the named reason, 2 unsafe Supported (X07: a test that computes its expected value with the code
+it tests; X15: request text in an SQL `ORDER BY`), 1 false block on 8 controls (X01: a
+`pytest.raises` test). 0 unsafe Supported in the high-stake classes. With the four build disputes
+(23 cases): 19 right, 18 with the reason, 3 unsafe Supported, 1 false block.
+
+After set 7, two of its faults were fixed (X01 and the merge result of X09). They are measured
+only on cases we have read, so they are not a new result; a new blind set is needed.
 
 **The model reviewer as a gate (set 5): not met.** It caught 0 of the 4 unsafe cases and held 2
 correct controls. So from 20 Nov the reviewer is advice only. It is shown, and it never changes a
@@ -101,7 +117,7 @@ Cannot verify (GitHub answered HTTP 403, likely its limit for requests without a
 - The CI report is written by CI in the repository under test. The pinned workflow, the bot
   author, the head commit and the hash marker make an edit after the run visible. They do not
   make the run honest.
-- Each set has 20 to 40 cases. On 24 cases, one case moves a rate by about 4 points. Sets 1 to 5
+- Each set has 20 to 40 cases. On 24 cases, one case moves a rate by about 4 points. Sets 1 to 7
   are now development sets. A new claim needs a new blind set.
 - The verifier reads one configured GitHub repository (`GITHUB_REPO`), and the CI report format
   of the demo bank (`docs/ci-report.md`). Another repository needs that workflow and report.
