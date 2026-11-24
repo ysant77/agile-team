@@ -503,7 +503,11 @@ Three points of this paper match rules here:
   is not counted.
 - **Validation before and after the merge.** A `done` claim needs the named test to fail on the
   base by an assertion and pass on the head (`reproduced`), and a clean main report for the merge
-  commit (`merged_clean`).
+  commit (`merged_clean`). When `main.json` is not for the merge commit, the app reads the push
+  runs on the merge commit, and the reason tells two cases apart (owner decision, 24 Nov): the push
+  run is still running ("wait for it to end, then claim again"), or no run is running ("report
+  missing"). If the runs cannot be read, the reason says so. The check is unknown in all three
+  cases, so the verdict does not change.
 - **A plausible patch is not a correct patch.** A passing test after a change shows that the
   change is plausible. On set 5 the code checks supported 4 changes that were not correct (C7).
   That is why level 5 of the evidence levels is never "proved".

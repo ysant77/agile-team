@@ -881,10 +881,29 @@ export function uniqueMigrations(report) {
     : result('unique_migrations', 'pass', `${numbers.length} migration(s), numbers unique`);
 }
 
+// Owner decision 24 Nov: when main.json is not for the merge commit, the reason tells a push run on
+// the merge commit that is still running (wait, then claim again) from a report that is missing.
+// The result is unknown in both cases. mergeRuns: the push runs on the merge commit, read by the
+// collector only in this case; null when they were not read.
+const RUNNING = ['queued', 'in_progress', 'waiting', 'pending', 'requested'];
+function mergeReportGap(ctx, report) {
+  const merge = String(ctx.mergeSha).slice(0, 7);
+  const runs = ctx.mergeRuns;
+  if (!isObjList(runs)) return `the push runs on the merge commit ${merge} were not read, so it is not known whether its report is still to come`;
+  const paths = ctx.config?.requiredWorkflowPaths ?? DEFAULT_WORKFLOW_PATHS;
+  const running = runs.find((r) => isList(paths) && paths.includes(runPath(r)) && r.headSha === ctx.mergeSha && RUNNING.includes(r.status));
+  if (running) return `the push run on the merge commit ${merge} is still running (run ${running.id}, ${running.status}), so its report is not written yet; wait for it to end, then claim again`;
+  const other = isObj(report) && isText(report.head_sha) ? `main.json is for ${report.head_sha.slice(0, 7)}, not the merge commit ${merge}` : `no main.json for the merge commit ${merge}`;
+  return `${other}, and no push run on the merge commit is running (report missing)`;
+}
+
 export function mergedClean(ctx) {
   const report = ctx.mergeReport;
   const trust = reportTrusted(ctx, report, ctx.mergeSha);
-  if (trust.status !== 'pass') return result('merged_clean', 'unknown', `merge result: ${trust.reason}`);
+  if (trust.status !== 'pass') {
+    const stale = isText(ctx.mergeSha) && (!isObj(report) || report.head_sha !== ctx.mergeSha);
+    return result('merged_clean', 'unknown', `merge result: ${stale ? mergeReportGap(ctx, report) : trust.reason}`);
+  }
   // The reader always sets the list (verify-claim.js); an empty list names no test.
   const required = ctx.mergeRequiredTests;
   if (!isTextList(required)) return result('merged_clean', 'unknown', 'the list of tests required after merge is missing or malformed');
