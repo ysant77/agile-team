@@ -33,9 +33,9 @@ the headline.
 - Set 8 is the first held-out measure of PR 100 and PR 101. PR 100: Y01 and Y05 are `supported`
   (the app before it gave two false blocks on the same evidence). PR 101: Y06 and Y14 are
   `contradicted` with the failed AC test on the merge result named.
-- After set 8 (development data only, pushed for review): the high-stake mark is kept with the AC
-  record, so a label removed by the claimant still asks for the sign-off (Y08 moves to
-  `cannot_verify`); a test that a later PR added to main in another module is no longer read as
+- After set 8 (development data only): the high-stake mark is kept with the AC
+  record, so a label removed by the claimant still asks for the sign-off (PR 117; Y08 moves to
+  `cannot_verify`); and (pushed for review) a test that a later PR added to main in another module is no longer read as
   removed (the reasons of Y06 and Y14 change; no outcome moves).
 - Recorded, not fixed: Y02 and Y09 (weak tests), Y13 (a missing ownership check that no test
   exercises).
