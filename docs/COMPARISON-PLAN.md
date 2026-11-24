@@ -23,25 +23,29 @@ it block a correct one (false block on a control)?
 | 5 | 24 | 24 | 16 | 14 | 4 | 3 of 10 |
 | 6 | 24 | 16 buildable | 13 | 12 | 2 | 0 of 6 |
 | 7 | 24 | 19 undisputed (23 with the build readings) | 16 (19) | 15 (18) | 2 (3) | 1 of 8 (1 of 8) |
+| 8 | 24 | 22 (Y12 and Y22 not buildable; 0 disputed) | 18 | 18 | 4 | 0 of 8 |
 
 Arms A1 and A2 for sets 6 and 7 are in `run/summarize.py` output (set 4 definitions); they are not
 the headline.
 
-## What changed after set 7 (development data only)
+## What set 8 measured, and what changed after it
 
-- PR 100: a `pytest.raises` test that ends with DID NOT RAISE on base counts as a failure by an
-  assertion (X01). On the stored evidence of sets 1 to 7, only X01 moves.
-- PR 101: the merge result reads the AC tests (X09). No outcome moves; X09's reason changes.
-- The two set 7 limits (X07, X15) are recorded, not fixed.
-
-These changes are measured on cases we have read. They are not a new result.
+- Set 8 is the first held-out measure of PR 100 and PR 101. PR 100: Y01 and Y05 are `supported`
+  (the app before it gave two false blocks on the same evidence). PR 101: Y06 and Y14 are
+  `contradicted` with the failed AC test on the merge result named.
+- After set 8 (development data only, pushed for review): the high-stake mark is kept with the AC
+  record, so a label removed by the claimant still asks for the sign-off (Y08 moves to
+  `cannot_verify`); a test that a later PR added to main in another module is no longer read as
+  removed (the reasons of Y06 and Y14 change; no outcome moves).
+- Recorded, not fixed: Y02 and Y09 (weak tests), Y13 (a missing ownership check that no test
+  exercises).
 
 ## What a new figure needs
 
-1. A new blind set (set 8), written by a separate writer who sees no source, test, fixture, run
-   folder or result, from the same writer inputs as set 7.
-2. A freeze note before the case file is opened: the app commit (after PRs 100 and 101 and any
-   other change to the verifier), the scorer changes, the bank commit, the case file hash.
+1. A new blind set (set 9), written by a separate writer who sees no source, test, fixture, run
+   folder or result, from the same writer inputs as set 8.
+2. A freeze note before the case file is opened: the app commit (after the fixes of Y08 and of
+   the removed-test reason, and any other change to the verifier), the scorer changes, the bank commit, the case file hash.
 3. Predictions committed before any build or run.
 4. The same counting: every case made stays in the denominator; a case that cannot be built is
    counted apart with its reason; a build dispute is scored with its flag, and the headline is the

@@ -347,6 +347,21 @@ limits with no fix in this round; the panel lists both under "Never checked by t
 The third unsafe case of the 23 scored, X19 (a build dispute), is the known limit above: the AC
 text is not read. Figures: `benchmark/RESULTS-7.md`.
 
+## Measured limits (set 8, 24 Nov 2026)
+
+Set 8 (arm C, app 6c4ec0c; 22 scored): 18 right, 18 with the reason, 4 unsafe Supported, 0 of 8
+false blocks (`benchmark/RESULTS-8.md`). PR 100 and PR 101 were confirmed on held-out cases. The
+four unsafe cases:
+
+- **A label removed before the claim** (Y08). The claimant removed `money_semantics` before the
+  claim, so no sign-off was asked. A fix is pushed for review (the mark is kept with the AC record);
+  until it is merged and measured on a new blind set, this is a limit.
+- **A test that transforms both sides before it compares** (Y02): it lower-cases the text, so it
+  cannot see the letter case that the AC asks for.
+- **A test that expects a wrong value** (Y09): its expected date contradicts the example in the AC
+  text, which the app does not read.
+- **A route with no ownership check that no test exercises** (Y13): a customer reads any account.
+
 ## Approvals and the AC record (19 Nov 2026, finding E1)
 
 Any issue editor can write the issue property `aat.ticket` by REST. So:
