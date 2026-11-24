@@ -1,0 +1,181 @@
+{
+ "kind": "scores only (no model text, no symptom, no patch)",
+ "run": "repair-dev-3",
+ "date": "2026-11-24",
+ "partial": "1 of 3 seeds (seed 11 only); seeds 12 and 13 not run: the model slot was released after the seed 11 round",
+ "app": "32a582c (FREEZE of repair-dev-3; harness files identical in the run worktree at 7a4d8a8)",
+ "model": "qwen3-coder:30b 06c1097efce0",
+ "settings": {
+  "temperature": 0.6,
+  "numCtx": 16384,
+  "seeds": [
+   11
+  ],
+  "limits": {
+   "rounds": 30,
+   "checks": 8,
+   "patches": 3
+  }
+ },
+ "trees": {
+  "R3-1": "9d9171c",
+  "R3-2": "5ec0607",
+  "R3-3": "cb9b938",
+  "R3-C": "2d7b042"
+ },
+ "battery": {
+  "atLoad": "77%",
+  "lowest": "64%",
+  "atRelease": "64%"
+ },
+ "patchTally": {
+  "applied": 7,
+  "refused: edit 1: tests/test_agent_reference_length.py exists; give th": 2,
+  "refused: edit 1: the old text occurs 0 times in src/bank/money.py; it": 1
+ },
+ "runs": [
+  {
+   "case": "R3-1",
+   "seed": 11,
+   "stop": "rounds",
+   "rounds": 30,
+   "seconds": 967,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 8,
+    "run-check": 15,
+    "propose-patch": 3,
+    "lint-requirement": 1,
+    "record-finding": 1
+   },
+   "patches": [
+    "applied",
+    "refused: edit 1: tests/test_agent_reference_length.py exists; give th",
+    "refused: edit 1: tests/test_agent_reference_length.py exists; give th"
+   ],
+   "candidateChangesSrc": false,
+   "candidateFiles": [
+    "tests/test_agent_reference_length.py"
+   ],
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": "failed",
+   "protectedOnCandidate": {
+    "tests/test_api.py": "passed",
+    "tests/test_web.py": "passed"
+   },
+   "agentTests": [
+    {
+     "test": "tests/test_agent_reference_length.py",
+     "onBase": "passed",
+     "onCandidate": "passed",
+     "reproduces": false
+    }
+   ],
+   "verdict": "not repaired: the hidden check still fails"
+  },
+  {
+   "case": "R3-2",
+   "seed": 11,
+   "stop": "rounds",
+   "rounds": 30,
+   "seconds": 880,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 2,
+    "read-repo-file": 9,
+    "read-ci-results": 1,
+    "record-finding": 2,
+    "lint-requirement": 1,
+    "run-check": 8,
+    "propose-patch": 5,
+    "reset": 1
+   },
+   "patches": [
+    "applied",
+    "applied",
+    "refused: edit 1: the old text occurs 0 times in src/bank/money.py; it"
+   ],
+   "candidateChangesSrc": null,
+   "candidateFiles": [],
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": null,
+   "agentTests": [],
+   "verdict": "no candidate patch"
+  },
+  {
+   "case": "R3-3",
+   "seed": 11,
+   "stop": "rounds",
+   "rounds": 30,
+   "seconds": 612,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 2,
+    "read-repo-file": 4,
+    "read-ci-results": 1,
+    "record-finding": 2,
+    "run-check": 13,
+    "propose-patch": 5,
+    "reset": 1,
+    "lint-requirement": 1
+   },
+   "patches": [
+    "applied",
+    "applied",
+    "applied"
+   ],
+   "candidateChangesSrc": true,
+   "candidateFiles": [
+    "src/bank/ledger.py",
+    "tests/test_agent_account_case.py"
+   ],
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": "passed",
+   "protectedOnCandidate": {
+    "tests/test_api.py": "passed"
+   },
+   "agentTests": [
+    {
+     "test": "tests/test_agent_account_case.py",
+     "onBase": "failed",
+     "onCandidate": "failed",
+     "reproduces": false
+    }
+   ],
+   "verdict": "repaired (hidden check and protected tests pass); a person decides"
+  },
+  {
+   "case": "R3-C",
+   "seed": 11,
+   "stop": "final answer",
+   "rounds": 14,
+   "seconds": 347,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 4,
+    "read-ci-results": 1,
+    "record-finding": 2,
+    "lint-requirement": 1,
+    "run-check": 3,
+    "propose-patch": 1
+   },
+   "patches": [
+    "applied"
+   ],
+   "candidateChangesSrc": true,
+   "candidateFiles": [
+    "src/bank/api.py"
+   ],
+   "hiddenOnBase": null,
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": {
+    "tests/test_api.py": "passed"
+   },
+   "agentTests": [],
+   "verdict": "invented a defect: the candidate changes src/"
+  }
+ ]
+}
