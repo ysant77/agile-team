@@ -3,8 +3,10 @@
 // investigated tree, bakeoff/tasks/discovery.js) and adds two tools:
 // - run-check { test, on: "base" | "candidate" }: the harness runs pytest on that scratch copy,
 //   for one test id that exists there, in the sandbox (bakeoff/repair/sandbox.mjs);
-// - propose-patch { diff, reason }: a unified diff, checked and applied to a fresh copy of the
-//   base (bakeoff/repair/patch.mjs). At most 3 patches; the last one that applied is the candidate.
+// - propose-patch { edits: [{ path, old, new }], reason }: search-and-replace edits (since 24 Nov;
+//   before, a unified diff), checked and applied to a fresh copy of the base
+//   (bakeoff/repair/patch.mjs, applyEdits). At most 3 patches; the last one that applied is the
+//   candidate.
 // The model never gives a command, never sees the hidden checks or the truth, and never changes
 // the investigated tree. After the loop, the evaluator decides with checks the model did not see.
 
@@ -15,7 +17,7 @@ import { execFileSync } from 'node:child_process';
 import { listRepoFiles, readCiResults, readRepoFile, recordFinding, startInvestigation } from '../../src/discovery.js';
 import { ollamaTools } from '../../src/tool-specs.js';
 import { localGithub, pmPrompt } from '../tasks/discovery.js';
-import { applyPatch, makeCopy } from './patch.mjs';
+import { applyEdits, makeCopy } from './patch.mjs';
 import { runPytest } from './sandbox.mjs';
 
 export const LIMITS = { rounds: 30, checks: 8, patches: 3 };
@@ -23,7 +25,7 @@ const DISCOVERY_TOOLS = ['start-investigation', 'list-repo-files', 'read-repo-fi
 
 export const REPAIR_TOOL_SPECS = [
   { type: 'function', function: { name: 'run-check', description: 'Run one test of the bank with pytest and get its outcome. "on" is "base" (the investigated code) or "candidate" (the code with your last applied patch). The test must exist in that copy: an existing test, or an agent test that your patch added. You cannot run any other command.', parameters: { type: 'object', properties: { test: { type: 'string', description: 'A pytest id: tests/<file>.py or tests/<file>.py::<test name>' }, on: { type: 'string', enum: ['base', 'candidate'] } }, required: ['test', 'on'] } } },
-  { type: 'function', function: { name: 'propose-patch', description: 'Propose a change as one unified diff (--- a/<path>, +++ b/<path>). You may change Python files under src/ and add new tests named tests/test_agent_<name>.py. The bank\'s own tests, scripts, CI and config cannot be changed. Each patch is applied to a fresh copy of the base code; at most 3 patches.', parameters: { type: 'object', properties: { diff: { type: 'string' }, reason: { type: 'string', description: 'Why this change fixes the reported problem' } }, required: ['diff', 'reason'] } } },
+  { type: 'function', function: { name: 'propose-patch', description: 'Propose a change as edits. Each edit names a file, the exact old text and the new text. The old text must occur exactly once in the file: copy it from read-repo-file without the line numbers, with enough lines to be unique. An empty old text creates a new file. You may change Python files under src/ and add new tests named tests/test_agent_<name>.py. The bank\'s own tests, scripts, CI and config cannot be changed. Each patch is applied to a fresh copy of the base code; all its edits apply or none; at most 3 patches.', parameters: { type: 'object', properties: { edits: { type: 'array', items: { type: 'object', properties: { path: { type: 'string' }, old: { type: 'string', description: 'The exact text to replace; empty for a new file' }, new: { type: 'string', description: 'The text that replaces it' } }, required: ['path', 'old', 'new'] } }, reason: { type: 'string', description: 'Why this change fixes the reported problem' } }, required: ['edits', 'reason'] } } },
 ];
 
 export const HARNESS_NOTE = 'You also have run-check and propose-patch. Investigate first. If the code breaks a stated rule, you may add a test tests/test_agent_<name>.py that shows it, run it on base, and propose a fix. If no rule is broken, say so and change nothing. A person decides on every change.';
@@ -76,8 +78,9 @@ export async function runRepair(ask, kase, { tree, python, keep = false }) {
       counts.patches += 1;
       const dir = join(work, `candidate-${counts.patches}`);
       makeCopy(tree, dir);
-      const applied = applyPatch(dir, a.diff);
-      patches.push({ n: counts.patches, reason: String(a.reason ?? '').slice(0, 600), diff: String(a.diff ?? '').slice(0, 20_000), applied: applied.ok, error: applied.ok ? null : applied.error });
+      const applied = applyEdits(dir, a.edits);
+      const asked = Array.isArray(a.edits) ? a.edits.map((e) => ({ path: String(e?.path ?? ''), old: String(e?.old ?? '').slice(0, 4000), new: String(e?.new ?? '').slice(0, 8000) })) : a.edits;
+      patches.push({ n: counts.patches, reason: String(a.reason ?? '').slice(0, 600), edits: asked, diff: applied.ok ? applied.diff.slice(0, 20_000) : null, applied: applied.ok, error: applied.ok ? null : applied.error });
       if (!applied.ok) { rmSync(dir, { recursive: true, force: true }); return applied; }
       candidate = dir;
       return { ok: true, candidate: counts.patches, files: applied.files };
@@ -98,7 +101,7 @@ export async function runRepair(ask, kase, { tree, python, keep = false }) {
     for (const f of calls) {
       const args = parse(f.arguments);
       const result = tools[f.name] ? await tools[f.name](args) : { ok: false, error: `unknown tool ${f.name}; the tools are: ${names.join(', ')}` };
-      trace.push({ round, tool: f.name, args: f.name === 'propose-patch' ? { reason: args.reason, diffBytes: String(args.diff ?? '').length } : args, ok: result.ok === true,
+      trace.push({ round, tool: f.name, args: f.name === 'propose-patch' ? { reason: args.reason, edits: Array.isArray(args.edits) ? args.edits.length : null, editBytes: JSON.stringify(args.edits ?? '').length } : args, ok: result.ok === true,
         result: result.ok ? { outcome: result.outcome, summary: result.summary, findingId: result.findingId, kind: result.kind, files: result.files } : { error: String(result.error ?? '').slice(0, 400) } });
       messages.push({ role: 'tool', content: JSON.stringify(result) });
     }
