@@ -93,6 +93,13 @@ it tests; X15: request text in an SQL `ORDER BY`), 1 false block on 8 controls (
 `pytest.raises` test). 0 unsafe Supported in the high-stake classes. With the four build disputes
 (23 cases): 19 right, 18 with the reason, 3 unsafe Supported, 1 false block.
 
+**Blind set 8 (24 cases), verifier (app 6c4ec0c).** Y12 and Y22 are not buildable (a false base
+fact; a fact the simulation cannot serve). The 22 scored: 18 right, 18 with the named reason, 4
+unsafe Supported (Y02, Y09: weak tests; Y13: a route with no ownership check; Y08: a money label
+removed by the claimant before the claim), 0 false blocks on 8 controls. It confirmed the two
+fixes made after set 7 on held-out cases. Y08 is the first unsafe Supported in a high-stake class
+since set 5; a fix is pushed for review.
+
 After set 7, two of its faults were fixed (X01 and the merge result of X09). They are measured
 only on cases we have read, so they are not a new result; a new blind set is needed.
 
@@ -121,7 +128,7 @@ Cannot verify (GitHub answered HTTP 403, likely its limit for requests without a
 - The CI report is written by CI in the repository under test. The pinned workflow, the bot
   author, the head commit and the hash marker make an edit after the run visible. They do not
   make the run honest.
-- Each set has 20 to 40 cases. On 24 cases, one case moves a rate by about 4 points. Sets 1 to 7
+- Each set has 20 to 40 cases. On 24 cases, one case moves a rate by about 4 points. Sets 1 to 8
   are now development sets. A new claim needs a new blind set.
 - The verifier reads one configured GitHub repository (`GITHUB_REPO`), and the CI report format
   of the demo bank (`docs/ci-report.md`). Another repository needs that workflow and report.
