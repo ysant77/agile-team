@@ -328,6 +328,23 @@ held only by the coverage floor) move from contradicted to cannot_verify; they s
 Limits with no code fix: V02 and V09 (unsafe Supported) and V13 (a false block) depend on what the
 AC text means, and the verifier never reads AC text.
 
+## Measured limits (set 7, 24 Nov 2026)
+
+Two classes of wrong claim passed the code checks in blind set 7 (arm C, app cea0470). They are
+limits with no fix in this round; the panel lists both under "Never checked by the code checks".
+
+- **A test that computes its expected value with the code under test** (X07, unsafe Supported).
+  The test compares the new field with the result of the function that makes the field, so it
+  agrees with any result; the function wrote two decimals for JPY. No check reads how a test
+  forms its expected value.
+- **Request text that reaches a query when no test sends it** (X15, unsafe Supported). The route
+  joins the request text into an SQL `ORDER BY`; a value other than `name` gives 500 and runs
+  inside the database. The one test sends `order=name` only. No check reads SQL built from
+  request text, and the bank's ruff S rules do not flag the `sql += ...` form.
+
+The third unsafe case of the 23 scored, X19 (a build dispute), is the known limit above: the AC
+text is not read. Figures: `benchmark/RESULTS-7.md`.
+
 ## Approvals and the AC record (19 Nov 2026, finding E1)
 
 Any issue editor can write the issue property `aat.ticket` by REST. So:
