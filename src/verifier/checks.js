@@ -1273,6 +1273,16 @@ function newFunctionStory(ctx, row) {
 
 // D-repro: each ticket test fails on base by an assertion and passes on head; the full head suite
 // passes; no test is removed.
+// A failure by an assertion on base: an AssertionError, or pytest's own "Failed: DID NOT RAISE"
+// that a pytest.raises block gives when the code does not raise (set 7 X01; the case files of sets
+// 6 and 7 count it so). Any other Failed (pytest.fail) or error is not an assertion.
+const DID_NOT_RAISE = /^Failed: DID NOT RAISE\b/;
+function failsByAssertion(base) {
+  if (!isObj(base) || base.outcome !== 'failed') return false;
+  if (base.exc_type === 'AssertionError') return true;
+  return base.exc_type === 'Failed' && typeof base.exc_message === 'string' && DID_NOT_RAISE.test(base.exc_message);
+}
+
 export function reproduced(ctx) {
   const trust = reportTrusted(ctx);
   if (trust.status !== 'pass') return result('reproduced', 'unknown', trust.reason);
@@ -1297,7 +1307,7 @@ export function reproduced(ctx) {
   const acNames = new Set(acsOf(ctx).filter((a) => a.check?.type === 'test_passes').map((a) => resolveName(ctx, a.check.args?.[0])));
   const guards = all.filter((n) => !acNames.has(n));
   const rowOf = (name) => repro.tests.find((t) => testName(t.id) === name);
-  const reproduces = (name) => rowOf(name)?.base?.outcome === 'failed' && rowOf(name)?.base?.exc_type === 'AssertionError' && rowOf(name)?.head?.outcome === 'passed';
+  const reproduces = (name) => failsByAssertion(rowOf(name)?.base) && rowOf(name)?.head?.outcome === 'passed';
   let names = all;
   if (acNames.size || guards.some(reproduces)) {
     names = acNames.size ? [...acNames] : guards.filter(reproduces);
@@ -1330,7 +1340,7 @@ export function reproduced(ctx) {
     else if (base.outcome === 'error' || CANNOT_RUN_ON_BASE.includes(base.exc_type)) {
       unknowns.push(`${name} cannot run on base (${base.exc_type ?? base.outcome}); a human decides`);
     } else if (base.outcome !== 'failed') unknowns.push(`${name} has no base result`);
-    else if (base.exc_type !== 'AssertionError') unknowns.push(`${name} fails on base by ${base.exc_type ?? 'an unknown error'}, not by an assertion`);
+    else if (!failsByAssertion(base)) unknowns.push(`${name} fails on base by ${base.exc_type ?? 'an unknown error'}, not by an assertion`);
   }
   if (fails.length) return result('reproduced', 'fail', fails.join('; '));
   if (unknowns.length) return result('reproduced', 'unknown', unknowns.join('; '));

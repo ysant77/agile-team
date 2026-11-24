@@ -101,7 +101,7 @@ test('U04 (set 4): Contradicted, with the code reason and the failed check', asy
 
 // The evidence of set 4 with the protected regression set (pinned base tests, bank PR 21). The PR
 // makes an old assertion weaker; the base copy of that test fails on the head code.
-test('U20 (set 4): Contradicted by the protected set, and the wrong kind of failure is also shown', async () => {
+test('U20 (set 4): Contradicted by the protected set; its DID NOT RAISE base failure counts as an assertion', async () => {
   const s = await screen('U20');
   assert.equal(s.verdict.result, 'contradicted');
   assert.equal(s.items.find(([n]) => n === 'Lozenge')[1], 'Contradicted');
@@ -109,7 +109,9 @@ test('U20 (set 4): Contradicted by the protected set, and the wrong kind of fail
   assert.match(why, /pinned base test: test_account_numbers_are_obviously_fake: its base copy fails on the head code/);
   assert.match(why, /approval of the new pin by a person other than the claimant/);
   assert.ok(after(s.items, 'What failed').some((t) => t.includes('pinned_tests_hold')), JSON.stringify(after(s.items, 'What failed')));
-  assert.ok(after(s.items, 'What was not checked').some((t) => t.includes('fails on base by Failed, not by an assertion')));
+  // Before 24 Nov the AC test's base failure (pytest DID NOT RAISE) was listed as "not by an
+  // assertion"; it now counts as an assertion (set 7 X01), so that line is gone.
+  assert.ok(!after(s.items, 'What was not checked').some((t) => t.includes('not by an assertion')));
   common(s);
 });
 
