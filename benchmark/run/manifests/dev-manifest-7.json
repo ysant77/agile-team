@@ -1,0 +1,929 @@
+[
+ {
+  "id": "DEV7-01",
+  "void": null,
+  "branches": [
+   "case/W03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "DEV-701",
+   "type": "Story",
+   "labels": [
+    "money_semantics"
+   ],
+   "text": "the statement can be read in pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_limit_returns_the_first_lines",
+       "test_statement_reports_total_lines"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_offset_skips_lines",
+       "test_statement_paging_refuses_bad_values"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_limit_returns_the_first_lines",
+        "test_statement_reports_total_lines"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_offset_skips_lines",
+        "test_statement_paging_refuses_bad_values"
+       ]
+      }
+     }
+    ]
+   },
+   "signoff": {
+    "by": "acct-product-owner",
+    "at": "T+1h",
+    "sha": "merge",
+    "reason": "the money rule is right"
+   }
+  },
+  "dev": {
+   "expected": "supported",
+   "rule": "a sign-off of the merge commit by a person other than the claimant",
+   "base": "W03 (set 6 control) on its stored evidence"
+  }
+ },
+ {
+  "id": "DEV7-02",
+  "void": null,
+  "branches": [
+   "case/W03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "DEV-702",
+   "type": "Story",
+   "labels": [
+    "money_semantics"
+   ],
+   "text": "the statement can be read in pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_limit_returns_the_first_lines",
+       "test_statement_reports_total_lines"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_offset_skips_lines",
+       "test_statement_paging_refuses_bad_values"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_limit_returns_the_first_lines",
+        "test_statement_reports_total_lines"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_offset_skips_lines",
+        "test_statement_paging_refuses_bad_values"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "dev": {
+   "expected": "cannot_verify",
+   "rule": "money_semantics with no sign-off",
+   "base": "W03 (set 6 control) on its stored evidence"
+  }
+ },
+ {
+  "id": "DEV7-03",
+  "void": null,
+  "branches": [
+   "case/W03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "DEV-703",
+   "type": "Story",
+   "labels": [
+    "money_semantics"
+   ],
+   "text": "the statement can be read in pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_limit_returns_the_first_lines",
+       "test_statement_reports_total_lines"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_offset_skips_lines",
+       "test_statement_paging_refuses_bad_values"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_limit_returns_the_first_lines",
+        "test_statement_reports_total_lines"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_offset_skips_lines",
+        "test_statement_paging_refuses_bad_values"
+       ]
+      }
+     }
+    ]
+   },
+   "signoff": {
+    "by": "acct-claimant",
+    "at": "T+1h",
+    "sha": "merge",
+    "reason": "my own change"
+   }
+  },
+  "dev": {
+   "expected": "cannot_verify",
+   "rule": "the claimant signed off",
+   "base": "W03 (set 6 control) on its stored evidence"
+  }
+ },
+ {
+  "id": "DEV7-04",
+  "void": null,
+  "branches": [
+   "case/W03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "DEV-704",
+   "type": "Story",
+   "labels": [
+    "money_semantics"
+   ],
+   "text": "the statement can be read in pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_limit_returns_the_first_lines",
+       "test_statement_reports_total_lines"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_offset_skips_lines",
+       "test_statement_paging_refuses_bad_values"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_limit_returns_the_first_lines",
+        "test_statement_reports_total_lines"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_offset_skips_lines",
+        "test_statement_paging_refuses_bad_values"
+       ]
+      }
+     }
+    ]
+   },
+   "signoff": {
+    "by": "acct-product-owner",
+    "at": "T+1h",
+    "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "reason": "an earlier commit"
+   }
+  },
+  "dev": {
+   "expected": "cannot_verify",
+   "rule": "the sign-off names another commit",
+   "base": "W03 (set 6 control) on its stored evidence"
+  }
+ },
+ {
+  "id": "DEV7-05",
+  "void": null,
+  "branches": [
+   "case/W03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "DEV-705",
+   "type": "Story",
+   "labels": [],
+   "text": "the statement can be read in pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_limit_returns_the_first_lines",
+       "test_statement_reports_total_lines"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_offset_skips_lines",
+       "test_statement_paging_refuses_bad_values"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "titleWithoutKey": true
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_limit_returns_the_first_lines",
+        "test_statement_reports_total_lines"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_offset_skips_lines",
+        "test_statement_paging_refuses_bad_values"
+       ]
+      }
+     }
+    ]
+   },
+   "prLink": {
+    "by": "acct-product-owner",
+    "at": "T+0",
+    "prNumber": "case",
+    "reason": "the PR of this work item"
+   }
+  },
+  "dev": {
+   "expected": "supported",
+   "rule": "a PR link by another person; the title has no key",
+   "base": "W03 (set 6 control) on its stored evidence"
+  }
+ },
+ {
+  "id": "DEV7-06",
+  "void": null,
+  "branches": [
+   "case/W03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "DEV-706",
+   "type": "Story",
+   "labels": [],
+   "text": "the statement can be read in pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_limit_returns_the_first_lines",
+       "test_statement_reports_total_lines"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_offset_skips_lines",
+       "test_statement_paging_refuses_bad_values"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "titleWithoutKey": true
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_limit_returns_the_first_lines",
+        "test_statement_reports_total_lines"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_offset_skips_lines",
+        "test_statement_paging_refuses_bad_values"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "dev": {
+   "expected": "cannot_verify",
+   "rule": "no PR names the key and no link",
+   "base": "W03 (set 6 control) on its stored evidence"
+  }
+ },
+ {
+  "id": "DEV7-07",
+  "void": null,
+  "branches": [
+   "case/W03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "DEV-707",
+   "type": "Story",
+   "labels": [],
+   "text": "the statement can be read in pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_limit_returns_the_first_lines",
+       "test_statement_reports_total_lines"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_offset_skips_lines",
+       "test_statement_paging_refuses_bad_values"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "titleWithoutKey": true
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_limit_returns_the_first_lines",
+        "test_statement_reports_total_lines"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_offset_skips_lines",
+        "test_statement_paging_refuses_bad_values"
+       ]
+      }
+     }
+    ]
+   },
+   "prLink": {
+    "by": "acct-claimant",
+    "at": "T+0",
+    "prNumber": "case",
+    "reason": "my PR"
+   }
+  },
+  "dev": {
+   "expected": "cannot_verify",
+   "rule": "the only link is by the claimant",
+   "base": "W03 (set 6 control) on its stored evidence"
+  }
+ },
+ {
+  "id": "DEV7-08",
+  "void": null,
+  "branches": [
+   "case/W03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "DEV-708",
+   "type": "Story",
+   "labels": [],
+   "text": "the statement can be read in pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_limit_returns_the_first_lines",
+       "test_statement_reports_total_lines"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_offset_skips_lines",
+       "test_statement_paging_refuses_bad_values"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "rateLimited": {
+    "remaining": 0,
+    "resetAt": "2026-11-16T11:00:00Z"
+   }
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_limit_returns_the_first_lines",
+        "test_statement_reports_total_lines"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_offset_skips_lines",
+        "test_statement_paging_refuses_bad_values"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "dev": {
+   "expected": "not_checked",
+   "rule": "GitHub rate limit: no verdict",
+   "base": "W03 (set 6 control) on its stored evidence"
+  }
+ },
+ {
+  "id": "DEV7-09",
+  "void": null,
+  "branches": [
+   "case/W03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "DEV-709",
+   "type": "Story",
+   "labels": [],
+   "text": "the statement can be read in pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_limit_returns_the_first_lines",
+       "test_statement_reports_total_lines"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_offset_skips_lines",
+       "test_statement_paging_refuses_bad_values"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "rateLimited": {
+    "remaining": 40,
+    "retryAfterS": 60
+   }
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_limit_returns_the_first_lines",
+        "test_statement_reports_total_lines"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_offset_skips_lines",
+        "test_statement_paging_refuses_bad_values"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "dev": {
+   "expected": "not_checked",
+   "rule": "secondary limit with a wait above 10 s: no verdict",
+   "base": "W03 (set 6 control) on its stored evidence"
+  }
+ },
+ {
+  "id": "DEV7-10",
+  "void": null,
+  "branches": [
+   "case/W03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "DEV-710",
+   "type": "Story",
+   "labels": [],
+   "text": "the statement can be read in pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_limit_returns_the_first_lines",
+       "test_statement_reports_total_lines"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_offset_skips_lines",
+       "test_statement_paging_refuses_bad_values"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "mergeCommit": {}
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_limit_returns_the_first_lines",
+        "test_statement_reports_total_lines"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_offset_skips_lines",
+        "test_statement_paging_refuses_bad_values"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "dev": {
+   "expected": "cannot_verify",
+   "rule": "the merge commit is not the CI commit, and main.json is not for it",
+   "base": "W03 (set 6 control) on its stored evidence"
+  }
+ },
+ {
+  "id": "DEV7-11",
+  "void": null,
+  "branches": [
+   "case/W03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "DEV-711",
+   "type": "Story",
+   "labels": [],
+   "text": "the statement can be read in pages.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_limit_returns_the_first_lines",
+       "test_statement_reports_total_lines"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_statement_offset_skips_lines",
+       "test_statement_paging_refuses_bad_values"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "pushRunInProgress": true
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "with limit (1 to 200), lines has at most limit lines, the first lines of the window in the usual order, and the body has total_lines, the number of lines of the window with no paging.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_limit_returns_the_first_lines",
+        "test_statement_reports_total_lines"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With offset (0 or more), that number of lines is skipped before limit applies; the balance of each line is the same value as in the statement with no paging; limit=0, limit=201 and offset=-1 give 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_statement_offset_skips_lines",
+        "test_statement_paging_refuses_bad_values"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "dev": {
+   "expected": "cannot_verify",
+   "rule": "the push run on the merge commit is still running; main.json is the earlier report",
+   "base": "W03 (set 6 control) on its stored evidence"
+  }
+ }
+]

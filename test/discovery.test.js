@@ -533,3 +533,22 @@ test('a rule line must come from a read: citing an unread test line is still ref
   assert.match(r.error, /tests\/test_ledger.py:2 was not in a read/);
 });
 
+
+// Review of 24 Nov, audit order: the finding is stored, then the audit append fails. The retry
+// must write the finding.recorded event once (before, it took the duplicate path and wrote none).
+test('record-finding: an audit append that fails after the finding is stored is repaired by the retry, once', async () => {
+  const { d, id } = await withRead();
+  const append = d.appendAudit;
+  let fail = true;
+  d.appendAudit = async (e) => {
+    if (fail && e.event === 'finding.recorded') { fail = false; throw new Error('injected failure'); }
+    return append(e);
+  };
+  await assert.rejects(recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(FINDING) }, d), /injected failure/);
+  const again = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(FINDING) }, d);
+  assert.equal(again.ok, true, again.error);
+  assert.equal(d.audit.filter((e) => e.event === 'finding.recorded').length, 1);
+  const third = await recordFinding({ investigationId: id, by: 'pm-1', finding: JSON.stringify(FINDING) }, d);
+  assert.equal(third.duplicate, true);
+  assert.equal(d.audit.filter((e) => e.event === 'finding.recorded').length, 1);
+});

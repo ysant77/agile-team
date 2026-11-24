@@ -66,6 +66,19 @@ Every action, trigger and panel call that writes something.
   is tested only with a local double. If the deployed KVS ignored the option, deduplication would
   silently do nothing. This is on the checklist of the first live run: create the same draft
   twice, and post the same decision comment event twice.
+- **One audit event per operation (24 Nov).** Before, a write that failed between two steps could
+  leave a side effect with no event, or give a second event on the retry: a finding stored with
+  no `finding.recorded`, a Jira issue with no `ticket.created`, a second `verdict` or
+  `done_evidence` when the save after the event failed (`test/audit-faults.test.js`). Now these
+  four events go through `appendAuditOnce` (`src/audit-store.js`): an operation key
+  `audit-op:<opId>` is written before the event, the event carries the opId, and a retry returns
+  the recorded event, finds an event whose key was not updated, or writes the missing one. The
+  monitor counts the events past the head pointer (`auditLength`). Limits: two calls with the
+  same opId at the same moment can both write (the claim lease, the create-ticket "pending" key
+  and the finding's create-once serialize them); the `audit-op:` keys never expire; if the
+  "done" write of create-ticket fails after Jira made the issue, a call after 10 minutes makes a
+  second issue (finding the first needs an indexed issue property, a manifest change). It is not
+  exactly-once across Jira and the app's store.
 - **The keys never expire.** The `decision-seen:` and `ticket-create:` keys are never deleted
   (a done `ticket-create:` key older than 24 hours is overwritten by a new create). They grow
   by one per decision comment and per created draft.
