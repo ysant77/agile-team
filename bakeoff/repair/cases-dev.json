@@ -3,8 +3,27 @@
     "id": "D2-1",
     "label": "development (discovery set 2 case D2-1; its result is known, so it is not held out)",
     "symptom_source": "discovery-cases-2.json of the lead, case D2-1; passed to the model exactly as stored",
+    "tree_branch": "investigate/symptoms-2 (d193c76)",
     "truth": "end_day",
     "protected": ["tests/test_ledger.py", "tests/test_api.py"],
     "hidden": "D2-1.py"
+  },
+  {
+    "id": "D7-1",
+    "label": "development (written by the builder of the harness on 24 Nov 2026; not blind, not held out)",
+    "symptom_source": "symptoms-dev.json",
+    "tree_branch": "bank local branch work/unattended-20261124-discovery-d7 (e0de365): bank 165b689, kits removed, one seeded change",
+    "truth": "key_window",
+    "protected": ["tests/test_idempotency.py", "tests/test_api.py"],
+    "hidden": "D7-1.py"
+  },
+  {
+    "id": "D7-C",
+    "label": "development clean control (written by the builder on 24 Nov 2026): the reported behaviour is the documented one",
+    "symptom_source": "symptoms-dev.json",
+    "tree_branch": "bank local branch work/unattended-20261124-discovery-d7-control (2d7b042): bank 165b689, kits removed, no seeded change",
+    "truth": "none",
+    "protected": ["tests/test_idempotency.py", "tests/test_api.py"],
+    "hidden": null
   }
 ]

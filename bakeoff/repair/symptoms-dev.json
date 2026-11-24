@@ -1,0 +1,10 @@
+[
+  {
+    "id": "D7-1",
+    "symptom": "My phone lost signal while I was sending 25.00 to my brother from the bank app. About half an hour later the signal came back and the app sent the transfer again by itself. Now 25.00 has left my account twice, and my brother got 50.00. The app says it never sends the same transfer twice."
+  },
+  {
+    "id": "D7-C",
+    "symptom": "I sent 10.00 to a friend and my app sent the same request again a few seconds later because the screen froze. Only one 10.00 left my account, and the second answer said \"replayed\". Did the bank lose my second transfer?"
+  }
+]
