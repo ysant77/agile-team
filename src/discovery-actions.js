@@ -10,7 +10,7 @@
 
 import api from '@forge/api';
 import { kvs } from '@forge/kvs';
-import { appendAudit } from './audit-store.js';
+import { appendAudit, readAudit } from './audit-store.js';
 import { currentAccountId } from './action-guard.js';
 import { listRepoFiles, readCiResults, readRepoFile, recordFinding, startInvestigation } from './discovery.js';
 import { githubHeaders } from './github-evidence.js';
@@ -23,6 +23,7 @@ export function forgeDeps() {
     get: (path) => api.fetch(`${API}${path}`, { headers: githubHeaders(process.env.GITHUB_TOKEN) }),
     now: () => Date.now(),
     appendAudit,
+    readAudit,
   };
 }
 
