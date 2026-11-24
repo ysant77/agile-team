@@ -14,6 +14,11 @@ branch has its report file. Step 3 is done on 23 Nov: the owner set `GITHUB_REPO
 discovery variables of production, the production deploy (step 4) and the install link (step 5)
 are open.
 
+Status on 24 Nov: the first judge claims were made on development with two accounts, 6 of 6
+verdicts as expected, token authenticated (`docs/FIRST-JUDGE-CLAIM.md`, "The first live claims").
+Still open: the discovery variables of production, the production deploy (step 4), the install
+link (step 5) and a claim on a fresh site.
+
 ## 1. The workflow change on the cases repository
 
 Repository: `ysant77/yms-bank-demo-cases`. One pull request, merged on green CI. In words:

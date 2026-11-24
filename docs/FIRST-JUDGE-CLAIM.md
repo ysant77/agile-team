@@ -5,6 +5,29 @@ These are the steps the owner does in Jira for the first claim through the fresh
 development runs 5.13.0 (deployed on 23 Nov from `main` 520811a). The five judge branches and
 their reports exist on the cases repository (cases PRs 17 to 21).
 
+## The first live claims (done on 24 Nov)
+
+On 24 Nov the claims were made on the development site. Account A recorded the ACs and linked
+the PRs (and signed off U12); account B made every claim. Development runs 5.13.0, deployed from
+`main` 520811a. The source of 520811a is the same as the source of `main` 665e93e: the commits
+between them change docs only. So development runs the code of the current `main`.
+
+| Work item | Case | PR | Verdict | Expected | Log: calls, retries, rateRemaining, authenticated |
+|---|---|---|---|---|---|
+| BANK-10 | U01 | 17 | supported | Supported | 12, 2, 4905, true |
+| BANK-11 | U04 | 18 | contradicted (the AC test passes on base) | Contradicted | 11, 1, 4880, true |
+| BANK-12 | U20 | 19 | contradicted (a pinned base test fails on the head) | Contradicted | 11, 1, 4989, true |
+| BANK-13 | U12 | 20 | cannot_verify (sign-off required) | Cannot verify | 10, 0, 4979, true |
+| BANK-13 | U12, after the sign-off | 20 | supported | Supported | 10, 0, 4955, true |
+| BANK-14 | T08 | 21 | supported | Supported | 11, 1, 4968, true |
+
+Result: 6 of 6 verdicts as expected, one run for each case. Every log line has
+`"authenticated":true` and a rate limit of the 5,000 class, so GitHub accepted the token.
+
+Not shown by these claims: a fresh-site install, the production deploy, the judge install link
+(steps 4 and 5 of `docs/OWNER-HELD-STEPS.md`), and the advisory review of T08 (the reviewer was
+not run on PR 21). The retries are explained under "Retries" below where that change is merged.
+
 ## The repository of the environment (done on 23 Nov)
 
 Each judge PR is on `ysant77/yms-bank-demo-cases`. The app reads one repository only: the
