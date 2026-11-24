@@ -28,6 +28,14 @@ Not shown by these claims: a fresh-site install, the production deploy, the judg
 (steps 4 and 5 of `docs/OWNER-HELD-STEPS.md`), and the advisory review of T08 (the reviewer was
 not run on PR 21). The retries are explained under "Retries" below where that change is merged.
 
+## Production, fresh site (done on 24 Nov)
+
+Production was deployed on 24 Nov (12:45 UTC) by the owner, and distribution is set to sharing. A fresh-site install from the install link and one U01 claim gave **Supported** (live, n = 1): a work item on a new site, 11 checks verified. The production log has the verdict line with `"authenticated":true` and a rate limit of the 5,000 class (written by the queue consumer, about 9 s after the trigger's "claim queued" line). The install link is given in the submission form, not in this repository.
+
+To read the two log lines: `forge logs -e production --since 2h --limit 200`, or one function at a
+time with `-f onComment` (the claim is queued) and `-f verifyConsumer` (the verdict). A view of one
+function or one invocation shows only one of the two lines.
+
 ## On return (state after 24 Nov)
 
 Development now runs **5.16.0** (`main` 3862696), not 5.13.0. The six live claims above were made

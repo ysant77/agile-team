@@ -23,8 +23,13 @@ link (step 5) and a claim on a fresh site.
 
 Versions on development: 5.13.0 (520811a) for the live claims of 24 Nov; then 5.14.0 (aa62146),
 5.15.0 (1d093ef) and **5.16.0 (`main` 3862696)**, each deployed non-interactively with no change
-of `manifest.yml` against 520811a, so no new scope. Production still runs the older version: it
-was not deployed in this run.
+of `manifest.yml` against 520811a, so no new scope.
+
+**Production (24 Nov, done by the owner).** Production was deployed on 24 Nov (12:45 UTC) by the owner, and distribution is set to sharing. A fresh-site install from the install link and one U01 claim gave **Supported** (live, n = 1): a work item on a new site, 11 checks verified. The production log has the verdict line with `"authenticated":true` and a rate limit of the 5,000 class (written by the queue consumer, about 9 s after the trigger's "claim queued" line). The install link is given in the submission form, not in this repository. Of the list below, the production deploy
+(step 1), the install link (step 2), the fresh-site U01 claim (step 3) and the log read (step 4;
+`retries` was 0) are done. Not confirmed here: the discovery variables of production. Open: step 5
+("Drafts waiting for you"). Privacy and terms pages for the distribution form:
+`docs/PRIVACY.md`, `docs/TERMS.md`.
 
 What 5.14.0 to 5.16.0 added over the version of the live claims: the retry record in the log
 (`"retried"`), the "pull request linked only by the claimant" rule (Cannot verify), the "push run

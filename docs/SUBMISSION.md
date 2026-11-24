@@ -103,6 +103,10 @@ verdict.
 **Discovery (a model looks for a defect): not met** in two rounds. We present it as a grounded,
 unconfirmed lead that a person classifies, not as a defect finder.
 
+**Production, fresh site (24 Nov):** the app was deployed to production and installed from its
+install link on a site that had never had it. One U01 claim gave Supported, with the GitHub token
+accepted (live, n = 1). It is one claim, not a measurement of accuracy.
+
 **Live run on a Jira site (22 Nov):** the five demo cases ran on a real site with two users.
 Each gave the expected verdict; see `docs/claims.md`, "Live run on a Jira site". On T08 the
 model's review was rejected by the guard for numbers on the first attempt and accepted on the
@@ -132,5 +136,6 @@ doi:10.1145/3803437.3805209.
 - Code: this repository (MIT).
 - Demo bank: https://github.com/ysant77/yms-bank-demo
 - Demo case pull requests: https://github.com/ysant77/yms-bank-demo-cases
-- Install link: (owner adds it from the developer console)
+- Install link: given in the submission form (it is not kept in this repository).
+- Privacy: `docs/PRIVACY.md`. Terms: `docs/TERMS.md`.
 - Video: (owner adds the YouTube link)
