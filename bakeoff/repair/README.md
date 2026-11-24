@@ -21,8 +21,11 @@ is changed, and nothing here is a product feature.
 ## Where commands run
 
 Every test run is `<bank python> -m pytest -q ...` on a scratch copy (`git archive` of the tree),
-under `sandbox-exec` with a profile that denies all network use and every file write outside the
-scratch copy. The environment is replaced (no variable of the caller passes, so no token), and a
+under `sandbox-exec` with a profile that denies all network use, every file write outside the
+scratch copy, and reading the content of any file under the home folder, the shared temporary
+folders or mounted volumes, except the scratch copy and the Python environment of the run
+(`sys.prefix`, `sys.base_prefix`). A test the model writes cannot read a credential file into a
+trace. The environment is replaced (no variable of the caller passes, so no token), and a
 run over its time limit is killed. The investigated tree is never written.
 
 ## How a run is judged (`evaluate` in `task.mjs`)
@@ -50,6 +53,11 @@ node bakeoff/repair/run.mjs --case D2-1 --symptoms <lead's case file> --tree <in
 
 `--scripted <steps.json>` replays fixed tool calls instead of a model. A scripted result tests the
 harness and is labelled "scripted"; it is never an agent result.
+
+## Run records
+
+Traces, patches and model output go to the `--out` folder, outside the repository. A record goes
+into git only as a scores-only file, and only after the pre-push scan passes on it.
 
 ## Limits
 
