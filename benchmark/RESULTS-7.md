@@ -142,3 +142,17 @@ the build and the CI run.
 ```
 python run/summarize.py run/evidence/set7-2026-11-24/results.json run/truth-7.json
 ```
+
+## Ruling, 24 Nov 2026 (after the score)
+
+The lead ruled on X10, X17 and X19 as on X11: not buildable as written (the bank's seed-patch test
+`tests/test_discovery_branch.py` makes CI red against the rows' green CI; the writer could not know
+that test). The built readings stay scored with the "build dispute" flag. **The headline of record
+is the 19 undisputed cases: 16 right, 15 right with reason, 2 unsafe supported (X07, X15), 1 false
+block of 8 (X01).** The 23-case figures above are reported beside it. Set 7 is development data
+from now on, and the freeze is lifted.
+
+Information, not scored: the app (cea0470) on the three literal heads with red CI
+(`run/evidence/set7-2026-11-24/asis_X10`, `asis_X17`, `asis_X19`, scored with the same manifest
+rows) says `contradicted` for each, with the reason "full suite on head failed (3 failed)".
+
