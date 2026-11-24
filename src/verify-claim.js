@@ -252,6 +252,19 @@ export function configFor(repo, repos = VERIFY_CONFIG.pinnedRequiredRepos, prove
   return { ...VERIFY_CONFIG, pinnedRequired: listed(repos), provenanceRequired: listed(provenanceRepos) };
 }
 
+// Owner decision 24 Nov: a claim whose only PR link was made by the claimant is Cannot verify, not
+// Contradicted. A PR exists, but no second person linked it. The rule applies only when no PR was
+// found by the key and every failed check is about the PR; a claim that is wrong for another
+// reason stays Contradicted. A done claim with no PR and no link stays Contradicted.
+const PR_CHECKS = ['pr_linked', 'on_main'];
+export function selfLinkOnly(verdict, prLink, pr) {
+  if (verdict?.result !== 'contradicted' || !prLink?.byClaimant || prLink.counted || pr) return verdict;
+  const failed = (verdict.checks ?? []).filter((c) => c?.status === 'fail' && !c.advisory);
+  if (!failed.length || !failed.every((c) => PR_CHECKS.includes(c.name))) return verdict;
+  return { ...verdict, result: 'cannot_verify',
+    reason: `PR #${prLink.prNumber} is linked only by the claimant, so no second person has linked a PR; another person links the PR, then the claim is checked again` };
+}
+
 // Collects the evidence and runs the checks. A GitHub error is not evidence of absence.
 export async function decide({ issueKey, claim }, d) {
   const ticket = await d.collectJira(issueKey);
@@ -325,7 +338,7 @@ export async function decide({ issueKey, claim }, d) {
   // merged_clean still needs every base test kept and unique migrations. The checks read a
   // missing list as not known, so it is always set here.
   const ctx = { ticket, ...github, repo, linkedPr, mergeRequiredTests: [], config: configFor(repo), claimant: claim.by ?? null, signoffEvent, approvals, approvalEvents };
-  let verdict = verify(claim, ctx);
+  let verdict = selfLinkOnly(verify(claim, ctx), prLink, github.pr);
   // The link is shown with the checks, as advice that never changes the verdict by itself.
   if (prLink) verdict = { ...verdict, checks: [...verdict.checks, { name: 'pr_link', status: 'pass', advisory: true, reason: prLink.reason }] };
   // Without the code host, a PR check that does not pass says why (a fail or an unknown).

@@ -136,3 +136,23 @@ app, which needs a privacy statement).
 Option 1 first. It needs no new scope and lets a judge follow the judge path on a fresh site with
 the public demo repository. Option 2 only if the entry should claim "works on your own
 repository"; the submission text does not claim that today.
+
+## A PR linked only by the claimant (owner decision, 24 Nov)
+
+A claim counts a panel link only when a person other than the claimant made it. Before this
+decision, a claim whose only link came from the claimant read no PR, so `on_main` failed and the
+verdict was **Contradicted**. That is too strong: a PR exists, but no second person has linked it.
+
+The rule now (`selfLinkOnly` in `src/verify-claim.js`):
+
+- A "done" claim with no PR and no link stays **Contradicted**.
+- A claim whose latest audited link was made by the claimant, with no PR that names the key, is
+  **Cannot verify** when every failed check is `pr_linked` or `on_main`. The reason says that the
+  PR is linked only by the claimant and that another person links it.
+- A claim that also fails another check stays **Contradicted**.
+- A link with no matching audit event changes nothing.
+
+The checks are not changed, so the panel still shows that `on_main` failed. The scored sets 1 to 6
+give byte-identical results with and without this change. On the development set 7, one case
+changes: DEV7-07 (a PR linked only by the claimant) goes from Contradicted to Cannot verify, which
+is the result its case file predicted.
