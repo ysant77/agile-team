@@ -62,6 +62,8 @@ harness and is labelled "scripted"; it is never an agent result.
 
 Traces, patches and model output go to the `--out` folder, outside the repository. A record goes
 into git only as a scores-only file, and only after the pre-push scan passes on it.
+Scores-only files live in `bakeoff/repair/scores/` (`bakeoff/.gitignore` ignores every
+`results/` folder, so a file there is never committed).
 
 ## Limits
 

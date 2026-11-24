@@ -1,0 +1,271 @@
+{
+ "kind": "scores only (no model text, no symptom, no patch)",
+ "run": "repair-dev-1",
+ "date": "2026-11-24",
+ "app": "6f33f0a",
+ "model": "qwen3-coder:30b 06c1097efce0",
+ "settings": {
+  "temperature": 0.6,
+  "numCtx": 16384,
+  "seeds": [
+   11,
+   12,
+   13
+  ],
+  "limits": {
+   "rounds": 30,
+   "checks": 8,
+   "patches": 3
+  }
+ },
+ "trees": {
+  "D2-1": "d193c76",
+  "D7-1": "e0de365",
+  "D7-C": "2d7b042"
+ },
+ "runs": [
+  {
+   "case": "D2-1",
+   "seed": 11,
+   "stop": "final answer",
+   "rounds": 17,
+   "seconds": 400,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 2,
+    "read-repo-file": 4,
+    "read-ci-results": 1,
+    "record-finding": 2,
+    "run-check": 5,
+    "propose-patch": 1,
+    "lint-requirement": 1
+   },
+   "patchesProposed": 1,
+   "patchesApplied": 1,
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": "failed",
+   "protectedOnCandidate": {
+    "tests/test_ledger.py": "passed",
+    "tests/test_api.py": "passed"
+   },
+   "agentTests": [],
+   "verdict": "not repaired: the hidden check still fails"
+  },
+  {
+   "case": "D2-1",
+   "seed": 12,
+   "stop": "final answer",
+   "rounds": 23,
+   "seconds": 646,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 2,
+    "read-repo-file": 5,
+    "read-ci-results": 1,
+    "record-finding": 2,
+    "lint-requirement": 1,
+    "run-check": 7,
+    "propose-patch": 4
+   },
+   "patchesProposed": 3,
+   "patchesApplied": 1,
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": "failed",
+   "protectedOnCandidate": {
+    "tests/test_ledger.py": "passed",
+    "tests/test_api.py": "passed"
+   },
+   "agentTests": [
+    {
+     "onBase": "failed",
+     "onCandidate": "failed",
+     "reproduces": false
+    }
+   ],
+   "verdict": "not repaired: the hidden check still fails"
+  },
+  {
+   "case": "D2-1",
+   "seed": 13,
+   "stop": "final answer",
+   "rounds": 28,
+   "seconds": 1131,
+   "toolCalls": {
+    "start-investigation": 2,
+    "list-repo-files": 2,
+    "read-repo-file": 4,
+    "read-ci-results": 1,
+    "record-finding": 4,
+    "lint-requirement": 1,
+    "run-check": 7,
+    "propose-patch": 6,
+    "create-ticket": 1
+   },
+   "patchesProposed": 3,
+   "patchesApplied": 3,
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": "failed",
+   "protectedOnCandidate": {
+    "tests/test_ledger.py": "passed",
+    "tests/test_api.py": "passed"
+   },
+   "agentTests": [
+    {
+     "onBase": "passed",
+     "onCandidate": "passed",
+     "reproduces": false
+    }
+   ],
+   "verdict": "not repaired: the hidden check still fails"
+  },
+  {
+   "case": "D7-1",
+   "seed": 11,
+   "stop": "rounds",
+   "rounds": 30,
+   "seconds": 801,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 2,
+    "read-repo-file": 5,
+    "read-ci-results": 1,
+    "record-finding": 2,
+    "lint-requirement": 1,
+    "run-check": 15,
+    "propose-patch": 3
+   },
+   "patchesProposed": 3,
+   "patchesApplied": 0,
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": null,
+   "agentTests": [],
+   "verdict": "no candidate patch"
+  },
+  {
+   "case": "D7-1",
+   "seed": 12,
+   "stop": "final answer",
+   "rounds": 22,
+   "seconds": 988,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 6,
+    "read-ci-results": 1,
+    "record-finding": 3,
+    "run-check": 4,
+    "propose-patch": 5,
+    "lint-requirement": 1
+   },
+   "patchesProposed": 3,
+   "patchesApplied": 0,
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": null,
+   "agentTests": [],
+   "verdict": "no candidate patch"
+  },
+  {
+   "case": "D7-1",
+   "seed": 13,
+   "stop": "final answer",
+   "rounds": 23,
+   "seconds": 859,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 2,
+    "read-repo-file": 7,
+    "read-ci-results": 1,
+    "record-finding": 3,
+    "lint-requirement": 1,
+    "run-check": 7,
+    "propose-patch": 1
+   },
+   "patchesProposed": 1,
+   "patchesApplied": 1,
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": "failed",
+   "protectedOnCandidate": {
+    "tests/test_idempotency.py": "passed",
+    "tests/test_api.py": "passed"
+   },
+   "agentTests": [
+    {
+     "onBase": "passed",
+     "onCandidate": "passed",
+     "reproduces": false
+    }
+   ],
+   "verdict": "not repaired: the hidden check still fails"
+  },
+  {
+   "case": "D7-C",
+   "seed": 11,
+   "stop": "final answer",
+   "rounds": 10,
+   "seconds": 233,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 3,
+    "read-ci-results": 1,
+    "record-finding": 2,
+    "run-check": 1,
+    "lint-requirement": 1
+   },
+   "patchesProposed": 0,
+   "patchesApplied": 0,
+   "hiddenOnBase": null,
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": null,
+   "agentTests": [],
+   "verdict": "no change (as a clean control should)"
+  },
+  {
+   "case": "D7-C",
+   "seed": 12,
+   "stop": "final answer",
+   "rounds": 8,
+   "seconds": 181,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 3,
+    "read-ci-results": 1,
+    "record-finding": 1,
+    "lint-requirement": 1
+   },
+   "patchesProposed": 0,
+   "patchesApplied": 0,
+   "hiddenOnBase": null,
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": null,
+   "agentTests": [],
+   "verdict": "no change (as a clean control should)"
+  },
+  {
+   "case": "D7-C",
+   "seed": 13,
+   "stop": "final answer",
+   "rounds": 12,
+   "seconds": 283,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 4,
+    "read-ci-results": 1,
+    "record-finding": 2,
+    "run-check": 2,
+    "lint-requirement": 1
+   },
+   "patchesProposed": 0,
+   "patchesApplied": 0,
+   "hiddenOnBase": null,
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": null,
+   "agentTests": [],
+   "verdict": "no change (as a clean control should)"
+  }
+ ]
+}
