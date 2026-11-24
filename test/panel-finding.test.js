@@ -69,9 +69,10 @@ test('the view never makes a finding more than it is: the status stays as stored
   for (const bad of [null, undefined, 'x', [], {}, { findingId: 'F-1', kind: 'other' }]) assert.equal(findingView(bad), null);
 });
 
-test('the action reads the stored record by id; an unknown or malformed id gives the not-found text', async () => {
+test('the action reads the stored record by id for its investigator; an unknown or malformed id gives the not-found text', async () => {
   const store = new Map([[`finding:${defect.findingId}`, defect]]);
-  const d = { store: { get: async (k) => structuredClone(store.get(k)) } };
+  // Review of 24 Nov (finding access): the caller is part of the read. Here the investigator reads.
+  const d = { store: { get: async (k) => structuredClone(store.get(k)) }, accountId: defect.by, canBrowse: async () => false };
   const ok = await getFindingAction({ findingId: ` ${defect.findingId} ` }, d);
   assert.equal(ok.ok, true);
   assert.equal(ok.view.kind, 'defect');
