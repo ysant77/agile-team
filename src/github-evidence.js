@@ -95,7 +95,13 @@ const realSleep = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); })
 // gives null (an empty answer). Every other failure throws a GitHubError.
 export function githubClient({ token, fetchFn, sleep = realSleep, now = Date.now, retry = RETRY }) {
   const headers = githubHeaders(token);
-  const meta = { calls: 0, rateRemaining: null, retries: 0 };
+  // retried: the first 5 retries, each { kind, status, path without the query } (first judge
+  // claims, 24 Nov: the count alone did not say which call was retried or why). No header, no body.
+  const meta = { calls: 0, rateRemaining: null, retries: 0, retried: [] };
+  const noteRetry = (kind, status, path) => {
+    meta.retries += 1;
+    if (meta.retried.length < 5) meta.retried.push({ kind, status, path: String(path).split('?')[0].slice(0, 120) });
+  };
   const get = async (path, { required = false } = {}) => {
     let secondaryWaited = false;
     for (let attempt = 1; ; attempt += 1) {
@@ -105,7 +111,7 @@ export function githubClient({ token, fetchFn, sleep = realSleep, now = Date.now
         response = await fetchFn(`${API}${path}`, { headers });
       } catch (error) {
         if (attempt <= retry.waitsMs.length) {
-          meta.retries += 1;
+          noteRetry('network', 0, path);
           await sleep(retry.waitsMs[attempt - 1]);
           continue;
         }
@@ -123,13 +129,13 @@ export function githubClient({ token, fetchFn, sleep = realSleep, now = Date.now
       }
       const c = classifyGithubResponse(response, { now: now(), message });
       if (c.kind === 'server' && attempt <= retry.waitsMs.length) {
-        meta.retries += 1;
+        noteRetry('server', response.status, path);
         await sleep(retry.waitsMs[attempt - 1]);
         continue;
       }
       if (c.kind === 'secondary_limit' && !secondaryWaited && c.retryAfterS <= retry.secondaryMaxWaitS) {
         secondaryWaited = true;
-        meta.retries += 1;
+        noteRetry('secondary_limit', response.status, path);
         await sleep(c.retryAfterS * 1000);
         continue;
       }
@@ -414,7 +420,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     mergeSha: pr?.mergeSha ?? null,
     mergeReport: pr?.mergeSha ? baseReport : null,
     deployRuns,
-    meta: { calls: meta.calls, retries: meta.retries, rateRemaining: meta.rateRemaining, authenticated: Boolean(token) },
+    meta: { calls: meta.calls, retries: meta.retries, rateRemaining: meta.rateRemaining, authenticated: Boolean(token), ...(meta.retried.length ? { retried: meta.retried } : {}) },
   };
 }
 

@@ -110,6 +110,14 @@ value from `forge variables list` into a note, a chat or a commit.
 If the line has `rateRemaining` near 60, or the verdict comment says "not checked" with a GitHub
 error, stop and tell the lead.
 
+**Retries (24 Nov).** `retries` counts the GitHub calls that were made again after a thrown
+fetch, an HTTP 5xx or a secondary rate limit. It need not be 0. On the first live claims of
+24 Nov it was 1 or 2 on four of six claims, and every verdict was as expected. The same calls
+made locally (5 rounds, 55 calls) all answered 200 or 404 in less than 1 s, so the cause was not
+found. From the next deploy, a line with a retry also has `"retried"`: for each of the first five
+retries, its kind (`network`, `server` or `secondary_limit`), the HTTP status and the path with no
+query. It holds no header and no body.
+
 ## Local replay of the judge route (24 Nov)
 
 `test/judge-live.test.js` runs the five judge PRs with no network. It uses the panel's own
