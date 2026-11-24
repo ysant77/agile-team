@@ -7,12 +7,14 @@ repositories, no deploy).
 
 - Case file: `CASES-7-INDEPENDENT.md`, copied unchanged, sha256 `ece33972...bb5fd` (the value of
   `FREEZE-7.md`; checked before the file was read).
-- Truth: `run/truth-7.json`, made by `run/make_truth7.py` from the case file (e516fd2). The set 6
+- Truth: `run/truth-7.json`, made by `run/make_truth7.py` from the case file (2637bd5). The set 6
   second reading of the patterns as regular expressions is not made: the case file states that
   each alternative is plain text, and one alternative (`display(`) is not a valid expression.
-- Predictions: `PREDICTIONS-7.md`, committed (a0be2fe) before the scorer change, any case branch,
+- Predictions: `PREDICTIONS-7.md`, committed (3492299) before the scorer change, any case branch,
   manifest or scoring run.
-- Scorer change 23 (0a90a60), "seen set 7 results: no": `run/SCORER-CHANGES.md`, with the identity
+- Commit ids are those on the pushed branch (the local commits were rebased onto `main` 0752ad5
+  before the first push; the order of the commits did not change).
+- Scorer change 23 (c33a348), "seen set 7 results: no": `run/SCORER-CHANGES.md`, with the identity
   check on sets 1 to 6 (`run/evidence/identity-23-2026-11-24.txt`).
 
 ## Base

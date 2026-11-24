@@ -4,11 +4,11 @@ Blind set 7, written by a separate writer who saw no source, test, fixture, run 
 (`CASES-7-INDEPENDENT.md`, sha256 `ece33972...bb5fd`, the value of `FREEZE-7.md`). Code under test:
 app `main` cea0470 (after PRs 94 and 95), frozen by `FREEZE-7.md`. Arm C only (the app's
 `decide()` on stored evidence, `run/score.mjs`), scored by PROTOCOL-5 with no change. Build:
-`BUILD-7.md`. Predictions: `PREDICTIONS-7.md` (a0be2fe, committed before any build or run). Run
+`BUILD-7.md`. Predictions: `PREDICTIONS-7.md` (3492299, committed before any build or run). Run
 records: `run/evidence/set7-2026-11-24/` (sha256 in `run/evidence/SHA256SUMS-set7`), with
 `results.json`.
 
-**Scorer change 23** (0a90a60): seen the set 7 case file: yes; seen set 7 results: no. It lets the
+**Scorer change 23** (c33a348): seen the set 7 case file: yes; seen set 7 results: no. It lets the
 scorer serve three facts of the rows: the failed push run on `M` (X09), the second attempt of a
 push run in progress (X23), and two PR links (X14). Sets 1 to 6 give byte-identical results with
 and without it (`run/evidence/identity-23-2026-11-24.txt`). The lead allowed it (24 Nov).
