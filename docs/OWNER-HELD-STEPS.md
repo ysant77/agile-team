@@ -1,4 +1,4 @@
-# Steps held for the owner: a judge on a fresh site (23 Nov 2026)
+# Steps held for the owner: a judge on a fresh site (23 Nov 2026; state updated 24 Nov)
 
 These steps finish the fresh-site route (`docs/JUDGE-PATH.md`, "A judge on a fresh site"). The
 app side is in code (panel AC editor, panel PR link, base report per branch). Each step below
@@ -18,6 +18,38 @@ Status on 24 Nov: the first judge claims were made on development with two accou
 verdicts as expected, token authenticated (`docs/FIRST-JUDGE-CLAIM.md`, "The first live claims").
 Still open: the discovery variables of production, the production deploy (step 4), the install
 link (step 5) and a claim on a fresh site.
+
+## State after 24 Nov, and what the owner does on return
+
+Versions on development: 5.13.0 (520811a) for the live claims of 24 Nov; then 5.14.0 (aa62146),
+5.15.0 (1d093ef) and **5.16.0 (`main` 3862696)**, each deployed non-interactively with no change
+of `manifest.yml` against 520811a, so no new scope. Production still runs the older version: it
+was not deployed in this run.
+
+What 5.14.0 to 5.16.0 added over the version of the live claims: the retry record in the log
+(`"retried"`), the "pull request linked only by the claimant" rule (Cannot verify), the "push run
+still running" reason, the DID NOT RAISE rule, the merge result that reads the AC tests, two more
+lines under "Never checked by the code checks", and "Drafts waiting for you" in the panel (a
+ticket draft with a number or money waits for the person who asked). Not on 5.16.0 (a branch
+after it, `feat/store-not-checked`, waits for merge and the next deploy): the panel line for a
+claim that was not checked (a GitHub rate limit).
+
+On return, in this order (each step needs the owner's word; details in the sections below and in
+`docs/FIRST-JUDGE-CLAIM.md`):
+
+1. **Production deploy** (section 4): `forge deploy -e production` in a terminal, so any prompt is
+   seen. The manifest has not changed since 520811a, so a scope prompt is not expected; if one
+   comes, stop and decide. Before it, set the discovery variables of production (section 3a).
+2. **Install link** (section 5), into `docs/SUBMISSION.md`.
+3. **A fresh-site U01 claim**: install from the link on a site that has never had the app, type
+   the ACs of U01 in the panel, link PR 17 with the second account, and claim `done` with the
+   first. Expected: Supported (`docs/FIRST-JUDGE-CLAIM.md`, "On return").
+4. **One claim to read the retry log**: after any claim, `forge logs -e <env> --limit 50`; read the
+   `retries` and, if not 0, the new `"retried"` field (kind, status, path).
+5. **A check of "Drafts waiting for you"**: ask the PM agent for a ticket whose text has a number
+   (for example "refuse a transfer above 10000 EUR"). Expected: the agent says it is not created
+   yet; the panel of any work item shows the draft beside the request; **Create** makes the work
+   item once; the monitor page shows `ticket.drafted` and `ticket.draft_confirmed`.
 
 ## 1. The workflow change on the cases repository
 
