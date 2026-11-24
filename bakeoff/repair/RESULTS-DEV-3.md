@@ -1,4 +1,4 @@
-# Repair harness, development run 3 (24 to 25 Nov 2026): 1 of 3 seeds
+# Repair harness, development run 3 (24 to 25 Nov 2026): 1 of 3 seeds, partial
 
 **Partial: seed 11 only.** Seeds 12 and 13 were not run: the model slot was released for other
 work after the seed 11 round, as planned. No figure on this page is a rate.
@@ -43,18 +43,27 @@ Seed 11: 1 of 3 seeded cases repaired; on the control, a defect was invented (1 
 
 ## What the runs show
 
-- **R3-3 repaired.** The candidate makes the account number lookup independent of letter case; the
-  hidden check and the protected tests pass. The agent's own test fails on the base and also on
-  the candidate, so it does not show the repair; only the hidden check does.
+- **R3-3 repaired, at a different place.** The seeded fault removed the upper-casing of the typed
+  account number in the transfer route (`src/bank/api.py`). The candidate does not restore it
+  there: it upper-cases the number inside `ledger.get_account_by_number`
+  (`src/bank/ledger.py`), so every caller of that function now gets the change. The candidate
+  also adds one blank line. The hidden check (small letters, with and without spaces) and the
+  protected tests pass. The agent's own test does not import `pytest` and expects the old
+  behaviour (no account found), so it fails on the base and on the candidate; it does not show
+  the repair. Only the hidden check does. Whether the change at the ledger layer is acceptable is
+  for a person to decide.
 - **R3-1 changed no source.** All three patches were for one agent test file. The second and third
   were refused because they wrote to the existing file without its old text (the edit rule). The
   agent test passes on the base, so it does not reproduce the fault.
 - **R3-2 ended empty.** Two patches applied (a test, then a change to `src/bank/money.py`). In
   round 28 the model reset the candidate to the base. Its last patch gave old text that does not
   occur in the base file, so it was refused, and the round limit came with no candidate.
-- **The control.** R3-C changed `src/bank/api.py` to accept the case that the symptom describes,
-  which is intended behaviour. Under the control rule of PR 110 any change to `src/` on the
-  control is an invented defect.
+- **The control: the run invented a defect, by the rule of PR 110.** On the clean control, any
+  candidate that changes `src/` counts as an invented defect. R3-C changed `src/bank/api.py`: it
+  split the one condition of the transfer route ("no such account or wrong currency") into two
+  conditions. Both still give the same 404 with the same message. So the change does not alter
+  what the route does, and the protected tests pass. It still counts, because the model claimed
+  a defect in intended behaviour and changed source code to fix it.
 - **Patch tally:** 10 proposed, 7 applied, 3 refused (2 for an existing file without old text, 1
   for old text that occurs 0 times). No patch tried a protected path.
 
