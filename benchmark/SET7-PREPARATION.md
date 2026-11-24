@@ -176,3 +176,12 @@ Do the steps in this order. Write "done" and the commit or file for each step in
 - Owner identity only on each commit. No tool names in any commit, branch or file.
 - Before each push: the pre-push scan, `node --check`, `npm test`, and gitleaks.
 - No site name, account id, email, home path or secret in a tracked file.
+
+## Update of 24 Nov: the five facts are now expressible (scorer change 22)
+
+The list "The scorer has no simulation of these app records" above was true on 23 Nov. Scorer
+change 22 (`run/SCORER-CHANGES.md`) adds the five facts as manifest fields: `jira.signoff`,
+`jira.prLink` (with `github.titleWithoutKey`), `github.rateLimited`, `github.mergeCommit` and
+`github.pushRunInProgress`. The identity check on sets 1 to 6 gave byte-identical results with
+three app commits. The change is on a local branch and is not merged; until it is merged, the
+freeze note keeps the list above. No set 7 case exists, and nothing here is blind or scored.
