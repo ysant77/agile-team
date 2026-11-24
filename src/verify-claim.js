@@ -1,5 +1,6 @@
 // Orchestrates one claim: collect evidence, run deterministic checks, record and report.
 
+import { randomUUID } from 'node:crypto';
 import { fetch } from '@forge/api';
 import { kvs } from '@forge/kvs';
 import { appendAudit, appendAuditOnce, readAudit } from './audit-store.js';
@@ -101,17 +102,37 @@ const DEFAULT_DEPS = {
 export const LEASE_MS = 5 * 60 * 1000;
 export const verdictMarker = (claimId) => `[verdict ${claimId}]`;
 
+// Review of 24 Nov, stale lease: each delivery holds the lease with its own token. A stale lease is
+// taken over with one atomic swap (Forge KVS `returnValue: 'PREVIOUS'`); the delivery goes on only
+// if the swap replaced the stale lease it read, so of two deliveries that read the same stale
+// lease only one goes on. Returns the token.
 async function takeLease(store, key, now) {
+  const mine = { at: now, token: randomUUID() };
   try {
-    await store.set(key, { at: now }, { keyPolicy: 'FAIL_IF_EXISTS' });
-    return;
+    await store.set(key, mine, { keyPolicy: 'FAIL_IF_EXISTS' });
+    return mine.token;
   } catch (error) {
     const held = await store.get(key);
     if (!held) throw error;
     if (now - held.at < LEASE_MS) throw new Error('another delivery is verifying this claim; retry later');
-    // A stale lease: the delivery that held it stopped. Take it over.
-    await store.set(key, { at: now });
+    // A stale lease: the delivery that held it stopped. Take it over, unless another delivery did.
+    const prev = await store.set(key, mine, { keyPolicy: 'OVERRIDE', returnValue: 'PREVIOUS' });
+    if (prev?.value?.at !== held.at || (prev?.value?.token ?? null) !== (held.token ?? null)) {
+      // Another delivery took it over first: give its lease back (only if the key still holds ours).
+      if (prev?.value) {
+        const back = await store.set(key, prev.value, { keyPolicy: 'OVERRIDE', returnValue: 'PREVIOUS' });
+        if (back?.value?.token !== mine.token && back?.value) await store.set(key, back.value);
+      }
+      throw new Error('another delivery took over this claim; retry later');
+    }
+    return mine.token;
   }
+}
+
+// The lease still names this delivery. Checked before each side effect, so a delivery whose lease
+// was taken over stops (it may have done the step it was in; each step can be done again).
+async function holdsLease(store, key, token) {
+  return (await store.get(key))?.token === token;
 }
 
 export async function verifyClaim({ issueKey, claim }, deps = {}) {
@@ -120,7 +141,10 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
   const leaseKey = `claim-lease:${claim.id}`;
   let progress = (await d.store.get(progressKey)) ?? null;
   if (progress?.done) return progress.verdict;
-  await takeLease(d.store, leaseKey, Date.now());
+  const token = await takeLease(d.store, leaseKey, Date.now());
+  const fence = async () => {
+    if (!(await holdsLease(d.store, leaseKey, token))) throw new Error('the lease of this claim was taken over; this delivery stops');
+  };
   try {
     progress = (await d.store.get(progressKey)) ?? null;
     if (progress?.done) return progress.verdict;
@@ -140,6 +164,7 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
       // No property, no audit entry: nothing final was decided. The slots go back first, so a
       // failed comment post does not keep them.
       if (!progress.steps.released) {
+        await fence();
         await d.releaseClaim?.(claim.id, d.store);
         progress.steps.released = true;
         await save();
@@ -153,6 +178,7 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
           progress.steps.comment = true;
         }
         if (!progress.steps.comment) {
+          await fence();
           await d.addComment(issueKey, `${progress.comment}\n${marker}`);
           progress.steps.comment = true;
         }
@@ -163,17 +189,20 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
       return progress.verdict;
     }
     if (!progress.steps.property) {
+      await fence();
       await d.addVerdictProperty(issueKey, progress.record);
       progress.steps.property = true;
       await save();
     }
     if (!progress.steps.audit) {
+      await fence();
       const audit = await auditOnce(`verdict:${claim.id}`, { actor: 'team-lead-verifier', event: 'verdict', data: { issueKey, ...progress.record } });
       progress.steps.audit = { seq: audit.seq, hash: audit.hash };
       await save();
     }
     // The sign-off reads the claimant and the merged commit from this audit entry (src/sign-off.js).
     if (claim.type === 'done' && !progress.steps.latestDone) {
+      await fence();
       await d.store.set(LATEST_DONE_KEY(issueKey), { seq: progress.steps.audit.seq, hash: progress.steps.audit.hash });
       progress.steps.latestDone = true;
       await save();
@@ -181,6 +210,7 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
     // The evidence record goes into the audit chain before the comment, so a posted done verdict
     // always has its record (DESIGN 15d).
     if (progress.evidence && !progress.steps.evidence) {
+      await fence();
       const audit = await auditOnce(`done_evidence:${claim.id}`, { actor: 'team-lead-verifier', event: 'done_evidence', data: { issueKey, ...progress.evidence } });
       progress.steps.evidence = { seq: audit.seq, hash: audit.hash };
       await save();
@@ -196,6 +226,7 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
         progress.steps.comment = true;
       }
       if (!progress.steps.comment) {
+        await fence();
         const a = progress.steps.audit;
         await d.addComment(issueKey, `${progress.comment}\nAudit seq ${a.seq}, hash ${a.hash.slice(0, 12)}. ${marker}`);
         progress.steps.comment = true;
@@ -205,7 +236,10 @@ export async function verifyClaim({ issueKey, claim }, deps = {}) {
     await save();
     return progress.verdict;
   } finally {
-    await d.store.delete?.(leaseKey);
+    // Only the lease of this delivery is released; a lease taken over stays with its new owner.
+    // Limit: between this read and the delete another delivery can take a stale lease over; KVS
+    // has no conditional delete of a plain key.
+    if (await holdsLease(d.store, leaseKey, token)) await d.store.delete?.(leaseKey);
   }
 }
 
