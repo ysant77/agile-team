@@ -1,0 +1,31 @@
+{
+ "branch": "case/Y10",
+ "head": "a6a7f823e929e8fe51d810c5578bd2fb64ac09be",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import EXPONENTS, Money, exponent, from_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -159,8 +159,13 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         response.delete_cookie(COOKIE)\n \n     @app.get(\"/api/accounts\")\n-    def list_accounts(customer_id: CustomerId, conn: Conn) -> list[dict[str, object]]:\n-        return [account_json(a) for a in ledger.list_accounts(conn, customer_id)]\n+    def list_accounts(\n+        customer_id: CustomerId, conn: Conn, currency: str | None = None\n+    ) -> list[dict[str, object]]:\n+        if currency is not None and currency not in EXPONENTS:\n+            raise HTTPException(422, \"unsupported currency\")\n+        rows = [account_json(a) for a in ledger.list_accounts(conn, customer_id)]\n+        return rows if currency is None else [r for r in rows if r[\"currency\"] == currency]\n \n     @app.get(\"/api/accounts/{account_id}\")\n     def read_account(account: OwnedAccount) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,27 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_account_list_can_be_filtered_by_currency(bank):\n+    from bank.money import EXPONENTS\n+\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    assert len(client.get(\"/api/accounts\").json()) == 2\n+    eur = client.get(\"/api/accounts?currency=EUR\").json()\n+    assert len(eur) == 1\n+    assert eur[0][\"currency\"] == \"EUR\"\n+    assert eur[0][\"balance\"] == \"100.00\"\n+    jpy = client.get(\"/api/accounts?currency=JPY\").json()\n+    assert len(jpy) == 1\n+    assert jpy[0][\"currency\"] == \"JPY\"\n+    other = next(c for c in sorted(EXPONENTS) if c not in (\"EUR\", \"JPY\"))\n+    none = client.get(f\"/api/accounts?currency={other}\")\n+    assert none.status_code == 200\n+    assert none.json() == []\n+\n+\n+def test_account_list_refuses_an_unknown_currency(bank):\n+    response = login(bank[\"app\"], bank[\"owner\"]).get(\"/api/accounts?currency=XXX\")\n+    assert response.status_code == 422\n+    assert response.json()[\"detail\"] == \"unsupported currency\"\n"
+  }
+ ],
+ "additions": 32,
+ "deletions": 3,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 90%]\n....................................                                     [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpc9rxw6bu/bench-bank-8/coverage.json\n396 passed, 1 deselected in 510.16s (0:08:30)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

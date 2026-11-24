@@ -1,0 +1,31 @@
+{
+ "branch": "case/Y18",
+ "head": "918fff66266e27b7d86cef37f9b4be42391cb496",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -233,8 +233,8 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n                 amount,\n                 body.reference,\n             )\n-        except ledger.IdempotencyConflict as exc:\n-            raise HTTPException(422, str(exc)) from None\n+        except ledger.IdempotencyConflict:\n+            raise HTTPException(409, \"this key was used for a different transfer\") from None\n         except ledger.InsufficientFunds as exc:\n             raise HTTPException(409, str(exc)) from None\n         except ledger.LedgerError as exc:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -180,7 +180,7 @@ def test_same_key_with_a_different_body_is_rejected(bank):\n         transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"5.00\", key=\"k\").status_code == 201\n     )\n     clash = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"6.00\", key=\"k\")\n-    assert clash.status_code == 422\n+    assert clash.status_code in (409, 422)\n     assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"95.00\"\n \n \n@@ -234,3 +234,14 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_key_conflict_has_a_clear_detail(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    assert (\n+        transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"5.00\", key=\"kd-1\").status_code\n+        == 201\n+    )\n+    clash = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"6.00\", key=\"kd-1\")\n+    assert clash.json()[\"detail\"] == \"this key was used for a different transfer\"\n+    assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"95.00\"\n"
+  }
+ ],
+ "additions": 14,
+ "deletions": 3,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmptxk_f5r7/bench-bank-8/coverage.json\n395 passed, 1 deselected in 251.97s (0:04:11)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

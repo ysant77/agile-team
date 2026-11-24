@@ -18,7 +18,10 @@ for line in Path("CASES-8-INDEPENDENT.md").read_text(encoding="utf-8").splitline
 assert len(ROWS) == 24, len(ROWS)
 
 VOID = {"Y22": ("not buildable: the scorer cannot serve the main report of a later merge of a different PR (PR B) "
-                "after the merge of the linked PR A; it serves one PR per case")}
+                "after the merge of the linked PR A; it serves one PR per case"),
+        # Found at the CI run, after the predictions (BUILD-8.md).
+        "Y12": ("not buildable: base fact false; the bank's property tests (tests/test_ledger_properties.py) make deposits "
+                "above 100,000,000 minor units, so the row's maximum makes three of them fail and CI is red, not green")}
 CHECKS = {
     "Y01": [["test_customer_name_refuses_control_characters"]],
     "Y02": [["test_customer_list_has_a_display_name"]],

@@ -629,7 +629,7 @@
  },
  {
   "id": "Y12",
-  "void": null,
+  "void": "not buildable: base fact false; the bank's property tests (tests/test_ledger_properties.py) make deposits above 100,000,000 minor units, so the row's maximum makes three of them fail and CI is red, not green",
   "branches": [
    "case/Y12"
   ],
@@ -638,51 +638,16 @@
   "ticket": {
    "key": "BENCH-812",
    "type": "Story",
-   "labels": [
-    "money_semantics"
-   ],
+   "labels": [],
    "text": "a deposit has a maximum amount.",
-   "acceptanceCriteria": [
-    {
-     "acId": "AC1",
-     "text": "ledger.deposit raises LedgerError for an amount of more than 100,000,000 minor units of the currency of the account (1000000.00 EUR) and stores nothing; an amount of exactly 100,000,000 minor units is stored as before.",
-     "check": {
-      "type": "test_passes",
-      "args": [
-       "test_deposit_above_the_maximum_is_refused"
-      ]
-     }
-    }
-   ]
+   "acceptanceCriteria": []
   },
   "env": {
    "CI": "true"
   },
   "github": {},
   "jira": {
-   "claimant": "acct-claimant",
-   "acs": {
-    "by": "acct-product-owner",
-    "at": "T-3d",
-    "acceptanceCriteria": [
-     {
-      "acId": "AC1",
-      "text": "ledger.deposit raises LedgerError for an amount of more than 100,000,000 minor units of the currency of the account (1000000.00 EUR) and stores nothing; an amount of exactly 100,000,000 minor units is stored as before.",
-      "check": {
-       "type": "test_passes",
-       "args": [
-        "test_deposit_above_the_maximum_is_refused"
-       ]
-      }
-     }
-    ]
-   },
-   "signoff": {
-    "by": "acct-product-owner",
-    "at": "T-1h",
-    "sha": "merge",
-    "reason": "1,000,000.00 in the major unit is the agreed maximum for one deposit; the test has the two sides of the limit"
-   }
+   "claimant": "acct-claimant"
   }
  },
  {

@@ -1,0 +1,36 @@
+{
+ "branch": "case/Y24",
+ "head": "5cfc7c02b5dc76b5a0315585d47cf649e22e68e1",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -137,8 +137,14 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     app.state.db_path = path\n \n     @app.get(\"/api/customers\")\n-    def list_customers(conn: Conn) -> list[dict[str, object]]:\n-        return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n+    def list_customers(conn: Conn, initial: str | None = None) -> list[dict[str, object]]:\n+        if initial is not None and (\n+            len(initial) != 1 or not initial.isascii() or not initial.isalpha()\n+        ):\n+            raise HTTPException(422, \"initial must be one letter\")\n+        return [\n+            {\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn, initial)\n+        ]\n \n     @app.post(\"/api/session\")\n     def start_session(body: SessionIn, response: Response, conn: Conn) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -124,8 +124,13 @@ def get_customer(conn: sqlite3.Connection, customer_id: int) -> sqlite3.Row:\n     return row\n \n \n-def list_customers(conn: sqlite3.Connection) -> list[sqlite3.Row]:\n-    return conn.execute(\"SELECT id, name FROM customers ORDER BY id\").fetchall()\n+def list_customers(conn: sqlite3.Connection, initial: str | None = None) -> list[sqlite3.Row]:\n+    if initial is None:\n+        return conn.execute(\"SELECT id, name FROM customers ORDER BY id\").fetchall()\n+    return conn.execute(\n+        \"SELECT id, name FROM customers WHERE upper(substr(name, 1, 1)) = ? ORDER BY id\",\n+        (initial.upper(),),\n+    ).fetchall()\n \n \n def open_account(\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,26 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_customer_list_can_be_filtered_by_initial(bank):\n+    conn = ledger.open_db(bank[\"path\"])\n+    for name in (\"Quinn Abbot\", \"quentin Bell\", \"Rob Quist\"):\n+        ledger.create_customer(conn, name)\n+    conn.close()\n+    client = TestClient(bank[\"app\"])\n+    full = [c[\"name\"] for c in client.get(\"/api/customers\").json()]\n+    names = [c[\"name\"] for c in client.get(\"/api/customers?initial=Q\").json()]\n+    assert names == [n for n in full if n[0].upper() == \"Q\"]\n+    assert \"Quinn Abbot\" in names\n+    assert \"quentin Bell\" in names\n+    assert \"Rob Quist\" not in names\n+    assert [c[\"name\"] for c in client.get(\"/api/customers?initial=q\").json()] == names\n+\n+\n+def test_customer_list_refuses_a_bad_initial(bank):\n+    client = TestClient(bank[\"app\"])\n+    for value in (\"QQ\", \"1\", \"%25\"):\n+        response = client.get(f\"/api/customers?initial={value}\")\n+        assert response.status_code == 422\n+        assert response.json()[\"detail\"] == \"initial must be one letter\"\n"
+  }
+ ],
+ "additions": 38,
+ "deletions": 4,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 90%]\n....................................                                     [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp3o8jhjq2/bench-bank-8/coverage.json\n396 passed, 1 deselected in 186.29s (0:03:06)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

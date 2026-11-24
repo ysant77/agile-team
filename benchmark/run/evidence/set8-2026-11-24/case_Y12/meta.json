@@ -1,0 +1,31 @@
+{
+ "branch": "case/Y12",
+ "head": "6fc6b5e87bdddb60121b3418058cf8016ca6dbd7",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -230,6 +230,9 @@ def _post(\n     return entry_id\n \n \n+MAX_DEPOSIT_MINOR = 100_000_000\n+\n+\n def deposit(\n     conn: sqlite3.Connection,\n     account_id: int,\n@@ -237,6 +240,8 @@ def deposit(\n     description: str = \"Cash deposit\",\n     at: datetime | None = None,\n ) -> int:\n+    if amount.minor > MAX_DEPOSIT_MINOR:\n+        raise LedgerError(\"deposit is above the maximum\")\n     with write_txn(conn):\n         account = _require(conn, account_id, amount)\n         clearing = _clearing_account(conn, amount.currency)\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,14 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_deposit_above_the_maximum_is_refused(bank):\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"1000000.00\", \"EUR\"))\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    assert client.get(\"/api/accounts\").json()[0][\"balance\"] == \"1000100.00\"\n+    with pytest.raises(ledger.LedgerError):\n+        ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"1000000.01\", \"EUR\"))\n+    conn.close()\n+    assert client.get(\"/api/accounts\").json()[0][\"balance\"] == \"1000100.00\"\n"
+  }
+ ],
+ "additions": 16,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 1,
+  "tests_tail": "h - bank.ledger.LedgerError: deposit is above the maximum\nFailing test case: test_a_withdrawal_within_the_balance_goes_through(\n    start=100000001,\n    data=data(...),\n)\nDraw 1: 1  # or any other generated value\nExplanation:\n    These lines were always and only run by failing test cases:\n        /private/var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpezpa3s__/bench-bank-8/src/bank/ledger.py:244\n\nYou can reproduce this test case by temporarily adding @reproduce_failure('6.170.15', b'AEQF9eEBQQE=') as a decorator on your test function\n3 failed, 392 passed, 1 deselected in 508.14s (0:08:28)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}
