@@ -15,7 +15,7 @@ const symptoms = JSON.parse(readFileSync(new URL('../bakeoff/repair/symptoms-dev
 test('every development case is labelled development, and each case of the builder has its symptom here', () => {
   for (const c of cases) {
     assert.match(c.label, /^development/, c.id);
-    assert.doesNotMatch(c.label, /blind|held out(?!,)/i, c.id);
+    assert.doesNotMatch(c.label, /(?<!not )\b(blind|held out)\b/i, c.id);
     if (c.symptom_source === 'symptoms-dev.json') assert.ok(symptoms.find((s) => s.id === c.id)?.symptom, c.id);
     if (c.truth === 'none') assert.equal(c.hidden, null, c.id);
     else assert.ok(existsSync(new URL(`../bakeoff/repair/hidden/${c.hidden}`, import.meta.url)), c.id);
