@@ -12,6 +12,9 @@ import { collectJira } from './jira-evidence.js';
 import { latestView } from './verdict-view.js';
 import { readLatestDone, signOffAction, signoffPanel } from './sign-off.js';
 import { getFindingAction } from './finding-view.js';
+import { confirmDraft, listDrafts, rejectDraft } from './ticket-draft.js';
+import { createFromDraft } from './index.js';
+import { canonical, sha256 } from './audit.js';
 
 const resolver = new Resolver();
 
@@ -149,6 +152,17 @@ const canBrowse = async (key) => (await api.asUser().requestJira(route`/rest/api
 // app's store. Review of 24 Nov: only the investigator, or a person who can browse a work item
 // that the finding is linked to, gets the view.
 resolver.define('getFinding', async ({ payload, context }) => getFindingAction(payload, { store: kvs, accountId: context?.accountId, canBrowse }));
+
+// Narrow ticket confirmation (src/ticket-draft.js): the person's stored drafts, and Create or
+// Reject of one. The person is context.accountId, never an input. Create makes exactly the stored
+// draft, as the user, and its ticket.created event names the draft hash.
+const draftDeps = {
+  store: kvs, appendAudit, now: () => Date.now(),
+  create: (draft, by) => createFromDraft(by, draft, undefined, { draftHash: sha256(canonical(draft)) }),
+};
+resolver.define('getTicketDrafts', async ({ context }) => ({ drafts: await listDrafts(context?.accountId, draftDeps) }));
+resolver.define('confirmTicketDraft', async ({ payload, context }) => confirmDraft({ draftId: payload?.draftId, accountId: context?.accountId }, draftDeps));
+resolver.define('rejectTicketDraft', async ({ payload, context }) => rejectDraft({ draftId: payload?.draftId, accountId: context?.accountId }, draftDeps));
 
 // Monitor page: the whole audit chain (small in the demo), checked and replayed.
 const MONITOR_MAX = 2000;

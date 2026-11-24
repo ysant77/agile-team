@@ -19,6 +19,8 @@ export const NEVER_CHECKED = [
   'Whether the tests cover every case of the criterion (a test may assert only part of it).',
   'The text of the acceptance criteria: only the named tests and the mechanical checks are run.',
   'A side effect that no test asserts (for example a changed cookie, header or log).',
+  'Whether a test computes its expected value with the code it tests (it then agrees with any result).',
+  'Request text that reaches a query (for example SQL) when no test sends that text.',
 ];
 
 // One sentence on what the verdict rests on. A verdict describes the evidence at the time of the

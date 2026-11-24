@@ -6,6 +6,7 @@ import { invoke } from '@forge/bridge';
 import { VerdictSection } from './verdict-section.js';
 import { SignOffSection } from './sign-off-section.js';
 import { FindingSection } from './finding-section.js';
+import { DraftSection } from './draft-section.js';
 import { acEditorText } from '../ticket-spec.js';
 
 const APPEARANCE = { supported: 'success', contradicted: 'removed', cannot_verify: 'moved' };
@@ -26,12 +27,30 @@ function App() {
   const [finding, setFinding] = useState(null);
   const [findingError, setFindingError] = useState(null);
 
+  const [drafts, setDrafts] = useState([]);
+  const [draftError, setDraftError] = useState(null);
+
   const load = () => invoke('getPanel').then(setData);
+  const loadDrafts = () => invoke('getTicketDrafts').then((r) => setDrafts(r?.drafts ?? []));
   useEffect(() => {
     load();
+    loadDrafts();
   }, []);
 
   if (!data) return <Text>Loading…</Text>;
+
+  // A stored ticket draft is created or rejected only by the person who drafted it.
+  const createDraft = async (draftId) => {
+    const result = await invoke('confirmTicketDraft', { draftId });
+    setDraftError(result.ok ? null : result.error);
+    if (result.ok) setMessage({ appearance: 'success', text: `${result.duplicate ? 'Already created' : 'Created'}: ${result.key}.` });
+    loadDrafts();
+  };
+  const rejectDraftNow = async (draftId) => {
+    const result = await invoke('rejectTicketDraft', { draftId });
+    setDraftError(result.ok ? null : result.error);
+    loadDrafts();
+  };
   const acs = data.spec?.acceptanceCriteria ?? [];
 
   const adopt = async (prNumber, testName) => {
@@ -191,6 +210,8 @@ function App() {
           ))}
         </Stack>
       )}
+      <DraftSection drafts={drafts} onCreate={createDraft} onReject={rejectDraftNow} error={draftError}
+        ui={{ Box, Button, Heading, Inline, SectionMessage, Stack, Text }} />
       <FindingSection view={finding} findingRef={findingRef} onRef={setFindingRef} onShow={showFinding} error={findingError}
         ui={{ Button, Heading, Inline, SectionMessage, Stack, Text, Textfield }} />
     </Stack>

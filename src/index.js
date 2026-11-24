@@ -9,6 +9,7 @@ import { admitClaim } from './claim-intake.js';
 import { readLatestCommit } from './github.js';
 import { addComment, createIssue, getComment } from './jira.js';
 import { acLineErrors, normaliseAcs, parseAcLines } from './ticket-spec.js';
+import { needsConfirmation, storeDraft } from './ticket-draft.js';
 import { lintRequirement } from './lint.js';
 import { adfToText, checkStoryPoints, parseClaim } from './text.js';
 
@@ -57,6 +58,28 @@ export async function createTicket(payload) {
     acceptanceCriteria: normaliseAcs(parseAcLines(payload.acceptanceCriteria), projectKey),
     ...(finding ? { findingId: finding.findingId, labels: ['unconfirmed'] } : {}),
   };
+  // Owner decision 24 Nov (docs/DESIGN-TICKET-CONFIRMATION.md, middle way): a draft that states a
+  // number, a currency or a money label is stored, not created. The person creates exactly the
+  // stored draft from the issue panel (src/ticket-draft.js). The check reads the text that was
+  // passed in, not the finding note that the app adds.
+  const why = needsConfirmation({ ...draft, description });
+  if (why.length) {
+    const stored = await storeDraft({ by, draft, request: payload.request, findingId: finding?.findingId ?? null },
+      { store: kvs, appendAudit, now: () => Date.now() });
+    return { ok: true, pending: true, draftId: stored.draftId, created: false,
+      note: `Not created yet: the draft states ${why.join(' and ')}. Open the Agile Team panel on any work item, check the draft under "Drafts waiting for you", and press Create (within 30 minutes).` };
+  }
+  return createFromDraft(by, draft, finding);
+}
+
+// Creates the work item of a checked draft, once per draft and person. Used by createTicket and by
+// the panel's Create of a stored draft (src/ticket-draft.js). finding: the finding object, or
+// undefined to read it again from draft.findingId (with the same access rule).
+export async function createFromDraft(by, draft, finding, { draftHash } = {}) {
+  if (finding === undefined) {
+    finding = draft.findingId ? await readFindingFor(draft.findingId, { store: kvs, accountId: by }) : null;
+    if (draft.findingId && !finding) return { ok: false, error: `there is no finding ${String(draft.findingId).slice(0, 40)}` };
+  }
   // One work item per draft and person: a retried or repeated call returns the first result.
   const onceKey = `ticket-create:${sha256(canonical({ by, ...draft }))}`;
   const now = Date.now();
@@ -66,7 +89,7 @@ export async function createTicket(payload) {
       // A call that stopped after the create may have left the finding link or the event
       // unwritten; this writes them, each once.
       await linkFinding(finding, prior.key);
-      await appendAuditOnce(`ticket.created:${onceKey}`, createdEvent(by, prior.key, draft, finding));
+      await appendAuditOnce(`ticket.created:${onceKey}`, createdEvent(by, prior.key, draft, finding, draftHash));
       return { ok: true, key: prior.key, duplicate: true, note: `This draft was already created as ${prior.key}; no second work item.` };
     }
     if (prior?.state === 'pending' && now - prior.at < CREATE_PENDING_MS) {
@@ -88,7 +111,7 @@ export async function createTicket(payload) {
   }
   await kvs.set(onceKey, { state: 'done', key: result.key, at: now });
   await linkFinding(finding, result.key);
-  const audit = await appendAuditOnce(`ticket.created:${onceKey}`, createdEvent(by, result.key, draft, finding));
+  const audit = await appendAuditOnce(`ticket.created:${onceKey}`, createdEvent(by, result.key, draft, finding, draftHash));
   return { ...result, auditSeq: audit.seq };
 }
 
@@ -107,10 +130,10 @@ async function linkFinding(finding, key) {
 // Limit (review of 24 Nov): if the "done" write fails after Jira made the issue, the key stays
 // "pending"; after 10 minutes a repeated call makes a second issue. The app cannot ask Jira for
 // the first one without an indexed issue property (a manifest change).
-function createdEvent(by, key, draft, finding) {
+function createdEvent(by, key, draft, finding, draftHash) {
   return { actor: by, event: 'ticket.created', data: {
     key, projectKey: draft.projectKey, issueType: draft.issueType, storyPoints: draft.storyPoints, acHash: sha256(canonical(draft.acceptanceCriteria)),
-    ...(finding ? { findingId: finding.findingId } : {}) } };
+    ...(finding ? { findingId: finding.findingId } : {}), ...(draftHash ? { draftHash } : {}) } };
 }
 
 function findingNote(f) {

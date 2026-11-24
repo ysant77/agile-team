@@ -1,8 +1,9 @@
-# Design note: a person confirms the exact ticket draft (24 Nov 2026; not built)
+# Design note: a person confirms the exact ticket draft (24 Nov 2026; middle way built)
 
 Review of 24 Nov, finding "the human-approved specification and the model-provided request can
 diverge" (P1). This note records what the platform guarantees, what the app guarantees today, and
-a design that binds a person's approval to the exact draft. Nothing here is built.
+a design that binds a person's approval to the exact draft. The middle way (below) is built; see
+"What is built" at the end.
 
 ## What the platform states (public Forge docs, read on 24 Nov 2026)
 
@@ -65,3 +66,29 @@ person can compare them.
 - Create by another account, after expiry, twice, or for a draft whose stored body was changed:
   refused, no Jira POST; the second Create returns the first work item.
 - The created issue's fields equal the stored draft; `ticket.created` carries the draft hash.
+
+## What is built (24 Nov 2026, owner decision: the middle way)
+
+- `src/ticket-draft.js`. A draft needs a person's confirmation when its summary, description or
+  AC lines have a digit, a currency code (EUR, USD, JPY, ...) or a currency symbol, or when it
+  carries the label `money_semantics`. The story points and the finding note that the app adds are
+  not read for this.
+- `create-ticket` (`src/index.js`): such a draft is stored as `ticket-draft:<id>` with the caller
+  (`currentAccountId`), its hash, the request text, a 30-minute limit and the state `pending`, with
+  the audit event `ticket.drafted`. Nothing is created; the result says `pending: true` and tells
+  the person where to confirm. Any other draft is created at once, as before.
+- The issue panel shows "Drafts waiting for you": each pending draft of the viewer, the request
+  beside it, why it waits, and **Create** and **Reject**. The resolvers `getTicketDrafts`,
+  `confirmTicketDraft` and `rejectTicketDraft` take the person from `context.accountId`, never
+  from an input.
+- Create checks: the draft exists, the person drafted it, it is `pending` and not expired, and the
+  stored draft still has its hash. It then creates exactly the stored fields as that person, with
+  the same once-per-draft rule as before; `ticket.created` carries `draftHash`, and
+  `ticket.draft_confirmed` names the draft, the hash and the work item. A second Create returns
+  the first work item. A failed create leaves the draft `pending`. Reject writes
+  `ticket.draft_rejected`.
+- No manifest change. Limit: the action's description in `manifest.yml` still says "Creates a Jira
+  work item"; the result of a stored draft says that it is not created yet, and the agent passes
+  that on. Changing the description is a manifest change.
+- Tests: `test/ticket-draft.test.js`, `test/ticket-draft-flow.test.js`, `test/panel-drafts.test.js`.
+
