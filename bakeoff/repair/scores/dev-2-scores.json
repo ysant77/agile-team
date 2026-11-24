@@ -1,0 +1,286 @@
+{
+ "kind": "scores only (no model text, no symptom, no patch)",
+ "run": "repair-dev-2",
+ "date": "2026-11-24",
+ "app": "b8baf61 (test/repair-dev-2 on main beee9ed; edit form of PR 105)",
+ "model": "qwen3-coder:30b 06c1097efce0",
+ "settings": {
+  "temperature": 0.6,
+  "numCtx": 16384,
+  "seeds": [
+   11,
+   12,
+   13
+  ],
+  "limits": {
+   "rounds": 30,
+   "checks": 8,
+   "patches": 3
+  }
+ },
+ "trees": {
+  "R2-1": "57deaf0",
+  "R2-2": "29ba7d4",
+  "R2-C": "2d7b042"
+ },
+ "battery": {
+  "atLoad": "100%",
+  "lowest": "92%",
+  "atRelease": "96%"
+ },
+ "patchTally": {
+  "refused: protected path": 4,
+  "applied": 7,
+  "refused: edits not a list": 1
+ },
+ "runs": [
+  {
+   "case": "R2-1",
+   "seed": 11,
+   "stop": "final answer",
+   "rounds": 12,
+   "seconds": 484,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 4,
+    "read-ci-results": 1,
+    "record-finding": 1,
+    "run-check": 2,
+    "propose-patch": 1,
+    "lint-requirement": 1
+   },
+   "patches": [
+    "refused: protected path"
+   ],
+   "candidateChangesSrc": null,
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": null,
+   "agentTests": [],
+   "verdict": "no candidate patch"
+  },
+  {
+   "case": "R2-1",
+   "seed": 12,
+   "stop": "final answer",
+   "rounds": 14,
+   "seconds": 306,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 3,
+    "read-ci-results": 1,
+    "record-finding": 1,
+    "run-check": 4,
+    "propose-patch": 2,
+    "lint-requirement": 1
+   },
+   "patches": [
+    "applied",
+    "applied"
+   ],
+   "candidateChangesSrc": false,
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": "failed",
+   "protectedOnCandidate": {
+    "tests/test_ledger.py": "passed",
+    "tests/test_api.py": "passed"
+   },
+   "agentTests": [
+    {
+     "onBase": "passed",
+     "onCandidate": "passed",
+     "reproduces": false
+    }
+   ],
+   "verdict": "not repaired: the hidden check still fails"
+  },
+  {
+   "case": "R2-1",
+   "seed": 13,
+   "stop": "final answer",
+   "rounds": 22,
+   "seconds": 949,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 3,
+    "read-ci-results": 1,
+    "record-finding": 1,
+    "lint-requirement": 1,
+    "run-check": 10,
+    "propose-patch": 3,
+    "create-ticket": 1
+   },
+   "patches": [
+    "applied",
+    "applied",
+    "refused: protected path"
+   ],
+   "candidateChangesSrc": true,
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": "passed",
+   "protectedOnCandidate": {
+    "tests/test_ledger.py": "passed",
+    "tests/test_api.py": "passed"
+   },
+   "agentTests": [],
+   "verdict": "repaired (hidden check and protected tests pass); a person decides"
+  },
+  {
+   "case": "R2-2",
+   "seed": 11,
+   "stop": "final answer",
+   "rounds": 9,
+   "seconds": 137,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 3,
+    "read-ci-results": 1,
+    "record-finding": 3
+   },
+   "patches": [],
+   "candidateChangesSrc": null,
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": null,
+   "agentTests": [],
+   "verdict": "no candidate patch"
+  },
+  {
+   "case": "R2-2",
+   "seed": 12,
+   "stop": "final answer",
+   "rounds": 8,
+   "seconds": 128,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 3,
+    "read-ci-results": 1,
+    "record-finding": 1,
+    "lint-requirement": 1
+   },
+   "patches": [],
+   "candidateChangesSrc": null,
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": null,
+   "agentTests": [],
+   "verdict": "no candidate patch"
+  },
+  {
+   "case": "R2-2",
+   "seed": 13,
+   "stop": "model error: terminated",
+   "rounds": 13,
+   "seconds": 593,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 2,
+    "read-repo-file": 4,
+    "read-ci-results": 1,
+    "record-finding": 1,
+    "run-check": 1,
+    "propose-patch": 3
+   },
+   "patches": [
+    "refused: protected path",
+    "applied",
+    "applied"
+   ],
+   "candidateChangesSrc": true,
+   "hiddenOnBase": "failed",
+   "hiddenOnCandidate": "failed",
+   "protectedOnCandidate": {
+    "tests/test_api.py": "passed",
+    "tests/test_web.py": "passed"
+   },
+   "agentTests": [],
+   "verdict": "not repaired: the hidden check still fails"
+  },
+  {
+   "case": "R2-C",
+   "seed": 11,
+   "stop": "rounds",
+   "rounds": 30,
+   "seconds": 787,
+   "toolCalls": {
+    "start-investigation": 2,
+    "list-repo-files": 2,
+    "read-repo-file": 4,
+    "read-ci-results": 1,
+    "record-finding": 3,
+    "lint-requirement": 2,
+    "run-check": 12,
+    "propose-patch": 4
+   },
+   "patches": [
+    "refused: edits not a list",
+    "applied",
+    "refused: protected path"
+   ],
+   "candidateChangesSrc": false,
+   "hiddenOnBase": null,
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": {
+    "tests/test_ledger.py": "passed",
+    "tests/test_api.py": "passed"
+   },
+   "agentTests": [
+    {
+     "onBase": "passed",
+     "onCandidate": "passed",
+     "reproduces": false
+    }
+   ],
+   "verdict": "invented change on a clean control"
+  },
+  {
+   "case": "R2-C",
+   "seed": 12,
+   "stop": "final answer",
+   "rounds": 8,
+   "seconds": 184,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 3,
+    "read-ci-results": 1,
+    "record-finding": 1,
+    "lint-requirement": 1
+   },
+   "patches": [],
+   "candidateChangesSrc": null,
+   "hiddenOnBase": null,
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": null,
+   "agentTests": [],
+   "verdict": "no change (as a clean control should)"
+  },
+  {
+   "case": "R2-C",
+   "seed": 13,
+   "stop": "final answer",
+   "rounds": 9,
+   "seconds": 236,
+   "toolCalls": {
+    "start-investigation": 1,
+    "list-repo-files": 1,
+    "read-repo-file": 3,
+    "read-ci-results": 1,
+    "record-finding": 2,
+    "lint-requirement": 1
+   },
+   "patches": [],
+   "candidateChangesSrc": null,
+   "hiddenOnBase": null,
+   "hiddenOnCandidate": null,
+   "protectedOnCandidate": null,
+   "agentTests": [],
+   "verdict": "no change (as a clean control should)"
+  }
+ ]
+}

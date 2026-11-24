@@ -2,7 +2,7 @@
 
 Kind: development run on three new development cases that no earlier run had seen. It is not a
 blind measurement, and no claim of the product rests on it. Scores only:
-`results/dev-2-scores.json`. The traces, the patches and the model text are kept outside the
+`scores/dev-2-scores.json`. The traces, the patches and the model text are kept outside the
 repository (README, "Run records"); this page quotes none of the model text.
 
 What changed since run 1: `propose-patch` takes search-and-replace edits (PR 105) in place of a
@@ -83,7 +83,7 @@ unified diff. In run 1, 8 of 14 diffs did not apply. The three run 1 cases were 
 
 ## Files
 
-- `results/dev-2-scores.json`: one entry for each run (case, seed, stop, rounds, seconds, tool call
+- `scores/dev-2-scores.json`: one entry for each run (case, seed, stop, rounds, seconds, tool call
   counts, each patch as applied or refused with the kind of refusal, whether the candidate changes
   `src/`, the hidden check on the base and the candidate, the protected tests, the agent tests and
   the verdict), and the battery values. No model text, no symptom and no patch.
