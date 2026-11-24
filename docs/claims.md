@@ -502,7 +502,9 @@ Three points of this paper match rules here:
   shows it as the advisory check `imports_known` (`docs/ci-report.md`, "The imports block"); it
   is not counted.
 - **Validation before and after the merge.** A `done` claim needs the named test to fail on the
-  base by an assertion and pass on the head (`reproduced`), and a clean main report for the merge
+  base by an assertion and pass on the head (`reproduced`; a `pytest.raises` block that ends with
+  pytest's own `DID NOT RAISE` on base counts as an assertion, any other `Failed` or error does
+  not; set 7 X01, 24 Nov), and a clean main report for the merge
   commit (`merged_clean`). When `main.json` is not for the merge commit, the app reads the push
   runs on the merge commit, and the reason tells two cases apart (owner decision, 24 Nov): the push
   run is still running ("wait for it to end, then claim again"), or no run is running ("report
