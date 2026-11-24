@@ -1,6 +1,6 @@
 import api, { route } from '@forge/api';
 import Resolver from '@forge/resolver';
-import { appendAudit, readAudit } from './audit-store.js';
+import { appendAudit, auditLength, readAudit } from './audit-store.js';
 import { monitorForViewer } from './monitor.js';
 import { kvs } from '@forge/kvs';
 import { adoptFromReviews } from './review.js';
@@ -153,13 +153,14 @@ resolver.define('getFinding', async ({ payload, context }) => getFindingAction(p
 // Monitor page: the whole audit chain (small in the demo), checked and replayed.
 const MONITOR_MAX = 2000;
 resolver.define('getMonitor', async () => {
-  const head = await kvs.get('audit-head');
-  const count = head ? Math.min(head.seq + 1, MONITOR_MAX) : 0;
+  // Every event, also one written after the head pointer's last update (review of 24 Nov).
+  const total = await auditLength(kvs);
+  const count = Math.min(total, MONITOR_MAX);
   const events = [];
   for (let from = 0; from < count; from += 50) events.push(...(await readAudit(from, Math.min(50, count - from))));
   // As the user: a work item the viewer cannot browse is left out.
   const monitor = await monitorForViewer(events, canBrowse);
-  return { ...monitor, truncated: head ? head.seq + 1 > MONITOR_MAX : false, readAt: new Date().toISOString() };
+  return { ...monitor, truncated: total > MONITOR_MAX, readAt: new Date().toISOString() };
 });
 
 export const handler = resolver.getDefinitions();

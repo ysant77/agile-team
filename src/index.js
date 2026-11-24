@@ -1,6 +1,6 @@
 import { Queue } from '@forge/events';
 import { kvs } from '@forge/kvs';
-import { appendAudit } from './audit-store.js';
+import { appendAudit, appendAuditOnce } from './audit-store.js';
 import { canonical, sha256 } from './audit.js';
 import { createOnce, currentAccountId } from './action-guard.js';
 import { findingLinksKey, readFindingFor } from './discovery.js';
@@ -63,6 +63,8 @@ export async function createTicket(payload) {
   if (!(await createOnce(kvs, onceKey, { state: 'pending', at: now }))) {
     const prior = await kvs.get(onceKey);
     if (prior?.state === 'done' && now - prior.at < CREATE_WINDOW_MS) {
+      // A call that stopped after the create left the event unwritten; this writes it, once.
+      await appendAuditOnce(`ticket.created:${onceKey}`, createdEvent(by, prior.key, draft, finding));
       return { ok: true, key: prior.key, duplicate: true, note: `This draft was already created as ${prior.key}; no second work item.` };
     }
     if (prior?.state === 'pending' && now - prior.at < CREATE_PENDING_MS) {
@@ -90,10 +92,18 @@ export async function createTicket(payload) {
     const kept = Array.isArray(links) ? links.filter((k) => typeof k === 'string' && k !== result.key) : [];
     await kvs.set(findingLinksKey(finding.findingId), [...kept, result.key].slice(-20));
   }
-  const audit = await appendAudit({ actor: by, event: 'ticket.created', data: {
-    key: result.key, projectKey, issueType, storyPoints, acHash: sha256(canonical(draft.acceptanceCriteria)),
-    ...(finding ? { findingId: finding.findingId } : {}) } });
+  const audit = await appendAuditOnce(`ticket.created:${onceKey}`, createdEvent(by, result.key, draft, finding));
   return { ...result, auditSeq: audit.seq };
+}
+
+// The ticket.created event (one per draft and person: appendAuditOnce with the idempotency key).
+// Limit (review of 24 Nov): if the "done" write fails after Jira made the issue, the key stays
+// "pending"; after 10 minutes a repeated call makes a second issue. The app cannot ask Jira for
+// the first one without an indexed issue property (a manifest change).
+function createdEvent(by, key, draft, finding) {
+  return { actor: by, event: 'ticket.created', data: {
+    key, projectKey: draft.projectKey, issueType: draft.issueType, storyPoints: draft.storyPoints, acHash: sha256(canonical(draft.acceptanceCriteria)),
+    ...(finding ? { findingId: finding.findingId } : {}) } };
 }
 
 function findingNote(f) {

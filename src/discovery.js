@@ -14,6 +14,7 @@
 //   status is "unconfirmed"; only a CI report can make it "reproduced" (the reproduced check).
 
 import { canonical, sha256 } from './audit.js';
+import { appendAuditOnce } from './audit-store.js';
 import { createOnce } from './action-guard.js';
 import { classifyGithubResponse } from './github-evidence.js';
 
@@ -400,12 +401,13 @@ export async function recordFinding({ investigationId, by, finding }, d) {
   const closeOpen = async () => {
     if ((await d.store.get(openKey(by)))?.id === inv.id) await d.store.delete(openKey(by));
   };
-  if (!(await createOnce(d.store, `finding:${findingId}`, record))) {
-    await closeOpen();
-    return { ok: true, findingId, status: 'unconfirmed', kind: body.kind, duplicate: true, ...(noRule ? { note: NO_RULE_NOTE } : {}) };
-  }
+  // Review of 24 Nov, audit order: the event is written once per finding (appendAuditOnce), also by
+  // a repeated call, so a call that stopped after the finding was stored is repaired by the next.
+  const created = await createOnce(d.store, `finding:${findingId}`, record);
+  const audit = await appendAuditOnce(`finding.recorded:${findingId}`, { actor: by, event: 'finding.recorded', data: { findingId, investigationId: inv.id, kind: body.kind, commit: inv.commit, hash } },
+    { store: d.store, append: d.appendAudit, read: d.readAudit ? async (seq) => (await d.readAudit(seq, 1))[0] ?? null : null });
   await closeOpen();
-  const audit = await d.appendAudit({ actor: by, event: 'finding.recorded', data: { findingId, investigationId: inv.id, kind: body.kind, commit: inv.commit, hash } });
+  if (!created) return { ok: true, findingId, status: 'unconfirmed', kind: body.kind, duplicate: true, ...(noRule ? { note: NO_RULE_NOTE } : {}) };
   return { ok: true, findingId, status: 'unconfirmed', kind: body.kind, auditSeq: audit.seq, ...(noRule ? { note: NO_RULE_NOTE } : {}) };
 }
 
