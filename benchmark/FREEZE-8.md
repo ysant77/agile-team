@@ -4,8 +4,7 @@
 
 - Writer: blind. The writer saw no source, test, fixture or run folder of the app or the bank, and
   no set 8 result. The lead holds the file.
-- sha256 of the case file: **open**. The lead sends it when the writer finishes; it is added to
-  this file in the same PR, before the merge. No other line changes when it is added.
+- sha256 of the case file, given by the lead before the release: `c91973e3752dd48f82bcb680ef0bab684527b2f8bc10d838bad68a6df605b75b`
 - Checked after the copy into `CASES-8-INDEPENDENT.md`: (filled in `BUILD-8.md` after the release;
   this note does not change)
 
