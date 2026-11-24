@@ -113,6 +113,7 @@ function App() {
   const view = data.view;
   return (
     <Stack space="space.200">
+      {data.notChecked && <SectionMessage appearance="warning"><Text>{data.notChecked}</Text></SectionMessage>}
       <VerdictSection view={view} ui={{ Heading, Inline, Lozenge, SectionMessage, Stack, Text }} />
       <Heading as="h3">Acceptance criteria</Heading>
       {acs.length === 0 ? (

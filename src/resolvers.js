@@ -9,7 +9,8 @@ import { saveAcsAction } from './ac-editor.js';
 import { githubClient, githubFailure } from './github-evidence.js';
 import { linkPrAction } from './pr-link.js';
 import { collectJira } from './jira-evidence.js';
-import { latestView } from './verdict-view.js';
+import { latestView, notCheckedLine } from './verdict-view.js';
+import { latestNotChecked, notCheckedKey } from './verify-claim.js';
 import { readLatestDone, signOffAction, signoffPanel } from './sign-off.js';
 import { getFindingAction } from './finding-view.js';
 import { confirmDraft, listDrafts, rejectDraft } from './ticket-draft.js';
@@ -86,8 +87,10 @@ resolver.define('getPanel', async ({ context }) => {
   ]);
   // The verdict view explains the newest verdict; code set it, and the view never changes it.
   const prLinks = (await kvs.get(`pr-links:${key}`)) ?? [];
+  // A claim that GitHub could not answer is not a verdict; the panel says so while no verdict is newer.
+  const notChecked = notCheckedLine(latestNotChecked(await kvs.get(notCheckedKey(key)), verdicts));
   return { key, spec, verdicts: verdicts ?? [], view: latestView(verdicts), approval, reviews: reviews ?? [], signoff: signoffPanel(verdicts, signoff),
-    prLink: Array.isArray(prLinks) && prLinks.length ? { ...prLinks.at(-1), count: prLinks.length } : null };
+    prLink: Array.isArray(prLinks) && prLinks.length ? { ...prLinks.at(-1), count: prLinks.length } : null, notChecked };
 });
 
 resolver.define('approve', async ({ payload, context }) => {
