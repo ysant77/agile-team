@@ -1277,7 +1277,7 @@ function newFunctionStory(ctx, row) {
 // that a pytest.raises block gives when the code does not raise (set 7 X01; the case files of sets
 // 6 and 7 count it so). Any other Failed (pytest.fail) or error is not an assertion.
 const DID_NOT_RAISE = /^Failed: DID NOT RAISE\b/;
-export function failsByAssertion(base) {
+function failsByAssertion(base) {
   if (!isObj(base) || base.outcome !== 'failed') return false;
   if (base.exc_type === 'AssertionError') return true;
   return base.exc_type === 'Failed' && typeof base.exc_message === 'string' && DID_NOT_RAISE.test(base.exc_message);
