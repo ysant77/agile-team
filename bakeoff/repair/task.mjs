@@ -5,8 +5,9 @@
 //   for one test id that exists there, in the sandbox (bakeoff/repair/sandbox.mjs);
 // - propose-patch { edits: [{ path, old, new }], reason }: search-and-replace edits (since 24 Nov;
 //   before, a unified diff), checked and applied to a fresh copy of the base
-//   (bakeoff/repair/patch.mjs, applyEdits). At most 3 patches; the last one that applied is the
-//   candidate.
+//   (bakeoff/repair/patch.mjs, applyEdits). At most 3 patches. Since 24 Nov (lead's ruling after
+//   run 2) the patches of one run build on each other: each applies to the state after the earlier
+//   applied ones, and the final state is the candidate; reset {} returns to the base.
 // The model never gives a command, never sees the hidden checks or the truth, and never changes
 // the investigated tree. After the loop, the evaluator decides with checks the model did not see.
 
@@ -25,7 +26,8 @@ const DISCOVERY_TOOLS = ['start-investigation', 'list-repo-files', 'read-repo-fi
 
 export const REPAIR_TOOL_SPECS = [
   { type: 'function', function: { name: 'run-check', description: 'Run one test of the bank with pytest and get its outcome. "on" is "base" (the investigated code) or "candidate" (the code with your last applied patch). The test must exist in that copy: an existing test, or an agent test that your patch added. You cannot run any other command.', parameters: { type: 'object', properties: { test: { type: 'string', description: 'A pytest id: tests/<file>.py or tests/<file>.py::<test name>' }, on: { type: 'string', enum: ['base', 'candidate'] } }, required: ['test', 'on'] } } },
-  { type: 'function', function: { name: 'propose-patch', description: 'Propose a change as edits. Each edit names a file, the exact old text and the new text. The old text must occur exactly once in the file: copy it from read-repo-file without the line numbers, with enough lines to be unique. An empty old text creates a new file. You may change Python files under src/ and add new tests named tests/test_agent_<name>.py. The bank\'s own tests, scripts, CI and config cannot be changed. Each patch is applied to a fresh copy of the base code; all its edits apply or none; at most 3 patches.', parameters: { type: 'object', properties: { edits: { type: 'array', items: { type: 'object', properties: { path: { type: 'string' }, old: { type: 'string', description: 'The exact text to replace; empty for a new file' }, new: { type: 'string', description: 'The text that replaces it' } }, required: ['path', 'old', 'new'] } }, reason: { type: 'string', description: 'Why this change fixes the reported problem' } }, required: ['edits', 'reason'] } } },
+  { type: 'function', function: { name: 'propose-patch', description: 'Propose a change as edits. Each edit names a file, the exact old text and the new text. The old text must occur exactly once in the file: copy it from read-repo-file without the line numbers, with enough lines to be unique. An empty old text creates a new file. You may change Python files under src/ and add new tests named tests/test_agent_<name>.py. The bank\'s own tests, scripts, CI and config cannot be changed. Each patch applies to the code after your earlier applied patches (call reset to start again from the base); all its edits apply or none; at most 3 patches.', parameters: { type: 'object', properties: { edits: { type: 'array', items: { type: 'object', properties: { path: { type: 'string' }, old: { type: 'string', description: 'The exact text to replace; empty for a new file' }, new: { type: 'string', description: 'The text that replaces it' } }, required: ['path', 'old', 'new'] } }, reason: { type: 'string', description: 'Why this change fixes the reported problem' } }, required: ['edits', 'reason'] } } },
+  { type: 'function', function: { name: 'reset', description: 'Drop every patch applied so far: the next patch applies to the base code again. It does not give back the patch budget.', parameters: { type: 'object', properties: {} } } },
 ];
 
 export const HARNESS_NOTE = 'You also have run-check and propose-patch. Investigate first. If the code breaks a stated rule, you may add a test tests/test_agent_<name>.py that shows it, run it on base, and propose a fix. If no rule is broken, say so and change nothing. A person decides on every change.';
@@ -51,6 +53,7 @@ export async function runRepair(ask, kase, { tree, python, keep = false }) {
   const by = 'repair-harness';
   const branch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: tree, encoding: 'utf8' }).trim();
   const counts = { checks: 0, patches: 0 };
+  const candidateFiles = [];
   const patches = [];
   const tools = {
     'start-investigation': (a) => startInvestigation({ symptom: a.symptom, by, repo: 'local/investigated', ref: branch }, d),
@@ -76,17 +79,26 @@ export async function runRepair(ask, kase, { tree, python, keep = false }) {
     'propose-patch': async (a) => {
       if (counts.patches >= LIMITS.patches) return { ok: false, error: `the patch budget (${LIMITS.patches}) is used` };
       counts.patches += 1;
-      const dir = join(work, `candidate-${counts.patches}`);
-      makeCopy(tree, dir);
+      // The patches build on each other: the first one after the base (or a reset) starts a copy;
+      // a later one applies to the current candidate. A refused patch writes nothing.
+      const fresh = candidate === null;
+      const dir = fresh ? join(work, `candidate-${counts.patches}`) : candidate;
+      if (fresh) makeCopy(tree, dir);
       const applied = applyEdits(dir, a.edits);
       const asked = Array.isArray(a.edits) ? a.edits.map((e) => ({ path: String(e?.path ?? ''), old: String(e?.old ?? '').slice(0, 4000), new: String(e?.new ?? '').slice(0, 8000) })) : a.edits;
       patches.push({ n: counts.patches, reason: String(a.reason ?? '').slice(0, 600), edits: asked, diff: applied.ok ? applied.diff.slice(0, 20_000) : null, applied: applied.ok, error: applied.ok ? null : applied.error });
-      if (!applied.ok) { rmSync(dir, { recursive: true, force: true }); return applied; }
+      if (!applied.ok) { if (fresh) rmSync(dir, { recursive: true, force: true }); return applied; }
       candidate = dir;
-      return { ok: true, candidate: counts.patches, files: applied.files };
+      for (const f of applied.files) if (!candidateFiles.includes(f.path)) candidateFiles.push(f.path);
+      return { ok: true, candidate: counts.patches, files: applied.files, changedSinceBase: [...candidateFiles] };
+    },
+    reset: async () => {
+      candidate = null;
+      candidateFiles.length = 0;
+      return { ok: true, note: 'back to the base code; the next patch applies to the base' };
     },
   };
-  const names = [...DISCOVERY_TOOLS, 'run-check', 'propose-patch'];
+  const names = [...DISCOVERY_TOOLS, 'run-check', 'propose-patch', 'reset'];
   const specs = [...ollamaTools(DISCOVERY_TOOLS), ...REPAIR_TOOL_SPECS];
   const messages = [{ role: 'system', content: `${pmPrompt()}\n\n${HARNESS_NOTE}` }, { role: 'user', content: kase.symptom }];
   const trace = [];
@@ -107,11 +119,13 @@ export async function runRepair(ask, kase, { tree, python, keep = false }) {
     }
   }
   const findings = [...store.entries()].filter(([k]) => k.startsWith('finding:')).map(([, v]) => v);
-  const evaluation = evaluate(kase, { tree, base, candidate, python, patches });
+  const finding = findings.at(-1) ?? null;
+  const evaluation = evaluate(kase, { tree, base, candidate, python, patches, candidateFiles, finding });
   const out = {
     case: kase.id, label: kase.label, stop, rounds: trace.length ? trace.at(-1).round + 1 : 0, trace, patches,
     finding: findings.at(-1) ? { kind: findings.at(-1).kind, hypothesis: findings.at(-1).hypothesis, citations: findings.at(-1).citations, reproducer: findings.at(-1).reproducer } : null,
-    finalText: finalText.slice(0, 2000), evaluation,
+    finalText: finalText.slice(0, 2000), evaluation, candidateFiles: [...candidateFiles],
+    ...(keep && candidate ? { candidateDir: candidate } : {}),
   };
   if (!keep) rmSync(work, { recursive: true, force: true });
   return out;
@@ -121,7 +135,7 @@ export async function runRepair(ask, kase, { tree, python, keep = false }) {
 // tests the reported problem) and pass on the candidate; the protected tests must pass on the
 // candidate; an agent test counts as a reproducer only if it fails on base and passes on the
 // candidate. The decision on the change stays with a person.
-export function evaluate(kase, { tree, base, candidate, python, patches }) {
+export function evaluate(kase, { tree, base, candidate, python, patches, candidateFiles = [], finding = null }) {
   const hiddenSrc = kase.hidden ? new URL(`./hidden/${kase.hidden}`, import.meta.url).pathname : null;
   const hiddenName = 'tests/test_hidden_check.py';
   const withHidden = (copy) => { cpSync(hiddenSrc, join(copy, hiddenName)); return copy; };
@@ -132,7 +146,7 @@ export function evaluate(kase, { tree, base, candidate, python, patches }) {
     rmSync(scratch, { recursive: true, force: true });
   }
   if (!candidate) {
-    out.verdict = kase.truth === 'none' ? 'no change (as a clean control should)' : 'no candidate patch';
+    out.verdict = kase.truth === 'none' ? controlVerdict({ candidateFiles: [], finding }) : 'no candidate patch';
     return out;
   }
   if (hiddenSrc) out.hiddenOnCandidate = runPytest({ copy: withHidden(candidate), python, tests: [hiddenName] }).outcome;
@@ -147,7 +161,7 @@ export function evaluate(kase, { tree, base, candidate, python, patches }) {
     return { test: t, onBase, onCandidate, reproduces: onBase === 'failed' && onCandidate === 'passed' };
   });
   const protectedOk = Object.values(out.protected).every((o) => o === 'passed');
-  if (kase.truth === 'none') out.verdict = 'invented change on a clean control';
+  if (kase.truth === 'none') out.verdict = controlVerdict({ candidateFiles, finding, agentTests: out.agentTests });
   else if (out.hiddenOnBase !== 'failed') out.verdict = 'hidden check does not fail on base: the case is not valid';
   else if (!protectedOk) out.verdict = 'regression: a protected test fails on the candidate';
   else if (out.hiddenOnCandidate === 'passed') out.verdict = 'repaired (hidden check and protected tests pass); a person decides';
@@ -158,3 +172,16 @@ export function evaluate(kase, { tree, base, candidate, python, patches }) {
 export function loadRepairCases(file) {
   return JSON.parse(readFileSync(file, 'utf8'));
 }
+
+// Lead's ruling (24 Nov, after run 2): on a clean control, "invented a defect" means a candidate
+// that changes src/, a recorded defect, or an added test that fails on the base (it claims a
+// defect). A candidate of tests only that pass on the base, with no defect recorded, is counted
+// apart. Run 2 was scored by the earlier rule (any candidate is an invented change).
+export function controlVerdict({ candidateFiles = [], finding = null, agentTests = [] }) {
+  if (candidateFiles.some((p) => p.startsWith('src/'))) return 'invented a defect: the candidate changes src/';
+  if (finding?.kind === 'defect') return 'invented a defect: a defect was recorded';
+  if ((agentTests ?? []).some((t) => t.onBase === 'failed')) return 'invented a defect: an added test fails on base';
+  if (candidateFiles.length) return 'added a test, no defect claimed';
+  return 'no change (as a clean control should)';
+}
+

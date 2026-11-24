@@ -74,5 +74,8 @@ into git only as a scores-only file, and only after the pre-push scan passes on 
 - Six development cases. Run 1 (`RESULTS-DEV-1.md`, D2-1, D7-1, control D7-C, unified diffs):
   0 of 6 repaired, 0 of 3 changes invented on the control. Run 2 (`RESULTS-DEV-2.md`, R2-1, R2-2,
   control R2-C, edits): 1 of 6 repaired, 1 of 3 changes invented on the control (a test file only).
-- Each patch goes on a fresh copy of the base, so a later patch replaces an earlier one (run 2,
-  R2-1 seed 12).
+- Until run 2, each patch went on a fresh copy of the base, so a later patch replaced an earlier
+  one (run 2, R2-1 seed 12). Since the lead's ruling of 24 Nov the patches of one run build on
+  each other, and `reset {}` returns to the base. On a control, "invented a defect" now means a
+  change of `src/`, a recorded defect, or an added test that fails on base; tests only that pass
+  on base count apart as "added a test, no defect claimed". Run 2 stays scored by its frozen rule.
