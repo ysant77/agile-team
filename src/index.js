@@ -63,7 +63,9 @@ export async function createTicket(payload) {
   if (!(await createOnce(kvs, onceKey, { state: 'pending', at: now }))) {
     const prior = await kvs.get(onceKey);
     if (prior?.state === 'done' && now - prior.at < CREATE_WINDOW_MS) {
-      // A call that stopped after the create left the event unwritten; this writes it, once.
+      // A call that stopped after the create may have left the finding link or the event
+      // unwritten; this writes them, each once.
+      await linkFinding(finding, prior.key);
       await appendAuditOnce(`ticket.created:${onceKey}`, createdEvent(by, prior.key, draft, finding));
       return { ok: true, key: prior.key, duplicate: true, note: `This draft was already created as ${prior.key}; no second work item.` };
     }
@@ -85,15 +87,20 @@ export async function createTicket(payload) {
     return result;
   }
   await kvs.set(onceKey, { state: 'done', key: result.key, at: now });
-  // The new work item is the explicit link of the finding: a person who can browse it may read
-  // the finding (src/discovery.js readFindingFor). At most 20 links are kept.
-  if (finding) {
-    const links = await kvs.get(findingLinksKey(finding.findingId));
-    const kept = Array.isArray(links) ? links.filter((k) => typeof k === 'string' && k !== result.key) : [];
-    await kvs.set(findingLinksKey(finding.findingId), [...kept, result.key].slice(-20));
-  }
+  await linkFinding(finding, result.key);
   const audit = await appendAuditOnce(`ticket.created:${onceKey}`, createdEvent(by, result.key, draft, finding));
   return { ...result, auditSeq: audit.seq };
+}
+
+// The new work item is the explicit link of the finding: a person who can browse it may read the
+// finding (src/discovery.js readFindingFor). At most 20 links are kept; a key already linked is
+// not added again, so a retry writes nothing new.
+async function linkFinding(finding, key) {
+  if (!finding) return;
+  const links = await kvs.get(findingLinksKey(finding.findingId));
+  const kept = Array.isArray(links) ? links.filter((k) => typeof k === 'string') : [];
+  if (kept.includes(key)) return;
+  await kvs.set(findingLinksKey(finding.findingId), [...kept, key].slice(-20));
 }
 
 // The ticket.created event (one per draft and person: appendAuditOnce with the idempotency key).
