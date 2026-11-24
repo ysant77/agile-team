@@ -1,0 +1,18 @@
+[
+  {
+    "id": "R3-1",
+    "symptom": "I wanted to pay my rent and typed a note for my landlord in the reference box. The box let me type the whole note, but when I pressed send the bank refused the transfer and said the request was not valid. With one letter less it went through. The box should not let me type a note that the bank then refuses."
+  },
+  {
+    "id": "R3-2",
+    "symptom": "My cousin in Seoul has a won account with the bank. She paid in 50000 won, and the app shows her balance as 50000.00 KRW. Won amounts have no cents, so it should show 50000 KRW. She can also type an amount like 10.50 won, which does not exist."
+  },
+  {
+    "id": "R3-3",
+    "symptom": "I copied my friend's account number from a chat where it was written in small letters, and the bank said there is no such account. When I typed the same number in capital letters it worked. The number is the same, so it should be found either way."
+  },
+  {
+    "id": "R3-C",
+    "symptom": "I tried to send 20.00 from my euro account to my brother's account, and the bank said there is no such destination. I checked the number twice and it is right. His account is a yen account. Is the bank losing accounts?"
+  }
+]

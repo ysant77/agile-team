@@ -70,5 +70,51 @@
       "tests/test_api.py"
     ],
     "hidden": null
+  },
+  {
+    "id": "R3-1",
+    "label": "development run 3 (written by the builder of the harness on 24 Nov 2026; not blind, not held out)",
+    "symptom_source": "symptoms-dev-3.json",
+    "tree_branch": "bank local branch work/repair-dev3-r3-1 (9d9171c): bank 165b689, kits removed (2d7b042), one seeded change",
+    "truth": "reference_limit",
+    "protected": [
+      "tests/test_api.py",
+      "tests/test_web.py"
+    ],
+    "hidden": "R3-1.py"
+  },
+  {
+    "id": "R3-2",
+    "label": "development run 3 (written by the builder of the harness on 24 Nov 2026; not blind, not held out)",
+    "symptom_source": "symptoms-dev-3.json",
+    "tree_branch": "bank local branch work/repair-dev3-r3-2 (5ec0607): bank 165b689, kits removed (2d7b042), one seeded change",
+    "truth": "krw_exponent",
+    "protected": [
+      "tests/test_money.py",
+      "tests/test_api.py"
+    ],
+    "hidden": "R3-2.py"
+  },
+  {
+    "id": "R3-3",
+    "label": "development run 3 (written by the builder of the harness on 24 Nov 2026; not blind, not held out)",
+    "symptom_source": "symptoms-dev-3.json",
+    "tree_branch": "bank local branch work/repair-dev3-r3-3 (cb9b938): bank 165b689, kits removed (2d7b042), one seeded change",
+    "truth": "account_number_case",
+    "protected": [
+      "tests/test_api.py"
+    ],
+    "hidden": "R3-3.py"
+  },
+  {
+    "id": "R3-C",
+    "label": "development run 3 clean control (written by the builder on 24 Nov 2026): the reported behaviour is the intended one",
+    "symptom_source": "symptoms-dev-3.json",
+    "tree_branch": "bank local branch work/repair-dev3-r3-c (2d7b042): bank 165b689, kits removed, no seeded change",
+    "truth": "none",
+    "protected": [
+      "tests/test_api.py"
+    ],
+    "hidden": null
   }
 ]
