@@ -1,7 +1,7 @@
 # Repair harness, development run 1 (24 Nov 2026)
 
 Kind: development run on three development cases. It is not a blind measurement, and no claim of
-the product rests on it. Scores only: `results/dev-1-scores.json`. The traces, the patches and the
+the product rests on it. Scores only: `scores/dev-1-scores.json`. The traces, the patches and the
 model text are kept outside the repository, as the README says ("Run records"); this page quotes
 none of them.
 
@@ -75,7 +75,7 @@ the check to see.
 
 ## Files
 
-- `results/dev-1-scores.json`: one entry for each run: case, seed, stop, rounds, seconds, tool call
+- `scores/dev-1-scores.json`: one entry for each run: case, seed, stop, rounds, seconds, tool call
   counts, patches proposed and applied, the hidden check on the base and the candidate, the
   protected tests, the model tests (base, candidate, reproduces) and the verdict. No model text, no
   symptom and no patch.
