@@ -1,0 +1,31 @@
+{
+ "branch": "case/X21",
+ "head": "4c67ebba9350f51e5ef0865a533171118318ea0e",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -10,6 +10,7 @@ through ``owned_account``, which answers 404 for accounts of other customers.\n from __future__ import annotations\n \n import os\n+import re\n import sqlite3\n from collections.abc import AsyncIterator, Iterator\n from contextlib import asynccontextmanager\n@@ -50,7 +51,7 @@ class SessionIn(BaseModel):\n class TransferIn(BaseModel):\n     from_account_id: int\n     to_account_number: str = Field(min_length=1, max_length=32)\n-    amount: str = Field(pattern=r\"^\\d{1,12}(\\.\\d{1,3})?$\")\n+    amount: str = Field(pattern=r\"^(\\d{1,12}|\\d{1,3}(,\\d{3})+)(\\.\\d{1,3})?$\")\n     reference: str | None = Field(default=None, max_length=40)\n \n \n@@ -106,6 +107,9 @@ OwnedAccount = Annotated[ledger.Account, Depends(owned_account)]\n \n \n def parse_amount(text: str, currency: str) -> Money:\n+    whole = text.split(\".\", 1)[0]\n+    if re.fullmatch(r\"[0-9]{1,3}(,[0-9]{3})+\", whole):\n+        text = text.replace(\",\", \"\")\n     try:\n         value = Decimal(text)\n     except InvalidOperation:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,16 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_transfer_accepts_grouped_amounts_only(bank, at):\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"5000.00\", \"EUR\"), at=at(\"2026-05-01\"))\n+    conn.close()\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    grouped = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"1,000.00\")\n+    assert grouped.status_code == 201\n+    assert grouped.json()[\"amount\"] == \"1000.00\"\n+    for text in (\"1,00.00\", \"1000,00\", \",100.00\"):\n+        assert transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, text).status_code == 422\n+    assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"4100.00\"\n"
+  }
+ ],
+ "additions": 18,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmptv3ez_ko/bench-bank-7/coverage.json\n395 passed, 1 deselected in 756.00s (0:12:36)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

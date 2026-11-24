@@ -1,0 +1,31 @@
+{
+ "branch": "case/X24",
+ "head": "68278b1eb6221a9e6f48a382ff2020e6f6d86850",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -136,6 +136,13 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     app = FastAPI(title=\"YMS Bank demo\", lifespan=lifespan)\n     app.state.db_path = path\n \n+    @app.middleware(\"http\")\n+    async def api_version_header(request: Request, call_next):\n+        response = await call_next(request)\n+        if request.url.path.startswith(\"/api/\"):\n+            response.headers[\"X-Api-Version\"] = \"1\"\n+        return response\n+\n     @app.get(\"/api/customers\")\n     def list_customers(conn: Conn) -> list[dict[str, object]]:\n         return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,16 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+@pytest.mark.parametrize(\n+    (\"path\", \"session\"),\n+    [(\"/api/customers\", True), (\"/api/accounts\", False), (\"/api/no-such-path\", True)],\n+    ids=[\"customers\", \"accounts-without-session\", \"unknown-path\"],\n+)\n+def test_api_replies_have_the_version_header(bank, path, session):\n+    client = TestClient(bank[\"app\"])\n+    response = client.get(path)\n+    assert response.headers.get(\"x-api-version\") == \"1\"\n+    if path == \"/api/no-such-path\":\n+        assert response.status_code == 404\n"
+  }
+ ],
+ "additions": 20,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 90%]\n.....................................                                    [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpwkvqjf2n/bench-bank-7/coverage.json\n397 passed, 1 deselected in 735.10s (0:12:15)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,36 @@
+{
+ "branch": "case/X17",
+ "head": "55f9144db87ce0c2e4f98e5b639e0960fbbc106a",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "seeds/k8_statement_access.patch",
+   "status": "modified",
+   "patch": "@@ -1,10 +1,10 @@\n diff --git a/src/bank/api.py b/src/bank/api.py\n-index 26ad526..fff2ddc 100644\n+index ca77cbb..2073e9c 100644\n --- a/src/bank/api.py\n +++ b/src/bank/api.py\n-@@ -168,11 +168,16 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n+@@ -168,12 +168,17 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n  \n-     @app.get(\"/api/accounts/{account_id}/statement\")\n+     @app.get(\"/api/accounts/{account_id}/statement\", response_model=None)\n      def read_statement(\n -        account: OwnedAccount,\n +        account_id: int,\n@@ -12,7 +12,8 @@ index 26ad526..fff2ddc 100644\n          conn: Conn,\n          start: Annotated[date | None, Query(alias=\"from\")] = None,\n          end: Annotated[date | None, Query(alias=\"to\")] = None,\n-     ) -> dict[str, object]:\n+         format: str | None = None,\n+     ) -> dict[str, object] | Response:\n +        try:\n +            account = ledger.get_account(conn, account_id)\n +        except ledger.NotFound:\n"
+  },
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -166,13 +166,14 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     def read_account(account: OwnedAccount) -> dict[str, object]:\n         return account_json(account)\n \n-    @app.get(\"/api/accounts/{account_id}/statement\")\n+    @app.get(\"/api/accounts/{account_id}/statement\", response_model=None)\n     def read_statement(\n         account: OwnedAccount,\n         conn: Conn,\n         start: Annotated[date | None, Query(alias=\"from\")] = None,\n         end: Annotated[date | None, Query(alias=\"to\")] = None,\n-    ) -> dict[str, object]:\n+        format: str | None = None,\n+    ) -> dict[str, object] | Response:\n         for value in (start, end):\n             if value is not None and not EARLIEST_DATE <= value <= LATEST_DATE:\n                 raise HTTPException(400, f\"dates must be between {EARLIEST_DATE} and {LATEST_DATE}\")\n@@ -183,6 +184,11 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         except ledger.LedgerError as exc:\n             raise HTTPException(400, str(exc)) from None\n         cur = account.currency\n+        if format == \"csv\":\n+            rows = [\"date,amount\"] + [\n+                f\"{line.posted_at[:10]},{from_minor(line.amount_minor, cur)}\" for line in st.lines\n+            ]\n+            return Response(\"\\n\".join(rows) + \"\\n\", media_type=\"text/csv; charset=utf-8\")\n         return {\n             \"account\": account_json(account),\n             \"from\": st.start.isoformat(),\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,19 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def add_deposits(bank, at, *items):\n+    conn = ledger.open_db(bank[\"path\"])\n+    for day, amount in items:\n+        ledger.deposit(conn, bank[\"eur\"].id, Money.of(amount, \"EUR\"), at=at(day))\n+    conn.close()\n+\n+\n+def test_statement_csv_has_date_and_amount(bank, at):\n+    add_deposits(bank, at, (\"2026-05-06\", \"4.00\"), (\"2026-05-20\", \"6.00\"))\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    url = f\"/api/accounts/{bank['eur'].id}/statement?from=2026-05-02&to=2026-05-31&format=csv\"\n+    response = client.get(url)\n+    assert response.headers[\"content-type\"].startswith(\"text/csv\")\n+    assert response.text.splitlines() == [\"date,amount\", \"2026-05-06,4.00\", \"2026-05-20,6.00\"]\n"
+  }
+ ],
+ "additions": 29,
+ "deletions": 6,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpfw9cyja7/bench-bank-7/coverage.json\n395 passed, 1 deselected in 629.71s (0:10:29)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

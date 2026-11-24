@@ -1,0 +1,36 @@
+{
+ "branch": "case/X07",
+ "head": "f3b93f7c92d4a5bb4d473d98d33323eb543c13ae",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import Money, display, exponent, from_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -160,7 +160,10 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n \n     @app.get(\"/api/accounts\")\n     def list_accounts(customer_id: CustomerId, conn: Conn) -> list[dict[str, object]]:\n-        return [account_json(a) for a in ledger.list_accounts(conn, customer_id)]\n+        return [\n+            account_json(a) | {\"balance_display\": display(a.balance_minor, a.currency)}\n+            for a in ledger.list_accounts(conn, customer_id)\n+        ]\n \n     @app.get(\"/api/accounts/{account_id}\")\n     def read_account(account: OwnedAccount) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -76,3 +76,7 @@ class Money:\n \n     def __str__(self) -> str:\n         return f\"{from_minor(self.minor, self.currency)} {self.currency}\"\n+\n+\n+def display(minor: int, currency: str) -> str:\n+    return f\"{minor / 10 ** EXPONENTS[currency]:,.2f} {currency}\"\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,13 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_account_list_has_a_display_balance(bank):\n+    from bank import money\n+\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    for obj in client.get(\"/api/accounts\").json():\n+        assert obj.get(\"balance_display\") is not None\n+        minor = Money.of(obj[\"balance\"], obj[\"currency\"]).minor\n+        assert obj[\"balance_display\"] == money.display(minor, obj[\"currency\"])\n"
+  }
+ ],
+ "additions": 19,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpigr32b5i/bench-bank-7/coverage.json\n395 passed, 1 deselected in 458.42s (0:07:38)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}
