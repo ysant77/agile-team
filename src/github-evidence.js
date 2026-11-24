@@ -385,6 +385,23 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     }
   }
 
+  // A merged PR whose merge commit has no main.json yet: the push runs on the merge commit, so the
+  // reason can tell a run that is still going from a missing report (owner decision 24 Nov). One
+  // call, only in that case; a read error gives null (not known).
+  let mergeRuns = null;
+  const mergeSha = pr?.mergeSha;
+  if (typeof mergeSha === 'string' && /^[0-9a-f]{40}$/.test(mergeSha) && baseReport?.head_sha !== mergeSha) {
+    try {
+      const runs = await get(`/repos/${repo}/actions/runs?head_sha=${mergeSha}&event=push&per_page=20`);
+      mergeRuns = Array.isArray(runs?.workflow_runs) ? runs.workflow_runs.map((r) => ({
+        id: r.id, attempt: r.run_attempt ?? 1, path: r.path, headSha: r.head_sha, event: r.event ?? null,
+        headBranch: r.head_branch ?? null, status: r.status ?? null, conclusion: r.conclusion ?? null,
+      })) : null;
+    } catch {
+      mergeRuns = null;
+    }
+  }
+
   const deploys = await get(`/repos/${repo}/actions/workflows/deploy.yml/runs?per_page=20`);
   const deployRuns = (deploys?.workflow_runs ?? []).map((r) => ({
     name: 'deploy',
@@ -419,6 +436,7 @@ export async function collectGithub({ repo, key, token, fetchFn, prNumber = null
     // commit (DESIGN 15a).
     mergeSha: pr?.mergeSha ?? null,
     mergeReport: pr?.mergeSha ? baseReport : null,
+    mergeRuns,
     deployRuns,
     meta: { calls: meta.calls, retries: meta.retries, rateRemaining: meta.rateRemaining, authenticated: Boolean(token), ...(meta.retried.length ? { retried: meta.retried } : {}) },
   };
