@@ -4,6 +4,7 @@
 // always names a real audit event; an audit event with no entry counts for nothing.
 
 import { acHash, ACS_EVENT, APPROVAL_EVENTS, recordAcs, recordApproval } from './approvals.js';
+import { highStakeMarks } from './verifier/checks.js';
 
 // A test name as the verifier compares it: "test_x" or "TestClass::test_x", no path.
 const TEST_NAME = /^(?:[A-Za-z_][A-Za-z0-9_]*::)?[A-Za-z_][A-Za-z0-9_]*$/;
@@ -41,7 +42,10 @@ export async function recordAcsAction({ key, accountId }, deps) {
   if (!accountId) return { ok: false, error: 'the person is not known' };
   if (!(await deps.canEdit(key))) return { ok: false, error: 'only a person who can edit this work item can record its ACs' };
   const h = acHash(await deps.readAcs(key));
-  const audit = await deps.appendAudit({ actor: accountId, event: ACS_EVENT, data: { key, acHash: h } });
-  await recordAcs(deps.store, key, { acHash: h, by: accountId, at: audit.at ?? new Date().toISOString(), auditSeq: audit.seq });
+  // Set 8 Y08: the high-stake marks of this moment are kept with the record, so a mark removed
+  // later still asks for a sign-off (src/verifier/checks.js, checkHumanSignoff).
+  const marks = deps.readMarks ? highStakeMarks(await deps.readMarks(key)) : [];
+  const audit = await deps.appendAudit({ actor: accountId, event: ACS_EVENT, data: { key, acHash: h, ...(marks.length ? { marks } : {}) } });
+  await recordAcs(deps.store, key, { acHash: h, by: accountId, at: audit.at ?? new Date().toISOString(), auditSeq: audit.seq, ...(marks.length ? { marks } : {}) });
   return { ok: true, auditSeq: audit.seq, acHash: h };
 }
