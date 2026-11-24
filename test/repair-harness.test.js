@@ -4,7 +4,7 @@
 // REPAIR_PYTHON and REPAIR_TREE; without them those tests are skipped (CI has neither).
 
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -73,6 +73,30 @@ test('the sandbox refuses the network and writes outside the scratch copy, and k
   } finally {
     delete process.env.REPAIR_TEST_SECRET;
     rmSync(s, { recursive: true, force: true });
+  }
+});
+
+test('the sandbox refuses reads of files outside the scratch copy and the Python environment', { skip: !local && 'REPAIR_PYTHON not set' }, () => {
+  const s = mkdtempSync(join(process.env.TMPDIR ?? tmpdir(), 'sbx-'));
+  const other = mkdtempSync(join(process.env.TMPDIR ?? tmpdir(), 'sbx-other-'));
+  try {
+    writeFileSync(join(other, 'secret.txt'), 'not for the run');
+    writeFileSync(join(s, 'mine.txt'), 'for the run');
+    const read = (path) => runSandboxed({ scratch: s, python: PY, argv: [PY, '-c', `print(open(${JSON.stringify(path)}).read())`], env: { PYTHONDONTWRITEBYTECODE: '1' }, timeoutMs: 10_000 });
+    // A file of this repository (under the home folder), and a file in another temporary folder.
+    for (const path of [join(process.cwd(), 'package.json'), join(other, 'secret.txt')]) {
+      const r = read(path);
+      assert.notEqual(r.status, 0, path);
+      assert.doesNotMatch(r.stdout, /not for the run|"name"/, path);
+    }
+    const mine = read(join(s, 'mine.txt'));
+    assert.equal(mine.status, 0, mine.stderr);
+    assert.match(mine.stdout, /for the run/);
+    // The Python standard library and the environment's packages still load.
+    assert.equal(runSandboxed({ scratch: s, python: PY, argv: [PY, '-c', 'import json, sqlite3, pytest, hypothesis; print("ok")'], env: { PYTHONDONTWRITEBYTECODE: '1' } }).status, 0);
+  } finally {
+    rmSync(s, { recursive: true, force: true });
+    rmSync(other, { recursive: true, force: true });
   }
 });
 
