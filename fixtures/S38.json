@@ -6,6 +6,7 @@
       "kind": "verify",
       "claim": { "id": "c1", "type": "fixed", "text": "Flaky test fixed" },
       "context": {
+        "prFiles": ["src/bank/service.py", "tests/test_transfers.py"],
         "ticket": { "key": "BANK-21", "type": "Task", "acceptanceCriteria": [
           { "acId": "AC1", "check": { "type": "ci_green" } } ] },
         "pr": { "number": 30, "title": "BANK-21 stabilise CI", "state": "open", "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1" },
