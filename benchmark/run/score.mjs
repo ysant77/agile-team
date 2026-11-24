@@ -141,6 +141,9 @@ function recordGithub(c, ev, prNumber) {
   // no failed step.
   const cancelledJobs = { jobs: [{ name: 'test', conclusion: 'cancelled', steps: [step('Set up job', 'success')] }] };
   if (g.cancelledRunOnHead) runs.push(sim.withRunFacts({ id: 9500 + prNumber, name: 'CI', path: CI_PATH, head_sha: prHead, status: 'completed', conclusion: 'cancelled', created_at: at(20), updated_at: at(21), run_started_at: at(20), run_attempt: 1, html_url: 'x' }, runFacts));
+  // SCORER-CHANGES 26: a completed CI run on the PR head (a later commit than the report) that wrote
+  // no report comment and uploaded no artifact (set 9 Z23).
+  if (g.headRunWithoutReport) runs.push(sim.withRunFacts({ id: 9600 + prNumber, name: 'CI', path: CI_PATH, head_sha: prHead, status: 'completed', conclusion: 'success', created_at: at(40), updated_at: at(49), run_started_at: at(40), run_attempt: 1, html_url: 'x' }, runFacts));
   let report = ev.report ? structuredClone(ev.report) : null;
   if (report && g.reportFromWorkflow) {
     delete report.repro;
@@ -169,7 +172,7 @@ function recordGithub(c, ev, prNumber) {
   const baseTip = g.baseMovedTo ? (ev.meta.base_tip ?? c.baseTipSha ?? 'b'.repeat(40)) : ev.meta.merge_base;
   // The pinned PR run uploads a marker only when it is the ci.yml run that posts the bot report.
   const marker = Boolean(report) && !g.reportFromWorkflow && !g.noBotReport && !g.fork;
-  return { pulls, runs, attempts, cancelledJobs, cancelledRunId: g.cancelledRunOnHead ? 9500 + prNumber : null, report, comment, files, filesTruncated: Boolean(g.filesTruncated), runs404: Boolean(g.runs404),
+  return { pulls, runs, attempts, cancelledJobs, cancelledRunId: g.cancelledRunOnHead ? 9500 + prNumber : null, headRunId: g.headRunWithoutReport ? 9600 + prNumber : null, report, comment, files, filesTruncated: Boolean(g.filesTruncated), runs404: Boolean(g.runs404),
     stats: { additions: ev.meta.additions, deletions: ev.meta.deletions }, prHead, main, baseTip, ciText, marker, pushRunId: 7000 + prNumber,
     commentReport, mainPushedByPerson: g.mainPushedByPerson,
     ...(g.rateLimited ? { rateLimited: g.rateLimited } : {}), ...(g.pushRunInProgress ? { pushRunInProgress: true, mergeSha, pushRunAttempt: g.pushRunInProgress.attempt ?? 1 } : {}),
@@ -203,6 +206,7 @@ export function fetchFrom(d) {
       const id = Number(/runs\/(\d+)\/artifacts/.exec(u)[1]);
       if (id === d.runs?.[0]?.id) return sim.prArtifacts({ attempt: d.runs[0].run_attempt, ciText: d.ciText, marker: d.marker });
       if (id === d.cancelledRunId) return { total_count: 0, artifacts: [] };
+      if (d.headRunId && id === d.headRunId) return { total_count: 0, artifacts: [] };
       if (d.pushRunId && id === d.pushRunId && mainOf()) return sim.mainArtifacts(JSON.stringify(genuineMain() ?? mainOf()), d.mainPushRunAttempt ?? 1);
       return 404;
     }],

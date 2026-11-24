@@ -106,3 +106,16 @@ UTC" against "09:25 UTC"); its outcome is `not_checked` on both sides. Hashes:
 and the new scorer (this branch) were run with the frozen app of set 8 (6c4ec0c) on the stored
 evidence of sets 1 to 7. Every `results.json` is byte-identical (7 of 7 pairs). Hashes:
 `run/evidence/identity-24-2026-11-24.txt`.
+
+## Set 9 (25 Nov 2026; written after the set 9 predictions and before any set 9 result)
+
+| # | Change | Seen set 9 results before? | Kind |
+|---|---|---|---|
+| 26 | `github.headRunWithoutReport`: a completed `CI` pull request run, conclusion `success`, attempt 1, on the PR head when the report comment is for an earlier commit (`reportForCommit`); the run wrote no report comment and its artifact list is empty. It acts only on a manifest field that sets 1 to 8 do not have. | Seen the set 9 case file: yes; seen set 9 results: no (`PREDICTIONS-9.md`, c24fbdd, was committed before this change, and no case was run). Case that needs it: Z23 (the run on H2 is green, but its comment step failed). | Support for a set 9 fact, as PROTOCOL-5 allows. No verifier file changes. |
+
+**Identity check of change 26 (25 Nov 2026).** The old scorer (`benchmark/run` at `main` af415a8)
+and the new scorer (this branch), both with the frozen app of set 9 (f3662f8), on the stored
+evidence of sets 1 to 8. Sets 1 to 6 and 8: byte-identical. Set 7: one text differs, the retry
+clock time in the reason of X04 ("try again after ..."), which the app computes from the time of
+the run (`FREEZE-9.md`: results are compared by outcome and checks, not by this time); every
+outcome, check and other reason is identical. Hashes: `run/evidence/identity-26-2026-11-25.txt`.

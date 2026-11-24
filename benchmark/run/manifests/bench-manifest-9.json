@@ -1,0 +1,1377 @@
+[
+ {
+  "id": "Z01",
+  "void": null,
+  "branches": [
+   "case/Z01"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-901",
+   "type": "Bug",
+   "labels": [],
+   "text": "a customer with the name 12345 can be made, and the statement header of that customer shows only a number.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "ledger.create_customer raises LedgerError for a name that has no letter after the outer whitespace is removed (str.isalpha is false for each character of the name); a name with one letter or more is stored as before; a refused name stores nothing.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_name_needs_a_letter"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "ledger.create_customer raises LedgerError for a name that has no letter after the outer whitespace is removed (str.isalpha is false for each character of the name); a name with one letter or more is stored as before; a refused name stores nothing.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_name_needs_a_letter"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z02",
+  "void": null,
+  "branches": [
+   "case/Z02"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-902",
+   "type": "Story",
+   "labels": [],
+   "text": "the customer list can show only the customers that have accounts.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/customers?min_accounts=<n> returns only the customers that have n or more accounts, in the order of the list with no min_accounts; with no min_accounts the list does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_can_be_filtered_by_min_accounts"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/customers?min_accounts=<n> returns only the customers that have n or more accounts, in the order of the list with no min_accounts; with no min_accounts the list does not change.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_can_be_filtered_by_min_accounts"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z03",
+  "void": null,
+  "branches": [
+   "case/Z03"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-903",
+   "type": "Story",
+   "labels": [],
+   "text": "the customer list can be sorted by name.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/customers?sort=name returns the customers in the order of their names, compared without case; sort=-name returns the opposite order; with no sort the list does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_can_be_sorted_by_name"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "Each other value of sort gives 422 with the detail unknown sort.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_refuses_an_unknown_sort"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "mergeCommit": {
+    "branch": "merge/Z03"
+   }
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/customers?sort=name returns the customers in the order of their names, compared without case; sort=-name returns the opposite order; with no sort the list does not change.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_can_be_sorted_by_name"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "Each other value of sort gives 422 with the detail unknown sort.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_refuses_an_unknown_sort"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z04",
+  "void": null,
+  "branches": [
+   "case/Z04"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-904",
+   "type": "Story",
+   "labels": [],
+   "text": "each customer object tells how many words the name has.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each object of GET /api/customers has name_words: the number of words of the name (the parts that whitespace divides).",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_has_name_words"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "rateLimited": {
+    "remaining": 4873,
+    "limit": 5000,
+    "used": 127,
+    "retryAfterS": 600,
+    "message": "You have exceeded a secondary rate limit. Please wait a few minutes before you try again."
+   }
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "each object of GET /api/customers has name_words: the number of words of the name (the parts that whitespace divides).",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_has_name_words"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z05",
+  "void": null,
+  "branches": [
+   "case/Z05"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-905",
+   "type": "Bug",
+   "labels": [],
+   "text": "a typing mistake in the year (0206-11-24) stored a deposit in the year 206, and the statement puts that line before each other line.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "ledger.deposit raises LedgerError for a date before 2000-01-01 and stores nothing; a deposit with the date 2000-01-01 is stored as before; a deposit with no date is stored as before.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_deposit_refuses_a_date_before_2000"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "ledger.deposit raises LedgerError for a date before 2000-01-01 and stores nothing; a deposit with the date 2000-01-01 is stored as before; a deposit with no date is stored as before.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_deposit_refuses_a_date_before_2000"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z06",
+  "void": null,
+  "branches": [
+   "case/Z06"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-906",
+   "type": "Story",
+   "labels": [],
+   "text": "the page gives a row the correct height for a name of two lines.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each object of GET /api/customers has name_lines: the number of lines of the stored name, which is 1 plus the number of line breaks in it; a customer made with the name Ann\\nLee has name_lines 2.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_has_name_lines"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "mergeCommit": {
+    "branch": "merge/Z06",
+    "pushConclusion": "failure"
+   }
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "each object of GET /api/customers has name_lines: the number of lines of the stored name, which is 1 plus the number of line breaks in it; a customer made with the name Ann\\nLee has name_lines 2.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_has_name_lines"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z07",
+  "void": null,
+  "branches": [
+   "case/Z07"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-907",
+   "type": "Story",
+   "labels": [],
+   "text": "the page can check the form of an account number before it sends a transfer.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/account-number/check?number=<text>, with no session, returns 200 and {\"valid\": true} when the text is exactly YMS-, four digits, - and four digits, with nothing before and nothing after; each other text gives 200 and {\"valid\": false}.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_account_number_check_tells_the_form"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/account-number/check?number=<text>, with no session, returns 200 and {\"valid\": true} when the text is exactly YMS-, four digits, - and four digits, with nothing before and nothing after; each other text gives 200 and {\"valid\": false}.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_account_number_check_tells_the_form"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z08",
+  "void": null,
+  "branches": [
+   "case/Z08"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-908",
+   "type": "Story",
+   "labels": [],
+   "text": "the page shows a share of an amount.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/share?amount=<text>&currency=<code>&percent=<n> returns share: the amount in minor units times n, divided by 100 and rounded to the nearest minor unit, with a half rounded up; the reply also has share_minor and the currency.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_share_is_rounded_half_up"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "percent below 1 or above 100, an unsupported currency, or an amount with too many decimals gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_share_refuses_bad_input"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-5d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/share?amount=<text>&currency=<code>&percent=<n> returns share: the amount in minor units times n, divided by 100 and rounded to the nearest minor unit, with a half rounded up; the reply also has share_minor and the currency.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_share_is_rounded_half_up"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "percent below 1 or above 100, an unsupported currency, or an amount with too many decimals gives 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_share_refuses_bad_input"
+       ]
+      }
+     }
+    ],
+    "marks": [
+     "money_semantics"
+    ]
+   },
+   "markRemoval": {
+    "mark": "money_semantics",
+    "by": "acct-claimant",
+    "at": "T-45m"
+   }
+  }
+ },
+ {
+  "id": "Z09",
+  "void": null,
+  "branches": [
+   "case/Z09"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-909",
+   "type": "Story",
+   "labels": [],
+   "text": "the account list can be sorted by currency.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/accounts?sort=currency, in a session, returns the accounts of the customer in the order of the currency code; sort=-currency returns the opposite order; each other value of sort gives 422 with the detail unknown sort; with no sort the list does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_account_list_can_be_sorted_by_currency"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "mergeCommit": {
+    "branch": "merge/Z09"
+   }
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/accounts?sort=currency, in a session, returns the accounts of the customer in the order of the currency code; sort=-currency returns the opposite order; each other value of sort gives 422 with the detail unknown sort; with no sort the list does not change.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_account_list_can_be_sorted_by_currency"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z10",
+  "void": null,
+  "branches": [
+   "case/Z10"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-910",
+   "type": "Bug",
+   "labels": [],
+   "text": "the customers Ann  Lee (two spaces) and Ann Lee are two rows that look the same on the page.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "ledger.create_customer raises LedgerError for a name that has two whitespace characters in a row after the outer whitespace is removed; whitespace at the start and at the end is removed as before and is not a reason to refuse; a name with single spaces is stored as before; a refused name stores nothing.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_name_refuses_two_spaces_in_a_row"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "ledger.create_customer raises LedgerError for a name that has two whitespace characters in a row after the outer whitespace is removed; whitespace at the start and at the end is removed as before and is not a reason to refuse; a name with single spaces is stored as before; a refused name stores nothing.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_name_refuses_two_spaces_in_a_row"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z11",
+  "void": null,
+  "branches": [
+   "case/Z11"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-911",
+   "type": "Story",
+   "labels": [],
+   "text": "each customer object tells its place in the list.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each object of GET /api/customers has position: 1 for the first object of the reply, 2 for the second, and so on.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_has_the_position"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "each object of GET /api/customers has position: 1 for the first object of the reply, 2 for the second, and so on.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_has_the_position"
+       ]
+      }
+     }
+    ]
+   },
+   "prLink": {
+    "by": "acct-claimant",
+    "at": "T-2h",
+    "prNumber": "case",
+    "reason": "my PR for this ticket"
+   }
+  }
+ },
+ {
+  "id": "Z12",
+  "void": null,
+  "branches": [
+   "case/Z12"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-912",
+   "type": "Story",
+   "labels": [
+    "money_semantics"
+   ],
+   "text": "the page shows the fee of a transfer before the customer sends it.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/fee?amount=<text>&currency=<code> returns fee: 1.5 percent of the amount, in minor units, rounded up to the next minor unit; the reply also has fee_minor and the currency.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_fee_is_rounded_up"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "An unsupported currency or an amount with too many decimals gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_fee_refuses_bad_input"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-5d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/fee?amount=<text>&currency=<code> returns fee: 1.5 percent of the amount, in minor units, rounded up to the next minor unit; the reply also has fee_minor and the currency.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_fee_is_rounded_up"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "An unsupported currency or an amount with too many decimals gives 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_fee_refuses_bad_input"
+       ]
+      }
+     }
+    ],
+    "marks": [
+     "money_semantics"
+    ]
+   },
+   "signoff": {
+    "by": "acct-finance-owner",
+    "at": "T-2h",
+    "sha": "merge",
+    "reason": "1.5 percent, rounded up to the next minor unit, is the agreed fee; the test has the exact case, the rounded case and the two kinds of currency"
+   }
+  }
+ },
+ {
+  "id": "Z13",
+  "void": null,
+  "branches": [
+   "case/Z13"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-913",
+   "type": "Story",
+   "labels": [],
+   "text": "the staff can get the customer list as a file for a spreadsheet.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/export/customers.csv returns 200 with the content type text/csv; the first line is name; then the reply has one line for each customer, in the order of GET /api/customers; each name is in double quotes, and a double quote inside a name is written two times; the lines are joined by \\n; a name that starts with =, +, - or @ is written with the character ' before it, inside the quotes, so that a spreadsheet program does not read it as a formula.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_can_be_exported_as_csv"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/export/customers.csv returns 200 with the content type text/csv; the first line is name; then the reply has one line for each customer, in the order of GET /api/customers; each name is in double quotes, and a double quote inside a name is written two times; the lines are joined by \\n; a name that starts with =, +, - or @ is written with the character ' before it, inside the quotes, so that a spreadsheet program does not read it as a formula.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_can_be_exported_as_csv"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z14",
+  "void": null,
+  "branches": [
+   "case/Z14"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-914",
+   "type": "Story",
+   "labels": [],
+   "text": "the account list has a text of the balance that a person can read easily.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each object of GET /api/accounts has balance_display: the balance text with a comma between each group of three digits of the whole part, then one space and the currency code (1334.50 in EUR gives 1,334.50 EUR); the keys balance and currency do not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_account_list_has_a_balance_display"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-6d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "each object of GET /api/accounts has balance_display: the balance text with a comma between each group of three digits of the whole part, then one space and the currency code (1334.50 in EUR gives 1,334.50 EUR); the keys balance and currency do not change.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_account_list_has_a_balance_display"
+       ]
+      }
+     }
+    ],
+    "marks": [
+     "money_semantics"
+    ]
+   },
+   "markRemoval": {
+    "mark": "money_semantics",
+    "by": "acct-product-owner",
+    "at": "T-20h"
+   }
+  }
+ },
+ {
+  "id": "Z15",
+  "void": null,
+  "branches": [
+   "case/Z15"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-915",
+   "type": "Story",
+   "labels": [],
+   "text": "the customer list can be cut to the first customers.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/customers?limit=<n> returns the first n customers of the list, in the order of the list; n is from 1 to 50; each other value gives 422; with no limit the list does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_can_be_limited"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-2d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/customers?limit=<n> returns the first n customers of the list, in the order of the list; n is from 1 to 50; each other value gives 422; with no limit the list does not change.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_can_be_limited"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z16",
+  "void": null,
+  "branches": [
+   "case/Z16"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-916",
+   "type": "Story",
+   "labels": [],
+   "text": "the page shows a circle with the initials of each customer.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each object of GET /api/customers has initials: the first character of each word of the name, in upper case, joined with nothing between them (ina maria obel gives IMO; Xu gives X).",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_has_initials"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-4d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "each object of GET /api/customers has initials: the first character of each word of the name, in upper case, joined with nothing between them (ina maria obel gives IMO; Xu gives X).",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_has_initials"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z17",
+  "void": null,
+  "branches": [
+   "case/Z17"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-917",
+   "type": "Story",
+   "labels": [],
+   "text": "each customer object has a short form of the name.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each object of GET /api/customers has short_name: for a name of two words or more, the first word, one space, the first character of the last word and a point (Ann Marie Short gives Ann S.); for a name of one word, the name.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_has_a_short_name"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "pushRunInProgress": {
+    "attempt": 2
+   }
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "each object of GET /api/customers has short_name: for a name of two words or more, the first word, one space, the first character of the last word and a point (Ann Marie Short gives Ann S.); for a name of one word, the name.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_has_a_short_name"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z18",
+  "void": null,
+  "branches": [
+   "case/Z18"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-918",
+   "type": "Story",
+   "labels": [],
+   "text": "each customer object tells how many accounts the customer has.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "each object of GET /api/customers has account_count: the number of accounts of that customer.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_has_the_account_count"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-claimant",
+    "at": "T-2h",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "each object of GET /api/customers has account_count: the number of accounts of that customer.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_has_the_account_count"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z19",
+  "void": null,
+  "branches": [
+   "case/Z19"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-919",
+   "type": "Story",
+   "labels": [],
+   "text": "the page shows the interest of one year for an amount.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/interest?amount=<text>&currency=<code>&rate_bp=<n> returns interest: the amount in minor units times n, divided by 10,000 and rounded to the nearest minor unit, with a half rounded up; the reply also has interest_minor and the currency.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_interest_is_rounded_half_up"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "rate_bp below 1 or above 10,000, an unsupported currency, or an amount with too many decimals gives 422.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_interest_refuses_bad_input"
+      ]
+     }
+    }
+   ],
+   "domain": "money_semantics"
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-6d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/interest?amount=<text>&currency=<code>&rate_bp=<n> returns interest: the amount in minor units times n, divided by 10,000 and rounded to the nearest minor unit, with a half rounded up; the reply also has interest_minor and the currency.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_interest_is_rounded_half_up"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "rate_bp below 1 or above 10,000, an unsupported currency, or an amount with too many decimals gives 422.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_interest_refuses_bad_input"
+       ]
+      }
+     }
+    ],
+    "marks": [
+     "money_semantics"
+    ]
+   },
+   "signoff": {
+    "by": "acct-finance-owner",
+    "at": "T-3d",
+    "sha": "a1728e8db5c4e44b66bf36338cc6704bf49ec0a6",
+    "reason": "Formula and tests read; the rule is as agreed."
+   }
+  }
+ },
+ {
+  "id": "Z20",
+  "void": null,
+  "branches": [
+   "case/Z20"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-920",
+   "type": "Story",
+   "labels": [],
+   "text": "the page can check a customer name before it sends the form.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/name-check?name=<text>, with no session, returns 200 and {\"ok\": true, \"reason\": null} for a name that has from 1 to 80 characters after the outer whitespace is removed; {\"ok\": false, \"reason\": \"empty\"} for a name that is empty after the outer whitespace is removed; and {\"ok\": false, \"reason\": \"too long\"} for a name of more than 80 characters after the outer whitespace is removed.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_name_check_tells_the_reason"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/name-check?name=<text>, with no session, returns 200 and {\"ok\": true, \"reason\": null} for a name that has from 1 to 80 characters after the outer whitespace is removed; {\"ok\": false, \"reason\": \"empty\"} for a name that is empty after the outer whitespace is removed; and {\"ok\": false, \"reason\": \"too long\"} for a name of more than 80 characters after the outer whitespace is removed.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_name_check_tells_the_reason"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z21",
+  "void": null,
+  "branches": [
+   "case/Z21"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-921",
+   "type": "Story",
+   "labels": [],
+   "text": "the customer list can show the customers with an account or the customers with none.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/customers?has_account=true returns only the customers that have one account or more; has_account=false returns only the customers that have none; the order is the order of the list with no has_account; each other value gives 422 with the detail has_account must be true or false; with no has_account the list does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_can_be_filtered_by_has_account"
+      ]
+     }
+    },
+    {
+     "acId": "AC2",
+     "text": "With 10,000 customers in the database of the staging server, the reply for has_account=true comes in less than 300 ms.",
+     "check": {
+      "type": "manual",
+      "args": [
+       "a load test by the team; the result goes into a comment on this ticket"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {},
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/customers?has_account=true returns only the customers that have one account or more; has_account=false returns only the customers that have none; the order is the order of the list with no has_account; each other value gives 422 with the detail has_account must be true or false; with no has_account the list does not change.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_can_be_filtered_by_has_account"
+       ]
+      }
+     },
+     {
+      "acId": "AC2",
+      "text": "With 10,000 customers in the database of the staging server, the reply for has_account=true comes in less than 300 ms.",
+      "check": {
+       "type": "manual",
+       "args": [
+        "a load test by the team; the result goes into a comment on this ticket"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z22",
+  "void": null,
+  "branches": [
+   "case/Z22"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-922",
+   "type": "Story",
+   "labels": [],
+   "text": "the reply of the customer list has an id that the support team can find in the logs.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "the reply of GET /api/customers has the header X-Request-Id; when the request has a header X-Request-Id with from 1 to 64 characters, each of them a letter, a digit or -, the reply has the same value; in each other case the reply has a new value of 32 hexadecimal digits in lower case.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_has_a_request_id"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "mergeCommit": {}
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "the reply of GET /api/customers has the header X-Request-Id; when the request has a header X-Request-Id with from 1 to 64 characters, each of them a letter, a digit or -, the reply has the same value; in each other case the reply has a new value of 32 hexadecimal digits in lower case.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_has_a_request_id"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z23",
+  "void": null,
+  "branches": [
+   "case/Z23"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-923",
+   "type": "Story",
+   "labels": [],
+   "text": "the customer list can start after the first customers.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/customers?offset=<n> returns the list with no first n customers, in the order of the list; an offset equal to or above the number of customers gives an empty list; an offset below 0 or above 10,000 gives 422; with no offset the list does not change.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_customer_list_can_skip_the_first_customers"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "reportForCommit": "h1/Z23",
+   "headRunWithoutReport": true
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/customers?offset=<n> returns the list with no first n customers, in the order of the list; an offset equal to or above the number of customers gives an empty list; an offset below 0 or above 10,000 gives 422; with no offset the list does not change.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_customer_list_can_skip_the_first_customers"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "Z24",
+  "void": null,
+  "branches": [
+   "case/Z24"
+  ],
+  "base": "bench-base",
+  "claim": "done",
+  "ticket": {
+   "key": "BENCH-924",
+   "type": "Story",
+   "labels": [],
+   "text": "the page shows two numbers about the customer names.",
+   "acceptanceCriteria": [
+    {
+     "acId": "AC1",
+     "text": "GET /api/stats/names, with no session, returns 200 and {\"count\": <the number of customers>, \"longest\": <the number of characters of the longest name>}.",
+     "check": {
+      "type": "test_passes",
+      "args": [
+       "test_stats_tell_the_longest_name"
+      ]
+     }
+    }
+   ]
+  },
+  "env": {
+   "CI": "true"
+  },
+  "github": {
+   "noCoverageBlock": true
+  },
+  "jira": {
+   "claimant": "acct-claimant",
+   "acs": {
+    "by": "acct-product-owner",
+    "at": "T-3d",
+    "acceptanceCriteria": [
+     {
+      "acId": "AC1",
+      "text": "GET /api/stats/names, with no session, returns 200 and {\"count\": <the number of customers>, \"longest\": <the number of characters of the longest name>}.",
+      "check": {
+       "type": "test_passes",
+       "args": [
+        "test_stats_tell_the_longest_name"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ }
+]
