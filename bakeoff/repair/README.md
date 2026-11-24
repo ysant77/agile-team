@@ -71,5 +71,8 @@ into git only as a scores-only file, and only after the pre-push scan passes on 
   minutes); the full suite is a separate step before any change is proposed for real.
 - The Python environment is built from another bank commit; the copy's `src/` comes first on the
   path. A dependency change in a patch is refused, so this holds.
-- Three development cases (D2-1, D7-1 and the control D7-C). The first model run is
-  `RESULTS-DEV-1.md` (24 Nov): 0 of 6 repaired, 0 of 3 defects invented on the control.
+- Six development cases. Run 1 (`RESULTS-DEV-1.md`, D2-1, D7-1, control D7-C, unified diffs):
+  0 of 6 repaired, 0 of 3 changes invented on the control. Run 2 (`RESULTS-DEV-2.md`, R2-1, R2-2,
+  control R2-C, edits): 1 of 6 repaired, 1 of 3 changes invented on the control (a test file only).
+- Each patch goes on a fresh copy of the base, so a later patch replaces an earlier one (run 2,
+  R2-1 seed 12).
