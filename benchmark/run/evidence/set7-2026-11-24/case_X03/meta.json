@@ -1,0 +1,31 @@
+{
+ "branch": "case/X03",
+ "head": "904ef8fe02cc25bade650214fc3382b23b1e7043",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import EXPONENTS, Money, exponent, from_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -254,6 +254,10 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/currencies\")\n+    def list_currencies() -> list[dict[str, object]]:\n+        return [{\"code\": code, \"decimals\": EXPONENTS[code]} for code in sorted(EXPONENTS)]\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,18 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_currency_list_has_each_supported_currency(bank):\n+    from bank.money import EXPONENTS\n+\n+    response = TestClient(bank[\"app\"]).get(\"/api/currencies\")\n+    assert response.status_code == 200\n+    body = response.json()\n+    assert [c[\"code\"] for c in body] == sorted(EXPONENTS)\n+    assert len(body) == 8\n+    for c in body:\n+        assert c[\"decimals\"] == EXPONENTS[c[\"code\"]]\n+    decimals = {c[\"code\"]: c[\"decimals\"] for c in body}\n+    assert decimals[\"EUR\"] == 2\n+    assert decimals[\"JPY\"] == 0\n"
+  }
+ ],
+ "additions": 20,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp170f8dwg/bench-bank-7/coverage.json\n395 passed, 1 deselected in 264.89s (0:04:24)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

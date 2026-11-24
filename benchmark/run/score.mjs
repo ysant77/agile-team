@@ -172,7 +172,9 @@ function recordGithub(c, ev, prNumber) {
   return { pulls, runs, attempts, cancelledJobs, cancelledRunId: g.cancelledRunOnHead ? 9500 + prNumber : null, report, comment, files, filesTruncated: Boolean(g.filesTruncated), runs404: Boolean(g.runs404),
     stats: { additions: ev.meta.additions, deletions: ev.meta.deletions }, prHead, main, baseTip, ciText, marker, pushRunId: 7000 + prNumber,
     commentReport, mainPushedByPerson: g.mainPushedByPerson,
-    ...(g.rateLimited ? { rateLimited: g.rateLimited } : {}), ...(g.pushRunInProgress ? { pushRunInProgress: true, mergeSha } : {}),
+    ...(g.rateLimited ? { rateLimited: g.rateLimited } : {}), ...(g.pushRunInProgress ? { pushRunInProgress: true, mergeSha, pushRunAttempt: g.pushRunInProgress.attempt ?? 1 } : {}),
+    // SCORER-CHANGES 23 (a): the conclusion of the push run on the merge result's commit.
+    ...(g.mergeCommit?.pushConclusion ? { pushConclusion: g.mergeCommit.pushConclusion } : {}),
     ...(c.jira?.prLink ? { fullPullByNumber: true } : {}) };
 }
 
@@ -189,11 +191,8 @@ export function fetchFrom(d) {
       const sha = new URL(u).searchParams.get('head_sha');
       const main = mainOf();
       if (d.runs404) return 404;
-      const conclusion = genuineMain() ? 'failure' : 'success';
-      const runs = main && d.pushRunId && main.head_sha === sha ? [sim.pushRun({ id: d.pushRunId, sha, repo: REPO, conclusion })] : [];
-      // SCORER-CHANGES 22 (e): the push run on the merge commit, still running (no artifacts yet).
-      if (d.pushRunInProgress && d.mergeSha === sha && !runs.length) runs.push(sim.pushRun({ id: d.pushRunId + 1, sha, repo: REPO, status: 'in_progress' }));
-      return { workflow_runs: runs };
+      // SCORER-CHANGES 22 (e) and 23 (a, b): the push runs of this commit (sim-set7.mjs).
+      return { workflow_runs: set7.pushRunsFor(d, sha, main, { genuineFailed: Boolean(genuineMain()), repo: REPO }) };
     }],
     [/\/actions\/runs\/\d+\/artifacts/, (u) => {
       const id = Number(/runs\/(\d+)\/artifacts/.exec(u)[1]);

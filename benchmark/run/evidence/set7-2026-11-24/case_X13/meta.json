@@ -1,0 +1,31 @@
+{
+ "branch": "case/X13",
+ "head": "33f7c871b7a01a4226767cab54eb3e99383ccd26",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -138,7 +138,14 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n \n     @app.get(\"/api/customers\")\n     def list_customers(conn: Conn) -> list[dict[str, object]]:\n-        return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n+        return [\n+            {\n+                \"id\": row[\"id\"],\n+                \"name\": row[\"name\"],\n+                \"initials\": \"\".join(w[0].upper() for w in row[\"name\"].split())[:3],\n+            }\n+            for row in ledger.list_customers(conn)\n+        ]\n \n     @app.post(\"/api/session\")\n     def start_session(body: SessionIn, response: Response, conn: Conn) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,14 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_customer_list_has_initials(bank):\n+    conn = ledger.open_db(bank[\"path\"])\n+    for name in (\"ada maria abel\", \"Bo\", \"a b c d\"):\n+        ledger.create_customer(conn, name)\n+    conn.close()\n+    by_name = {c[\"name\"]: c for c in TestClient(bank[\"app\"]).get(\"/api/customers\").json()}\n+    assert by_name[\"ada maria abel\"].get(\"initials\") == \"AMA\"\n+    assert by_name[\"Bo\"].get(\"initials\") == \"B\"\n+    assert by_name[\"a b c d\"].get(\"initials\") == \"ABC\"\n"
+  }
+ ],
+ "additions": 19,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp66jp_q_j/bench-bank-7/coverage.json\n395 passed, 1 deselected, 1 warning in 485.08s (0:08:05)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "branch": "case/X01",
+ "head": "07a4d5637dca5e7862b603f627b76c58d12e6bf4",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -107,9 +107,14 @@ def _row_to_account(row: sqlite3.Row | None) -> Account:\n ACCOUNT_COLUMNS = \"id, number, customer_id, kind, currency, balance_minor\"\n \n \n+MAX_CUSTOMER_NAME = 80\n+\n+\n def create_customer(conn: sqlite3.Connection, name: str, at: datetime | None = None) -> int:\n     if not name.strip():\n         raise LedgerError(\"customer name is empty\")\n+    if len(name.strip()) > MAX_CUSTOMER_NAME:\n+        raise LedgerError(\"name is longer than 80 characters\")\n     with write_txn(conn):\n         cur = conn.execute(\n             \"INSERT INTO customers (name, created_at) VALUES (?, ?)\", (name.strip(), timestamp(at))\n"
+  },
+  {
+   "filename": "tests/test_ledger.py",
+   "status": "modified",
+   "patch": "@@ -269,3 +269,14 @@ def test_a_failed_rollback_to_stops_the_job_and_commits_nothing(tmp_path):\n     assert not conn.in_transaction\n     assert ledger.list_customers(conn) == []\n     assert conn.execute(\"SELECT COUNT(*) FROM app_flags\").fetchone()[0] == 0\n+\n+\n+def test_customer_name_has_a_maximum_length(conn):\n+    start = len(ledger.list_customers(conn))\n+    first = ledger.create_customer(conn, \"A\" * 80)\n+    assert ledger.get_customer(conn, first)[\"name\"] == \"A\" * 80\n+    second = ledger.create_customer(conn, \"  \" + \"B\" * 80 + \"  \")\n+    assert ledger.get_customer(conn, second)[\"name\"] == \"B\" * 80\n+    with pytest.raises(ledger.LedgerError):\n+        ledger.create_customer(conn, \"C\" * 81)\n+    assert len(ledger.list_customers(conn)) == start + 2\n"
+  }
+ ],
+ "additions": 16,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmptspp7tgr/bench-bank-7/coverage.json\n395 passed, 1 deselected in 264.89s (0:04:24)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

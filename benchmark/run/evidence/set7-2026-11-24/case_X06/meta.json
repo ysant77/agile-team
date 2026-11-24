@@ -1,0 +1,36 @@
+{
+ "branch": "case/X06",
+ "head": "084be5c04533033e91d3738ff89b5879395fe8bb",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import Money, exponent, from_minor, interest_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -254,6 +254,21 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/interest/quote\")\n+    def interest_quote(principal: str, currency: str, days: int) -> dict[str, object]:\n+        if not 1 <= days <= 366:\n+            raise HTTPException(422, \"days must be 1 to 366\")\n+        try:\n+            amount = Money.of(principal, currency)\n+        except ValueError as exc:\n+            raise HTTPException(422, str(exc)) from None\n+        minor = interest_minor(amount.minor, days)\n+        return {\n+            \"interest_minor\": minor,\n+            \"interest\": str(from_minor(minor, currency)),\n+            \"currency\": currency,\n+        }\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -76,3 +76,8 @@ class Money:\n \n     def __str__(self) -> str:\n         return f\"{from_minor(self.minor, self.currency)} {self.currency}\"\n+\n+\n+def interest_minor(principal_minor: int, days: int) -> int:\n+    \"\"\"Interest of 0.01% for each day, rounded down to the minor unit.\"\"\"\n+    return principal_minor * days // 10_000\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,32 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_interest_quote_rounds_down(bank):\n+    client = TestClient(bank[\"app\"])\n+\n+    def quote(principal, currency, days):\n+        response = client.get(\n+            f\"/api/interest/quote?principal={principal}&currency={currency}&days={days}\"\n+        )\n+        assert response.status_code == 200\n+        return response.json()\n+\n+    eur = quote(\"1000.00\", \"EUR\", 30)\n+    assert eur[\"interest_minor\"] == 300\n+    assert eur[\"interest\"] == \"3.00\"\n+    assert quote(\"99.99\", \"EUR\", 1)[\"interest_minor\"] == 0\n+    assert quote(\"333.33\", \"EUR\", 3)[\"interest_minor\"] == 9\n+    jpy = quote(\"100000\", \"JPY\", 7)\n+    assert jpy[\"interest_minor\"] == 70\n+    assert jpy[\"interest\"] == \"70\"\n+\n+\n+def test_interest_quote_refuses_bad_input(bank):\n+    client = TestClient(bank[\"app\"])\n+    base = \"/api/interest/quote?principal={}&currency={}&days={}\"\n+    assert client.get(base.format(\"100.00\", \"EUR\", 0)).status_code == 422\n+    assert client.get(base.format(\"100.00\", \"EUR\", 367)).status_code == 422\n+    assert client.get(base.format(\"100.00\", \"XXX\", 30)).status_code == 422\n+    assert client.get(base.format(\"1.005\", \"EUR\", 30)).status_code == 422\n"
+  }
+ ],
+ "additions": 50,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 90%]\n....................................                                     [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpm_bh70by/bench-bank-7/coverage.json\n396 passed, 1 deselected in 446.56s (0:07:26)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "branch": "case/X22",
+ "head": "b43fcd829bb79691a15b28d84a5e83e1d8d007c6",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -9,6 +9,7 @@ through ``owned_account``, which answers 404 for accounts of other customers.\n \n from __future__ import annotations\n \n+import hashlib\n import os\n import sqlite3\n from collections.abc import AsyncIterator, Iterator\n@@ -19,6 +20,7 @@ from pathlib import Path\n from typing import Annotated\n \n from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response\n+from fastapi.responses import JSONResponse\n from fastapi.staticfiles import StaticFiles\n from pydantic import BaseModel, Field\n \n@@ -136,9 +138,15 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     app = FastAPI(title=\"YMS Bank demo\", lifespan=lifespan)\n     app.state.db_path = path\n \n-    @app.get(\"/api/customers\")\n-    def list_customers(conn: Conn) -> list[dict[str, object]]:\n-        return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n+    @app.get(\"/api/customers\", response_model=None)\n+    def list_customers(conn: Conn, request: Request) -> Response:\n+        rows = [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n+        response = JSONResponse(rows)\n+        etag = '\"' + hashlib.sha256(response.body).hexdigest() + '\"'\n+        if request.headers.get(\"if-none-match\") == etag:\n+            return Response(status_code=304)\n+        response.headers[\"ETag\"] = etag\n+        return response\n \n     @app.post(\"/api/session\")\n     def start_session(body: SessionIn, response: Response, conn: Conn) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,16 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_customer_list_has_an_etag(bank):\n+    import hashlib\n+\n+    client = TestClient(bank[\"app\"])\n+    response = client.get(\"/api/customers\")\n+    etag = response.headers.get(\"etag\")\n+    assert etag == '\"' + hashlib.sha256(response.content).hexdigest() + '\"'\n+    again = client.get(\"/api/customers\", headers={\"If-None-Match\": etag})\n+    assert again.status_code == 304\n+    assert again.content == b\"\"\n+    assert client.get(\"/api/customers\", headers={\"If-None-Match\": '\"x\"'}).status_code == 200\n"
+  }
+ ],
+ "additions": 24,
+ "deletions": 3,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpd9gzcqo8/bench-bank-7/coverage.json\n395 passed, 1 deselected in 736.76s (0:12:16)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

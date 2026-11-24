@@ -1,0 +1,36 @@
+{
+ "branch": "case/X05",
+ "head": "1f7e94f071105f7e687c2fdf613ac02677dea004",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import MAX_TRANSFER_MINOR, Money, exponent, from_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -223,6 +223,8 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         if target is None or target.kind != \"customer\" or target.currency != source.currency:\n             raise HTTPException(404, NO_DESTINATION)\n         amount = parse_amount(body.amount, source.currency)\n+        if amount.minor > MAX_TRANSFER_MINOR:\n+            raise HTTPException(422, \"amount is above the transfer limit\")\n         try:\n             result, replayed = ledger.transfer_once(\n                 conn,\n"
+  },
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -5,6 +5,9 @@ from __future__ import annotations\n from dataclasses import dataclass\n from decimal import ROUND_HALF_EVEN, Decimal\n \n+# The largest amount of one transfer, in minor units of the source currency.\n+MAX_TRANSFER_MINOR = 1_000_000\n+\n # ISO 4217 minor-unit exponents for the currencies the demo uses.\n EXPONENTS: dict[str, int] = {\n     \"EUR\": 2,\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,20 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_transfer_above_the_limit_is_refused(bank, at):\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"20000.00\", \"EUR\"), at=at(\"2026-05-01\"))\n+    conn.close()\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    assert (\n+        transfer(\n+            client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10000.00\", key=\"lim-a\"\n+        ).status_code\n+        == 201\n+    )\n+    refused = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10000.01\", key=\"lim-b\")\n+    assert refused.status_code == 422\n+    assert refused.json()[\"detail\"] == \"amount is above the transfer limit\"\n+    assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"10100.00\"\n"
+  }
+ ],
+ "additions": 23,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpvzndhaw4/bench-bank-7/coverage.json\n395 passed, 1 deselected in 260.01s (0:04:20)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

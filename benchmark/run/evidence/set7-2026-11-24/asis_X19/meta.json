@@ -1,0 +1,31 @@
+{
+ "branch": "case/X19",
+ "head": "03ae4e195b75dca633f5738c436b4cfe8557f8b1",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -172,7 +172,17 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         conn: Conn,\n         start: Annotated[date | None, Query(alias=\"from\")] = None,\n         end: Annotated[date | None, Query(alias=\"to\")] = None,\n+        month: str | None = None,\n     ) -> dict[str, object]:\n+        if month is not None:\n+            if start is not None or end is not None:\n+                raise HTTPException(422, \"month cannot be used with from or to\")\n+            try:\n+                year, number = (int(part) for part in month.split(\"-\"))\n+                start = date(year, number, 1)\n+            except ValueError:\n+                raise HTTPException(422, \"month must be YYYY-MM\") from None\n+            end = start + timedelta(days=30)\n         for value in (start, end):\n             if value is not None and not EARLIEST_DATE <= value <= LATEST_DATE:\n                 raise HTTPException(400, f\"dates must be between {EARLIEST_DATE} and {LATEST_DATE}\")\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,14 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_statement_month_window(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    base = f\"/api/accounts/{bank['eur'].id}/statement\"\n+    july = client.get(base + \"?month=2026-07\")\n+    assert july.status_code == 200\n+    assert july.json()[\"from\"] == \"2026-07-01\"\n+    assert july.json()[\"to\"] == \"2026-07-31\"\n+    assert client.get(base + \"?month=2026-13\").status_code == 422\n+    assert client.get(base + \"?month=2026-07&from=2026-07-02\").status_code == 422\n"
+  }
+ ],
+ "additions": 21,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 1,
+  "tests_tail": "atch does not apply\\n', stderr='').returncode\nERROR tests/test_discovery_branch.py::test_set_2_branch_passes_lint_and_collects - AssertionError: refused: git apply --index: error: patch failed: src/bank/api.py:168\n  error: src/bank/api.py: patch does not apply\n  \nassert 2 == 0\n +  where 2 = CompletedProcess(args=['<workspace>/bench-bank-7/.venv/bin/python', '/private/v...it apply --index: error: patch failed: src/bank/api.py:168\\nerror: src/bank/api.py: patch does not apply\\n', stderr='').returncode\n392 passed, 1 deselected, 3 errors in 749.79s (0:12:29)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

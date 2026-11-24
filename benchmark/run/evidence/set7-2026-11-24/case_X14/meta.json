@@ -1,0 +1,36 @@
+{
+ "branch": "case/X14",
+ "head": "9bf004231e8c8d24b86f1260fed5154c16f05a7c",
+ "base": "ce491dc0fc0af56d2163eeb1b3efe7ec6d68fd65",
+ "merge_base": "ce491dc0fc0af56d2163eeb1b3efe7ec6d68fd65",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import FX_RATES, Money, convert_minor, exponent, from_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -254,6 +254,25 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/fx/quote\")\n+    def fx_quote(\n+        amount: str,\n+        source: Annotated[str, Query(alias=\"from\")],\n+        target: Annotated[str, Query(alias=\"to\")],\n+    ) -> dict[str, object]:\n+        if (source, target) not in FX_RATES:\n+            raise HTTPException(422, f\"no rate for {source} to {target}\")\n+        try:\n+            money = Money.of(amount, source)\n+        except ValueError as exc:\n+            raise HTTPException(422, str(exc)) from None\n+        minor = convert_minor(money.minor, source, target)\n+        return {\n+            \"converted_minor\": minor,\n+            \"converted\": str(from_minor(minor, target)),\n+            \"currency\": target,\n+        }\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -3,7 +3,7 @@\n from __future__ import annotations\n \n from dataclasses import dataclass\n-from decimal import ROUND_HALF_EVEN, Decimal\n+from decimal import ROUND_HALF_EVEN, ROUND_HALF_UP, Decimal\n \n # Conversion rates for one unit of the first currency.\n FX_RATES = {(\"EUR\", \"JPY\"): Decimal(\"162.5\"), (\"JPY\", \"EUR\"): Decimal(\"0.004\")}\n@@ -79,3 +79,9 @@ class Money:\n \n     def __str__(self) -> str:\n         return f\"{from_minor(self.minor, self.currency)} {self.currency}\"\n+\n+\n+def convert_minor(minor: int, source: str, target: str) -> int:\n+    \"\"\"Convert minor units of source to minor units of target at FX_RATES, rounded half up.\"\"\"\n+    value = from_minor(minor, source) * FX_RATES[(source, target)]\n+    return int(value.scaleb(exponent(target)).quantize(Decimal(1), rounding=ROUND_HALF_UP))\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,28 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_fx_quote_rounds_half_up(bank):\n+    client = TestClient(bank[\"app\"])\n+\n+    def quote(amount, source, target):\n+        response = client.get(f\"/api/fx/quote?amount={amount}&from={source}&to={target}\")\n+        assert response.status_code == 200\n+        return response.json()\n+\n+    one = quote(\"1.00\", \"EUR\", \"JPY\")\n+    assert one[\"converted_minor\"] == 163\n+    assert one[\"converted\"] == \"163\"\n+    assert quote(\"3.00\", \"EUR\", \"JPY\")[\"converted_minor\"] == 488\n+    assert quote(\"2.00\", \"EUR\", \"JPY\")[\"converted_minor\"] == 325\n+    back = quote(\"125\", \"JPY\", \"EUR\")\n+    assert back[\"converted_minor\"] == 50\n+    assert back[\"converted\"] == \"0.50\"\n+\n+\n+def test_fx_quote_refuses_bad_input(bank):\n+    client = TestClient(bank[\"app\"])\n+    assert client.get(\"/api/fx/quote?amount=1.00&from=EUR&to=EUR\").status_code == 422\n+    assert client.get(\"/api/fx/quote?amount=1.00&from=EUR&to=XXX\").status_code == 422\n+    assert client.get(\"/api/fx/quote?amount=1.005&from=EUR&to=JPY\").status_code == 422\n"
+  }
+ ],
+ "additions": 52,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 90%]\n....................................                                     [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpbczeu0oo/bench-bank-7/coverage.json\n396 passed, 1 deselected in 496.28s (0:08:16)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

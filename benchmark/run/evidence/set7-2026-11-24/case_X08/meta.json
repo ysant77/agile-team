@@ -1,0 +1,31 @@
+{
+ "branch": "case/X08",
+ "head": "fc61e7aa537e11b4a7a2a7ed062c7401550e4da2",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -27,6 +27,7 @@ from bank.db import connect\n from bank.money import Money, exponent, from_minor\n \n COOKIE = \"yms_customer\"\n+MAX_KEY_LENGTH = 64\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n STATEMENT_DAYS = 30\n EARLIEST_DATE = date(1900, 1, 1)\n@@ -223,6 +224,8 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n         if target is None or target.kind != \"customer\" or target.currency != source.currency:\n             raise HTTPException(404, NO_DESTINATION)\n         amount = parse_amount(body.amount, source.currency)\n+        if len(idempotency_key.strip()) > MAX_KEY_LENGTH:\n+            raise HTTPException(422, \"idempotency key is longer than 64 characters\")\n         try:\n             result, replayed = ledger.transfer_once(\n                 conn,\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,15 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_idempotency_key_has_a_maximum_length(bank):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    assert (\n+        transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"1.00\", key=\"k\" * 64).status_code\n+        == 201\n+    )\n+    refused = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"1.00\", key=\"k\" * 65)\n+    assert refused.status_code == 422\n+    assert refused.json()[\"detail\"] == \"idempotency key is longer than 64 characters\"\n+    assert client.get(f\"/api/accounts/{bank['eur'].id}\").json()[\"balance\"] == \"99.00\"\n"
+  }
+ ],
+ "additions": 15,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpgu2tm8jj/bench-bank-7/coverage.json\n395 passed, 1 deselected, 1 warning in 470.65s (0:07:50)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

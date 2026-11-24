@@ -1,0 +1,31 @@
+{
+ "branch": "case/X20",
+ "head": "d292b04f94bc4c2bb0a97644d16472321d37a84f",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -27,6 +27,7 @@ from bank.db import connect\n from bank.money import Money, exponent, from_minor\n \n COOKIE = \"yms_customer\"\n+SESSION_SECONDS = 28800\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n STATEMENT_DAYS = 30\n EARLIEST_DATE = date(1900, 1, 1)\n@@ -146,7 +147,9 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             customer = ledger.get_customer(conn, body.customer_id)\n         except ledger.NotFound:\n             raise HTTPException(404, \"customer not found\") from None\n-        response.set_cookie(COOKIE, str(customer[\"id\"]), httponly=True, samesite=\"lax\")\n+        response.set_cookie(\n+            COOKIE, str(customer[\"id\"]), httponly=True, samesite=\"lax\", max_age=SESSION_SECONDS\n+        )\n         return {\"id\": customer[\"id\"], \"name\": customer[\"name\"]}\n \n     @app.get(\"/api/session\")\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,12 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_session_cookie_expires_after_8_hours(bank):\n+    response = TestClient(bank[\"app\"]).post(\"/api/session\", json={\"customer_id\": bank[\"owner\"]})\n+    header = response.headers[\"set-cookie\"].lower()\n+    assert \"max-age=28800\" in header\n+    assert \"httponly\" in header\n+    assert \"path=/\" in header\n+    assert \"samesite=lax\" in header\n"
+  }
+ ],
+ "additions": 13,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp9fzjsbo6/bench-bank-7/coverage.json\n395 passed, 1 deselected in 768.33s (0:12:48)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

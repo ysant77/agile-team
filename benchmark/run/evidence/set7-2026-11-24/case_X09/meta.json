@@ -1,0 +1,31 @@
+{
+ "branch": "case/X09",
+ "head": "e8ecdeeca15abfdf637ce4a982bedd019a7dc394",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -178,6 +178,8 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n                 raise HTTPException(400, f\"dates must be between {EARLIEST_DATE} and {LATEST_DATE}\")\n         end = end or datetime.now(UTC).date()\n         start = start or end - timedelta(days=STATEMENT_DAYS - 1)\n+        if end > datetime.now(UTC).date():\n+            raise HTTPException(422, \"to is in the future\")\n         try:\n             st = ledger.statement(conn, account.id, start, end)\n         except ledger.LedgerError as exc:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,15 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_statement_refuses_a_future_to(bank):\n+    from datetime import UTC, datetime, timedelta\n+\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    base = f\"/api/accounts/{bank['eur'].id}/statement\"\n+    today = datetime.now(UTC).date()\n+    assert client.get(base + f\"?to={today}\").status_code == 200\n+    future = client.get(base + f\"?to={today + timedelta(days=1)}\")\n+    assert future.status_code == 422\n+    assert future.json()[\"detail\"] == \"to is in the future\"\n"
+  }
+ ],
+ "additions": 14,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpve6wp7q7/bench-bank-7/coverage.json\n395 passed, 1 deselected in 470.64s (0:07:50)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

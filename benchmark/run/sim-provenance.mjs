@@ -24,9 +24,10 @@ export function prArtifacts({ attempt, ciText, marker }) {
 
 // conclusion: 'success' unless the case states a failed push run (SCORER-CHANGES 21, V21).
 // SCORER-CHANGES 22 (e): status 'in_progress' gives a run with no conclusion yet.
-export function pushRun({ id, sha, repo, conclusion = 'success', status = 'completed' }) {
+// SCORER-CHANGES 23 (b): attempt gives the run's current attempt (a re-run of a failed job).
+export function pushRun({ id, sha, repo, conclusion = 'success', status = 'completed', attempt = 1 }) {
   return { id, name: 'CI', path: CI_PATH, head_sha: sha, event: 'push', head_branch: 'main', head_repository: { full_name: repo },
-    status, conclusion: status === 'completed' ? conclusion : null, run_attempt: 1, html_url: 'x' };
+    status, conclusion: status === 'completed' ? conclusion : null, run_attempt: attempt, html_url: 'x' };
 }
 
 // SCORER-CHANGES 21 (c), V15: the report comment as a person edited it after the run. One base

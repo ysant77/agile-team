@@ -47,11 +47,14 @@ export function simJira(jira, issueKey, ctx = {}) {
   }
   let store = null;
   if (jira.prLink) {
-    const l = jira.prLink;
-    const prNumber = l.prNumber === 'case' || l.prNumber === undefined ? ctx.prNumber : l.prNumber;
-    const data = { key: issueKey, repo: l.repo ?? ctx.repo, prNumber, reason: l.reason };
-    const auditSeq = append(l.by, 'pr.linked', data, l.at);
-    const links = [{ ...data, by: l.by, at: l.at ?? null, auditSeq }];
+    // SCORER-CHANGES 23 (c): a list of links, oldest first, as the panel writes them.
+    const links = [];
+    for (const l of Array.isArray(jira.prLink) ? jira.prLink : [jira.prLink]) {
+      const prNumber = l.prNumber === 'case' || l.prNumber === undefined ? ctx.prNumber : l.prNumber;
+      const data = { key: issueKey, repo: l.repo ?? ctx.repo, prNumber, reason: l.reason };
+      const auditSeq = append(l.by, 'pr.linked', data, l.at);
+      links.push({ ...data, by: l.by, at: l.at ?? null, auditSeq });
+    }
     store = { get: async (k) => (k === `pr-links:${issueKey}` ? structuredClone(links) : undefined) };
   }
   let signoff = null;
