@@ -280,7 +280,7 @@ function call(name, ctx, args) {
 test('every exported check of checks.js is in the table, except the helpers that are not checks', () => {
   const fns = Object.entries(c).filter(([, v]) => typeof v === 'function').map(([k]) => k);
   const covered = new Set(ROWS.map(([n]) => n));
-  assert.deepEqual(fns.filter((n) => !covered.has(n)).sort(), ['deletedTestNote', 'hasCodeWork', 'needsRepro', 'ticketTests']);
+  assert.deepEqual(fns.filter((n) => !covered.has(n)).sort(), ['deletedTestNote', 'hasCodeWork', 'highStakeMarks', 'needsRepro', 'ticketTests']);
 });
 
 for (const [name, keys, opts = {}] of ROWS) {

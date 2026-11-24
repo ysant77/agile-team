@@ -265,6 +265,8 @@ async function armC(c, ev, n) {
   // SCORER-CHANGES 22 (a, b): the audited sign-off on the ticket, and the PR-link store.
   if (jira?.signoff) d.collectJira = async () => ({ subtasks: [], links: [], ...structuredClone(c.ticket), signoff: structuredClone(jira.signoff) });
   if (jira?.store) d.store = jira.store;
+  // SCORER-CHANGES 25 (b): the label changelog gives the removal of a mark, when the case gives one.
+  if (c.jira?.markRemoval) d.readMarkRemoval = async () => structuredClone(c.jira.markRemoval);
   const claim = { id: `bench-${c.id}`, type: c.claim, text: `${c.claim} claimed for ${c.ticket.key}`, ...(jira?.claimant ? { by: jira.claimant } : {}) };
   const decided = await decide({ issueKey: c.ticket.key, claim }, d);
   // SCORER-CHANGES 22 (c): a transient GitHub failure gives no verdict; the app posts "not checked".
