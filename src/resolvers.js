@@ -32,7 +32,9 @@ async function canEdit(key) {
 }
 // The ACs exactly as the verifier reads them (as the app, from aat.ticket).
 const readAcs = async (key) => (await collectJira(key)).acceptanceCriteria;
-const approvalDeps = { canEdit, readAcs, appendAudit, store: kvs };
+// The high-stake marks of this moment are kept with an AC record (set 8 Y08).
+const readMarks = async (key) => { const j = await collectJira(key); return { domain: j.domain, labels: j.labels }; };
+const approvalDeps = { canEdit, readAcs, readMarks, appendAudit, store: kvs };
 
 // A person approves the removal or change of one test (finding E1, 19 Nov). Only this action, not
 // the issue property, gives an approval that the verifier counts; the claimant's own approval

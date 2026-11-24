@@ -36,8 +36,10 @@ export function simJira(jira, issueKey, ctx = {}) {
   const approvals = { removals: [], changes: [], acs: null };
   if (jira.acs) {
     const acHash = sha256(canonical(jira.acs.acceptanceCriteria ?? []));
-    const auditSeq = append(jira.acs.by, 'acs.recorded', { key: issueKey, acHash }, jira.acs.at);
-    approvals.acs = { acHash, by: jira.acs.by, at: jira.acs.at ?? null, auditSeq };
+    // SCORER-CHANGES 25 (a): the high-stake marks kept with the record, when the case gives them.
+    const marks = Array.isArray(jira.acs.marks) && jira.acs.marks.length ? { marks: jira.acs.marks } : {};
+    const auditSeq = append(jira.acs.by, 'acs.recorded', { key: issueKey, acHash, ...marks }, jira.acs.at);
+    approvals.acs = { acHash, by: jira.acs.by, at: jira.acs.at ?? null, auditSeq, ...marks };
   }
   for (const [kind, list, event] of [['removal', 'removals', 'test.removal_approved'], ['change', 'changes', 'test.change_approved']]) {
     for (const x of jira[list] ?? []) {
