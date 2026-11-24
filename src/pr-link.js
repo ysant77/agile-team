@@ -47,14 +47,15 @@ export async function linkPrAction({ key, accountId, payload }, deps) {
 }
 
 // The latest link of a work item, checked against its audit event, for a claim by `claimant`.
-// Returns null when there is no link, else { prNumber, by, auditSeq, counted, reason }.
+// Returns null when there is no link, else { prNumber, by, auditSeq, counted, byClaimant, reason }.
+// byClaimant is true only for an audited link of the configured kind that the claimant made.
 export async function latestPrLink(key, { store, readAudit }, claimant) {
   const entries = await store.get(linksKey(key));
   if (!Array.isArray(entries) || entries.length === 0) return null;
   const e = entries.at(-1);
   const many = entries.length > 1 ? `${entries.length} links; the latest (audit seq ${e?.auditSeq}) is used` : null;
-  const out = (counted, why) => ({ prNumber: e?.prNumber ?? null, by: e?.by ?? null, auditSeq: e?.auditSeq ?? null, repo: e?.repo ?? null, counted,
-    reason: [why, many].filter(Boolean).join('; ') });
+  const out = (counted, why, byClaimant = false) => ({ prNumber: e?.prNumber ?? null, by: e?.by ?? null, auditSeq: e?.auditSeq ?? null, repo: e?.repo ?? null, counted,
+    byClaimant, reason: [why, many].filter(Boolean).join('; ') });
   let event = null;
   if (Number.isInteger(e?.auditSeq) && e.auditSeq >= 0 && readAudit) {
     try {
@@ -69,6 +70,6 @@ export async function latestPrLink(key, { store, readAudit }, claimant) {
   if (!matches) return out(false, `the link to PR #${e?.prNumber} has no matching audit event, so it does not count`);
   if (typeof e.repo !== 'string' || !e.repo) return out(false, `the link to PR #${e.prNumber} names no repository, so it does not count`);
   if (typeof claimant !== 'string' || !claimant) return out(false, `PR #${e.prNumber} is linked, but the claimant is not known, so the link cannot be shown to come from another person`);
-  if (e.by === claimant) return out(false, `the link to PR #${e.prNumber} was made by the claimant, so it does not count; another person links the PR`);
+  if (e.by === claimant) return out(false, `the link to PR #${e.prNumber} was made by the claimant, so it does not count; another person links the PR`, true);
   return out(true, `PR #${e.prNumber} linked by ${e.by} (audit seq ${e.auditSeq})`);
 }
