@@ -1,4 +1,4 @@
-# The first claim on a judge branch (owner steps, 23 Nov 2026)
+# The first claim on a judge branch (owner steps, 23 Nov 2026; updated 24 Nov)
 
 These are the steps the owner does in Jira for the first claim through the fresh-site path
 (`docs/JUDGE-PATH.md`, "A judge on a fresh site"). The app work for this path is on `main`, and
@@ -27,6 +27,30 @@ Result: 6 of 6 verdicts as expected, one run for each case. Every log line has
 Not shown by these claims: a fresh-site install, the production deploy, the judge install link
 (steps 4 and 5 of `docs/OWNER-HELD-STEPS.md`), and the advisory review of T08 (the reviewer was
 not run on PR 21). The retries are explained under "Retries" below where that change is merged.
+
+## On return (state after 24 Nov)
+
+Development now runs **5.16.0** (`main` 3862696), not 5.13.0. The six live claims above were made
+on 5.13.0; their verdicts stand as the record of that version. On 5.16.0 the same five cases
+are expected to give the same verdicts: on the stored evidence of the judge cases no outcome
+changes, and U20's "What was not checked" no longer lists "fails on base by Failed, not by an
+assertion" (`docs/JUDGE-PATH.md`).
+
+Three checks for the owner, after the production deploy and the install link
+(`docs/OWNER-HELD-STEPS.md`, "State after 24 Nov"):
+
+1. **A fresh-site U01 claim.** On a site that has never had the app: install from the link, open a
+   new work item, type the ACs of U01 in the panel ("Edit the acceptance criteria", then "Save and
+   record"), link PR 17 with account A ("Linked pull request"; a link by the claimant does not
+   count), and comment `claim: done` with account B. Expected: **Supported**. Record the version,
+   the work item key and the log line.
+2. **The retry log.** For that claim, run the command below and read `retries`. If it is not 0, the
+   line also has `"retried"`: for each of the first five retries, its kind, status and path. Write
+   them in the run notes; they show the cause of the retries of 24 Nov, which was not found
+   locally.
+3. **Drafts waiting for you.** Ask the PM agent for a ticket with a number. Expected: no work item
+   yet; the panel shows the draft beside the request; **Create** makes it once; a second **Create**
+   says it was already created.
 
 ## The repository of the environment (done on 23 Nov)
 
