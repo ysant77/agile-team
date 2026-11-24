@@ -102,27 +102,15 @@ test('the sandbox refuses reads of files outside the scratch copy and the Python
 
 const scripted = (steps) => { let i = 0; return async () => (i < steps.length ? { ok: true, content: '', toolCalls: steps[i++] } : { ok: true, content: 'done', toolCalls: [] }); };
 const call = (name, args) => ({ name, arguments: args });
-const FIX = `--- a/src/bank/ledger.py
-+++ b/src/bank/ledger.py
-@@ -399,7 +399,11 @@
-     if start > end:
-         raise LedgerError("statement start is after its end")
-     account = get_account(conn, account_id)
--    lower, upper = start.isoformat(), end.isoformat()
-+    try:
-+        upper = (end + timedelta(days=1)).isoformat()
-+    except OverflowError:
-+        raise LedgerError("statement end is out of range") from None
-+    lower = start.isoformat()
-     (opening,) = conn.execute(
-`;
+const FIX = [{ path: 'src/bank/ledger.py', old: '    lower, upper = start.isoformat(), end.isoformat()\n',
+  new: '    try:\n        upper = (end + timedelta(days=1)).isoformat()\n    except OverflowError:\n        raise LedgerError("statement end is out of range") from None\n    lower = start.isoformat()\n' }];
 const D21 = { id: 'D2-1', truth: 'end_day', symptom: 'A statement for 1 to 31 October leaves out a payment made on 31 October.', protected: ['tests/test_ledger.py'], hidden: 'D2-1.py' };
 
 test('scripted run (not an agent): a patch that restores the inclusive end date is judged repaired by checks the script never saw', { skip: !(local && TREE && existsSync(TREE)) && 'REPAIR_PYTHON or REPAIR_TREE not set', timeout: 600_000 }, async () => {
   const { runRepair } = await import('../bakeoff/repair/task.mjs');
   const r = await runRepair(scripted([
     [call('run-check', { test: 'tests/test_ledger.py::test_statement_running_balance', on: 'base' })],
-    [call('propose-patch', { diff: FIX.replace('ledger.py\n@@', 'ledger.py\n@@'), reason: 'the end date must be inclusive' })],
+    [call('propose-patch', { edits: FIX, reason: 'the end date must be inclusive' })],
     [call('run-check', { test: 'tests/test_ledger.py::test_statement_running_balance', on: 'candidate' })],
   ]), D21, { tree: TREE, python: PY });
   assert.equal(r.trace[0].result.outcome, 'passed');
@@ -135,7 +123,7 @@ test('scripted run (not an agent): a patch that restores the inclusive end date 
 test('scripted run: a patch to a protected test is refused, and with no candidate nothing is repaired', { skip: !(local && TREE && existsSync(TREE)) && 'REPAIR_PYTHON or REPAIR_TREE not set', timeout: 600_000 }, async () => {
   const { runRepair } = await import('../bakeoff/repair/task.mjs');
   const r = await runRepair(scripted([
-    [call('propose-patch', { diff: diff('tests/test_ledger.py'), reason: 'make the test pass' })],
+    [call('propose-patch', { edits: [{ path: 'tests/test_ledger.py', old: 'def ', new: 'def  ' }], reason: 'make the test pass' })],
     [call('run-check', { test: 'tests/test_ledger.py', on: 'candidate' })],
     [call('run-check', { test: '-k statement', on: 'base' })],
   ]), D21, { tree: TREE, python: PY });

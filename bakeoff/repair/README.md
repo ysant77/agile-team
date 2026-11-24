@@ -13,10 +13,14 @@ is changed, and nothing here is a product feature.
 - `run-check { test, on }`: pytest for one test id that exists in the base copy or the candidate
   copy. The harness builds the command; the agent gives only the test id (`TEST_ID` pattern).
   At most 8 checks.
-- `propose-patch { diff, reason }`: one unified diff. Allowed: change Python files under `src/`,
-  add `tests/test_agent_<name>.py`. Refused: the bank's own tests (the protected oracle),
-  scripts, CI, config, lock files, deletes, renames, binary, paths with `..`; more than 5 files or
-  20,000 bytes. Each patch goes on a fresh copy of the base; at most 3 patches.
+- `propose-patch { edits: [{ path, old, new }], reason }` (since 24 Nov; development run 1 used a
+  unified diff, and 8 of its 14 diffs did not apply): each edit replaces an exact old text that
+  must occur once in the file; an empty old text creates a new file. Text copied with the "N: "
+  line numbers of `read-repo-file` is tried once without them. All edits of one call apply, or
+  none. Allowed: change Python files under `src/`, add `tests/test_agent_<name>.py`. Refused: the
+  bank's own tests (the protected oracle), scripts, CI, config, lock files, paths with `..`; more
+  than 5 files or 20,000 bytes of resulting diff. Each patch goes on a fresh copy of the base; at
+  most 3 patches. The resulting diff is kept in the record.
 
 ## Where commands run
 

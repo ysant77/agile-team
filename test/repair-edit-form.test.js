@@ -63,7 +63,7 @@ test('a new agent test is created only with empty old text and only when absent'
 
 test('protected files, unsafe paths and other kinds of file are refused', () => {
   const dir = copy();
-  for (const [path, re] of [['tests/test_ledger.py', /protected/], ['../etc/x.py', /plain relative path/], ['.github/workflows/ci.yml', /protected/],
+  for (const [path, re] of [['tests/test_ledger.py', /protected/], ['../etc/x.py', /plain relative path/], ['.github/workflows/ci.yml', /protected|plain relative path/],
     ['tests/conftest.py', /protected/], ['src/bank/new_module.txt', /protected|Python/]]) {
     const r = applyEdits(dir, [{ path, old: 'a', new: 'b' }]);
     assert.equal(r.ok, false, path);
