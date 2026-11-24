@@ -32,8 +32,9 @@ Status words:
 | 14 | "Done means good on main: while the push run on the merge commit is still running, the claim is Cannot verify." | built; measured (blind) | PR 95; set 7 X10, X23 |
 | 15 | "Every verdict, approval, link and sign-off is an event in a hash chain that the monitor page checks." | built | `src/audit.js`, `src/audit-store.js`, monitor page |
 | 16 | "The five demo cases gave the expected verdict on a real Jira site with two users." | live, n = 1 | `docs/claims.md`, "Live run on a Jira site" (22 Nov) |
-| 17 | "A ticket draft that states a number or money is created only when the person who asked confirms it in the panel." | built after merge of `feat/ticket-draft-confirmation`; not deployed | `src/ticket-draft.js`; `docs/DESIGN-TICKET-CONFIRMATION.md` |
+| 17 | "A ticket draft that states a number or money is created only when the person who asked confirms it in the panel." | built; deployed to development 5.15.0 and later; not yet tried live | `src/ticket-draft.js`; `docs/DESIGN-TICKET-CONFIRMATION.md` |
 | 18 | "Two faults that set 7 showed are fixed: a `pytest.raises` test that ends with DID NOT RAISE counts as a failure by an assertion, and the merge result reads the AC tests." | measured (development) | PR 100, PR 101; impact records in `benchmark/run/evidence/` |
+| 19 | "The app is deployed to production and can be installed from its install link; on a fresh site one claim gave the expected Supported." | live, n = 1 | `docs/FIRST-JUDGE-CLAIM.md`, "Production, fresh site" (24 Nov); the install link is in the submission form, not in the repository |
 
 ## Sentences we do not say
 
