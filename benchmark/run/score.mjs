@@ -156,7 +156,7 @@ function recordGithub(c, ev, prNumber) {
   }
   // The bot comment carries the report; after a merge the main report is the merge commit's
   // report (fast-forward merge here). Both are built from `report` when served.
-  const comment = report && !g.noBotReport ? { created_at: at(8), updated_at: g.reportEditedByUser || g.reportCommentEdit ? at(120) : at(9) } : null;
+  const comment = report && !g.noBotReport ? { created_at: at(8), updated_at: g.reportEditedByUser || g.reportCommentEdit || g.reportCommentNote ? at(120) : at(9) } : null;
   // SCORER-CHANGES 21 (c), V15: the comment text edited by a person after the run; the report
   // that CI wrote, its artifact and its marker do not change.
   const commentReport = report && g.reportCommentEdit ? sim.editedComment(report, g.reportCommentEdit) : undefined;
@@ -175,6 +175,11 @@ function recordGithub(c, ev, prNumber) {
     ...(g.rateLimited ? { rateLimited: g.rateLimited } : {}), ...(g.pushRunInProgress ? { pushRunInProgress: true, mergeSha, pushRunAttempt: g.pushRunInProgress.attempt ?? 1 } : {}),
     // SCORER-CHANGES 23 (a): the conclusion of the push run on the merge result's commit.
     ...(g.mergeCommit?.pushConclusion ? { pushConclusion: g.mergeCommit.pushConclusion } : {}),
+    // SCORER-CHANGES 24 (b, c, d): a note added to the bot comment after the run; the attempt of the
+    // completed push run; runs of other workflows on the merge commit.
+    ...(g.reportCommentNote ? { reportCommentNote: g.reportCommentNote } : {}),
+    ...(g.mainPushRunAttempt ? { mainPushRunAttempt: g.mainPushRunAttempt } : {}),
+    ...(g.otherPushRuns ? { otherPushRuns: g.otherPushRuns, mergeSha } : {}),
     ...(c.jira?.prLink ? { fullPullByNumber: true } : {}) };
 }
 
@@ -198,7 +203,7 @@ export function fetchFrom(d) {
       const id = Number(/runs\/(\d+)\/artifacts/.exec(u)[1]);
       if (id === d.runs?.[0]?.id) return sim.prArtifacts({ attempt: d.runs[0].run_attempt, ciText: d.ciText, marker: d.marker });
       if (id === d.cancelledRunId) return { total_count: 0, artifacts: [] };
-      if (d.pushRunId && id === d.pushRunId && mainOf()) return sim.mainArtifacts(JSON.stringify(genuineMain() ?? mainOf()));
+      if (d.pushRunId && id === d.pushRunId && mainOf()) return sim.mainArtifacts(JSON.stringify(genuineMain() ?? mainOf()), d.mainPushRunAttempt ?? 1);
       return 404;
     }],
     [/\/pulls\?/, (u) => (page(u) === 1 ? d.pulls : [])],
@@ -217,7 +222,7 @@ export function fetchFrom(d) {
     }],
     [/\/actions\/runs\?head_sha=/, (u) => (d.runs404 ? 404 : { workflow_runs: page(u) === 1 ? d.runs : [] })],
     [/\/issues\/\d+\/comments/, (u) => (page(u) === 1 && d.comment ? [{ user: BOT, ...d.comment,
-      body: `<!-- aat-ci-report -->\n\`\`\`json\n${JSON.stringify(d.commentReport ?? d.report)}\n\`\`\`` }] : [])],
+      body: `<!-- aat-ci-report -->\n\`\`\`json\n${JSON.stringify(d.commentReport ?? d.report)}\n\`\`\`${d.reportCommentNote ? `\n${d.reportCommentNote}` : ''}` }] : [])],
     [/\/pulls\/\d+\/files/, (u) => (d.filesTruncated
       ? Array.from({ length: 100 }, (_, i) => ({ filename: `src/gen/f${page(u)}_${i}.py`, patch: '' }))
       : d.files.slice((page(u) - 1) * 100, page(u) * 100))],

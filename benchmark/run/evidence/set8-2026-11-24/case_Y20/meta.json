@@ -1,0 +1,36 @@
+{
+ "branch": "case/Y20",
+ "head": "c696dd11a94634c87f2a120fbb65f9c2b534a2fb",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -254,6 +254,10 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/stats/currencies\")\n+    def stats_currencies(conn: Conn) -> dict[str, int]:\n+        return ledger.count_accounts_by_currency(conn)\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -128,6 +128,14 @@ def list_customers(conn: sqlite3.Connection) -> list[sqlite3.Row]:\n     return conn.execute(\"SELECT id, name FROM customers ORDER BY id\").fetchall()\n \n \n+def count_accounts_by_currency(conn: sqlite3.Connection) -> dict[str, int]:\n+    rows = conn.execute(\n+        \"SELECT currency, count(*) AS n FROM accounts WHERE kind = 'customer'\"\n+        \" GROUP BY currency ORDER BY currency\"\n+    ).fetchall()\n+    return {row[\"currency\"]: row[\"n\"] for row in rows}\n+\n+\n def open_account(\n     conn: sqlite3.Connection, customer_id: int, currency: str, at: datetime | None = None\n ) -> Account:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,9 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_stats_counts_accounts_by_currency(bank):\n+    response = TestClient(bank[\"app\"]).get(\"/api/stats/currencies\")\n+    assert response.status_code == 200\n+    assert response.json() == {\"EUR\": 2, \"JPY\": 1}\n"
+  }
+ ],
+ "additions": 18,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp598q3wdg/bench-bank-8/coverage.json\n395 passed, 1 deselected in 262.76s (0:04:22)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

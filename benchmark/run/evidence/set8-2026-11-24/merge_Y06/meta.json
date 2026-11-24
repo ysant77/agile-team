@@ -1,0 +1,36 @@
+{
+ "branch": "merge/Y06",
+ "head": "32efc7d98d06eb2308a5fd3bd374a69046689547",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -136,8 +136,16 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     app = FastAPI(title=\"YMS Bank demo\", lifespan=lifespan)\n     app.state.db_path = path\n \n+    @app.middleware(\"http\")\n+    async def no_store(request: Request, call_next):\n+        response = await call_next(request)\n+        if request.url.path.startswith(\"/api/\"):\n+            response.headers[\"Cache-Control\"] = \"no-store\"  # no reply of the API is stored\n+        return response\n+\n     @app.get(\"/api/customers\")\n-    def list_customers(conn: Conn) -> list[dict[str, object]]:\n+    def list_customers(conn: Conn, response: Response) -> list[dict[str, object]]:\n+        response.headers[\"Cache-Control\"] = \"private, max-age=60\"\n         return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n \n     @app.post(\"/api/session\")\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,8 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_customer_list_has_a_cache_header(bank):\n+    response = TestClient(bank[\"app\"]).get(\"/api/customers\")\n+    assert response.headers.get(\"cache-control\") == \"private, max-age=60\"\n"
+  },
+  {
+   "filename": "tests/test_cache_policy.py",
+   "status": "added",
+   "patch": "@@ -0,0 +1,11 @@\n+from fastapi.testclient import TestClient\n+\n+from bank import ledger\n+from bank.api import create_app\n+\n+\n+def test_api_replies_are_not_stored(tmp_path):\n+    path = tmp_path / \"cache.db\"\n+    ledger.open_db(path).close()\n+    response = TestClient(create_app(path, seed_if_empty=False)).get(\"/api/customers\")\n+    assert response.headers.get(\"cache-control\") == \"no-store\"\n"
+  }
+ ],
+ "additions": 25,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 1,
+  "tests_tail": ": AssertionError\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpy0jlhd5l/bench-bank-8/coverage.json\n=========================== short test summary info ============================\nFAILED tests/test_api.py::test_customer_list_has_a_cache_header - AssertionError: assert 'no-store' == 'private, max-age=60'\n  \n  - private, max-age=60\n  + no-store\n1 failed, 395 passed, 1 deselected in 173.55s (0:02:53)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

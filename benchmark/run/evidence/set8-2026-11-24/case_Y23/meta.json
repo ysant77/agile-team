@@ -1,0 +1,36 @@
+{
+ "branch": "case/Y23",
+ "head": "ee632bcba49069a963d9dcf0aaa17fee1388dbb3",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -138,7 +138,11 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n \n     @app.get(\"/api/customers\")\n     def list_customers(conn: Conn) -> list[dict[str, object]]:\n-        return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n+        out = []\n+        for row in ledger.list_customers(conn):\n+            currencies = ledger.account_currencies(conn, row[\"id\"])\n+            out.append({\"id\": row[\"id\"], \"name\": row[\"name\"], \"account_currencies\": currencies})\n+        return out\n \n     @app.post(\"/api/session\")\n     def start_session(body: SessionIn, response: Response, conn: Conn) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -128,6 +128,14 @@ def list_customers(conn: sqlite3.Connection) -> list[sqlite3.Row]:\n     return conn.execute(\"SELECT id, name FROM customers ORDER BY id\").fetchall()\n \n \n+def account_currencies(conn: sqlite3.Connection, customer_id: int) -> list[str]:\n+    rows = conn.execute(\n+        \"SELECT DISTINCT currency FROM accounts WHERE customer_id = ? ORDER BY currency\",\n+        (customer_id,),\n+    ).fetchall()\n+    return [row[\"currency\"] for row in rows]\n+\n+\n def open_account(\n     conn: sqlite3.Connection, customer_id: int, currency: str, at: datetime | None = None\n ) -> Account:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,17 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_customer_list_has_account_currencies(bank):\n+    client = TestClient(bank[\"app\"])\n+    body = client.get(\"/api/customers\").json()\n+    assert sorted(tuple(c.get(\"account_currencies\") or ()) for c in body) == [\n+        (\"EUR\",),\n+        (\"EUR\", \"JPY\"),\n+    ]\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.create_customer(conn, \"Lio Empty\")\n+    conn.close()\n+    again = client.get(\"/api/customers\").json()\n+    assert next(c for c in again if c[\"name\"] == \"Lio Empty\")[\"account_currencies\"] == []\n"
+  }
+ ],
+ "additions": 27,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpebh4ia6j/bench-bank-8/coverage.json\n395 passed, 1 deselected in 191.93s (0:03:11)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

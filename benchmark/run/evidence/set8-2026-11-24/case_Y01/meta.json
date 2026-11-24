@@ -1,0 +1,31 @@
+{
+ "branch": "case/Y01",
+ "head": "8ed6b14e1b6ec3f6d339c92d9d081e5d4490557b",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -110,6 +110,8 @@ ACCOUNT_COLUMNS = \"id, number, customer_id, kind, currency, balance_minor\"\n def create_customer(conn: sqlite3.Connection, name: str, at: datetime | None = None) -> int:\n     if not name.strip():\n         raise LedgerError(\"customer name is empty\")\n+    if any(ord(ch) < 32 or ord(ch) == 127 for ch in name.strip()):\n+        raise LedgerError(\"name has a control character\")\n     with write_txn(conn):\n         cur = conn.execute(\n             \"INSERT INTO customers (name, created_at) VALUES (?, ?)\", (name.strip(), timestamp(at))\n"
+  },
+  {
+   "filename": "tests/test_ledger.py",
+   "status": "modified",
+   "patch": "@@ -269,3 +269,16 @@ def test_a_failed_rollback_to_stops_the_job_and_commits_nothing(tmp_path):\n     assert not conn.in_transaction\n     assert ledger.list_customers(conn) == []\n     assert conn.execute(\"SELECT COUNT(*) FROM app_flags\").fetchone()[0] == 0\n+\n+\n+def test_customer_name_refuses_control_characters(conn):\n+    start = len(ledger.list_customers(conn))\n+    kept = ledger.create_customer(conn, \"Ann Lee\\n\")\n+    assert ledger.get_customer(conn, kept)[\"name\"] == \"Ann Lee\"\n+    with pytest.raises(ledger.LedgerError):\n+        ledger.create_customer(conn, \"Ann\\nLee\")\n+    with pytest.raises(ledger.LedgerError):\n+        ledger.create_customer(conn, \"Bo\\tBay\")\n+    with pytest.raises(ledger.LedgerError):\n+        ledger.create_customer(conn, \"Cy\\x7fDee\")\n+    assert len(ledger.list_customers(conn)) == start + 1\n"
+  }
+ ],
+ "additions": 15,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp0y_x4ixn/bench-bank-8/coverage.json\n395 passed, 1 deselected, 1 warning in 517.05s (0:08:37)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

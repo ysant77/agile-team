@@ -1,0 +1,31 @@
+{
+ "branch": "case/Y14",
+ "head": "600ddc699fef6b95773866afed17a8743c34b951",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import EXPONENTS, Money, exponent, from_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -254,6 +254,12 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/currencies/{code}\")\n+    def read_currency(code: str) -> dict[str, object]:\n+        if code.upper() not in EXPONENTS:\n+            raise HTTPException(404, \"unknown currency\")\n+        return {\"code\": code.upper(), \"decimals\": EXPONENTS[code.upper()]}\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,16 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_one_currency_can_be_read(bank):\n+    client = TestClient(bank[\"app\"])\n+    eur = client.get(\"/api/currencies/EUR\")\n+    assert eur.status_code == 200\n+    assert eur.json() == {\"code\": \"EUR\", \"decimals\": 2}\n+    jpy = client.get(\"/api/currencies/jpy\")\n+    assert jpy.status_code == 200\n+    assert jpy.json() == {\"code\": \"JPY\", \"decimals\": 0}\n+    unknown = client.get(\"/api/currencies/XXX\")\n+    assert unknown.status_code == 404\n+    assert unknown.json()[\"detail\"] == \"unknown currency\"\n"
+  }
+ ],
+ "additions": 20,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpq45aqxhx/bench-bank-8/coverage.json\n395 passed, 1 deselected in 307.52s (0:05:07)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

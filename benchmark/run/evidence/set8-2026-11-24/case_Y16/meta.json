@@ -1,0 +1,31 @@
+{
+ "branch": "case/Y16",
+ "head": "dc3418338467670ef6e4728ad2c97b54905d6576",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import EXPONENTS, Money, exponent, from_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -160,7 +160,11 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n \n     @app.get(\"/api/accounts\")\n     def list_accounts(customer_id: CustomerId, conn: Conn) -> list[dict[str, object]]:\n-        return [account_json(a) for a in ledger.list_accounts(conn, customer_id)]\n+        out = []\n+        for a in ledger.list_accounts(conn, customer_id):\n+            decimals = EXPONENTS[a.currency]\n+            out.append(account_json(a) | {\"decimals\": decimals})\n+        return out\n \n     @app.get(\"/api/accounts/{account_id}\")\n     def read_account(account: OwnedAccount) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,8 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_account_list_has_the_decimals(bank):\n+    body = login(bank[\"app\"], bank[\"owner\"]).get(\"/api/accounts\").json()\n+    assert {a[\"currency\"]: a.get(\"decimals\") for a in body} == {\"EUR\": 2, \"JPY\": 0}\n"
+  }
+ ],
+ "additions": 11,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpvxsnhwwa/bench-bank-8/coverage.json\n395 passed, 1 deselected in 291.25s (0:04:51)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

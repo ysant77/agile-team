@@ -1,0 +1,31 @@
+{
+ "branch": "case/Y21",
+ "head": "d7815cc1bfaf0dea9625e0f07e33dca127c97937",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -11,6 +11,7 @@ from __future__ import annotations\n \n import os\n import sqlite3\n+import uuid\n from collections.abc import AsyncIterator, Iterator\n from contextlib import asynccontextmanager\n from datetime import UTC, date, datetime, timedelta\n@@ -254,6 +255,10 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/keys/new\")\n+    def new_key() -> dict[str, object]:\n+        return {\"key\": uuid.uuid4().hex}\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,13 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_new_key_is_32_hex_digits(bank):\n+    client = TestClient(bank[\"app\"])\n+    first, second = client.get(\"/api/keys/new\"), client.get(\"/api/keys/new\")\n+    assert first.status_code == 200\n+    assert second.status_code == 200\n+    for response in (first, second):\n+        assert re.fullmatch(r\"[0-9a-f]{32}\", response.json()[\"key\"])\n+    assert first.json()[\"key\"] != second.json()[\"key\"]\n"
+  }
+ ],
+ "additions": 15,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp0ub9jaza/bench-bank-8/coverage.json\n395 passed, 1 deselected in 202.10s (0:03:22)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}
