@@ -907,8 +907,19 @@ export function mergedClean(ctx) {
   // The reader always sets the list (verify-claim.js); an empty list names no test.
   const required = ctx.mergeRequiredTests;
   if (!isTextList(required)) return result('merged_clean', 'unknown', 'the list of tests required after merge is missing or malformed');
+  // The ticket's own AC tests must pass in the report for the merge commit too (set 7 X09: no
+  // required tests were configured, so a failed AC test on main was never read).
+  const acTests = (acsOf(ctx) ?? []).filter((a) => a.check?.type === 'test_passes')
+    .flatMap((a) => (Array.isArray(a.check.args) ? a.check.args : []).filter(isText).map((n) => resolveName(ctx, n)));
+  // An AC test that is not in that report is unknown here, not a fail: the head checks own it.
+  const acParts = [...new Set(acTests)].filter((n) => !required.includes(n)).map((n) => {
+    const r = testPasses(ctx, n, report);
+    if (r.status === 'fail' && testsByName(report, n).length === 0) return result(r.name, 'unknown', `merge result: ${n} is not in the report for the merge commit`);
+    return { ...r, reason: `merge result: ${r.reason}` };
+  });
   const parts = [
     ...required.map((n) => testPasses(ctx, n, report)),
+    ...acParts,
     testsNotRemoved(ctx, report),
     uniqueMigrations(report),
   ];
