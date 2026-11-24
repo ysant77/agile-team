@@ -61,7 +61,9 @@ export function simJira(jira, issueKey, ctx = {}) {
   if (jira.signoff) {
     const s = jira.signoff;
     const sha = s.sha === 'merge' ? ctx.mergeSha : s.sha;
-    const auditSeq = append(s.by, 'change.signed_off', { key: issueKey, sha, reason: s.reason }, s.at);
+    // SCORER-CHANGES 24 (e): noAuditEvent: an issue property with the form of a sign-off, written
+    // through the REST interface; no sign-off action, so no audit event and no audit sequence.
+    const auditSeq = s.noAuditEvent ? null : append(s.by, 'change.signed_off', { key: issueKey, sha, reason: s.reason }, s.at);
     signoff = { by: s.by, sha, reason: s.reason, at: s.at ?? null, auditSeq };
   }
   return {

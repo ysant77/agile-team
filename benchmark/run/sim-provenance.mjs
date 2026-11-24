@@ -48,7 +48,8 @@ export function genuineMainReport(served, { test, excType = 'AssertionError' }) 
 }
 
 // The artifacts of the push run: the marker of the bytes served as main.json.
-export function mainArtifacts(servedText) {
-  const artifacts = [{ name: 'ci-report' }, { name: `main-report-sha256-${simReportHash(servedText)}-attempt-1` }];
+// SCORER-CHANGES 24 (c): the marker names the run's current attempt (default 1).
+export function mainArtifacts(servedText, attempt = 1) {
+  const artifacts = [{ name: 'ci-report' }, { name: `main-report-sha256-${simReportHash(servedText)}-attempt-${attempt}` }];
   return { total_count: artifacts.length, artifacts };
 }
