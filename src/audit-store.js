@@ -45,3 +45,48 @@ export async function readAudit(fromSeq, count, store = kvs) {
   }
   return events;
 }
+
+// The number of events: the head pointer, then forward over events that the head does not name
+// yet (its write can fail after the event is written). Review of 24 Nov, audit order.
+export async function auditLength(store = kvs) {
+  const head = await store.get(HEAD);
+  let n = head ? head.seq + 1 : 0;
+  while (await store.get(keyFor(n))) n += 1;
+  return n;
+}
+
+// One audit event per operation id (review of 24 Nov, audit order). The operation key
+// audit-op:<opId> is written (FAIL_IF_EXISTS) before the event, with the seq where the search
+// starts; the event carries the opId in its data; then the key gets the event's seq. A retry
+// returns the recorded event, or finds an event whose key was not updated (a stop between the two
+// writes), or writes the event when no earlier try did.
+// append and read are injected by callers that use their own writer (tests); read: null means no
+// search, so a stop between the event and the key update can then give a second event.
+// Limit: two calls with the same opId at the same moment can both write; the callers serialize
+// them (the claim lease, the create-ticket "pending" key, the finding's createOnce).
+const opKey = (opId) => `audit-op:${opId}`;
+export async function appendAuditOnce(opId, entry, { store = kvs, append = null, read } = {}) {
+  const id = String(opId);
+  const write = append ?? ((e) => appendAudit(e, store));
+  const readOne = read === undefined ? async (seq) => (await store.get(keyFor(seq))) ?? null : read;
+  let op = await store.get(opKey(id));
+  if (op && Number.isInteger(op.seq)) return { seq: op.seq, hash: op.hash ?? null, at: op.at ?? null, duplicate: true };
+  if (op && readOne) {
+    for (let seq = Number.isInteger(op.fromSeq) ? op.fromSeq : 0; ; seq += 1) {
+      const e = await readOne(seq);
+      if (!e || e.missing) break;
+      if (e.data?.opId === id) {
+        await store.set(opKey(id), { seq, hash: e.hash ?? null, at: e.at ?? null });
+        return { seq, hash: e.hash ?? null, at: e.at ?? null, duplicate: true };
+      }
+    }
+  }
+  if (!op) {
+    const head = await store.get(HEAD);
+    op = { fromSeq: head ? head.seq + 1 : 0 };
+    await store.set(opKey(id), op, { keyPolicy: 'FAIL_IF_EXISTS' });
+  }
+  const written = await write({ ...entry, data: { ...(entry.data ?? {}), opId: id } });
+  await store.set(opKey(id), { seq: written.seq, hash: written.hash ?? null, at: written.at ?? null });
+  return written;
+}
