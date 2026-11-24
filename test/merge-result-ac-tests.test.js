@@ -30,11 +30,14 @@ test('an AC test that passed there keeps the merge result clean', () => {
   assert.equal(r.status, 'pass', r.reason);
 });
 
-test('every name of a multi-test AC is required; a missing one fails', () => {
+test('every name of a multi-test AC is read; a failed one fails, a missing one is unknown', () => {
   const acs = [{ acId: 'AC1', check: { type: 'test_passes', args: ['test_a', 'test_b'] } }];
-  const r = mergedClean(ctxOf([{ id: 'tests/t.py::test_a', outcome: 'passed' }, { id: OTHER, outcome: 'passed' }], acs));
-  assert.equal(r.status, 'fail', r.reason);
-  assert.match(r.reason, /test_b is missing from the report/);
+  const failed = mergedClean(ctxOf([{ id: 'tests/t.py::test_a', outcome: 'passed' }, { id: 'tests/t.py::test_b', outcome: 'failed' }, { id: OTHER, outcome: 'passed' }], acs));
+  assert.equal(failed.status, 'fail', failed.reason);
+  assert.match(failed.reason, /test_b: failed/);
+  const missing = mergedClean(ctxOf([{ id: 'tests/t.py::test_a', outcome: 'passed' }, { id: OTHER, outcome: 'passed' }], acs));
+  assert.equal(missing.status, 'unknown', missing.reason);
+  assert.match(missing.reason, /test_b is not in the report for the merge commit/);
 });
 
 test('an AC with no test check adds nothing', () => {

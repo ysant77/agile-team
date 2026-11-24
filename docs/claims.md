@@ -508,6 +508,16 @@ Three points of this paper match rules here:
   run is still running ("wait for it to end, then claim again"), or no run is running ("report
   missing"). If the runs cannot be read, the reason says so. The check is unknown in all three
   cases, so the verdict does not change.
+- **The merge result reads the AC tests (24 Nov, set 7 X09).** Diagnosis: the first verifier
+  (12 Nov) took the tests required after merge from each scenario fixture. The live path (17 Nov)
+  set that list to empty, with the note "none are configured", and it was never connected to the
+  ticket. So `merged_clean` read only whether the report for the merge commit is trusted, whether
+  a base test was removed, and the migration numbers. In X09 the AC test failed on the merge
+  commit and the check passed. Fix: `merged_clean` also reads each test that an AC names. A
+  failed one fails the merge result ("merge result: <test>: failed"); one that is not in that
+  report is unknown, because the head checks already own a missing test. On the stored evidence
+  of sets 1 to 7 no outcome moves; X09 now names the failed test
+  (`benchmark/run/evidence/impact-merge-ac-tests-2026-11-24.txt`).
 - **A plausible patch is not a correct patch.** A passing test after a change shows that the
   change is plausible. On set 5 the code checks supported 4 changes that were not correct (C7).
   That is why level 5 of the evidence levels is never "proved".
