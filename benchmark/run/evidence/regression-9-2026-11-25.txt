@@ -1,0 +1,24 @@
+# Regression of the set 9 frozen app f3662f8 on the stored evidence of sets 1 to 8 (25 Nov 2026), arm C, no model
+# scorer: benchmark/run at f3662f8 (changes up to 25); old app: 6c4ec0c (set 8 freeze); record: results.json committed with each set (sets 5 to 8)
+# sha256 of results.json with app f3662f8
+s1 355fc9efb6c722a08c4587443f78355e362715c08240fd8ffcfae43cab9688ce
+s2 57db04ea4cecb09347186ca09ec6c30b692cb9d31a5078d2c5cd9283d0b762d2
+s3 578734001f5194b6b5ab5fed2a285c726f303e7d81fc0dc1b613d15109922696
+s4 3c426b9c2d3e95c0f5100af0455640af7ff2480309a95201d67427a608c906ea
+s5 035883b84b15f9acb7e56fde574dec29e96d4de8ba1dd19586a2c479f4e50b19
+s6 e9ba1f24712116731938e7c0641d386c370100d85d1c68f81efe3dba77e57985
+s7 22a4c910e100a8f83a3aee6eee0f331b876f6e4226fd78126f82477f159cc273
+s8 4560c0893ae999f33d473403687a6c588a4ac070d6236d6be7d9e2b5bbf20f16
+# moved rows (reasons with a retry clock time are not compared)
+s1 f3662f8 vs 6c4ec0c identical outcomes and reasons
+s2 f3662f8 vs 6c4ec0c identical outcomes and reasons
+s3 f3662f8 vs 6c4ec0c identical outcomes and reasons
+s4 f3662f8 vs 6c4ec0c identical outcomes and reasons
+s5 f3662f8 vs 6c4ec0c identical outcomes and reasons
+s5 f3662f8 vs record V07 contradicted -> cannot_verify | V12 supported -> cannot_verify | V17 contradicted -> cannot_verify | V18 supported -> cannot_verify
+s6 f3662f8 vs 6c4ec0c identical outcomes and reasons
+s6 f3662f8 vs record W10 supported -> cannot_verify | W13 reason changed | W22 contradicted -> cannot_verify
+s7 f3662f8 vs 6c4ec0c identical outcomes and reasons
+s7 f3662f8 vs record X01 cannot_verify -> supported | X09 reason changed
+s8 f3662f8 vs 6c4ec0c Y06 reason changed | Y08 supported -> cannot_verify | Y14 reason changed
+s8 f3662f8 vs record Y06 reason changed | Y08 supported -> cannot_verify | Y14 reason changed

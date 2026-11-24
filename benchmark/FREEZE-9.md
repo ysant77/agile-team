@@ -1,5 +1,12 @@
 # Set 9: freeze note (fixed 25 Nov 2026, before the set 9 case file is opened)
 
+## Regression before the hash
+
+The frozen app on the stored evidence of sets 1 to 8: `REGRESSION-FREEZE-9-2026-11-25.md`
+(record `run/evidence/regression-9-2026-11-25.txt`). Against the set 8 frozen app only the moves
+of PRs 117 and 118; against the results of record, only moves of recorded fixes. Set 9 results
+are compared with this run.
+
 ## The case file
 
 - Writer: blind. The writer saw no source, test, fixture or run folder of the app or the bank, and
