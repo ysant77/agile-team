@@ -12,7 +12,7 @@ const ctxOf = ({ prFiles, head, base }) => ({
   ticket: { key: 'BANK-6', acceptanceCriteria: [] },
   prFiles,
   baseReport: { tests: base.map(T) },
-  report: { tests: head.map(T), repro: { base_test_ids: [] } },
+  report: { tests: head.map(T) },
   approvals: null,
 });
 const BASE = ['tests/test_api.py::test_a', 'tests/test_ping.py::test_ping_answers_ok'];

@@ -1,0 +1,11 @@
+# Moved rows of fix/removed-test-reads-pr-base (24 Nov 2026): app main 7a4d8a8 (old) against this branch (new),
+# both with the scorer of main, on the stored evidence of sets 1 to 8. Development data. No outcome moves.
+s1 identical outcomes and reasons
+s2 identical outcomes and reasons
+s3 identical outcomes and reasons
+s4 identical outcomes and reasons
+s5 identical outcomes and reasons
+s6 identical outcomes and reasons
+s7 identical outcomes and reasons
+s8 Y06 reason: merge result: test_customer_list_has_a_cache_header: failed; removed without app -> merge result: test_customer_list_has_a_cache_header: failed | Y14 reason: merge result: test_one_currency_can_be_read: failed; removed without approval: t -> merge result: test_one_currency_can_be_read: failed
+# Not changed: set 7 X09 (the later PR's test is in tests/test_api.py, a module that this PR also changes).
