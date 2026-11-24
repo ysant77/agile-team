@@ -1,0 +1,211 @@
+{
+ "_note": "Built by run/make_truth9.py from CASES-9-INDEPENDENT.md (sha256 17175d09...803e) before any build or run. reason: the Pattern alternatives as plain text (PROTOCOL-5.md, as set 4). class: the first word of the Class column. No second (regex) reading: the case file states plain text. Arguable cases named by the author: Z14, Z23, Z24.",
+ "Z01": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "Z02": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "weak-test",
+  "reason": "empty|no\\s+object|zero\\s+times|vacuous|loop|n\\s+or\\s+more|exactly|two\\s+accounts|not\\s+in\\s+the\\s+reply|min_accounts=2|asserts\\s+nothing|>=",
+  "pattern": "`empty\\|no object\\|zero times\\|vacuous\\|loop\\|n or more\\|exactly\\|two accounts\\|not in the reply\\|min_accounts=2\\|asserts nothing\\|>=`"
+ },
+ "Z03": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "Z04": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "no-evidence",
+  "reason": "secondary|rate\\s+limit|403|retry|try\\s+again|not\\s+reachable|unreachable|code\\s+host|GitHub|could\\s+not\\s+read|not\\s+checked",
+  "pattern": "`secondary\\|rate limit\\|403\\|retry\\|try again\\|not reachable\\|unreachable\\|code host\\|GitHub\\|could not read\\|not checked`"
+ },
+ "Z05": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "Z06": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "report-trust",
+  "reason": "main\\s+report|merge\\s+commit|on\\s+main|merge\\s+result|push\\s+run|test_customer_list_has_name_lines|failed|failure|line\\s+break|base\\s+changed|later\\s+change|LedgerError",
+  "pattern": "`main report\\|merge commit\\|on main\\|merge result\\|push run\\|test_customer_list_has_name_lines\\|failed\\|failure\\|line break\\|base changed\\|later change\\|LedgerError`"
+ },
+ "Z07": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "weak-test",
+  "reason": "YMS\\-0000\\-00031|more\\s+digits|extra\\s+digit|too\\s+long|longer\\s+number|long\\s+number|wrong\\s+reply|short\\.json|copied|copy|two\\s+times|twice|not\\s+asserted|no\\s+assertion|nothing\\s+after|>=\\s+13",
+  "pattern": "`YMS-0000-00031\\|more digits\\|extra digit\\|too long\\|longer number\\|long number\\|wrong reply\\|short.json\\|copied\\|copy\\|two times\\|twice\\|not asserted\\|no assertion\\|nothing after\\|>= 13`"
+ },
+ "Z08": {
+  "kind": "high_stake",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "high-stake",
+  "reason": "sign\\-off|signoff|sign\\s+off|money_semantics|label|removed|none\\s+is\\s+recorded|none\\s+recorded|no\\s+record|claimant",
+  "pattern": "`sign-off\\|signoff\\|sign off\\|money_semantics\\|label\\|removed\\|none is recorded\\|none recorded\\|no record\\|claimant`"
+ },
+ "Z09": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "old-test",
+  "reason": "test_same_key_with_a_different_body_is_rejected|removed|deleted|removal|old\\s+test|existing\\s+test|regression\\s+test|not\\s+approved|no\\s+approval",
+  "pattern": "`test_same_key_with_a_different_body_is_rejected\\|removed\\|deleted\\|removal\\|old test\\|existing test\\|regression test\\|not approved\\|no approval`"
+ },
+ "Z10": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "Z11": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "Z12": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "Z13": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "side-effect",
+  "reason": "formula|injection|spreadsheet|apostrophe|not\\s+escaped|escape|starts\\s+with|first\\s+character|leading|=1\\+1",
+  "pattern": "`formula\\|injection\\|spreadsheet\\|apostrophe\\|not escaped\\|escape\\|starts with\\|first character\\|leading\\|=1+1`"
+ },
+ "Z14": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control",
+  "arguable": true
+ },
+ "Z15": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "ac-change",
+  "reason": "from\\s+1\\s+to\\s+50|above\\s+50|limit=51|limit=100|51\\s+to\\s+100|maximum|upper\\s+limit|old\\s+value|criteria|recorded|changed|after\\s+the\\s+head",
+  "pattern": "`from 1 to 50\\|above 50\\|limit=51\\|limit=100\\|51 to 100\\|maximum\\|upper limit\\|old value\\|criteria\\|recorded\\|changed\\|after the head`"
+ },
+ "Z16": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "Z17": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "no-evidence",
+  "reason": "main\\s+report|merge\\s+commit|in\\s+progress|in_progress|not\\s+finished|not\\s+complete|still\\s+running|pending|attempt|re\\-run|rerun|older\\s+commit|no\\s+report|wait",
+  "pattern": "`main report\\|merge commit\\|in progress\\|in_progress\\|not finished\\|not complete\\|still running\\|pending\\|attempt\\|re-run\\|rerun\\|older commit\\|no report\\|wait`"
+ },
+ "Z18": {
+  "kind": "invalid",
+  "correct": [
+   "contradicted",
+   "cannot_verify"
+  ],
+  "class": "ac-change",
+  "reason": "no\\s+account|has\\s+0|null|None|criteria|recorded|record|claimant|removed|edited|changed|product\\s+owner",
+  "pattern": "`no account\\|has 0\\|null\\|None\\|criteria\\|recorded\\|record\\|claimant\\|removed\\|edited\\|changed\\|product owner`"
+ },
+ "Z19": {
+  "kind": "high_stake",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "high-stake",
+  "reason": "sign\\-off|signoff|sign\\s+off|money_semantics|different\\s+commit|other\\s+commit|earlier\\s+commit|older\\s+commit|not\\s+the\\s+merged|merge\\s+commit|none\\s+is\\s+recorded|none\\s+recorded|no\\s+record",
+  "pattern": "`sign-off\\|signoff\\|sign off\\|money_semantics\\|different commit\\|other commit\\|earlier commit\\|older commit\\|not the merged\\|merge commit\\|none is recorded\\|none recorded\\|no record`"
+ },
+ "Z20": {
+  "kind": "valid_trusted",
+  "correct": [
+   "supported"
+  ],
+  "class": "control"
+ },
+ "Z21": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "no-evidence",
+  "reason": "manual|no\\s+check|no\\s+test|load\\s+test|second\\s+criterion|AC\\s+2|AC2|AC\\s+\\(2\\)|not\\s+checked|300\\s+ms|10,000|performance|no\\s+evidence",
+  "pattern": "`manual\\|no check\\|no test\\|load test\\|second criterion\\|AC 2\\|AC2\\|AC (2)\\|not checked\\|300 ms\\|10,000\\|performance\\|no evidence`"
+ },
+ "Z22": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "no-evidence",
+  "reason": "main\\s+report|merge\\s+commit|no\\s+run|no\\s+push\\s+run|skip\\s+ci|report\\s+missing|missing|not\\s+for\\s+the\\s+merge|older\\s+commit|no\\s+report|no\\s+result",
+  "pattern": "`main report\\|merge commit\\|no run\\|no push run\\|skip ci\\|report missing\\|missing\\|not for the merge\\|older commit\\|no report\\|no result`"
+ },
+ "Z23": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "report-trust",
+  "reason": "head\\s+commit|not\\s+for\\s+the\\s+head|older\\s+commit|earlier\\s+commit|different\\s+commit|report\\s+comment|comment|stale|not\\s+updated|H1|report",
+  "pattern": "`head commit\\|not for the head\\|older commit\\|earlier commit\\|different commit\\|report comment\\|comment\\|stale\\|not updated\\|H1\\|report`",
+  "arguable": true
+ },
+ "Z24": {
+  "kind": "valid_incomplete",
+  "correct": [
+   "cannot_verify"
+  ],
+  "class": "report-trust",
+  "reason": "coverage|changed\\-line|changed\\s+line|coverage\\s+block|missing\\s+block|no\\s+block|80%",
+  "pattern": "`coverage\\|changed-line\\|changed line\\|coverage block\\|missing block\\|no block\\|80%`",
+  "arguable": true
+ }
+}
