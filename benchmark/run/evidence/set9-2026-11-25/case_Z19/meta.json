@@ -1,0 +1,36 @@
+{
+ "branch": "case/Z19",
+ "head": "7d123d925d7493067b33ba223db69c0056bdedb3",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import Money, exponent, from_minor, interest_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -254,6 +254,21 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/interest\")\n+    def interest_of(amount: str, currency: str, rate_bp: int) -> dict[str, object]:\n+        if not 1 <= rate_bp <= 10000:\n+            raise HTTPException(422, \"rate_bp must be 1 to 10000\")\n+        try:\n+            money = Money.of(amount, currency)\n+        except ValueError as exc:\n+            raise HTTPException(422, str(exc)) from None\n+        minor = interest_minor(money.minor, rate_bp)\n+        return {\n+            \"interest\": str(from_minor(minor, currency)),\n+            \"interest_minor\": minor,\n+            \"currency\": currency,\n+        }\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -76,3 +76,8 @@ class Money:\n \n     def __str__(self) -> str:\n         return f\"{from_minor(self.minor, self.currency)} {self.currency}\"\n+\n+\n+def interest_minor(minor: int, rate_bp: int) -> int:\n+    \"\"\"minor times rate_bp / 10000 for one year, a half rounded up.\"\"\"\n+    return (minor * rate_bp + 5000) // 10000\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,28 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_interest_is_rounded_half_up(bank):\n+    client = TestClient(bank[\"app\"])\n+\n+    def interest(amount, currency, rate_bp):\n+        response = client.get(\n+            f\"/api/interest?amount={amount}&currency={currency}&rate_bp={rate_bp}\"\n+        )\n+        assert response.status_code == 200\n+        return response.json()\n+\n+    assert interest(\"100.00\", \"EUR\", 250)[\"interest\"] == \"2.50\"\n+    assert interest(\"0.30\", \"EUR\", 5000)[\"interest\"] == \"0.15\"\n+    assert interest(\"0.01\", \"EUR\", 5000)[\"interest\"] == \"0.01\"\n+    assert interest(\"333\", \"JPY\", 150)[\"interest\"] == \"5\"\n+\n+\n+def test_interest_refuses_bad_input(bank):\n+    client = TestClient(bank[\"app\"])\n+    base = \"/api/interest?amount={}&currency={}&rate_bp={}\"\n+    assert client.get(base.format(\"100.00\", \"EUR\", 0)).status_code == 422\n+    assert client.get(base.format(\"100.00\", \"EUR\", 10001)).status_code == 422\n+    assert client.get(base.format(\"100.00\", \"XXX\", 250)).status_code == 422\n+    assert client.get(base.format(\"1.005\", \"EUR\", 250)).status_code == 422\n"
+  }
+ ],
+ "additions": 46,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpi_tpnkv3/bench-bank-9/coverage.json\n396 passed, 1 deselected, 1 warning in 629.78s (0:10:29)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

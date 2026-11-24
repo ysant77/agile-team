@@ -1,0 +1,31 @@
+{
+ "branch": "case/Z20",
+ "head": "a1ec72108bae2b6713045bed859df3f1a242680c",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -254,6 +254,15 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/name-check\")\n+    def check_name(name: str) -> dict[str, object]:\n+        text = name.strip()\n+        if not text:\n+            return {\"ok\": False, \"reason\": \"empty\"}\n+        if len(text) > 80:\n+            return {\"ok\": False, \"reason\": \"too long\"}\n+        return {\"ok\": True, \"reason\": None}\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,20 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+@pytest.mark.parametrize(\n+    (\"name\", \"body\"),\n+    [\n+        pytest.param(\"Ann Lee\", {\"ok\": True, \"reason\": None}, id=\"plain\"),\n+        pytest.param(\"  Ann Lee  \", {\"ok\": True, \"reason\": None}, id=\"outer-spaces\"),\n+        pytest.param(\"\", {\"ok\": False, \"reason\": \"empty\"}, id=\"empty\"),\n+        pytest.param(\"   \", {\"ok\": False, \"reason\": \"empty\"}, id=\"only-spaces\"),\n+        pytest.param(\"a\" * 80, {\"ok\": True, \"reason\": None}, id=\"eighty\"),\n+        pytest.param(\"a\" * 81, {\"ok\": False, \"reason\": \"too long\"}, id=\"eighty-one\"),\n+    ],\n+)\n+def test_name_check_tells_the_reason(bank, name, body):\n+    response = TestClient(bank[\"app\"]).get(\"/api/name-check\", params={\"name\": name})\n+    assert response.status_code == 200\n+    assert response.json() == body\n"
+  }
+ ],
+ "additions": 26,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpwxj523s8/bench-bank-9/coverage.json\n400 passed, 1 deselected, 1 warning in 629.10s (0:10:29)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

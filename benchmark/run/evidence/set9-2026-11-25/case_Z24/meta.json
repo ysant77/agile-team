@@ -1,0 +1,31 @@
+{
+ "branch": "case/Z24",
+ "head": "085b57f16bc9e51490db9ec0301856f8e8bf7a6d",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -254,6 +254,11 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/stats/names\")\n+    def name_stats(conn: Conn) -> dict[str, int]:\n+        names = [str(row[\"name\"]) for row in ledger.list_customers(conn)]\n+        return {\"count\": len(names), \"longest\": max((len(n) for n in names), default=0)}\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,15 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_stats_tell_the_longest_name(bank):\n+    client = TestClient(bank[\"app\"])\n+    names = [c[\"name\"] for c in client.get(\"/api/customers\").json()]\n+    response = client.get(\"/api/stats/names\")\n+    assert response.status_code == 200\n+    assert response.json() == {\"count\": len(names), \"longest\": max(len(n) for n in names)}\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.create_customer(conn, \"Longest \" + \"x\" * 32)\n+    conn.close()\n+    assert client.get(\"/api/stats/names\").json() == {\"count\": len(names) + 1, \"longest\": 40}\n"
+  }
+ ],
+ "additions": 17,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp0czylhth/bench-bank-9/coverage.json\n395 passed, 1 deselected, 1 warning in 516.38s (0:08:36)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

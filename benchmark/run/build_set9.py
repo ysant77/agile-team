@@ -604,7 +604,10 @@ def z18():
     append(LEDGER, '''
 def account_counts(conn: sqlite3.Connection) -> dict[int, int]:
     """The number of accounts of each customer that has one account or more."""
-    rows = conn.execute("SELECT customer_id, COUNT(*) FROM accounts WHERE customer_id IS NOT NULL GROUP BY customer_id").fetchall()
+    rows = conn.execute(
+        "SELECT customer_id, COUNT(*) FROM accounts"
+        " WHERE customer_id IS NOT NULL GROUP BY customer_id"
+    ).fetchall()
     return {int(row[0]): int(row[1]) for row in rows}
 ''')
     customers("", '''

@@ -1,0 +1,31 @@
+{
+ "branch": "case/Z05",
+ "head": "f1c263a0c334740a79b005b95bc1e0b05ad06488",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/ledger.py",
+   "status": "modified",
+   "patch": "@@ -237,6 +237,8 @@ def deposit(\n     description: str = \"Cash deposit\",\n     at: datetime | None = None,\n ) -> int:\n+    if at is not None and at.date() < date(2000, 1, 1):\n+        raise LedgerError(\"deposit date is before 2000\")\n     with write_txn(conn):\n         account = _require(conn, account_id, amount)\n         clearing = _clearing_account(conn, amount.currency)\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,20 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_deposit_refuses_a_date_before_2000(bank, at):\n+    client = login(bank[\"app\"], bank[\"owner\"])\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"3.00\", \"EUR\"), at=at(\"2000-01-01\"))\n+\n+    def eur_balance():\n+        return next(a for a in client.get(\"/api/accounts\").json() if a[\"currency\"] == \"EUR\")[\n+            \"balance\"\n+        ]\n+\n+    assert eur_balance() == \"103.00\"\n+    with pytest.raises(ledger.LedgerError):\n+        ledger.deposit(conn, bank[\"eur\"].id, Money.of(\"4.00\", \"EUR\"), at=at(\"1999-12-31\"))\n+    conn.close()\n+    assert eur_balance() == \"103.00\"\n"
+  }
+ ],
+ "additions": 19,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp9_wikicg/bench-bank-9/coverage.json\n395 passed, 1 deselected in 636.31s (0:10:36)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

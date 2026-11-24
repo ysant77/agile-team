@@ -1,0 +1,31 @@
+{
+ "branch": "case/Z15",
+ "head": "a308a78037666b09a640e358a319212c168fe72f",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -137,8 +137,12 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     app.state.db_path = path\n \n     @app.get(\"/api/customers\")\n-    def list_customers(conn: Conn) -> list[dict[str, object]]:\n-        return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n+    def list_customers(\n+        conn: Conn, limit: Annotated[int | None, Query(ge=1, le=100)] = None\n+    ) -> list[dict[str, object]]:\n+        out = [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n+        out = out if limit is None else out[:limit]\n+        return out\n \n     @app.post(\"/api/session\")\n     def start_session(body: SessionIn, response: Response, conn: Conn) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,22 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_customer_list_can_be_limited(bank):\n+    client = TestClient(bank[\"app\"])\n+\n+    def names(query=\"\"):\n+        return [c[\"name\"] for c in client.get(f\"/api/customers{query}\").json()]\n+\n+    full = names()\n+    assert names(\"?limit=1\") == full[:1]\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.create_customer(conn, \"Lim Three\")\n+    conn.close()\n+    full3 = names()\n+    assert names(\"?limit=2\") == full3[:2]\n+    assert client.get(\"/api/customers?limit=100\").status_code == 200\n+    assert names(\"?limit=100\") == full3\n+    assert client.get(\"/api/customers?limit=0\").status_code == 422\n+    assert client.get(\"/api/customers?limit=101\").status_code == 422\n"
+  }
+ ],
+ "additions": 25,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp8k4_vz3n/bench-bank-9/coverage.json\n395 passed, 1 deselected, 1 warning in 597.66s (0:09:57)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

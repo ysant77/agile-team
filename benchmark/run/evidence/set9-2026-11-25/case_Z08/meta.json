@@ -1,0 +1,36 @@
+{
+ "branch": "case/Z08",
+ "head": "122e1d5720eb0d097ec119800beb8590fa30057c",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import Money, exponent, from_minor, percent_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -254,6 +254,21 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/share\")\n+    def share_of(amount: str, currency: str, percent: int) -> dict[str, object]:\n+        if not 1 <= percent <= 100:\n+            raise HTTPException(422, \"percent must be 1 to 100\")\n+        try:\n+            money = Money.of(amount, currency)\n+        except ValueError as exc:\n+            raise HTTPException(422, str(exc)) from None\n+        minor = percent_minor(money.minor, percent)\n+        return {\n+            \"share\": str(from_minor(minor, currency)),\n+            \"share_minor\": minor,\n+            \"currency\": currency,\n+        }\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -76,3 +76,8 @@ class Money:\n \n     def __str__(self) -> str:\n         return f\"{from_minor(self.minor, self.currency)} {self.currency}\"\n+\n+\n+def percent_minor(minor: int, percent: int) -> int:\n+    \"\"\"minor times percent / 100, rounded to the nearest minor unit, a half rounded up.\"\"\"\n+    return (minor * percent + 50) // 100\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,28 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_share_is_rounded_half_up(bank):\n+    client = TestClient(bank[\"app\"])\n+\n+    def share(amount, currency, percent):\n+        response = client.get(f\"/api/share?amount={amount}&currency={currency}&percent={percent}\")\n+        assert response.status_code == 200\n+        return response.json()\n+\n+    assert share(\"10.05\", \"EUR\", 50)[\"share\"] == \"5.03\"\n+    assert share(\"0.01\", \"EUR\", 50)[\"share\"] == \"0.01\"\n+    low = share(\"0.01\", \"EUR\", 49)\n+    assert low[\"share\"] == \"0.00\" and low[\"share_minor\"] == 0\n+    assert share(\"301\", \"JPY\", 33)[\"share\"] == \"99\"\n+    assert share(\"200.00\", \"EUR\", 100)[\"share\"] == \"200.00\"\n+\n+\n+def test_share_refuses_bad_input(bank):\n+    client = TestClient(bank[\"app\"])\n+    base = \"/api/share?amount={}&currency={}&percent={}\"\n+    assert client.get(base.format(\"10.00\", \"EUR\", 0)).status_code == 422\n+    assert client.get(base.format(\"10.00\", \"EUR\", 101)).status_code == 422\n+    assert client.get(base.format(\"10.00\", \"XXX\", 50)).status_code == 422\n+    assert client.get(base.format(\"1.005\", \"EUR\", 50)).status_code == 422\n"
+  }
+ ],
+ "additions": 46,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp6d6pf4v2/bench-bank-9/coverage.json\n396 passed, 1 deselected, 1 warning in 626.80s (0:10:26)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

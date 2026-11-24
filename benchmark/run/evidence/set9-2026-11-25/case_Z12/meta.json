@@ -1,0 +1,36 @@
+{
+ "branch": "case/Z12",
+ "head": "16c7b9dad1d5bbc2d3235e971381ecd3128f4905",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field\n \n from bank import ledger, seed_data\n from bank.db import connect\n-from bank.money import Money, exponent, from_minor\n+from bank.money import Money, exponent, fee_minor, from_minor\n \n COOKIE = \"yms_customer\"\n WEB_DIR = Path(__file__).resolve().parent / \"web\"\n@@ -254,6 +254,15 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/fee\")\n+    def transfer_fee(amount: str, currency: str) -> dict[str, object]:\n+        try:\n+            money = Money.of(amount, currency)\n+        except ValueError as exc:\n+            raise HTTPException(422, str(exc)) from None\n+        minor = fee_minor(money.minor)\n+        return {\"fee\": str(from_minor(minor, currency)), \"fee_minor\": minor, \"currency\": currency}\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "src/bank/money.py",
+   "status": "modified",
+   "patch": "@@ -76,3 +76,8 @@ class Money:\n \n     def __str__(self) -> str:\n         return f\"{from_minor(self.minor, self.currency)} {self.currency}\"\n+\n+\n+def fee_minor(minor: int) -> int:\n+    \"\"\"1.5 percent of minor, rounded up to the next minor unit.\"\"\"\n+    return (minor * 15 + 999) // 1000\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,26 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_fee_is_rounded_up(bank):\n+    client = TestClient(bank[\"app\"])\n+\n+    def fee(amount, currency):\n+        response = client.get(f\"/api/fee?amount={amount}&currency={currency}\")\n+        assert response.status_code == 200\n+        return response.json()\n+\n+    assert fee(\"10.00\", \"EUR\")[\"fee\"] == \"0.15\"\n+    assert fee(\"0.01\", \"EUR\")[\"fee\"] == \"0.01\"\n+    assert fee(\"33.33\", \"EUR\")[\"fee\"] == \"0.50\"\n+    big = fee(\"200.00\", \"EUR\")\n+    assert big[\"fee\"] == \"3.00\" and big[\"fee_minor\"] == 300\n+    assert fee(\"300\", \"JPY\")[\"fee\"] == \"5\"\n+    assert fee(\"100\", \"JPY\")[\"fee\"] == \"2\"\n+\n+\n+def test_fee_refuses_bad_input(bank):\n+    client = TestClient(bank[\"app\"])\n+    assert client.get(\"/api/fee?amount=10.00&currency=XXX\").status_code == 422\n+    assert client.get(\"/api/fee?amount=1.005&currency=EUR\").status_code == 422\n"
+  }
+ ],
+ "additions": 38,
+ "deletions": 1,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 90%]\n....................................                                     [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpqiy5dv_d/bench-bank-9/coverage.json\n396 passed, 1 deselected in 599.37s (0:09:59)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

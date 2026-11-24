@@ -1,0 +1,36 @@
+{
+ "branch": "merge/Z03",
+ "head": "d987d20f7aeffaedab6b2716552bb45da9616880",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -137,8 +137,13 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n     app.state.db_path = path\n \n     @app.get(\"/api/customers\")\n-    def list_customers(conn: Conn) -> list[dict[str, object]]:\n-        return [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n+    def list_customers(conn: Conn, sort: str | None = None) -> list[dict[str, object]]:\n+        out = [{\"id\": row[\"id\"], \"name\": row[\"name\"]} for row in ledger.list_customers(conn)]\n+        if sort not in (None, \"name\", \"-name\"):\n+            raise HTTPException(422, \"unknown sort\")\n+        if sort is not None:\n+            out.sort(key=lambda c: str(c[\"name\"]).casefold(), reverse=sort.startswith(\"-\"))\n+        return out\n \n     @app.post(\"/api/session\")\n     def start_session(body: SessionIn, response: Response, conn: Conn) -> dict[str, object]:\n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,23 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_customer_list_can_be_sorted_by_name(bank):\n+    conn = ledger.open_db(bank[\"path\"])\n+    for name in (\"carl Sort\", \"Bob Sort\", \"alice Sort\"):\n+        ledger.create_customer(conn, name)\n+    conn.close()\n+    client = TestClient(bank[\"app\"])\n+    full = [c[\"name\"] for c in client.get(\"/api/customers\").json()]\n+    names = [c[\"name\"] for c in client.get(\"/api/customers?sort=name\").json()]\n+    assert names == sorted(full, key=str.casefold)\n+    assert [n for n in names if n.endswith(\" Sort\")] == [\"alice Sort\", \"Bob Sort\", \"carl Sort\"]\n+    backwards = [c[\"name\"] for c in client.get(\"/api/customers?sort=-name\").json()]\n+    assert backwards == names[::-1]\n+\n+\n+def test_customer_list_refuses_an_unknown_sort(bank):\n+    response = TestClient(bank[\"app\"]).get(\"/api/customers?sort=age\")\n+    assert response.status_code == 422\n+    assert response.json()[\"detail\"] == \"unknown sort\"\n"
+  },
+  {
+   "filename": "tests/test_ledger.py",
+   "status": "modified",
+   "patch": "@@ -269,3 +269,13 @@ def test_a_failed_rollback_to_stops_the_job_and_commits_nothing(tmp_path):\n     assert not conn.in_transaction\n     assert ledger.list_customers(conn) == []\n     assert conn.execute(\"SELECT COUNT(*) FROM app_flags\").fetchone()[0] == 0\n+\n+\n+def test_customer_name_outer_spaces_are_removed(conn):\n+    customer = ledger.create_customer(conn, \"  Ann Lee  \")\n+    assert ledger.get_customer(conn, customer)[\"name\"] == \"Ann Lee\"\n+\n+\n+def test_customer_name_outer_line_break_is_removed(conn):\n+    customer = ledger.create_customer(conn, \"Ann Lee\\n\")\n+    assert ledger.get_customer(conn, customer)[\"name\"] == \"Ann Lee\"\n"
+  }
+ ],
+ "additions": 37,
+ "deletions": 2,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 90%]\n......................................                                   [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpgw4kmtw0/bench-bank-9/coverage.json\n398 passed, 1 deselected in 176.55s (0:02:56)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

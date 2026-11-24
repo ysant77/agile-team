@@ -1,0 +1,31 @@
+{
+ "branch": "case/Z07",
+ "head": "dcaf70a4a0c1ed7d04f4a81dc44a032c3e648517",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -254,6 +254,17 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/account-number/check\")\n+    def check_account_number(number: str) -> dict[str, bool]:\n+        valid = (\n+            number.startswith(\"YMS-\")\n+            and number[4:8].isdigit()\n+            and number[8:9] == \"-\"\n+            and number[9:13].isdigit()\n+            and len(number) >= 13\n+        )\n+        return {\"valid\": valid}\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,17 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_account_number_check_tells_the_form(bank):\n+    client = TestClient(bank[\"app\"])\n+    ok = client.get(\"/api/account-number/check?number=YMS-0000-0003\")\n+    short = client.get(\"/api/account-number/check?number=YMS-0000-003\")\n+    other = client.get(\"/api/account-number/check?number=ABC-0000-0003\")\n+    long = client.get(\"/api/account-number/check?number=YMS-0000-00031\")\n+    for reply in (ok, short, other, long):\n+        assert reply.status_code == 200\n+    assert ok.json() == {\"valid\": True}\n+    assert short.json() == {\"valid\": False}\n+    assert other.json() == {\"valid\": False}\n+    assert short.json() == {\"valid\": False}\n"
+  }
+ ],
+ "additions": 25,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "is may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmp98_qrr4o/bench-bank-9/coverage.json\n395 passed, 1 deselected, 1 warning in 618.69s (0:10:18)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}

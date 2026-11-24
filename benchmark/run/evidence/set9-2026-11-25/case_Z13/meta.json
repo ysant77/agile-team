@@ -1,0 +1,31 @@
+{
+ "branch": "case/Z13",
+ "head": "39db1f34db413c32f2ec92e2ef99965e45d56abd",
+ "base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "merge_base": "165b6893c351a098319112e0ed1eb27d5e77fbce",
+ "pr_head": null,
+ "base_tip": null,
+ "files": [
+  {
+   "filename": "src/bank/api.py",
+   "status": "modified",
+   "patch": "@@ -254,6 +254,13 @@ def create_app(db_path: str | Path | None = None, *, seed_if_empty: bool = True)\n             \"from_account\": from_account,\n         }\n \n+    @app.get(\"/api/export/customers.csv\")\n+    def export_customers(conn: Conn) -> Response:\n+        lines = [\"name\"] + [\n+            '\"' + row[\"name\"].replace('\"', '\"\"') + '\"' for row in ledger.list_customers(conn)\n+        ]\n+        return Response(\"\\n\".join(lines), media_type=\"text/csv\")\n+\n     app.mount(\"/\", StaticFiles(directory=WEB_DIR, html=True), name=\"web\")\n     return app\n \n"
+  },
+  {
+   "filename": "tests/test_api.py",
+   "status": "modified",
+   "patch": "@@ -234,3 +234,19 @@ def test_a_replay_returns_the_original_result(bank):\n     again = transfer(client, bank[\"eur\"].id, bank[\"foreign\"].number, \"10.00\", key=\"orig\")\n     assert again.json()[\"from_account\"][\"balance\"] == first.json()[\"from_account\"][\"balance\"]\n     assert again.json()[\"from_account\"][\"balance\"] == \"90.00\"\n+\n+\n+def test_customer_list_can_be_exported_as_csv(bank):\n+    conn = ledger.open_db(bank[\"path\"])\n+    ledger.create_customer(conn, \"Vic Csv\")\n+    ledger.create_customer(conn, 'Uma \"Q\" Csv')\n+    conn.close()\n+    client = TestClient(bank[\"app\"])\n+    response = client.get(\"/api/export/customers.csv\")\n+    assert response.status_code == 200\n+    assert response.headers[\"content-type\"].startswith(\"text/csv\")\n+    lines = response.text.split(\"\\n\")\n+    assert lines[0] == \"name\"\n+    assert '\"Vic Csv\"' in lines\n+    assert '\"Uma \"\"Q\"\" Csv\"' in lines\n+    assert len(lines) == len(client.get(\"/api/customers\").json()) + 1\n"
+  }
+ ],
+ "additions": 23,
+ "deletions": 0,
+ "steps": {
+  "lint_rc": 0,
+  "tests_rc": 0,
+  "tests_tail": "......................... [ 54%]\n........................................................................ [ 72%]\n........................................................................ [ 91%]\n...................................                                      [100%]\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.12.15-final-0 _______________\n\nCoverage JSON written to file /var/folders/vz/9xqg11y913q3vgp9cqvjl96m0000gp/T/tmpk_m5ez76/bench-bank-9/coverage.json\n395 passed, 1 deselected in 597.74s (0:09:57)\n",
+  "repro_rc": 0,
+  "repro_err": "",
+  "coverage_rc": 0,
+  "coverage_err": ""
+ }
+}
