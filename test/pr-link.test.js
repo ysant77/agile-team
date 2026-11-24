@@ -156,3 +156,51 @@ test('a link with no repository, or for another repository than the configured o
   const v = await claim(a);
   assert.equal(v.checks.find((k) => k.name === 'on_main').status, 'fail');
 });
+
+// Owner decision 24 Nov: a "done" claim with no pull request stays Contradicted. A claim whose only
+// PR link was made by the claimant is Cannot verify: a PR exists, but no second person linked it.
+test('a done claim with no PR and no link stays contradicted', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  const v = await claim(appStore());
+  assert.equal(v.result, 'contradicted', v.reason);
+});
+
+test('a done claim whose only PR link was made by the claimant is cannot_verify, and the reason says why', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  const a = appStore();
+  await link(a, 'claimer', '7');
+  const v = await claim(a);
+  assert.equal(v.result, 'cannot_verify', v.reason);
+  assert.match(v.reason, /PR #7 is linked only by the claimant/);
+  assert.match(v.reason, /another person/);
+  // The checks are kept as they are: on_main still fails, so the panel shows what is missing.
+  assert.equal(v.checks.find((k) => k.name === 'on_main').status, 'fail');
+});
+
+test('a link with no matching audit event does not make a claim cannot_verify', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  const a = appStore();
+  await link(a, 'claimer', '7');
+  const entries = a.data.get(`pr-links:${KEY}`);
+  entries[0].prNumber = 9; // edited after the audit event
+  a.data.set(`pr-links:${KEY}`, entries);
+  const v = await claim(a);
+  assert.equal(v.result, 'contradicted', v.reason);
+});
+
+test('the self-link rule changes only a verdict whose failed checks are all about the PR', async () => {
+  const { selfLinkOnly } = await import('../src/verify-claim.js');
+  const link7 = { prNumber: 7, counted: false, byClaimant: true };
+  const v = (checks) => ({ result: 'contradicted', reason: 'r', checks });
+  const prFail = { name: 'on_main', status: 'fail', reason: 'no PR' };
+  assert.equal(selfLinkOnly(v([prFail]), link7, null).result, 'cannot_verify');
+  // Another check fails as well: the claim is wrong for that reason too.
+  assert.equal(selfLinkOnly(v([prFail, { name: 'subtasks_done', status: 'fail', reason: 'x' }]), link7, null).result, 'contradicted');
+  // A PR was found by the key: the normal checks decide.
+  assert.equal(selfLinkOnly(v([prFail]), link7, { number: 3 }).result, 'contradicted');
+  // A link by another person, or no link: no change.
+  assert.equal(selfLinkOnly(v([prFail]), { ...link7, byClaimant: false }, null).result, 'contradicted');
+  assert.equal(selfLinkOnly(v([prFail]), null, null).result, 'contradicted');
+  // Only a contradicted verdict changes.
+  assert.equal(selfLinkOnly({ ...v([prFail]), result: 'supported' }, link7, null).result, 'supported');
+});
