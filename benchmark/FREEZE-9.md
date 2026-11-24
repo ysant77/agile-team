@@ -11,8 +11,7 @@ are compared with this run.
 
 - Writer: blind. The writer saw no source, test, fixture or run folder of the app or the bank, and
   no result. The lead holds the file.
-- sha256 of the case file, given by the lead before the release: (open; the lead gives it when the
-  writer ends. It is filled in by one commit that changes only this line.)
+- sha256 of the case file, given by the lead before the release: `17175d0912a89b267b9891d0127dfa87eb86a2235ffb8396ddebc63e8925803e`
 - Checked after the copy into `CASES-9-INDEPENDENT.md`: (filled in `BUILD-9.md` after the release;
   this note does not change)
 
