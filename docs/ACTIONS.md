@@ -79,6 +79,20 @@ Every action, trigger and panel call that writes something.
   "done" write of create-ticket fails after Jira made the issue, a call after 10 minutes makes a
   second issue (finding the first needs an indexed issue property, a manifest change). It is not
   exactly-once across Jira and the app's store.
+- **The claim lease (24 Nov).** Before, a stale lease was read and then overwritten, and the lease
+  was deleted in `finally` with no owner check (`test/claim-lease.test.js`): two deliveries that
+  read the same stale lease both ran the claim, and a slow delivery deleted the lease of the
+  delivery that took over and kept posting. Now each delivery holds the lease with its own token;
+  a stale lease is taken over with one atomic swap (`returnValue: 'PREVIOUS'`), and only the
+  delivery whose swap replaced the stale lease goes on (the other puts the winner's lease back).
+  Before each side effect the delivery checks that the lease still holds its token, and `finally`
+  deletes only its own lease. Limits: the check and the side effect are two calls, so a delivery
+  can finish the one step it is in after a takeover (each step can be done again: the property
+  is a PUT, the audit event has an operation id where that change is merged, the comment has a
+  marker); the owner check and the delete in `finally` are two calls (KVS has no conditional
+  delete of a plain key); the queue's concurrency limit of 1 already keeps two jobs apart, so
+  these races need the platform to run a second job while the first is alive, which is not seen
+  live. A custom entity with conditional writes would close the gaps but needs a manifest change.
 - **The keys never expire.** The `decision-seen:` and `ticket-create:` keys are never deleted
   (a done `ticket-create:` key older than 24 hours is overwritten by a new create). They grow
   by one per decision comment and per created draft.
