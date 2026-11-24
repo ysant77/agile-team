@@ -1,0 +1,23 @@
+# freeze of repair-dev-3 (prepared; no model loaded), 2026-11-24 21:53 +0800
+app 32a582caf329886dfcd039c655af5dfcbd454cc3 (branch test/repair-dev-3-cases on main c561bd6)
+4e1df2610d278aa8a6e0910d3de7b4573fc16314190642d4bc1d74f22302320d  bakeoff/repair/patch.mjs
+55ee09699143a826054491f36c19e59cb705519f7f9a37df5fb8b86990654959  bakeoff/repair/run.mjs
+a6c083ec3f903fe99c54cf64b1a279e90df844b64d078f0778a30a53a24a75fa  bakeoff/repair/sandbox.mjs
+99263c185be1a3a4a60925b7844268cc4753334e5c822d6f194a778831cbe911  bakeoff/repair/task.mjs
+d4557c4600afe0016268097afcfa83ff95f646400fdc0b7e45b7b4fa4b980c2b  bakeoff/repair/hidden/R3-1.py
+64cd915cfa56f11560a5ee5265566f2e95e167737109c2458a4614194ff6f707  bakeoff/repair/hidden/R3-2.py
+23663c824d8e541bba796d11350b17913e48600a5f28d31d498200ec630078b2  bakeoff/repair/hidden/R3-3.py
+5b88b4ed6acb5744e97a3a77976d581ac5329a0b84cefa9a63bbb67db620cf21  bakeoff/repair/cases-dev.json
+7bfdbd11caca2cb606d982e8afb79b45f4e66d90ea44585062d35eda64b763cd  bakeoff/repair/symptoms-dev-3.json
+90ed40fddabdb98bdb04984378ccbc5c74c8e640c658e52ae5cdabcfe10365a8  bakeoff/tasks/discovery.js
+e649364cfca97321709816cc144916d61972914861906bb33db78dc05991dab8  src/discovery.js
+e033213a631e8ab6f88943a08b573a0ae260b67000d953fe7efe874cabafbc82  src/tool-specs.js
+e5b4b1f401cc8ee366649c9478093d34a428ae4a46cde9d62eb816c308c0c803  manifest.yml
+95706e2644d42e04ad04a3652fc38ae115afb350056cc0b2a3ec67fbdebdb532  bakeoff/ollama.js
+tree bank-r3-1 9d9171caff2f4cb1eb4a1082dd23319dcb77870b work/repair-dev3-r3-1 dirty=0
+tree bank-r3-2 5ec06078de02ac0b170aea20fcde527df61abd6c work/repair-dev3-r3-2 dirty=0
+tree bank-r3-3 cb9b9385e6f6c546ab43b792b3f69af9b82f3d25 work/repair-dev3-r3-3 dirty=0
+tree bank-r3-c 2d7b042b9a19d51a3a63ae70d0baf2aeb71bba2f work/repair-dev3-r3-c dirty=0
+model qwen3-coder:30b 06c1097efce0 (not loaded)
+python Python 3.12.15
+validity: hidden checks fail on seeded, pass on clean; bank suite 265 passed on each seeded tree (in the worktrees)
