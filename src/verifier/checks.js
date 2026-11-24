@@ -1198,25 +1198,51 @@ export function measurementUnchanged(ctx) {
 // fairness, product behaviour. "done" needs a person's sign-off of the merged commit; code alone
 // never supports it (benchmark B27). Returns null when the ticket has no such domain.
 const SIGNOFF_DOMAINS = ['money_semantics', 'security_exception', 'data_repair', 'model_risk', 'fairness', 'product_behaviour'];
+const asDomain = (v) => (typeof v === 'string' && SIGNOFF_DOMAINS.includes(v.toLowerCase()) ? v.toLowerCase() : null);
+// The high-stake marks of a ticket: its spec domain and its labels, in lower case, each once.
+export function highStakeMarks({ domain, labels } = {}) {
+  return [...new Set([asDomain(domain), ...(Array.isArray(labels) ? labels : []).map(asDomain)].filter(Boolean))];
+}
+// Set 8 Y08: the marks kept with the audited AC record of a person other than the claimant. Null
+// when there is no such record, no mark in it, or its audit event does not match.
+function recordedMark(ctx) {
+  const rec = isObj(ctx.approvals) ? ctx.approvals.acs : null;
+  if (!isObj(rec) || !Array.isArray(rec.marks) || !rec.marks.length || !isText(rec.by) || !Number.isInteger(rec.auditSeq)) return null;
+  if (!isText(ctx.claimant) || rec.by === ctx.claimant) return null;
+  const e = eventOf(ctx, rec.auditSeq);
+  if (!eventMatches(e, rec.auditSeq, ACS_EVENT, rec.by, { key: ctx.ticket?.key, acHash: rec.acHash })) return null;
+  if (canonical(e.data.marks ?? null) !== canonical(rec.marks)) return null;
+  const mark = rec.marks.map(asDomain).find(Boolean);
+  return mark ? { mark, auditSeq: rec.auditSeq } : null;
+}
 export function checkHumanSignoff(ctx) {
   // The domain comes from the stored ticket spec or from a Jira label (benchmark set 2, S16).
   // Labels are free text, so both match in any letter case (review finding 15).
-  const asDomain = (v) => (typeof v === 'string' && SIGNOFF_DOMAINS.includes(v.toLowerCase()) ? v.toLowerCase() : null);
   const labels = Array.isArray(ctx.ticket?.labels) ? ctx.ticket.labels : [];
-  const domain = asDomain(ctx.ticket?.domain) ?? labels.map(asDomain).find(Boolean);
-  if (!domain) return null;
+  let domain = asDomain(ctx.ticket?.domain) ?? labels.map(asDomain).find(Boolean);
+  // A mark that a person other than the claimant recorded with the ACs does not lower the bar
+  // when it is gone at the claim (set 8 Y08); a removal by the claimant is named.
+  let note = '';
+  if (!domain) {
+    const kept = recordedMark(ctx);
+    if (!kept) return null;
+    domain = kept.mark;
+    const removal = isObj(ctx.markRemoval) && ctx.markRemoval.mark === domain ? ctx.markRemoval : null;
+    const who = removal && isText(ctx.claimant) && removal.by === ctx.claimant ? `; the claimant removed the label ${domain}` : '';
+    note = ` (${domain} was recorded with the ACs (audit seq ${kept.auditSeq}) and is not on the work item at the claim${who})`;
+  }
   const s = ctx.ticket.signoff;
   const sha = ctx.pr?.mergeSha ?? ctx.pr?.headSha ?? null;
-  if (!isText(s?.by)) return result('human_signoff', 'unknown', `${domain}: a person's sign-off of the merged change is required, and none is recorded`);
-  if (!sha || s.sha !== sha) return result('human_signoff', 'unknown', `${domain}: the sign-off is for ${String(s.sha ?? 'no commit').slice(0, 7)}, not the merged commit ${String(sha ?? 'unknown').slice(0, 7)}`);
+  if (!isText(s?.by)) return result('human_signoff', 'unknown', `${domain}${note}: a person's sign-off of the merged change is required, and none is recorded`);
+  if (!sha || s.sha !== sha) return result('human_signoff', 'unknown', `${domain}${note}: the sign-off is for ${String(s.sha ?? 'no commit').slice(0, 7)}, not the merged commit ${String(sha ?? 'unknown').slice(0, 7)}`);
   // Any issue editor can write the aat.signoff property by REST. Only the sign-off button also
   // writes an audit event, so the property must match one (PR 8 review, item 10).
   if (!signoffAudited(ctx, s)) {
-    return result('human_signoff', 'unknown', `${domain}: the sign-off has no matching audit event from the sign-off button, so it may not come from the app; sign off again in the panel`);
+    return result('human_signoff', 'unknown', `${domain}${note}: the sign-off has no matching audit event from the sign-off button, so it may not come from the app; sign off again in the panel`);
   }
-  if (!isText(ctx.claimant)) return result('human_signoff', 'unknown', `${domain}: the claimant is not known, so the sign-off cannot be shown to come from another person`);
-  if (ctx.claimant === s.by) return result('human_signoff', 'unknown', `${domain}: the claimant signed off their own claim; another person must sign off`);
-  return result('human_signoff', 'pass', `${domain}: signed off by ${s.by} at ${s.at} (audit seq ${s.auditSeq})`);
+  if (!isText(ctx.claimant)) return result('human_signoff', 'unknown', `${domain}${note}: the claimant is not known, so the sign-off cannot be shown to come from another person`);
+  if (ctx.claimant === s.by) return result('human_signoff', 'unknown', `${domain}${note}: the claimant signed off their own claim; another person must sign off`);
+  return result('human_signoff', 'pass', `${domain}${note}: signed off by ${s.by} at ${s.at} (audit seq ${s.auditSeq})`);
 }
 
 function signoffAudited(ctx, s) {

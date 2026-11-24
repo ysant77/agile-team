@@ -10,11 +10,11 @@ import { releaseClaim } from './claim-intake.js';
 import { latestPrLink } from './pr-link.js';
 import { addComment, findComment } from './jira.js';
 import { LATEST_DONE_KEY } from './sign-off.js';
-import { addVerdictProperty, collectJira, collectReviews } from './jira-evidence.js';
+import { addVerdictProperty, collectJira, collectReviews, readMarkRemoval } from './jira-evidence.js';
 import { formatAdvice, withAdvice } from './review-advice.js';
 import { compactChecks } from './verdict-view.js';
 import { parseTwin } from './monitor.js';
-import { CONFIG_TRUST_PATHS } from './verifier/checks.js';
+import { CONFIG_TRUST_PATHS, highStakeMarks } from './verifier/checks.js';
 import { buildDoneEvidence, formatEvidence } from './verifier/evidence.js';
 import { verify } from './verifier/verdict.js';
 
@@ -103,6 +103,7 @@ export function latestNotChecked(entries, verdicts) {
 
 const DEFAULT_DEPS = {
   collectJira, collectGithub, collectPrStats, collectReviews, addVerdictProperty, appendAudit, readAudit, addComment, findComment, fetchFn: fetch, store: kvs,
+  readMarkRemoval,
   releaseClaim,
   env: () => ({ repo: process.env.GITHUB_REPO, token: process.env.GITHUB_TOKEN }),
 };
@@ -359,7 +360,18 @@ export async function decide({ issueKey, claim }, d) {
   // mergeRequiredTests: tests that must pass by name in the merge result. None are configured;
   // merged_clean still needs every base test kept and unique migrations. The checks read a
   // missing list as not known, so it is always set here.
-  const ctx = { ticket, ...github, repo, linkedPr, mergeRequiredTests: [], config: configFor(repo), claimant: claim.by ?? null, signoffEvent, approvals, approvalEvents };
+  // Set 8 Y08: a high-stake mark kept with the AC record and gone from the work item. Only then is
+  // the issue changelog read, to name who removed it. A read error names no one.
+  let markRemoval = null;
+  const keptMarks = Array.isArray(approvals?.acs?.marks) ? approvals.acs.marks : [];
+  if (keptMarks.length && d.readMarkRemoval && !highStakeMarks(ticket).length) {
+    try {
+      markRemoval = await d.readMarkRemoval(issueKey, keptMarks);
+    } catch (error) {
+      console.log('label changelog not read', issueKey, error.message);
+    }
+  }
+  const ctx = { ticket, ...github, repo, linkedPr, mergeRequiredTests: [], config: configFor(repo), claimant: claim.by ?? null, signoffEvent, approvals, approvalEvents, markRemoval };
   let verdict = selfLinkOnly(verify(claim, ctx), prLink, github.pr);
   // The link is shown with the checks, as advice that never changes the verdict by itself.
   if (prLink) verdict = { ...verdict, checks: [...verdict.checks, { name: 'pr_link', status: 'pass', advisory: true, reason: prLink.reason }] };

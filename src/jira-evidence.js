@@ -86,3 +86,34 @@ export async function addVerdictProperty(issueKey, verdict) {
   });
   return put.ok;
 }
+
+// Set 8 Y08: the last removal of a high-stake mark from the labels, from the issue changelog (read
+// as the app; read:jira-work). Returns { mark, by, at } or null (no removal found, or not readable).
+// The verifier reads it only when a mark kept with the AC record is gone at the claim.
+export async function readMarkRemoval(issueKey, marks, requestJira = asApp) {
+  const wanted = new Set((marks ?? []).map((m) => String(m).toLowerCase()));
+  let found = null;
+  for (let startAt = 0; startAt < 1000; startAt += 100) {
+    let response;
+    try {
+      response = await requestJira(route`/rest/api/3/issue/${issueKey}/changelog?startAt=${startAt}&maxResults=100`);
+    } catch {
+      return null;
+    }
+    if (!response.ok) return null;
+    const body = await response.json();
+    for (const h of body.values ?? []) {
+      for (const item of h.items ?? []) {
+        if (item.field !== 'labels') continue;
+        const before = String(item.fromString ?? '').toLowerCase().split(/\s+/).filter(Boolean);
+        const after = new Set(String(item.toString ?? '').toLowerCase().split(/\s+/).filter(Boolean));
+        for (const mark of before) {
+          if (wanted.has(mark) && !after.has(mark)) found = { mark, by: h.author?.accountId ?? null, at: h.created ?? null };
+        }
+      }
+    }
+    if (body.isLast !== false || !(body.values ?? []).length) break;
+  }
+  return found;
+}
+
