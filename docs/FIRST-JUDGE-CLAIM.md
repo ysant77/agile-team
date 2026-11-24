@@ -86,3 +86,26 @@ value from `forge variables list` into a note, a chat or a commit.
 
 If the line has `rateRemaining` near 60, or the verdict comment says "not checked" with a GitHub
 error, stop and tell the lead.
+
+## Local replay of the judge route (24 Nov)
+
+`test/judge-live.test.js` runs the five judge PRs with no network. It uses the panel's own
+actions (save and record the AC line, link the PR, and for U12 the sign-off) as account A, and
+`verifyClaim` with a claim by account B. The store and Jira are stand-ins. GitHub is a recording
+of the real answers of the cases repository (`fixtures/judge-live/`), made with read-only GET
+calls by `node scripts/judge-live.mjs --capture`. The recording keeps the status and the body.
+It removes emails, node ids, GitHub App records and the API URL fields that the app does not read. A path that is
+not in the recording stops the replay, so a change in what the app reads shows in the test.
+
+The replay gives the five expected verdicts. It does not prove the live site, the token or the
+Jira steps. The live claims of 24 Nov are the record for those.
+
+| Case | PR | Head | Merge commit | CI on the head (pull_request) | CI on the merge commit (push) | Report |
+|---|---|---|---|---|---|---|
+| U01 | 17 | `b2d566d` | `968aad6` | 45147637897, success | 45147983818, success | `reports/judge-U01.json` on `ci-reports` |
+| U04 | 18 | `232a47e` | `18f8647` | 45148436262, success | 45148761734, success | `reports/judge-U04.json` on `ci-reports` |
+| U20 | 19 | `f979573` | `f75844a` | 45149335831, success | 45149644796, success | `reports/judge-U20.json` on `ci-reports` |
+| U12 | 20 | `7f3d60f` | `b601a06` | 45149990134, success | 45150310359, success | `reports/judge-U12.json` on `ci-reports` |
+| T08 | 21 | `db1082f` | `a615391` | 45150614527, success | 45150944987, success | `reports/judge-T08.json` on `ci-reports` |
+
+Recorded on 24 Nov 2026 from the cases repository `main` at `bdc14be`.
