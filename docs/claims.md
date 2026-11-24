@@ -328,6 +328,23 @@ held only by the coverage floor) move from contradicted to cannot_verify; they s
 Limits with no code fix: V02 and V09 (unsafe Supported) and V13 (a false block) depend on what the
 AC text means, and the verifier never reads AC text.
 
+## Measured limits (set 7, 24 Nov 2026)
+
+Two classes of wrong claim passed the code checks in blind set 7 (arm C, app cea0470). They are
+limits with no fix in this round; the panel lists both under "Never checked by the code checks".
+
+- **A test that computes its expected value with the code under test** (X07, unsafe Supported).
+  The test compares the new field with the result of the function that makes the field, so it
+  agrees with any result; the function wrote two decimals for JPY. No check reads how a test
+  forms its expected value.
+- **Request text that reaches a query when no test sends it** (X15, unsafe Supported). The route
+  joins the request text into an SQL `ORDER BY`; a value other than `name` gives 500 and runs
+  inside the database. The one test sends `order=name` only. No check reads SQL built from
+  request text, and the bank's ruff S rules do not flag the `sql += ...` form.
+
+The third unsafe case of the 23 scored, X19 (a build dispute), is the known limit above: the AC
+text is not read. Figures: `benchmark/RESULTS-7.md`.
+
 ## Approvals and the AC record (19 Nov 2026, finding E1)
 
 Any issue editor can write the issue property `aat.ticket` by REST. So:
@@ -502,12 +519,24 @@ Three points of this paper match rules here:
   shows it as the advisory check `imports_known` (`docs/ci-report.md`, "The imports block"); it
   is not counted.
 - **Validation before and after the merge.** A `done` claim needs the named test to fail on the
-  base by an assertion and pass on the head (`reproduced`), and a clean main report for the merge
+  base by an assertion and pass on the head (`reproduced`; a `pytest.raises` block that ends with
+  pytest's own `DID NOT RAISE` on base counts as an assertion, any other `Failed` or error does
+  not; set 7 X01, 24 Nov), and a clean main report for the merge
   commit (`merged_clean`). When `main.json` is not for the merge commit, the app reads the push
   runs on the merge commit, and the reason tells two cases apart (owner decision, 24 Nov): the push
   run is still running ("wait for it to end, then claim again"), or no run is running ("report
   missing"). If the runs cannot be read, the reason says so. The check is unknown in all three
   cases, so the verdict does not change.
+- **The merge result reads the AC tests (24 Nov, set 7 X09).** Diagnosis: the first verifier
+  (12 Nov) took the tests required after merge from each scenario fixture. The live path (17 Nov)
+  set that list to empty, with the note "none are configured", and it was never connected to the
+  ticket. So `merged_clean` read only whether the report for the merge commit is trusted, whether
+  a base test was removed, and the migration numbers. In X09 the AC test failed on the merge
+  commit and the check passed. Fix: `merged_clean` also reads each test that an AC names. A
+  failed one fails the merge result ("merge result: <test>: failed"); one that is not in that
+  report is unknown, because the head checks already own a missing test. On the stored evidence
+  of sets 1 to 7 no outcome moves; X09 now names the failed test
+  (`benchmark/run/evidence/impact-merge-ac-tests-2026-11-24.txt`).
 - **A plausible patch is not a correct patch.** A passing test after a change shows that the
   change is plausible. On set 5 the code checks supported 4 changes that were not correct (C7).
   That is why level 5 of the evidence levels is never "proved".

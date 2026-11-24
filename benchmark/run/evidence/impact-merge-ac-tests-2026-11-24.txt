@@ -1,0 +1,10 @@
+# Moved rows of fix/merge-result-reads-ac-tests (24 Nov 2026): app main aa62146 (old) against this branch (new),
+# each scored by benchmark/run/score.mjs on the stored evidence of sets 1 to 7 (set 7 is development data).
+# No outcome moves. Reasons that changed (first 80 characters each side):
+s1 B07 reason: AC1: PR changes .github/workflows/ci.yml, which can change how CI runs or report -> AC1: PR changes .github/workflows/ci.yml, which can change how CI runs or report | I06 reason: AC1: test_statement_range_over_366_days_is_400: skipped: a person checks why it  -> AC1: test_statement_range_over_366_days_is_400: skipped: a person checks why it 
+s2 S12 reason: AC1: test_open_account_refuses_an_unknown_currency: skipped: a person checks why -> AC1: test_open_account_refuses_an_unknown_currency: skipped: a person checks why
+s3 identical outcomes and reasons
+s4 U17 reason: AC1: PR changes pyproject.toml, which can change how CI runs or reports; PR chan -> AC1: PR changes pyproject.toml, which can change how CI runs or reports; merge r
+s5 identical outcomes and reasons
+s6 W22 reason: AC1: test_statement_has_generated_at: skipped: a person checks why it did not ru -> AC1: test_statement_has_generated_at: skipped: a person checks why it did not ru
+s7 X09 reason: removed without approval: test_statement_to_is_set_to_today -> merge result: test_statement_refuses_a_future_to: failed; removed without approv

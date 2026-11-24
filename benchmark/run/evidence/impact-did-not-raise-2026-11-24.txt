@@ -1,0 +1,9 @@
+# Moved rows of fix/reproduced-accepts-did-not-raise (24 Nov 2026): app main aa62146 (old) against this branch (new),
+# each scored by benchmark/run/score.mjs on the stored evidence of sets 1 to 7. Set 7 is development data (lifted freeze).
+s1 identical outcomes and reasons
+s2 identical outcomes and reasons
+s3 identical outcomes and reasons
+s4 identical outcomes and reasons
+s5 identical outcomes and reasons
+s6 identical outcomes and reasons
+s7 X01 cannot_verify -> supported

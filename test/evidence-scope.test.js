@@ -52,6 +52,9 @@ test('the view lists what the code checks never read, on every verdict', () => {
   assert.match(text, /every case of the criterion/);
   assert.match(text, /side effect/);
   assert.match(text, /text of the acceptance criteria/);
+  // Measured limits of set 7 (24 Nov): X07 and X15.
+  assert.match(text, /expected value with the code it tests/);
+  assert.match(text, /reaches a query/);
 });
 
 const names = ['Heading', 'Inline', 'Lozenge', 'SectionMessage', 'Stack', 'Text'];
