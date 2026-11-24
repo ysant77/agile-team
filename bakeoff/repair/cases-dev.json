@@ -1,0 +1,10 @@
+[
+  {
+    "id": "D2-1",
+    "label": "development (discovery set 2 case D2-1; its result is known, so it is not held out)",
+    "symptom_source": "discovery-cases-2.json of the lead, case D2-1; passed to the model exactly as stored",
+    "truth": "end_day",
+    "protected": ["tests/test_ledger.py", "tests/test_api.py"],
+    "hidden": "D2-1.py"
+  }
+]
