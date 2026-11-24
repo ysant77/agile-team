@@ -205,3 +205,14 @@ export function latestView(records) {
   }
   return null;
 }
+
+// One line for a claim that was not checked (a transient GitHub failure; src/verify-claim.js keeps
+// it apart from the verdicts). Null when there is none to show.
+export function notCheckedLine(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+  const time = (v) => (typeof v === 'string' ? `${v.slice(0, 16).replace('T', ' ')} UTC` : null);
+  const retry = time(entry.retryAt);
+  return `The last claim "${entry.type}" (${time(entry.at) ?? 'an unknown time'}) was not checked: ${entry.reason}. No verdict was recorded. `
+    + (retry ? `Post the claim again after ${retry}.` : 'Post the claim again in a few minutes.');
+}
+

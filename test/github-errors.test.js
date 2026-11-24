@@ -307,3 +307,28 @@ test('the case action answers with the GitHub reason instead of throwing', async
     if (before === undefined) delete process.env.GITHUB_REPO; else process.env.GITHUB_REPO = before;
   }
 });
+
+// Lead's open item (24 Nov): the panel shows a claim that was not checked. The outcome is stored
+// apart from the verdicts (no property, no audit event, as before), in not-checked:<key>.
+test('a transient outcome is stored for the panel, once per claim, and a verdict stores none', async (t) => {
+  t.mock.method(console, 'log', () => {});
+  const { notCheckedKey, latestNotChecked } = await import('../src/verify-claim.js');
+  const { d, store, posted } = claimDeps(async () => SEVEN.rate);
+  await verifyClaim({ issueKey: 'T-1', claim: { id: 'T-1:1', type: 'done', by: 'a' } }, d);
+  await verifyClaim({ issueKey: 'T-1', claim: { id: 'T-1:1', type: 'done', by: 'a' } }, d);
+  const stored = await store.get(notCheckedKey('T-1'));
+  assert.equal(stored.length, 1);
+  assert.deepEqual(Object.keys(stored[0]).sort(), ['at', 'claimId', 'kind', 'reason', 'retryAt', 'type']);
+  assert.equal(stored[0].claimId, 'T-1:1');
+  assert.match(stored[0].reason, /rate limit/);
+  assert.equal(posted.properties.length, 0);
+  assert.equal(posted.audits.length, 0);
+  // The panel shows it while no verdict is newer.
+  assert.equal(latestNotChecked(stored, []).claimId, 'T-1:1');
+  assert.equal(latestNotChecked(stored, [{ at: '2999-01-01T00:00:00.000Z' }]), null);
+  assert.equal(latestNotChecked(null, []), null);
+  // A final error gives a stored verdict and nothing in not-checked.
+  const final = claimDeps(async () => SEVEN.badToken);
+  await verifyClaim({ issueKey: 'T-2', claim: { id: 'T-2:1', type: 'done', by: 'a' } }, final.d);
+  assert.equal(await final.store.get(notCheckedKey('T-2')), undefined);
+});
