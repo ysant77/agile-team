@@ -81,8 +81,21 @@ shows the kind and the status as stored, the symptom, the hypothesis, the cited 
 a README or a test) apart from the cited code lines, the reproducer, the severity and the
 priority. For an `unclear` finding that the model proposed as a defect, it says that no rule was
 cited and shows the rule question. The view only reads the store (`src/finding-view.js`,
-`src/frontend/finding-section.js`, `test/panel-finding.test.js`). A finding is not tied to a work
-item, so any person who can open the panel and has the id can see it.
+`src/frontend/finding-section.js`, `test/panel-finding.test.js`).
+
+**Who can read a finding (24 Nov).** Until 24 Nov any person who could open the panel and had the
+id could see a finding, and could make a ticket from it. Now the caller is part of every read
+(`readFindingFor` in `src/discovery.js`, `test/finding-access.test.js`):
+
+- The investigator (the person who recorded it) reads it and makes tickets from it.
+- A ticket made from the finding is its explicit link (`finding-links:<id>` in the app's store).
+  A person who can browse that work item in Jira reads the finding. Nobody else does.
+- Only the investigator makes a ticket from a finding. A link does not give that.
+- A record with no investigator is closed to everyone. Old records are not migrated.
+- A refusal gives the same text as an id that does not exist.
+
+Limit: two tickets made at the same time from one finding can lose one link, because the list is
+read and then written. Then only the investigator and the browsers of the other item read it.
 
 ## Owner steps (not done)
 

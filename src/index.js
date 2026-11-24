@@ -3,7 +3,7 @@ import { kvs } from '@forge/kvs';
 import { appendAudit } from './audit-store.js';
 import { canonical, sha256 } from './audit.js';
 import { createOnce, currentAccountId } from './action-guard.js';
-import { readFinding } from './discovery.js';
+import { findingLinksKey, readFindingFor } from './discovery.js';
 import { applyDecision, deciderRule, formatDecision, parseDecision, parseGithubAccounts } from './decision.js';
 import { admitClaim } from './claim-intake.js';
 import { readLatestCommit } from './github.js';
@@ -37,14 +37,16 @@ export async function createTicket(payload) {
   // A ticket from a discovery finding (Mode B): the finding must exist and name a defect. The
   // ticket names it and is labelled "unconfirmed" until a CI report shows the reproducer fails on
   // base. Removing the label is a person's step after a reproduced verdict.
+  const by = await currentAccountId();
+  if (!by) return { ok: false, error: 'Jira did not say who is asking, so no work item is created' };
+  // Review of 24 Nov, finding access: only the investigator makes a ticket from a finding (no
+  // link opens this). Another person gets the same text as for an id that does not exist.
   let finding = null;
   if (payload.findingId !== undefined && payload.findingId !== null && payload.findingId !== '') {
-    finding = await readFinding(payload.findingId, { store: kvs });
+    finding = await readFindingFor(payload.findingId, { store: kvs, accountId: by });
     if (!finding) return { ok: false, error: `there is no finding ${String(payload.findingId).slice(0, 40)}; record one with record-finding first` };
     if (finding.kind !== 'defect') return { ok: false, error: `finding ${finding.findingId} found no defect, so no bug ticket is created from it` };
   }
-  const by = await currentAccountId();
-  if (!by) return { ok: false, error: 'Jira did not say who is asking, so no work item is created' };
   const description = String(payload.description ?? '');
   const draft = {
     projectKey,
@@ -81,6 +83,13 @@ export async function createTicket(payload) {
     return result;
   }
   await kvs.set(onceKey, { state: 'done', key: result.key, at: now });
+  // The new work item is the explicit link of the finding: a person who can browse it may read
+  // the finding (src/discovery.js readFindingFor). At most 20 links are kept.
+  if (finding) {
+    const links = await kvs.get(findingLinksKey(finding.findingId));
+    const kept = Array.isArray(links) ? links.filter((k) => typeof k === 'string' && k !== result.key) : [];
+    await kvs.set(findingLinksKey(finding.findingId), [...kept, result.key].slice(-20));
+  }
   const audit = await appendAudit({ actor: by, event: 'ticket.created', data: {
     key: result.key, projectKey, issueType, storyPoints, acHash: sha256(canonical(draft.acceptanceCriteria)),
     ...(finding ? { findingId: finding.findingId } : {}) } });

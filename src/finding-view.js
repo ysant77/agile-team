@@ -3,7 +3,7 @@
 // (src/discovery.js) and gives the texts of the panel section. It only reads: it never changes the
 // kind or the status, and a record that does not have the stored shape gives no view.
 
-import { RULE_QUESTION, isRuleFile, readFinding } from './discovery.js';
+import { RULE_QUESTION, isRuleFile, readFindingFor } from './discovery.js';
 
 export const FINDING_NOT_FOUND = 'No stored finding has this id. A finding id looks like F-<12 letters or digits>-<8 letters or digits>.';
 
@@ -36,8 +36,9 @@ export function findingView(f) {
   };
 }
 
-// d = { store }: the app's KVS. The id must have the form of a finding id (readFinding checks it).
+// d = { store, accountId, canBrowse(key) }: the app's KVS, the caller that Jira names, and the
+// caller's browse permission (src/discovery.js readFindingFor). A refusal gives the not-found text.
 export async function getFindingAction(payload, d) {
-  const view = findingView(await readFinding(payload?.findingId, d));
+  const view = findingView(await readFindingFor(payload?.findingId, d));
   return view ? { ok: true, view } : { ok: false, error: FINDING_NOT_FOUND };
 }
