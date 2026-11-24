@@ -22,6 +22,8 @@ export function VerdictSection({ view, ui }) {
       h(Text, null, `${view.meta.claim ?? 'claim'} · head ${view.meta.head ?? 'unknown'} · ${at}`)),
     h(Text, { weight: 'bold' }, view.headline),
     h(Text, null, `Why: ${view.why}`),
+    ...(view.scope ? [h(Text, { key: 'scope' }, `Evidence scope: ${view.scope}`)] : []),
+    ...(view.kinds ? [h(Text, { key: 'kinds' }, `Checks: ${view.kinds.verified} verified, ${view.kinds.contradicted} contradicted, ${view.kinds.unknown} unknown.`)] : []),
     h(Heading, { as: 'h4' }, 'Evidence levels'),
     ...(view.levels ?? []).map((l) => h(Text, { key: `l-${l.level}` }, `${l.level}: ${l.status}. ${l.detail}`)),
     h(Heading, { as: 'h4' }, 'What was proved'),
@@ -29,6 +31,7 @@ export function VerdictSection({ view, ui }) {
     ...(view.failed.length > 0 ? [h(Heading, { as: 'h4', key: 'f-head' }, 'What failed'), ...lines('f', view.failed)] : []),
     h(Heading, { as: 'h4' }, 'What was not checked'),
     ...lines('n', view.notChecked),
+    ...(view.neverChecked?.length ? [h(Heading, { as: 'h4', key: 'never-head' }, 'Never checked by the code checks'), ...lines('never', view.neverChecked)] : []),
     h(SectionMessage, { appearance: 'information' }, h(Text, null, view.meaning)),
     // The model's advice is apart from the verdict and is not counted (src/review-advice.js).
     ...(view.advice ? [h(Heading, { as: 'h4', key: 'a-head' }, view.advice.heading), h(Text, { key: 'a-note' }, view.advice.note), ...lines('a', view.advice.lines)] : []),
