@@ -680,7 +680,13 @@ export function testsNotRemoved(ctx, report = ctx.report) {
   const repro = isObj(report.repro) ? report.repro : {};
   const listed = optList(repro.base_test_ids);
   const ids = listed && listed.every(isText) ? listed : [];
-  const baseIds = [...ctx.baseReport.tests.map((t) => t.id), ...ids];
+  // A PR removes a test only from a file that it changes, renames or deletes (prFiles holds the old
+  // name of a renamed file too). A main-report test of another module was added to main later, by
+  // another PR (set 7 fault 3; set 8 Y06, Y14). With no readable file list, every one counts.
+  const moduleOf = (id) => String(id).split('::')[0];
+  const touched = isTextList(ctx.prFiles) ? new Set(ctx.prFiles) : null;
+  const mainIds = ctx.baseReport.tests.map((t) => t.id).filter((id) => !touched || !isText(id) || touched.has(moduleOf(id)));
+  const baseIds = [...mainIds, ...ids];
   // A change approval covers a missing test only when the report links it to its renamed
   // successor (renameSuccessor). No link: unknown, never a pass.
   const renameUnknown = [];

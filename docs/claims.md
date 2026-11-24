@@ -555,6 +555,16 @@ Three points of this paper match rules here:
   report is unknown, because the head checks already own a missing test. On the stored evidence
   of sets 1 to 7 no outcome moves; X09 now names the failed test
   (`benchmark/run/evidence/impact-merge-ac-tests-2026-11-24.txt`).
+- **A later main test is not read as removed (24 Nov; set 7 fault 3, set 8 Y06 and Y14).** The
+  base side of `tests_not_removed` is the main report at the claim. When main moved after the PR
+  head (another ticket's PR added a test), that test was read as "removed without approval" by
+  this PR. Fix: a main-report test counts only when its module is a file that the PR changes,
+  renames or deletes (the PR's file list, with old names); the repro block's base ids count as
+  before, and with no readable file list every test counts. Limit: a later test in a module that
+  this PR also changes is still read as removed (set 7 X09). On sets 1 to 8 no outcome moves; the
+  reasons of Y06 and Y14 lose the false part
+  (`benchmark/run/evidence/impact-removed-test-pr-files-2026-11-24.txt`). Fixture S38 now lists
+  the deleted test module in its PR file list, as GitHub does.
 - **A high-stake mark removed before the claim (24 Nov, set 8 Y08).** Diagnosis: the app read the
   domain only from the live spec field and labels at the claim, and the audited AC record held
   only the AC hash. A claimant could remove `money_semantics` before the claim and no sign-off was
