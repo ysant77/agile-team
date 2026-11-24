@@ -839,6 +839,43 @@ PLAN = [
 ]
 
 
+# X10, X17, X19 (BUILD-7.md, build dispute): the row changes the signature of read_statement, the
+# context of the bank's seed patch seeds/k8_statement_access.patch, so the bank test
+# tests/test_discovery_branch.py cannot apply the seed and CI is red. The built reading also
+# refreshes that seed patch (both sides of the 3-way merge kept), as a developer would to keep CI
+# green. The literal heads are kept as asis/<id>.
+SEED = "seeds/k8_statement_access.patch"
+REFRESH_SEED = {"X10", "X17", "X19"}
+
+
+def refresh_seed() -> None:
+    subprocess.run(["git", "apply", "--3way", SEED], cwd=CLONE, capture_output=True, text=True)
+    p = CLONE / API
+    lines = p.read_text(encoding="utf-8").splitlines(keepends=True)
+    # Keep both sides of each conflict; the case's own signature closing line wins over the seed's.
+    kept, side, ours = [], None, []
+    for x in lines:
+        if x.startswith("<<<<<<< "):
+            side, ours = "ours", []
+        elif x.startswith("=======") and side:
+            side = "theirs"
+        elif x.startswith(">>>>>>> ") and side:
+            side = None
+        elif side == "theirs" and x.lstrip().startswith(") ->") and any(o.lstrip().startswith(") ->") for o in ours):
+            continue
+        else:
+            if side == "ours":
+                ours.append(x)
+            kept.append(x)
+    p.write_text("".join(kept), encoding="utf-8")
+    patch = git("diff", "HEAD", "--", API)
+    assert patch.strip(), "the seed changed nothing"
+    git("checkout", "HEAD", "--", API)
+    (CLONE / SEED).write_text(patch, encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-q", "--amend", "--no-edit")
+
+
 def case_id(branch: str) -> str:
     return branch.split("/")[1].split("-")[0].upper()
 
@@ -851,6 +888,8 @@ def main() -> None:
         subject = build()
         fmt()
         commit(subject)
+        if branch.startswith("case/") and case_id(branch) in REFRESH_SEED:
+            refresh_seed()
         print(branch, git("rev-parse", "--short", "HEAD").strip(), subject.splitlines()[0])
     if not ONLY or "X08" in ONLY:
         # Squash merge of case/X08 on other/X08: one commit with the PR's change, one parent.
