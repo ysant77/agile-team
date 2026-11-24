@@ -1,0 +1,11 @@
+# Moved rows of fix/high-stake-mark-from-record (24 Nov 2026): app main 7a4d8a8 (old) against this branch (new),
+# both scored with this branch's scorer (scorer change 25) on the stored evidence of sets 1 to 8. Development data.
+s1 identical outcomes and reasons
+s2 identical outcomes and reasons
+s3 identical outcomes and reasons
+s4 identical outcomes and reasons
+s5 identical outcomes and reasons
+s6 identical outcomes and reasons
+s7 identical outcomes and reasons
+s8 Y08 supported -> cannot_verify
+# Y08 new reason: money_semantics (money_semantics was recorded with the ACs (audit seq 0) and is not on the work item at the claim; the claimant removed the label money_semantics): a person's sign-off of the merged change is required, and none is recorded

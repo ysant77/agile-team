@@ -103,6 +103,11 @@ for i, (cid, row) in enumerate(sorted(ROWS.items()), 1):
         jira["changes"] = [{"test": "tests/test_api.py::test_same_key_with_a_different_body_is_rejected", "by": OWNER, "at": "T-30h",
                             "reason": "The status of a key conflict changes by this ticket. 409 is the new requirement; the balance check stays."}]
     # Y08: at T the ticket has no label and no domain field (the claimant removed the label).
+    # Scorer change 25 (after the set 8 results): the product owner's AC record kept the label
+    # present at that time, and the changelog names the claimant's removal.
+    if cid == "Y08":
+        jira["acs"]["marks"] = [MONEY]
+        jira["markRemoval"] = {"mark": MONEY, "by": CLAIMANT, "at": "T-50m"}
     if cid == "Y11":
         jira["prLink"] = {"by": CLAIMANT, "at": "T-1h", "prNumber": "case", "reason": "PR of my colleague for this ticket"}
     if cid == "Y12":
@@ -120,6 +125,7 @@ for i, (cid, row) in enumerate(sorted(ROWS.items()), 1):
     if cid == "Y19":
         ticket["domain"] = MONEY
         jira["signoff"] = {"by": FINANCE, "at": "T-90m", "sha": "merge", "reason": "approved", "noAuditEvent": True}
+        jira["acs"]["marks"] = [MONEY]  # scorer change 25: the domain was set when the AC were recorded
     if cid == "Y20":
         jira["acs"]["at"] = "T-3h"
     if cid == "Y21":

@@ -539,6 +539,16 @@ Three points of this paper match rules here:
   report is unknown, because the head checks already own a missing test. On the stored evidence
   of sets 1 to 7 no outcome moves; X09 now names the failed test
   (`benchmark/run/evidence/impact-merge-ac-tests-2026-11-24.txt`).
+- **A high-stake mark removed before the claim (24 Nov, set 8 Y08).** Diagnosis: the app read the
+  domain only from the live spec field and labels at the claim, and the audited AC record held
+  only the AC hash. A claimant could remove `money_semantics` before the claim and no sign-off was
+  asked. Fix: recording the ACs also keeps the high-stake marks of that moment in the audited
+  record. At the claim, a mark kept by a record of a person other than the claimant still asks for
+  the sign-off when it is gone from the work item; then (only then) the app reads the issue
+  changelog (`read:jira-work`, no new scope) and names a removal by the claimant in the reason.
+  Records made before this change have no marks, so nothing changes for them. On sets 1 to 8 only
+  Y08 moves (`supported` to `cannot_verify`); development evidence, not a held-out measure
+  (`benchmark/run/evidence/impact-high-stake-mark-2026-11-24.txt`).
 - **A plausible patch is not a correct patch.** A passing test after a change shows that the
   change is plausible. On set 5 the code checks supported 4 changes that were not correct (C7).
   That is why level 5 of the evidence levels is never "proved".

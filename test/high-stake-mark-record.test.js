@@ -71,3 +71,15 @@ test('recording the ACs keeps the high-stake marks of that moment in the event a
   await recordAcsAction({ key: KEY, accountId: 'po' }, { ...deps, readMarks: async () => ({ domain: null, labels: [] }), appendAudit: async (e) => { events2.push(e); return { seq: 0, at: 'T' }; } });
   assert.deepEqual(events2[0].data, { key: KEY, acHash: acHash(ACS) });
 });
+
+test('the changelog gives the last removal of a recorded mark, and decide reads it only when the mark is gone', async () => {
+  const { readMarkRemoval } = await import('../src/jira-evidence.js');
+  const page = { values: [
+    { author: { accountId: 'po' }, created: '2026-11-19T10:00:00.000+0000', items: [{ field: 'labels', fromString: '', toString: 'money_semantics' }] },
+    { author: { accountId: 'dev' }, created: '2026-11-24T10:10:00.000+0000', items: [{ field: 'labels', fromString: 'money_semantics ui', toString: 'ui' }] },
+  ], isLast: true };
+  const requestJira = async () => ({ ok: true, json: async () => page });
+  assert.deepEqual(await readMarkRemoval('BANK-8', ['money_semantics'], requestJira), { mark: 'money_semantics', by: 'dev', at: '2026-11-24T10:10:00.000+0000' });
+  assert.equal(await readMarkRemoval('BANK-8', ['fairness'], requestJira), null);
+  assert.equal(await readMarkRemoval('BANK-8', ['money_semantics'], async () => ({ ok: false, status: 403 })), null);
+});
